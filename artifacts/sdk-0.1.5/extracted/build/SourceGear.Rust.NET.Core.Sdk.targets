@@ -1,0 +1,54 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <DefaultLanguageSourceExtension>.rs</DefaultLanguageSourceExtension>
+    <Language>Rust</Language>
+    <TargetRuntime>Managed</TargetRuntime>
+    <AlwaysUseNumericalSuffixInItemNames>true</AlwaysUseNumericalSuffixInItemNames>
+    <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
+    <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
+    <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+  </PropertyGroup>
+
+  <Target Name="CreateManifestResourceNames">
+  </Target>
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+  </PropertyGroup>
+
+  <Target Name="RefWin32" BeforeTargets="BeforeResolveReferences">
+  <ItemGroup>
+    <Reference Include="$(SourceGearRustFullPath_crates)\sgwin32.dll" />
+    <Reference Include="$(SourceGearRustFullPath_crates)\sgm.dll" />
+  </ItemGroup>
+  </Target>
+
+  <Target Name="CoreCompile">
+      <!-- TODO classname foo should be a setting -->
+      <PropertyGroup>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <MyPath_obj>$(BaseIntermediateOutputPath.Replace('\', '/'))</MyPath_obj>
+        <MyPath_out>$(IntermediateOutputPath.Replace('\', '/'))</MyPath_out>
+
+        <MyPath_crates>$(SourceGearRustFullPath_crates.Replace('\', '/'))</MyPath_crates>
+
+        <MyPath_rsbuild>$(SourceGearRustFullPath_rsbuild.Replace('\', '/'))</MyPath_rsbuild>
+        <MyPath_rsfakelink>$(SourceGearRustFullPath_rsfakelink.Replace('\', '/'))</MyPath_rsfakelink>
+        <RustToolchain Condition=" '$(RustToolchain)' == '' ">+nightly</RustToolchain>
+        <RustEdition Condition=" '$(RustEdition)' == '' ">2018</RustEdition>
+        <!-- TODO this should use standard msbuild configuration property, and should probably default to debug -->
+        <RustDebugOrRelease Condition=" '$(RustDebugOrRelease)' == '' ">release</RustDebugOrRelease>
+        <RustWantRefDotnet Condition=" '$(RustWantRefDotnet)' == '' ">false</RustWantRefDotnet>
+        <items_RustCrateReference>@(RustCrateReference->'%(Identity)=%(Version)=%(DefaultFeatures)=%(Features)')</items_RustCrateReference>
+        <!-- TODO it would be nice to get rid of Name metadata below.  just use Include.  get the name from the other crate info. -->
+        <!-- TODO need support for DefaultFeatures and Features here as well -->
+        <items_RustReference>@(RustReference->'%(FullPath)=%(Name)')</items_RustReference>
+      </PropertyGroup>
+      <Exec Command='dotnet "$(MyPath_rsbuild)" "$(AssemblyName)" "$(Version)" "$(MyPath_crates)" "$(MyPath_rsfakelink)" foo "$(MyPath_obj)" "$(MyPath_out)" "$(OutputType)" "$(RustToolchain)" "$(RustEdition)" "$(RustDebugOrRelease)" "$(RustWantRefDotnet)" "$(items_RustCrateReference)" "$(items_RustReference)" ' />
+  </Target>
+
+  <!-- TODO CoreClean -->
+
+</Project>

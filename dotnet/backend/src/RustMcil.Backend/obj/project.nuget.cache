@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "7jmWHhR8u4w=",
+  "success": true,
+  "projectFilePath": "D:\\dev\\rust-msil\\dotnet\\backend\\src\\RustMcil.Backend\\RustMcil.Backend.csproj",
+  "expectedPackageFiles": [
+    "D:\\dev\\caches\\nuget\\libllvm\\20.1.2\\libllvm.20.1.2.nupkg.sha512",
+    "D:\\dev\\caches\\nuget\\llvmsharp.interop\\20.1.2\\llvmsharp.interop.20.1.2.nupkg.sha512",
+    "D:\\dev\\caches\\nuget\\mono.cecil\\0.11.6\\mono.cecil.0.11.6.nupkg.sha512",
+    "D:\\dev\\caches\\nuget\\microsoft.netcore.app.ref\\10.0.5\\microsoft.netcore.app.ref.10.0.5.nupkg.sha512",
+    "D:\\dev\\caches\\nuget\\microsoft.windowsdesktop.app.ref\\10.0.5\\microsoft.windowsdesktop.app.ref.10.0.5.nupkg.sha512",
+    "D:\\dev\\caches\\nuget\\microsoft.aspnetcore.app.ref\\10.0.5\\microsoft.aspnetcore.app.ref.10.0.5.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,32 @@
+[package]
+name = "Microsoft_VisualBasic_Core"
+version = "0.1.5"
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies.sgrust_core]
+path = "../../sgrust_core"
+
+[dependencies.core]
+path = '../../libcore'
+optional = true
+
+[dependencies.compiler_builtins]
+version = '0.1.10'
+features = ['rustc-dep-of-std']
+optional = true
+
+[dependencies.System_IO_FileSystem]
+path = "../System_IO_FileSystem"
+
+[dependencies.System_IO_FileSystem_DriveInfo]
+path = "../System_IO_FileSystem_DriveInfo"
+
+[dependencies.System_Runtime]
+path = "../System_Runtime"
+
+[features]
+building-sysroot = ['core', 'compiler_builtins', 'sgrust_core/building-sysroot' ,'System_Runtime/building-sysroot','System_IO_FileSystem_DriveInfo/building-sysroot','System_IO_FileSystem/building-sysroot']
+

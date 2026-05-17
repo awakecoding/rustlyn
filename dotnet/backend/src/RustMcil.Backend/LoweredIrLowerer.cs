@@ -1,0 +1,1094 @@
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace RustMcil.Backend;
+
+public static partial class LoweredIrLowerer
+{
+    public static LoweredModule LowerBitcode(string artifactPath, string? llvmRoot = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactPath);
+
+        var toolchainRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(llvmRoot)
+            ?? throw new InvalidOperationException("An LLVM toolchain root is required for lowering. Configure --llvm-root or RUSTMCIL_LLVM_ROOT.");
+
+        var llvmIr = LlvmToolingDisassembler.ReadLlvmIr(Path.GetFullPath(artifactPath), toolchainRoot);
+        return LowerLlvmIr(llvmIr);
+    }
+
+    public static LoweredModule LowerLlvmIr(string llvmIr)
+    {
+        var functions = new List<LoweredFunction>();
+        var globals = new List<LoweredGlobal>();
+        string? currentFunctionName = null;
+        string? currentReturnType = null;
+        List<LoweredParameter>? currentParameters = null;
+        List<LoweredBlock>? currentBlocks = null;
+        LoweredBlockBuilder? currentBlock = null;
+
+        foreach (var rawLine in ReadLines(llvmIr))
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith(';'))
+            {
+                continue;
+            }
+
+            if (currentFunctionName is null)
+            {
+                var aliasMatch = FunctionAliasRegex().Match(line);
+                if (aliasMatch.Success)
+                {
+                    functions.Add(CreateAliasFunction(aliasMatch));
+                    continue;
+                }
+
+                var globalMatch = ConstantByteArrayGlobalRegex().Match(line);
+                if (globalMatch.Success)
+                {
+                    globals.Add(new LoweredGlobal(
+                        globalMatch.Groups["name"].Value,
+                        ParseConstantByteArray(globalMatch.Groups["bytes"].Value)));
+                    continue;
+                }
+
+                var headerMatch = FunctionHeaderRegex().Match(line);
+                if (!headerMatch.Success)
+                {
+                    continue;
+                }
+
+                currentFunctionName = headerMatch.Groups["name"].Value;
+                currentReturnType = NormalizeType(headerMatch.Groups["returnType"].Value);
+                currentParameters = ParseParameters(headerMatch.Groups["parameters"].Value);
+                currentBlocks = [];
+                currentBlock = null;
+                continue;
+            }
+
+            if (line == "}")
+            {
+                if (currentBlock is not null)
+                {
+                    currentBlocks!.Add(currentBlock.ToBlock());
+                }
+
+                functions.Add(new LoweredFunction(currentFunctionName, currentReturnType!, currentParameters!, currentBlocks!));
+                currentFunctionName = null;
+                currentReturnType = null;
+                currentParameters = null;
+                currentBlocks = null;
+                currentBlock = null;
+                continue;
+            }
+
+            var blockMatch = BasicBlockRegex().Match(line);
+            if (blockMatch.Success)
+            {
+                if (currentBlock is not null)
+                {
+                    currentBlocks!.Add(currentBlock.ToBlock());
+                }
+
+                currentBlock = new LoweredBlockBuilder(blockMatch.Groups["name"].Value);
+                continue;
+            }
+
+            currentBlock ??= new LoweredBlockBuilder("entry");
+            currentBlock.Add(ParseInstruction(line));
+        }
+
+        return new LoweredModule(functions, globals);
+    }
+
+    public static string Dump(LoweredModule module)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var function in module.Functions)
+        {
+            builder.Append(function.ReturnType);
+            builder.Append(' ');
+            builder.Append(function.Name);
+            builder.Append('(');
+            builder.Append(string.Join(", ", function.Parameters.Select(parameter => $"{parameter.Type} {parameter.Name}")));
+            builder.AppendLine(")");
+
+            foreach (var block in function.Blocks)
+            {
+                builder.Append("  block ");
+                builder.AppendLine(block.Name);
+
+                foreach (var instruction in block.Instructions)
+                {
+                    builder.Append("    ");
+                    builder.AppendLine(FormatInstruction(instruction));
+                }
+            }
+        }
+
+        foreach (var global in module.Globals)
+        {
+            if (builder.Length > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.Append("global ");
+            builder.Append(global.Name);
+            builder.Append(" = ");
+            builder.Append(string.Join(" ", global.InitializerBytes.Select(static value => value.ToString("X2"))));
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    private static List<LoweredParameter> ParseParameters(string parameterText)
+    {
+        if (string.IsNullOrWhiteSpace(parameterText))
+        {
+            return [];
+        }
+
+        return parameterText
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(ParseParameter)
+            .Where(static parameter => parameter is not null)
+            .Select(static parameter => parameter!)
+            .ToList();
+    }
+
+    private static LoweredInstruction ParseInstruction(string line)
+    {
+        if (TryParseBinaryInstruction(line, out var binaryInstruction))
+        {
+            return binaryInstruction;
+        }
+
+            var truncateMatch = TruncateInstructionRegex().Match(line);
+            if (truncateMatch.Success)
+            {
+                return new LoweredTruncateInstruction(
+                NormalizeResultName(truncateMatch.Groups["result"].Value),
+                NormalizeType(truncateMatch.Groups["fromType"].Value),
+                NormalizeType(truncateMatch.Groups["toType"].Value),
+                NormalizeValue(truncateMatch.Groups["value"].Value));
+            }
+
+        var zeroExtendMatch = ZeroExtendInstructionRegex().Match(line);
+        if (zeroExtendMatch.Success)
+        {
+            return new LoweredZeroExtendInstruction(
+                NormalizeResultName(zeroExtendMatch.Groups["result"].Value),
+                NormalizeType(zeroExtendMatch.Groups["fromType"].Value),
+                NormalizeType(zeroExtendMatch.Groups["toType"].Value),
+                NormalizeValue(zeroExtendMatch.Groups["value"].Value));
+        }
+
+        var signExtendMatch = SignExtendInstructionRegex().Match(line);
+        if (signExtendMatch.Success)
+        {
+            return new LoweredSignExtendInstruction(
+                NormalizeResultName(signExtendMatch.Groups["result"].Value),
+                NormalizeType(signExtendMatch.Groups["fromType"].Value),
+                NormalizeType(signExtendMatch.Groups["toType"].Value),
+                NormalizeValue(signExtendMatch.Groups["value"].Value));
+        }
+
+        if (TryParseSelectInstruction(line, out var selectInstruction))
+        {
+            return selectInstruction;
+        }
+
+        var selectMatch = SelectInstructionRegex().Match(line);
+        if (selectMatch.Success)
+        {
+            return new LoweredSelectInstruction(
+                NormalizeResultName(selectMatch.Groups["result"].Value),
+                NormalizeValue(selectMatch.Groups["condition"].Value),
+                NormalizeType(selectMatch.Groups["valueType"].Value),
+                NormalizeValue(selectMatch.Groups["trueValue"].Value),
+                NormalizeValue(selectMatch.Groups["falseValue"].Value));
+        }
+
+        var phiMatch = PhiInstructionRegex().Match(line);
+        if (phiMatch.Success)
+        {
+            return new LoweredPhiInstruction(
+                NormalizeResultName(phiMatch.Groups["result"].Value),
+                NormalizeType(phiMatch.Groups["type"].Value),
+                ParsePhiIncoming(phiMatch.Groups["incoming"].Value));
+        }
+
+        if (UnreachableInstructionRegex().IsMatch(line))
+        {
+            return new LoweredUnreachableInstruction();
+        }
+
+        var callMatch = CallInstructionRegex().Match(line);
+        if (callMatch.Success)
+        {
+            var result = callMatch.Groups["result"].Success ? NormalizeResultName(callMatch.Groups["result"].Value) : null;
+            return new LoweredCallInstruction(
+                result,
+                NormalizeType(callMatch.Groups["returnType"].Value),
+                callMatch.Groups["callee"].Value,
+                ParseArguments(callMatch.Groups["arguments"].Value));
+        }
+
+        var returnMatch = ReturnInstructionRegex().Match(line);
+        if (returnMatch.Success)
+        {
+            return new LoweredReturnInstruction(
+                NormalizeType(returnMatch.Groups["type"].Value),
+                NormalizeValue(returnMatch.Groups["value"].Value));
+        }
+
+        var compareMatch = CompareInstructionRegex().Match(line);
+        if (compareMatch.Success)
+        {
+            return new LoweredCompareInstruction(
+                NormalizeResultName(compareMatch.Groups["result"].Value),
+                compareMatch.Groups["predicate"].Value,
+                NormalizeType(compareMatch.Groups["type"].Value),
+                NormalizeValue(compareMatch.Groups["left"].Value),
+                NormalizeValue(compareMatch.Groups["right"].Value));
+        }
+
+        var branchMatch = ConditionalBranchInstructionRegex().Match(line);
+        if (branchMatch.Success)
+        {
+            return new LoweredConditionalBranchInstruction(
+                NormalizeValue(branchMatch.Groups["condition"].Value),
+                branchMatch.Groups["trueLabel"].Value,
+                branchMatch.Groups["falseLabel"].Value);
+        }
+
+        var jumpMatch = UnconditionalBranchInstructionRegex().Match(line);
+        if (jumpMatch.Success)
+        {
+            return new LoweredJumpInstruction(jumpMatch.Groups["target"].Value);
+        }
+
+        var getElementPointerMatch = GetElementPointerInstructionRegex().Match(line);
+        if (getElementPointerMatch.Success)
+        {
+            return new LoweredGetElementPointerInstruction(
+                NormalizeResultName(getElementPointerMatch.Groups["result"].Value),
+                NormalizeType(getElementPointerMatch.Groups["elementType"].Value),
+                NormalizeValue(getElementPointerMatch.Groups["base"].Value),
+                int.Parse(getElementPointerMatch.Groups["index"].Value));
+        }
+
+        var globalElementLoadMatch = GlobalElementLoadInstructionRegex().Match(line);
+        if (globalElementLoadMatch.Success)
+        {
+            return new LoweredLoadInstruction(
+                NormalizeResultName(globalElementLoadMatch.Groups["result"].Value),
+                NormalizeType(globalElementLoadMatch.Groups["type"].Value),
+                $"{NormalizeValue(globalElementLoadMatch.Groups["source"].Value)}[{globalElementLoadMatch.Groups["index"].Value}]"
+            );
+        }
+
+        var loadMatch = LoadInstructionRegex().Match(line);
+        if (loadMatch.Success)
+        {
+            return new LoweredLoadInstruction(
+                NormalizeResultName(loadMatch.Groups["result"].Value),
+                NormalizeType(loadMatch.Groups["type"].Value),
+                NormalizeValue(loadMatch.Groups["source"].Value));
+        }
+
+        var allocaMatch = AllocaInstructionRegex().Match(line);
+        if (allocaMatch.Success)
+        {
+            return new LoweredAllocaInstruction(
+                NormalizeResultName(allocaMatch.Groups["result"].Value),
+                NormalizeType(allocaMatch.Groups["type"].Value));
+        }
+
+        var storeMatch = StoreInstructionRegex().Match(line);
+        if (storeMatch.Success)
+        {
+            return new LoweredStoreInstruction(
+                NormalizeType(storeMatch.Groups["type"].Value),
+                NormalizeValue(storeMatch.Groups["value"].Value),
+                NormalizeValue(storeMatch.Groups["destination"].Value));
+        }
+
+        return new LoweredRawInstruction(line);
+    }
+
+    private static List<LoweredArgument> ParseArguments(string argumentText)
+    {
+        if (string.IsNullOrWhiteSpace(argumentText))
+        {
+            return [];
+        }
+
+        var arguments = new List<LoweredArgument>();
+        var remaining = argumentText.Trim();
+
+        while (!string.IsNullOrEmpty(remaining))
+        {
+            var separatorIndex = FindTopLevelComma(remaining);
+            string segment;
+            if (separatorIndex < 0)
+            {
+                segment = remaining;
+                remaining = string.Empty;
+            }
+            else
+            {
+                segment = remaining[..separatorIndex];
+                remaining = remaining[(separatorIndex + 1)..].TrimStart();
+            }
+
+            var argument = ParseArgument(segment);
+            if (argument is not null)
+            {
+                arguments.Add(argument);
+            }
+        }
+
+        return arguments;
+    }
+
+    private static bool TryParseBinaryInstruction(string line, out LoweredBinaryInstruction instruction)
+    {
+        instruction = null!;
+
+        var equalsIndex = line.IndexOf('=');
+        if (equalsIndex <= 1)
+        {
+            return false;
+        }
+
+        var resultText = line[..equalsIndex].Trim();
+        if (!resultText.StartsWith("%", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var remainder = line[(equalsIndex + 1)..].TrimStart();
+        var operationSeparator = remainder.IndexOf(' ');
+        if (operationSeparator <= 0)
+        {
+            return false;
+        }
+
+        var operation = remainder[..operationSeparator];
+        if (!IsSupportedBinaryOperation(operation))
+        {
+            return false;
+        }
+
+        remainder = remainder[(operationSeparator + 1)..].TrimStart();
+        while (!string.IsNullOrEmpty(remainder))
+        {
+            if (TryReadTypePrefix(remainder, out var type, out var operandsText))
+            {
+                var commaIndex = FindTopLevelComma(operandsText);
+                if (commaIndex <= 0 || commaIndex == operandsText.Length - 1)
+                {
+                    return false;
+                }
+
+                instruction = new LoweredBinaryInstruction(
+                    NormalizeResultName(resultText),
+                    operation,
+                    NormalizeType(type),
+                    NormalizeValue(operandsText[..commaIndex]),
+                    NormalizeValue(operandsText[(commaIndex + 1)..]));
+                return true;
+            }
+
+            var nextTokenSeparator = remainder.IndexOf(' ');
+            if (nextTokenSeparator < 0)
+            {
+                return false;
+            }
+
+            remainder = remainder[(nextTokenSeparator + 1)..].TrimStart();
+        }
+
+        return false;
+    }
+
+    private static bool TryParseSelectInstruction(string line, out LoweredSelectInstruction instruction)
+    {
+        instruction = null!;
+
+        const string marker = "= select i1 ";
+        var markerIndex = line.IndexOf(marker, StringComparison.Ordinal);
+        if (markerIndex <= 1)
+        {
+            return false;
+        }
+
+        var resultText = line[..markerIndex].Trim();
+        if (resultText.Length == 0 || resultText[0] != '%')
+        {
+            return false;
+        }
+
+        var remainder = line[(markerIndex + marker.Length)..].TrimStart();
+        var conditionSeparator = FindTopLevelComma(remainder);
+        if (conditionSeparator <= 0 || conditionSeparator == remainder.Length - 1)
+        {
+            return false;
+        }
+
+        var condition = remainder[..conditionSeparator];
+        remainder = remainder[(conditionSeparator + 1)..].TrimStart();
+
+        if (!TryReadTypePrefix(remainder, out var valueType, out var valueRemainder)
+            || string.IsNullOrWhiteSpace(valueRemainder))
+        {
+            return false;
+        }
+
+        var trueValueSeparator = FindTopLevelComma(valueRemainder);
+        if (trueValueSeparator <= 0 || trueValueSeparator == valueRemainder.Length - 1)
+        {
+            return false;
+        }
+
+        var trueValue = valueRemainder[..trueValueSeparator];
+        var falseSegment = valueRemainder[(trueValueSeparator + 1)..].TrimStart();
+        if (!TryReadTypePrefix(falseSegment, out _, out var falseValue)
+            || string.IsNullOrWhiteSpace(falseValue))
+        {
+            return false;
+        }
+
+        instruction = new LoweredSelectInstruction(
+            NormalizeResultName(resultText),
+            NormalizeValue(condition),
+            NormalizeType(valueType),
+            NormalizeValue(trueValue),
+            NormalizeValue(falseValue));
+        return true;
+    }
+
+    private static bool IsSupportedBinaryOperation(string operation)
+    {
+        return operation is "add" or "sub" or "mul" or "sdiv" or "udiv" or "srem" or "urem" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr";
+    }
+
+    private static bool TryReadTypePrefix(string text, out string type, out string remainder)
+    {
+        var trimmed = text.TrimStart();
+
+        if (TryReadDelimitedType(trimmed, '<', '>', out type, out remainder)
+            || TryReadDelimitedType(trimmed, '[', ']', out type, out remainder)
+            || TryReadKeywordType(trimmed, "ptr", out type, out remainder)
+            || TryReadIntegerType(trimmed, out type, out remainder)
+            || TryReadKeywordType(trimmed, "void", out type, out remainder))
+        {
+            return true;
+        }
+
+        type = string.Empty;
+        remainder = string.Empty;
+        return false;
+    }
+
+    private static bool TryReadDelimitedType(string text, char open, char close, out string type, out string remainder)
+    {
+        type = string.Empty;
+        remainder = string.Empty;
+
+        if (string.IsNullOrEmpty(text) || text[0] != open)
+        {
+            return false;
+        }
+
+        var depth = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            if (text[index] == open)
+            {
+                depth++;
+            }
+            else if (text[index] == close)
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    type = text[..(index + 1)];
+                    remainder = text[(index + 1)..].TrimStart();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryReadKeywordType(string text, string keyword, out string type, out string remainder)
+    {
+        type = string.Empty;
+        remainder = string.Empty;
+
+        if (!text.StartsWith(keyword, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var length = keyword.Length;
+        if (string.Equals(keyword, "ptr", StringComparison.Ordinal)
+            && text.Length > length
+            && char.IsWhiteSpace(text[length])
+            && text[(length + 1)..].StartsWith("addrspace(", StringComparison.Ordinal))
+        {
+            var closingIndex = text.IndexOf(')', length + 1);
+            if (closingIndex < 0)
+            {
+                return false;
+            }
+
+            length = closingIndex + 1;
+        }
+
+        if (text.Length > length && !char.IsWhiteSpace(text[length]))
+        {
+            return false;
+        }
+
+        type = text[..length];
+        remainder = text[length..].TrimStart();
+        return true;
+    }
+
+    private static bool TryReadIntegerType(string text, out string type, out string remainder)
+    {
+        type = string.Empty;
+        remainder = string.Empty;
+
+        if (text.Length < 2 || text[0] != 'i' || !char.IsDigit(text[1]))
+        {
+            return false;
+        }
+
+        var length = 2;
+        while (length < text.Length && char.IsDigit(text[length]))
+        {
+            length++;
+        }
+
+        if (text.Length > length && !char.IsWhiteSpace(text[length]))
+        {
+            return false;
+        }
+
+        type = text[..length];
+        remainder = text[length..].TrimStart();
+        return true;
+    }
+
+    private static int FindTopLevelComma(string text)
+    {
+        var angleDepth = 0;
+        var bracketDepth = 0;
+        var parenthesisDepth = 0;
+
+        for (var index = 0; index < text.Length; index++)
+        {
+            switch (text[index])
+            {
+                case '<':
+                    angleDepth++;
+                    break;
+                case '>':
+                    angleDepth--;
+                    break;
+                case '[':
+                    bracketDepth++;
+                    break;
+                case ']':
+                    bracketDepth--;
+                    break;
+                case '(':
+                    parenthesisDepth++;
+                    break;
+                case ')':
+                    parenthesisDepth--;
+                    break;
+                case ',':
+                    if (angleDepth == 0 && bracketDepth == 0 && parenthesisDepth == 0)
+                    {
+                        return index;
+                    }
+
+                    break;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool TryReadBracketedSegment(string text, int startIndex, out int segmentStart, out int segmentEnd)
+    {
+        segmentStart = -1;
+        segmentEnd = -1;
+
+        for (var index = startIndex; index < text.Length; index++)
+        {
+            if (text[index] != '[')
+            {
+                continue;
+            }
+
+            segmentStart = index;
+            var depth = 1;
+            for (var innerIndex = index + 1; innerIndex < text.Length; innerIndex++)
+            {
+                if (text[innerIndex] == '[')
+                {
+                    depth++;
+                }
+                else if (text[innerIndex] == ']')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        segmentEnd = innerIndex;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        return false;
+    }
+
+    private static string FormatInstruction(LoweredInstruction instruction)
+    {
+        return instruction switch
+        {
+            LoweredBinaryInstruction binary => $"{binary.Result} = {binary.Operation} {binary.Type} {binary.Left}, {binary.Right}",
+            LoweredCallInstruction call when call.Result is null => $"call {call.ReturnType} {call.Callee}({FormatArguments(call.Arguments)})",
+            LoweredCallInstruction call => $"{call.Result} = call {call.ReturnType} {call.Callee}({FormatArguments(call.Arguments)})",
+            LoweredReturnInstruction ret => $"ret {ret.Type} {ret.Value}",
+            LoweredCompareInstruction compare => $"{compare.Result} = icmp {compare.Predicate} {compare.Type} {compare.Left}, {compare.Right}",
+            LoweredConditionalBranchInstruction branch => $"br {branch.Condition} -> {branch.TrueTarget}, {branch.FalseTarget}",
+            LoweredJumpInstruction jump => $"br -> {jump.Target}",
+            LoweredLoadInstruction load => $"{load.Result} = load {load.Type} {load.Source}",
+            LoweredAllocaInstruction alloca => $"{alloca.Result} = alloca {alloca.Type}",
+            LoweredGetElementPointerInstruction gep => $"{gep.Result} = gep {gep.ElementType} {gep.Base}[{gep.Index}]",
+            LoweredTruncateInstruction trunc => $"{trunc.Result} = trunc {trunc.FromType} {trunc.Value} to {trunc.ToType}",
+            LoweredZeroExtendInstruction zext => $"{zext.Result} = zext {zext.FromType} {zext.Value} to {zext.ToType}",
+            LoweredSignExtendInstruction sext => $"{sext.Result} = sext {sext.FromType} {sext.Value} to {sext.ToType}",
+            LoweredSelectInstruction select => $"{select.Result} = select i1 {select.Condition}, {select.ValueType} {select.TrueValue}, {select.ValueType} {select.FalseValue}",
+            LoweredPhiInstruction phi => $"{phi.Result} = phi {phi.Type} {FormatPhiIncoming(phi.Incoming)}",
+            LoweredUnreachableInstruction => "unreachable",
+            LoweredStoreInstruction store => $"store {store.Type} {store.Value} -> {store.Destination}",
+            LoweredRawInstruction raw => raw.Text,
+            _ => throw new InvalidOperationException($"Unsupported lowered instruction type: {instruction.GetType().Name}")
+        };
+    }
+
+    private static string FormatArguments(IReadOnlyList<LoweredArgument> arguments)
+    {
+        return string.Join(", ", arguments.Select(argument => $"{argument.Type} {argument.Value}"));
+    }
+
+    private static string FormatPhiIncoming(IReadOnlyList<LoweredPhiIncoming> incoming)
+    {
+        return string.Join(", ", incoming.Select(edge => $"[ {edge.Value}, %{edge.SourceBlock} ]"));
+    }
+
+    private static List<LoweredPhiIncoming> ParsePhiIncoming(string incomingText)
+    {
+        var incoming = new List<LoweredPhiIncoming>();
+        var index = 0;
+
+        while (TryReadBracketedSegment(incomingText, index, out var segmentStart, out var segmentEnd))
+        {
+            var segment = incomingText[(segmentStart + 1)..segmentEnd];
+            var separatorIndex = FindTopLevelComma(segment);
+            if (separatorIndex > 0)
+            {
+                var value = segment[..separatorIndex];
+                var source = segment[(separatorIndex + 1)..].Trim();
+                if (source.StartsWith("%", StringComparison.Ordinal))
+                {
+                    source = source[1..];
+                }
+
+                incoming.Add(new LoweredPhiIncoming(
+                    NormalizeValue(value),
+                    NormalizeBlockName(source)));
+            }
+
+            index = segmentEnd + 1;
+        }
+
+        return incoming;
+    }
+
+    private static string NormalizeValue(string value)
+    {
+        var trimmed = value.Trim();
+
+        if (trimmed.StartsWith('%') || trimmed.StartsWith('@'))
+        {
+            return NormalizeIdentifier(trimmed[1..]);
+        }
+
+        return trimmed;
+    }
+
+    private static string NormalizeResultName(string value)
+    {
+        return NormalizeIdentifier(value.Trim().TrimStart('%').TrimStart('@'));
+    }
+
+    private static string NormalizeBlockName(string value)
+    {
+        return value.Trim().TrimStart('%');
+    }
+
+    private static string NormalizeIdentifier(string value)
+    {
+        return value.Length > 0 && value.All(char.IsDigit)
+            ? $"tmp.{value}"
+            : value;
+    }
+
+    private static string NormalizeType(string typeText)
+    {
+        var match = CoreTypeRegex().Match(typeText.Trim());
+        return match.Success
+            ? match.Value
+            : typeText.Trim();
+    }
+
+    private static LoweredParameter? ParseParameter(string parameter)
+    {
+        var trimmed = parameter.Trim();
+        var separatorIndex = trimmed.LastIndexOf(' ');
+        if (separatorIndex <= 0 || separatorIndex == trimmed.Length - 1)
+        {
+            return null;
+        }
+
+        return new LoweredParameter(
+            NormalizeValue(trimmed[(separatorIndex + 1)..]),
+            NormalizeType(trimmed[..separatorIndex]));
+    }
+
+    private static LoweredArgument? ParseArgument(string argument)
+    {
+        var trimmed = argument.Trim();
+        if (!TryReadTypePrefix(trimmed, out var type, out var remainder)
+            || string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        remainder = StripLeadingArgumentAttributes(remainder);
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        return new LoweredArgument(
+            NormalizeType(type),
+            NormalizeValue(remainder));
+    }
+
+    private static string StripLeadingArgumentAttributes(string text)
+    {
+        var remaining = text.TrimStart();
+
+        while (!string.IsNullOrEmpty(remaining) && !LooksLikeArgumentValueStart(remaining))
+        {
+            var token = ReadTopLevelToken(remaining);
+            if (string.IsNullOrEmpty(token))
+            {
+                break;
+            }
+
+            remaining = remaining[token.Length..].TrimStart();
+
+            if (string.Equals(token, "align", StringComparison.Ordinal))
+            {
+                var alignment = ReadTopLevelToken(remaining);
+                if (string.IsNullOrEmpty(alignment))
+                {
+                    return string.Empty;
+                }
+
+                remaining = remaining[alignment.Length..].TrimStart();
+                continue;
+            }
+
+            if (!IsLeadingArgumentAttribute(token))
+            {
+                break;
+            }
+        }
+
+        return remaining;
+    }
+
+    private static bool LooksLikeArgumentValueStart(string text)
+    {
+        var trimmed = text.TrimStart();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return false;
+        }
+
+        var first = trimmed[0];
+        if (first is '%' or '@' or '-' or '<' or '[' || char.IsDigit(first))
+        {
+            return true;
+        }
+
+        return trimmed.StartsWith("null", StringComparison.Ordinal)
+            || trimmed.StartsWith("undef", StringComparison.Ordinal)
+            || trimmed.StartsWith("poison", StringComparison.Ordinal)
+            || trimmed.StartsWith("zeroinitializer", StringComparison.Ordinal)
+            || trimmed.StartsWith("true", StringComparison.Ordinal)
+            || trimmed.StartsWith("false", StringComparison.Ordinal)
+            || trimmed.StartsWith("none", StringComparison.Ordinal)
+            || trimmed.StartsWith("blockaddress(", StringComparison.Ordinal)
+            || trimmed.StartsWith("splat (", StringComparison.Ordinal)
+            || trimmed.StartsWith("c\"", StringComparison.Ordinal);
+    }
+
+    private static bool IsLeadingArgumentAttribute(string token)
+    {
+        return token is "align"
+            or "byref"
+            or "immarg"
+            or "inalloca"
+            or "inreg"
+            or "nest"
+            or "noalias"
+            or "nocapture"
+            or "nofree"
+            or "nonnull"
+            or "noundef"
+            or "preallocated"
+            or "readnone"
+            or "readonly"
+            or "returned"
+            or "signext"
+            or "swiftasync"
+            or "swiftself"
+            or "swifterror"
+            or "sret"
+            or "writeonly"
+            or "zeroext"
+            || token.StartsWith("alignstack(", StringComparison.Ordinal)
+            || token.StartsWith("byref(", StringComparison.Ordinal)
+            || token.StartsWith("byval(", StringComparison.Ordinal)
+            || token.StartsWith("dereferenceable(", StringComparison.Ordinal)
+            || token.StartsWith("dereferenceable_or_null(", StringComparison.Ordinal)
+            || token.StartsWith("elementtype(", StringComparison.Ordinal)
+            || token.StartsWith("inalloca(", StringComparison.Ordinal)
+            || token.StartsWith("preallocated(", StringComparison.Ordinal)
+            || token.StartsWith("range(", StringComparison.Ordinal)
+            || token.StartsWith("sret(", StringComparison.Ordinal);
+    }
+
+    private static string ReadTopLevelToken(string text)
+    {
+        var angleDepth = 0;
+        var bracketDepth = 0;
+        var parenDepth = 0;
+
+        for (var index = 0; index < text.Length; index++)
+        {
+            switch (text[index])
+            {
+                case '<':
+                    angleDepth++;
+                    break;
+                case '>':
+                    angleDepth = Math.Max(0, angleDepth - 1);
+                    break;
+                case '[':
+                    bracketDepth++;
+                    break;
+                case ']':
+                    bracketDepth = Math.Max(0, bracketDepth - 1);
+                    break;
+                case '(':
+                    parenDepth++;
+                    break;
+                case ')':
+                    parenDepth = Math.Max(0, parenDepth - 1);
+                    break;
+                default:
+                    if (char.IsWhiteSpace(text[index]) && angleDepth == 0 && bracketDepth == 0 && parenDepth == 0)
+                    {
+                        return text[..index];
+                    }
+
+                    break;
+            }
+        }
+
+        return text;
+    }
+
+    private static LoweredFunction CreateAliasFunction(Match aliasMatch)
+    {
+        var functionName = aliasMatch.Groups["name"].Value;
+        var targetName = aliasMatch.Groups["target"].Value;
+        var returnType = NormalizeType(aliasMatch.Groups["returnType"].Value);
+        var parameterTypes = ParseAliasParameterTypes(aliasMatch.Groups["parameters"].Value);
+        var parameters = parameterTypes
+            .Select((parameterType, index) => new LoweredParameter($"arg{index}", parameterType))
+            .ToList();
+        var arguments = parameters
+            .Select(parameter => new LoweredArgument(parameter.Type, parameter.Name))
+            .ToList();
+
+        var instructions = new List<LoweredInstruction>();
+        if (string.Equals(returnType, "void", StringComparison.Ordinal))
+        {
+            instructions.Add(new LoweredCallInstruction(null, returnType, targetName, arguments));
+            instructions.Add(new LoweredReturnInstruction("void", "void"));
+        }
+        else
+        {
+            instructions.Add(new LoweredCallInstruction("_0", returnType, targetName, arguments));
+            instructions.Add(new LoweredReturnInstruction(returnType, "_0"));
+        }
+
+        return new LoweredFunction(functionName, returnType, parameters, [new LoweredBlock("entry", instructions)]);
+    }
+
+    private static List<string> ParseAliasParameterTypes(string parameterText)
+    {
+        if (string.IsNullOrWhiteSpace(parameterText))
+        {
+            return [];
+        }
+
+        return parameterText
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeType)
+            .ToList();
+    }
+
+    private static IEnumerable<string> ReadLines(string text)
+    {
+        using var reader = new StringReader(text);
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            yield return line;
+        }
+    }
+
+    private static List<byte> ParseConstantByteArray(string escapedBytes)
+    {
+        var bytes = new List<byte>();
+        for (var index = 0; index < escapedBytes.Length;)
+        {
+            if (escapedBytes[index] == '\\' && index + 2 < escapedBytes.Length)
+            {
+                bytes.Add(Convert.ToByte(escapedBytes.Substring(index + 1, 2), 16));
+                index += 3;
+                continue;
+            }
+
+            bytes.Add((byte)escapedBytes[index]);
+            index++;
+        }
+
+        return bytes;
+    }
+
+    [GeneratedRegex("^define\\s+(?<returnType>[^@]+?)\\s+@(?<name>[^\\s(]+)\\((?<parameters>[^)]*)\\)", RegexOptions.CultureInvariant)]
+    private static partial Regex FunctionHeaderRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex FunctionAliasRegex();
+
+    [GeneratedRegex("<[^>]+>|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|void", RegexOptions.CultureInvariant)]
+    private static partial Regex CoreTypeRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,\\s*align\\s+\\d+)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ConstantByteArrayGlobalRegex();
+
+    [GeneratedRegex("^(?<name>[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
+    private static partial Regex BasicBlockRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?<op>add|sub|mul|sdiv|udiv|srem|urem|and|or|xor|shl|lshr|ashr)(?:\\s+[^\\s]+)*\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex BinaryInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*trunc(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex TruncateInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*zext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ZeroExtendInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex SignExtendInstructionRegex();
+
+    [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*select\\s+i1\\s+(?<condition>[^,]+),\\s+(?<valueType><[^>]+>|[^\\s]+)\\s+(?<trueValue>[^,]+),\\s+(?:<[^>]+>|[^\\s]+)\\s+(?<falseValue>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex SelectInstructionRegex();
+
+    [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*phi\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<incoming>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex PhiInstructionRegex();
+
+    [GeneratedRegex("^unreachable$", RegexOptions.CultureInvariant)]
+    private static partial Regex UnreachableInstructionRegex();
+
+    [GeneratedRegex("^(?:%(?<result>[^\\s=]+)\\s*=\\s*)?(?:tail\\s+)?call\\s+(?<returnType>[^@]+?)\\s+@(?<callee>[^\\s(]+)\\((?<arguments>.*)\\)(?:\\s+#\\d+)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex CallInstructionRegex();
+
+    [GeneratedRegex("^ret\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ReturnInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*icmp\\s+(?<predicate>[^\\s]+)\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex CompareInstructionRegex();
+
+    [GeneratedRegex("^br\\s+i1\\s+(?<condition>[^,]+),\\s+label\\s+%(?<trueLabel>[^,\\s]+),\\s+label\\s+%(?<falseLabel>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ConditionalBranchInstructionRegex();
+
+    [GeneratedRegex("^br\\s+label\\s+%(?<target>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex UnconditionalBranchInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex GetElementPointerInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>[^,]+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex GlobalElementLoadInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+(?<source>[^,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex LoadInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*alloca\\s+(?<type>[^,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex AllocaInstructionRegex();
+
+    [GeneratedRegex("^store\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^,]+),\\s+ptr\\s+(?<destination>[^,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex StoreInstructionRegex();
+
+    private sealed class LoweredBlockBuilder(string name)
+    {
+        private readonly List<LoweredInstruction> _instructions = [];
+
+        public string Name { get; } = name;
+
+        public void Add(LoweredInstruction instruction)
+        {
+            _instructions.Add(instruction);
+        }
+
+        public LoweredBlock ToBlock()
+        {
+            return new LoweredBlock(Name, _instructions);
+        }
+    }
+}

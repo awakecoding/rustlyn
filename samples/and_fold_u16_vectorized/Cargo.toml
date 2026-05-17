@@ -1,0 +1,12 @@
+[package]
+name = "and_fold_u16_vectorized"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = false

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>RustMcil.Tool</AssemblyName>
+    <RootNamespace>RustMcil.Tool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RustMcil.Backend\RustMcil.Backend.csproj" />
+  </ItemGroup>
+</Project>

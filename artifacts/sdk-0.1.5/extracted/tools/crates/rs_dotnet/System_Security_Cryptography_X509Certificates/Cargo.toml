@@ -1,0 +1,44 @@
+[package]
+name = "System_Security_Cryptography_X509Certificates"
+version = "0.1.5"
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies.sgrust_core]
+path = "../../sgrust_core"
+
+[dependencies.core]
+path = '../../libcore'
+optional = true
+
+[dependencies.compiler_builtins]
+version = '0.1.10'
+features = ['rustc-dep-of-std']
+optional = true
+
+[dependencies.System_Collections_NonGeneric]
+path = "../System_Collections_NonGeneric"
+
+[dependencies.System_Net_Primitives]
+path = "../System_Net_Primitives"
+
+[dependencies.System_Runtime]
+path = "../System_Runtime"
+
+[dependencies.System_Runtime_InteropServices]
+path = "../System_Runtime_InteropServices"
+
+[dependencies.System_Security_Cryptography_Algorithms]
+path = "../System_Security_Cryptography_Algorithms"
+
+[dependencies.System_Security_Cryptography_Encoding]
+path = "../System_Security_Cryptography_Encoding"
+
+[dependencies.System_Security_Cryptography_Primitives]
+path = "../System_Security_Cryptography_Primitives"
+
+[features]
+building-sysroot = ['core', 'compiler_builtins', 'sgrust_core/building-sysroot' ,'System_Runtime/building-sysroot','System_Security_Cryptography_Algorithms/building-sysroot','System_Security_Cryptography_Primitives/building-sysroot','System_Security_Cryptography_Encoding/building-sysroot','System_Net_Primitives/building-sysroot','System_Runtime_InteropServices/building-sysroot','System_Collections_NonGeneric/building-sysroot']
+

@@ -1,0 +1,32 @@
+[package]
+name = "System_Runtime_Serialization_Json"
+version = "0.1.5"
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies.sgrust_core]
+path = "../../sgrust_core"
+
+[dependencies.core]
+path = '../../libcore'
+optional = true
+
+[dependencies.compiler_builtins]
+version = '0.1.10'
+features = ['rustc-dep-of-std']
+optional = true
+
+[dependencies.System_Runtime]
+path = "../System_Runtime"
+
+[dependencies.System_Runtime_Serialization_Xml]
+path = "../System_Runtime_Serialization_Xml"
+
+[dependencies.System_Xml_ReaderWriter]
+path = "../System_Xml_ReaderWriter"
+
+[features]
+building-sysroot = ['core', 'compiler_builtins', 'sgrust_core/building-sysroot' ,'System_Runtime/building-sysroot','System_Runtime_Serialization_Xml/building-sysroot','System_Xml_ReaderWriter/building-sysroot']
+

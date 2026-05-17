@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>RustMcil.Backend.Tests</AssemblyName>
+    <RootNamespace>RustMcil.Backend.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RustMcil.Backend\RustMcil.Backend.csproj" />
+  </ItemGroup>
+</Project>

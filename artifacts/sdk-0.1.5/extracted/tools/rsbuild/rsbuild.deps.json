@@ -1,0 +1,294 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "rsbuild/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0",
+          "build_sysroot": "0.1.5",
+          "exec": "0.1.5",
+          "llvm2cil": "0.1.5",
+          "sgopt": "0.1.5",
+          "sgrt": "0.1.5"
+        },
+        "runtime": {
+          "rsbuild.dll": {}
+        }
+      },
+      "FSharp.Core/5.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/FSharp.Core.dll": {
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.20.50704"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.0/cs/FSharp.Core.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/netstandard2.0/de/FSharp.Core.resources.dll": {
+            "locale": "de"
+          },
+          "lib/netstandard2.0/es/FSharp.Core.resources.dll": {
+            "locale": "es"
+          },
+          "lib/netstandard2.0/fr/FSharp.Core.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/netstandard2.0/it/FSharp.Core.resources.dll": {
+            "locale": "it"
+          },
+          "lib/netstandard2.0/ja/FSharp.Core.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/netstandard2.0/ko/FSharp.Core.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/netstandard2.0/pl/FSharp.Core.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/netstandard2.0/pt-BR/FSharp.Core.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/netstandard2.0/ru/FSharp.Core.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/netstandard2.0/tr/FSharp.Core.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/netstandard2.0/zh-Hans/FSharp.Core.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/netstandard2.0/zh-Hant/FSharp.Core.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      },
+      "libLLVM/10.0.0": {},
+      "libLLVM.runtime.osx-x64/10.0.0": {
+        "runtimeTargets": {
+          "runtimes/osx-x64/native/libLLVM.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "libLLVM.runtime.ubuntu.18.04-x64/10.0.0": {
+        "runtimeTargets": {
+          "runtimes/ubuntu.18.04-x64/native/libLLVM.so": {
+            "rid": "ubuntu.18.04-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "libLLVM.runtime.win-x64/10.0.0": {
+        "runtimeTargets": {
+          "runtimes/win-x64/native/libLLVM.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "10.0.0.0"
+          }
+        }
+      },
+      "LLVMSharp/10.0.0-beta": {
+        "dependencies": {
+          "System.Memory": "4.5.4",
+          "libLLVM": "10.0.0"
+        },
+        "runtime": {
+          "lib/netcoreapp3.1/LLVMSharp.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.0.0"
+          }
+        }
+      },
+      "Mono.Cecil/0.11.1": {
+        "runtime": {
+          "lib/netstandard2.0/Mono.Cecil.Mdb.dll": {
+            "assemblyVersion": "0.11.1.0",
+            "fileVersion": "0.11.1.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Pdb.dll": {
+            "assemblyVersion": "0.11.1.0",
+            "fileVersion": "0.11.1.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Rocks.dll": {
+            "assemblyVersion": "0.11.1.0",
+            "fileVersion": "0.11.1.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.dll": {
+            "assemblyVersion": "0.11.1.0",
+            "fileVersion": "0.11.1.0"
+          }
+        }
+      },
+      "System.Memory/4.5.4": {},
+      "build_sysroot/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0",
+          "exec": "0.1.5"
+        },
+        "runtime": {
+          "build_sysroot.dll": {}
+        }
+      },
+      "exec/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0"
+        },
+        "runtime": {
+          "exec.dll": {}
+        }
+      },
+      "llvm2cil/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0",
+          "libLLVM": "10.0.0",
+          "libLLVM.runtime.osx-x64": "10.0.0",
+          "libLLVM.runtime.ubuntu.18.04-x64": "10.0.0",
+          "libLLVM.runtime.win-x64": "10.0.0",
+          "Mono.Cecil": "0.11.1",
+          "sgcil": "0.1.5",
+          "sgllvm": "0.1.5"
+        },
+        "runtime": {
+          "llvm2cil.dll": {}
+        }
+      },
+      "sgcil/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0",
+          "Mono.Cecil": "0.11.1"
+        },
+        "runtime": {
+          "sgcil.dll": {}
+        }
+      },
+      "sgllvm/0.1.5": {
+        "dependencies": {
+          "LLVMSharp": "10.0.0-beta"
+        },
+        "runtime": {
+          "sgllvm.dll": {}
+        }
+      },
+      "sgopt/0.1.5": {
+        "dependencies": {
+          "FSharp.Core": "5.0.0"
+        },
+        "runtime": {
+          "sgopt.dll": {}
+        }
+      },
+      "sgrt/0.1.5": {
+        "runtime": {
+          "sgrt.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "rsbuild/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "FSharp.Core/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-iHoYXA0VaSQUONGENB1aVafjDDZDZpwu39MtaRCTrmwFW/cTcK0b2yKNVYneFHJMc3ChtsSoM9lNtJ1dYXkHfA==",
+      "path": "fsharp.core/5.0.0",
+      "hashPath": "fsharp.core.5.0.0.nupkg.sha512"
+    },
+    "libLLVM/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-DC9UdkMMXA8hnALphaObeS7Rq+ZzBpgyz2ovB+7EUz4PoKwF01Jo3OOLxbwWlZzmFm4vnftX/ajDtDv1W83XIQ==",
+      "path": "libllvm/10.0.0",
+      "hashPath": "libllvm.10.0.0.nupkg.sha512"
+    },
+    "libLLVM.runtime.osx-x64/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UVB/kNIW4CY3tJE0SXzZFhO+dY7J3fs7EMRg4N84/Zfpnz3FZxsLKBjyPGMpfX1Vpjcdtjn9EYuRrCfqVi9g5A==",
+      "path": "libllvm.runtime.osx-x64/10.0.0",
+      "hashPath": "libllvm.runtime.osx-x64.10.0.0.nupkg.sha512"
+    },
+    "libLLVM.runtime.ubuntu.18.04-x64/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-AwQ7JLT0RtVNfw4uOdsZpEltJrg8qyY+W4/3B704Ju/1PkbWkPknT+gY1okjNob2YGwslQ0bEIAQG6KUIrs8AQ==",
+      "path": "libllvm.runtime.ubuntu.18.04-x64/10.0.0",
+      "hashPath": "libllvm.runtime.ubuntu.18.04-x64.10.0.0.nupkg.sha512"
+    },
+    "libLLVM.runtime.win-x64/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NlDkoQy9H2xR9gN/IfrXUBcz6z0BSDX5xHv5TidlMucwUyLEOFaJZB3+CtCaV448rQkA6sAaS0qv0AsA9LFWJQ==",
+      "path": "libllvm.runtime.win-x64/10.0.0",
+      "hashPath": "libllvm.runtime.win-x64.10.0.0.nupkg.sha512"
+    },
+    "LLVMSharp/10.0.0-beta": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9oSmbpRPHbGgfjvQg9NAPgkTtxxeAUZ5w5BRQyOrwMEWE8F8/En8Eq9pbxcTk8OcqqjY4uQmiUKMls7FUgM+YA==",
+      "path": "llvmsharp/10.0.0-beta",
+      "hashPath": "llvmsharp.10.0.0-beta.nupkg.sha512"
+    },
+    "Mono.Cecil/0.11.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RWBcccuMn8gxAasJxBBAb848qkt3S2t/7bEaEXtxQU6ROv1v0p7kk3+Xga4G+k+bKbLBla1bsrUt+8pAccaDwQ==",
+      "path": "mono.cecil/0.11.1",
+      "hashPath": "mono.cecil.0.11.1.nupkg.sha512"
+    },
+    "System.Memory/4.5.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1MbJTHS1lZ4bS4FmsJjnuGJOu88ZzTT2rLvrhW7Ygic+pC0NWA+3hgAen0HRdsocuQXCkUTdFn9yHJJhsijDXw==",
+      "path": "system.memory/4.5.4",
+      "hashPath": "system.memory.4.5.4.nupkg.sha512"
+    },
+    "build_sysroot/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "exec/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "llvm2cil/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "sgcil/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "sgllvm/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "sgopt/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "sgrt/0.1.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

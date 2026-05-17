@@ -1,0 +1,32 @@
+[package]
+name = "System_Text_Json"
+version = "0.1.5"
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies.sgrust_core]
+path = "../../sgrust_core"
+
+[dependencies.core]
+path = '../../libcore'
+optional = true
+
+[dependencies.compiler_builtins]
+version = '0.1.10'
+features = ['rustc-dep-of-std']
+optional = true
+
+[dependencies.System_Memory]
+path = "../System_Memory"
+
+[dependencies.System_Runtime]
+path = "../System_Runtime"
+
+[dependencies.System_Text_Encodings_Web]
+path = "../System_Text_Encodings_Web"
+
+[features]
+building-sysroot = ['core', 'compiler_builtins', 'sgrust_core/building-sysroot' ,'System_Runtime/building-sysroot','System_Memory/building-sysroot','System_Text_Encodings_Web/building-sysroot']
+
