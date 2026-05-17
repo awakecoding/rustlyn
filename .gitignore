@@ -11,5 +11,6 @@ artifacts/sdk-*/extracted/**/*.dylib
 
 dotnet/**/bin/
 dotnet/**/obj/
+dotnet/**/*.lscache
 
 samples/**/target/

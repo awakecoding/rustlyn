@@ -55,7 +55,7 @@ dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- 
 - Use `README.md` for user-facing value and the shortest path to trying the repo.
 - Use `docs/original-eric-sink-design.md` for the historical SDK design and public references.
 - Use `docs/revived-design.md` for the architecture being rebuilt in this repo now.
-- Keep `REBUILDING_RUST_TO_DOTNET_TODAY.md` as the deep notebook, not the front door.
+- Keep `docs/reconstruction-notes.md` as the deep notebook, not the front door.
 
 ## Cleanup Policy
 

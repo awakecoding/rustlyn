@@ -9054,7 +9054,8 @@ static string? FindWorkspaceRoot()
     var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
     while (directory is not null)
     {
-        if (File.Exists(Path.Combine(directory.FullName, "REBUILDING_RUST_TO_DOTNET_TODAY.md")))
+        if (Directory.Exists(Path.Combine(directory.FullName, ".git"))
+            || File.Exists(Path.Combine(directory.FullName, "README.md")))
         {
             return directory.FullName;
         }

@@ -1,8 +1,10 @@
-# Rebuilding Rust-to-.NET IL Today
+# Rust-to-.NET Reconstruction Notes
 
 ## Scope
 
-This note documents two things:
+This notebook collects the deep reconstruction details behind both the historical SourceGear/Llama SDK analysis and the revived cargo-first backend work in this repository.
+
+It documents two things:
 
 1. What the 2020-2021 SourceGear Rust.NET SDK actually shipped and how it worked.
 2. How to rebuild the same kind of project from the ground up in 2026.

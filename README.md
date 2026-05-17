@@ -57,7 +57,7 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 
 - [Original Eric Sink design](docs/original-eric-sink-design.md)
 - [Revived design in this repo](docs/revived-design.md)
-- [Deep reconstruction notebook](REBUILDING_RUST_TO_DOTNET_TODAY.md)
+- [Deep reconstruction notes](docs/reconstruction-notes.md)
 - [Contributor and agent workflow](AGENTS.md)
 
 ## Repo Map

@@ -65,7 +65,7 @@ This repo keeps the textual and reverse-engineered evidence that is most useful 
 
 - package metadata and textual extracted contents under `artifacts/sdk-0.1.5/extracted/`
 - decompiled source views under `artifacts/decompiled/`
-- the long-form reconstruction notebook in [../REBUILDING_RUST_TO_DOTNET_TODAY.md](../REBUILDING_RUST_TO_DOTNET_TODAY.md)
+- the long-form reconstruction notebook in [reconstruction-notes.md](reconstruction-notes.md)
 
 The published binary payloads are intentionally documented by link rather than retained as regular repo content.
 
