@@ -1,0 +1,104 @@
+# Revived Design
+
+This document describes the design being rebuilt in this repository today. It is intentionally separate from the historical SourceGear/Llama SDK design.
+
+## Summary
+
+The revived experiment is a cargo-first, backend-first reconstruction of the core Rust-to-.NET idea:
+
+1. Use ordinary Rust sample crates as the frontend input.
+2. Produce LLVM bitcode either directly or through Cargo.
+3. Lower LLVM text into a backend-owned reduced IR.
+4. Emit managed IL and helper methods from that reduced IR.
+5. Validate every newly supported slice with executable smoke tests and regression fixtures.
+
+The goal is not to recreate the old SDK packaging and project-system experience before the compiler path is proven. The goal is to recover and harden the translation pipeline itself.
+
+## Design Priorities
+
+- cargo-first experimentation instead of an MSBuild-first outer shell
+- minimal, explicit samples that pin one backend behavior at a time
+- executable validation after each narrow change
+- permanent regression coverage for every promoted slice
+- clear ownership boundaries between parsing/lowering and IL emission
+- documentation that keeps the historical design and the revived design distinct
+
+## Current Pipeline In This Repo
+
+### 1. Sample crates
+
+`samples/` contains small Rust crates that isolate specific behaviors such as arithmetic, control flow, comparisons, vector reductions, and adjacent transformed loops.
+
+### 2. Bitcode production
+
+`scripts/Build-SampleBitcode.ps1` builds a sample to LLVM bitcode and writes the result under `artifacts/out/`.
+
+For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode.
+
+### 3. Inspection and lowering
+
+`dotnet/backend/src/RustMcil.Tool/` exposes the main CLI commands:
+
+- `inspect`
+- `lower`
+- `emit`
+- `invoke`
+- `translate`
+
+The lowering stage produces a reduced IR that is easier for the backend tests to reason about than raw LLVM syntax.
+
+### 4. Backend ownership
+
+The current design has two especially important ownership boundaries:
+
+- `LoweredIrLowerer.cs`: responsible for parsing and normalizing the lowered IR surface
+- `LoweredAssemblyEmitter.cs`: responsible for managed IL emission, helper generation, intrinsic dispatch, and runtime glue
+
+When a slice fails, the intended workflow is to patch the direct owner rather than layering fixes across unrelated surfaces.
+
+### 5. Validation surfaces
+
+Two validation layers matter most:
+
+- `scripts/Test-Smoke.ps1` for focused executable smoke checks
+- `dotnet/backend/tests/RustMcil.Backend.Tests/Program.cs` for permanent regression assertions over module summaries, lowered IR, typed instructions, emitted execution, and Cargo-built behavior
+
+## How This Differs From The Original Design
+
+Compared with Eric Sink's original design, this revived repo intentionally changes the center of gravity:
+
+- from MSBuild-first to cargo-first
+- from packaged binary SDK distribution to source-first backend development
+- from one large end-user shell to many small backend regression fixtures
+- from historical proof-of-concept packaging to repeatable local validation in repo
+- from implicit compiler behavior to aggressively pinned sample-by-sample coverage
+
+## Current Repository Shape
+
+- `samples/`: narrow frontend fixtures
+- `scripts/`: repeatable PowerShell workflows
+- `dotnet/backend/src/RustMcil.Backend/`: backend implementation
+- `dotnet/backend/src/RustMcil.Tool/`: command-line entry point
+- `dotnet/backend/tests/`: backend regression harness
+- `artifacts/decompiled/` and `artifacts/sdk-0.1.5/extracted/`: historical reference material only
+
+## Why The Repo Keeps Historical Material
+
+The old design still matters because it answers two questions:
+
+- what the original system actually shipped
+- which architectural choices are worth preserving versus replacing
+
+That historical material is kept as reference evidence, not as the primary product surface of the revived experiment.
+
+## Practical Development Loop
+
+The working loop for this repo is:
+
+1. choose one failing or uncovered slice
+2. build or translate the smallest sample that exposes it
+3. fix the direct owner in lowering or emission
+4. validate immediately with the narrowest executable check
+5. promote the slice into permanent sample, smoke coverage, regression assertions, and notes
+
+That loop is what keeps the revived experiment moving without reintroducing the complexity of the original SDK too early.
