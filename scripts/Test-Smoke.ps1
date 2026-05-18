@@ -451,6 +451,882 @@ $sampleChecks = @{
         Arguments = @()
         Expected = 20
     }
+    alloc_probe = @{
+        Method = "alloc_string_len"
+        Arguments = @()
+        Expected = 12
+        SupportedModes = @("Cargo")
+    }
+    std_fs = @{
+        Method = "std_fs_line_count"
+        Arguments = @()
+        Expected = 3
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_api = @{
+        Method = "dotnet_runtime_score"
+        Arguments = @()
+        Expected = 253
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_loop = @{
+        Method = "dotnet_runtime_loop"
+        Arguments = @(2, [uint32]45)
+        Expected = 27
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_text = @{
+        Method = "dotnet_runtime_text_score"
+        Arguments = @()
+        Expected = 189
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_roundtrip = @{
+        Method = "dotnet_runtime_roundtrip_score"
+        Arguments = @()
+        Expected = 196
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_transform = @{
+        Method = "dotnet_runtime_transform_score"
+        Arguments = @()
+        Expected = 335
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_transform = @{
+        Method = "dotnet_runtime_path_transform_score"
+        Arguments = @()
+        Expected = 1563
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_change = @{
+        Method = "dotnet_runtime_path_change_score"
+        Arguments = @()
+        Expected = 10163
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_combine = @{
+        Method = "dotnet_runtime_path_combine_score"
+        Arguments = @()
+        Expected = 9573
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_combine3 = @{
+        Method = "dotnet_runtime_path_combine3_score"
+        Arguments = @()
+        Expected = 9595
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_env_path = @{
+        Method = "dotnet_runtime_env_path_score"
+        Arguments = @()
+        Expected = 10595
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_user_profile = @{
+        Method = "dotnet_runtime_user_profile_score"
+        Arguments = @()
+        Expected = 12717
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_dual_root = @{
+        Method = "dotnet_runtime_dual_root_score"
+        Arguments = @()
+        Expected = 11145
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_triple_root = @{
+        Method = "dotnet_runtime_triple_root_score"
+        Arguments = @()
+        Expected = 1018583
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_relative_path = @{
+        Method = "dotnet_runtime_relative_path_score"
+        Arguments = @()
+        Expected = 34095
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_directory_name = @{
+        Method = "dotnet_runtime_directory_name_score"
+        Arguments = @()
+        Expected = 239012
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_full_path = @{
+        Method = "dotnet_runtime_full_path_score"
+        Arguments = @()
+        Expected = 524012
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_root = @{
+        Method = "dotnet_runtime_path_root_score"
+        Arguments = @()
+        Expected = 4738012
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_file_name = @{
+        Method = "dotnet_runtime_path_file_name_score"
+        Arguments = @()
+        Expected = 47379812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_recompose = @{
+        Method = "dotnet_runtime_path_recompose_score"
+        Arguments = @()
+        Expected = 50499812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_recompose_change = @{
+        Method = "dotnet_runtime_path_recompose_change_score"
+        Arguments = @()
+        Expected = 51110812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_cross_root = @{
+        Method = "dotnet_runtime_path_cross_root_score"
+        Arguments = @()
+        Expected = 52116812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_branch_root = @{
+        Method = "dotnet_runtime_path_branch_root_score"
+        Arguments = @()
+        Expected = 152116812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_triple_branch = @{
+        Method = "dotnet_runtime_path_triple_branch_score"
+        Arguments = @()
+        Expected = 351105611
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_double_select = @{
+        Method = "dotnet_runtime_path_double_select_score"
+        Arguments = @()
+        Expected = 342006812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ranked_select = @{
+        Method = "dotnet_runtime_path_ranked_select_score"
+        Arguments = @()
+        Expected = 342006812
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_combo_rank = @{
+        Method = "dotnet_runtime_path_combo_rank_score"
+        Arguments = @()
+        Expected = 333121499
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_two_stage_rank = @{
+        Method = "dotnet_runtime_path_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332311999
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_three_stage_rank = @{
+        Method = "dotnet_runtime_path_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332231220
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_four_stage_rank = @{
+        Method = "dotnet_runtime_path_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332233109
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_five_stage_rank = @{
+        Method = "dotnet_runtime_path_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232319
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_six_stage_rank = @{
+        Method = "dotnet_runtime_path_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232209
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232210
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232212
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ten_stage_rank = @{
+        Method = "dotnet_runtime_path_ten_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eleven_stage_rank = @{
+        Method = "dotnet_runtime_path_eleven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twelve_stage_rank = @{
+        Method = "dotnet_runtime_path_twelve_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirteen_stage_rank = @{
+        Method = "dotnet_runtime_path_thirteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fourteen_stage_rank = @{
+        Method = "dotnet_runtime_path_fourteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifteen_stage_rank = @{
+        Method = "dotnet_runtime_path_fifteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixteen_stage_rank = @{
+        Method = "dotnet_runtime_path_sixteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventeen_stage_rank = @{
+        Method = "dotnet_runtime_path_seventeen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighteen_stage_rank = @{
+        Method = "dotnet_runtime_path_eighteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_nineteen_stage_rank = @{
+        Method = "dotnet_runtime_path_nineteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_twenty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_twenty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_thirty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_thirty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_forty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_forty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_fifty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_fifty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_sixty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_sixty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_one_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_two_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_three_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_four_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_five_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_six_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_seventy_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_seventy_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_one_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_two_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_three_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_four_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_five_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_six_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_eighty_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_eighty_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_one_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_two_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_three_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_four_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_five_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_six_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_ninety_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_ninety_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_one_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_one_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_two_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_two_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_three_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_three_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_four_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_four_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_five_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_five_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_six_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_six_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_seven_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_seven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_eight_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_eight_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_nine_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_nine_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_ten_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_ten_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_eleven_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_eleven_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_twelve_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_twelve_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_thirteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_thirteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_fourteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_fourteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_fifteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_fifteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_sixteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_sixteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_seventeen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_seventeen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_eighteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_eighteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
+    dotnet_runtime_path_one_hundred_nineteen_stage_rank = @{
+        Method = "dotnet_runtime_path_one_hundred_nineteen_stage_rank_score"
+        Arguments = @()
+        Expected = 332232222
+        SupportedModes = @("Cargo")
+    }
     pair_right = @{
         Method = "second_field_i32"
         Arguments = @(38654705667L)
@@ -607,36 +1483,33 @@ function Invoke-TranslateSmokeCheck {
             throw "dotnet run lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        $loadContext = [System.Runtime.Loader.AssemblyLoadContext]::new("rust-msil-translate-smoke-$CurrentSample-$([Guid]::NewGuid().ToString('N'))", $true)
-        try {
-            $assemblyBytes = [System.IO.File]::ReadAllBytes($translatedAssemblyPath)
-            $assemblyStream = [System.IO.MemoryStream]::new($assemblyBytes)
-            try {
-                $assembly = $loadContext.LoadFromStream($assemblyStream)
-            }
-            finally {
-                $assemblyStream.Dispose()
-            }
+        $invokeCommand = @(
+            'run',
+            '--project',
+            '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
+            '--',
+            'invoke',
+            $translatedBitcodePath,
+            '--method',
+            $Check.Method
+        )
 
-            $generatedType = $assembly.GetType("RustMcil.GeneratedModule", $true)
-            $method = $generatedType.GetMethod($Check.Method, [System.Reflection.BindingFlags]::Public -bor [System.Reflection.BindingFlags]::Static)
-            if ($null -eq $method) {
-                throw "Translated method '$($Check.Method)' was not found for '$CurrentSample'."
-            }
-
-            $actual = $method.Invoke($null, $arguments)
-            if ($actual -ne $Check.Expected) {
-                throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
-            }
-
-            Write-Host ("PASS {0} (cargo) => {1}" -f $CurrentSample, $actual)
+        foreach ($argument in $arguments) {
+            $invokeCommand += '--arg'
+            $invokeCommand += (Format-InvokeArgument -Value $argument)
         }
-        finally {
-            $loadContext.Unload()
-            [System.GC]::Collect()
-            [System.GC]::WaitForPendingFinalizers()
-            [System.GC]::Collect()
+
+        $invokeOutput = & dotnet @invokeCommand 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet run invoke failed for translated '$CurrentSample' with exit code $LASTEXITCODE`n$($invokeOutput | Out-String)"
         }
+
+        $actual = (($invokeOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1)
+        if ($actual -ne [string]$Check.Expected) {
+            throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
+        }
+
+        Write-Host ("PASS {0} (cargo) => {1}" -f $CurrentSample, $actual)
     }
     finally {
         if ($Check.ContainsKey("Cleanup")) {
@@ -651,6 +1524,43 @@ function Invoke-TranslateSmokeCheck {
             Remove-Item -Force $translatedBitcodePath
         }
     }
+}
+
+function Format-InvokeArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Value
+    )
+
+    if ($Value -is [int]) {
+        return "i32:$Value"
+    }
+
+    if ($Value -is [long]) {
+        return "i64:$Value"
+    }
+
+    if ($Value -is [uint32]) {
+        return "u32:$Value"
+    }
+
+    if ($Value -is [uint64]) {
+        return "u64:$Value"
+    }
+
+    if ($Value -is [bool]) {
+        return "i1:$([int]$Value)"
+    }
+
+    if ($Value -is [float]) {
+        return "f32:$Value"
+    }
+
+    if ($Value -is [double]) {
+        return "f64:$Value"
+    }
+
+    throw "Smoke invoke argument type '$($Value.GetType().FullName)' is not supported."
 }
 
 Push-Location $workspaceRoot

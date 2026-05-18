@@ -52,15 +52,14 @@ public static partial class LoweredIrLowerer
                     continue;
                 }
 
-                var headerMatch = FunctionHeaderRegex().Match(line);
-                if (!headerMatch.Success)
+                if (!TryParseFunctionHeader(line, out var functionName, out var returnType, out var parameters))
                 {
                     continue;
                 }
 
-                currentFunctionName = headerMatch.Groups["name"].Value;
-                currentReturnType = NormalizeType(headerMatch.Groups["returnType"].Value);
-                currentParameters = ParseParameters(headerMatch.Groups["parameters"].Value);
+                currentFunctionName = functionName;
+                currentReturnType = returnType;
+                currentParameters = parameters;
                 currentBlocks = [];
                 currentBlock = null;
                 continue;
@@ -90,7 +89,7 @@ public static partial class LoweredIrLowerer
                     currentBlocks!.Add(currentBlock.ToBlock());
                 }
 
-                currentBlock = new LoweredBlockBuilder(blockMatch.Groups["name"].Value);
+                currentBlock = new LoweredBlockBuilder(NormalizeBlockName(blockMatch.Groups["name"].Value));
                 continue;
             }
 
@@ -150,12 +149,32 @@ public static partial class LoweredIrLowerer
             return [];
         }
 
-        return parameterText
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(ParseParameter)
-            .Where(static parameter => parameter is not null)
-            .Select(static parameter => parameter!)
-            .ToList();
+        var parameters = new List<LoweredParameter>();
+        var remaining = parameterText.Trim();
+
+        while (!string.IsNullOrEmpty(remaining))
+        {
+            var separatorIndex = FindTopLevelComma(remaining);
+            string segment;
+            if (separatorIndex < 0)
+            {
+                segment = remaining;
+                remaining = string.Empty;
+            }
+            else
+            {
+                segment = remaining[..separatorIndex];
+                remaining = remaining[(separatorIndex + 1)..].TrimStart();
+            }
+
+            var parameter = ParseParameter(segment);
+            if (parameter is not null)
+            {
+                parameters.Add(parameter);
+            }
+        }
+
+        return parameters;
     }
 
     private static LoweredInstruction ParseInstruction(string line)
@@ -225,15 +244,14 @@ public static partial class LoweredIrLowerer
             return new LoweredUnreachableInstruction();
         }
 
-        var callMatch = CallInstructionRegex().Match(line);
-        if (callMatch.Success)
+        if (TryParseCallInstruction(line, out var callInstruction))
         {
-            var result = callMatch.Groups["result"].Success ? NormalizeResultName(callMatch.Groups["result"].Value) : null;
-            return new LoweredCallInstruction(
-                result,
-                NormalizeType(callMatch.Groups["returnType"].Value),
-                callMatch.Groups["callee"].Value,
-                ParseArguments(callMatch.Groups["arguments"].Value));
+            return callInstruction;
+        }
+
+        if (string.Equals(line, "ret void", StringComparison.Ordinal))
+        {
+            return new LoweredReturnInstruction("void", "void");
         }
 
         var returnMatch = ReturnInstructionRegex().Match(line);
@@ -260,14 +278,14 @@ public static partial class LoweredIrLowerer
         {
             return new LoweredConditionalBranchInstruction(
                 NormalizeValue(branchMatch.Groups["condition"].Value),
-                branchMatch.Groups["trueLabel"].Value,
-                branchMatch.Groups["falseLabel"].Value);
+                NormalizeBlockName(branchMatch.Groups["trueLabel"].Value),
+                NormalizeBlockName(branchMatch.Groups["falseLabel"].Value));
         }
 
         var jumpMatch = UnconditionalBranchInstructionRegex().Match(line);
         if (jumpMatch.Success)
         {
-            return new LoweredJumpInstruction(jumpMatch.Groups["target"].Value);
+            return new LoweredJumpInstruction(NormalizeBlockName(jumpMatch.Groups["target"].Value));
         }
 
         var getElementPointerMatch = GetElementPointerInstructionRegex().Match(line);
@@ -476,11 +494,136 @@ public static partial class LoweredIrLowerer
         return operation is "add" or "sub" or "mul" or "sdiv" or "udiv" or "srem" or "urem" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr";
     }
 
+    private static bool TryParseCallInstruction(string line, out LoweredCallInstruction instruction)
+    {
+        instruction = null!;
+
+        var remaining = line.Trim();
+        string? result = null;
+
+        var equalsIndex = remaining.IndexOf('=');
+        if (equalsIndex > 0)
+        {
+            result = NormalizeResultName(remaining[..equalsIndex].Trim());
+            remaining = remaining[(equalsIndex + 1)..].TrimStart();
+        }
+
+        if (!TrySkipToCallKeyword(remaining, out remaining))
+        {
+            return false;
+        }
+
+        while (!string.IsNullOrEmpty(remaining))
+        {
+            if (TryReadTypePrefix(remaining, out var returnType, out var callRemainder))
+            {
+                if (!TryReadCallTarget(callRemainder, out var callee, out var argumentsText))
+                {
+                    return false;
+                }
+
+                instruction = new LoweredCallInstruction(
+                    result,
+                    NormalizeType(returnType),
+                    NormalizeFunctionName(callee),
+                    ParseArguments(argumentsText));
+                return true;
+            }
+
+            var token = ReadTopLevelToken(remaining);
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            remaining = remaining[token.Length..].TrimStart();
+        }
+
+        return false;
+    }
+
+    private static bool TrySkipToCallKeyword(string text, out string remainder)
+    {
+        remainder = text.TrimStart();
+
+        while (!string.IsNullOrEmpty(remainder))
+        {
+            var token = ReadTopLevelToken(remainder);
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            remainder = remainder[token.Length..].TrimStart();
+            if (string.Equals(token, "call", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryReadCallTarget(string text, out string callee, out string argumentsText)
+    {
+        callee = string.Empty;
+        argumentsText = string.Empty;
+
+        var trimmed = text.TrimStart();
+        var openParenIndex = trimmed.IndexOf('(');
+        if (openParenIndex <= 0 || !TryFindMatchingParenthesis(trimmed, openParenIndex, out var closeParenIndex))
+        {
+            return false;
+        }
+
+        callee = trimmed[..openParenIndex].Trim();
+        argumentsText = trimmed[(openParenIndex + 1)..closeParenIndex];
+        return !string.IsNullOrWhiteSpace(callee);
+    }
+
+    private static bool TryParseFunctionHeader(string line, out string functionName, out string returnType, out List<LoweredParameter> parameters)
+    {
+        functionName = string.Empty;
+        returnType = string.Empty;
+        parameters = [];
+
+        const string marker = "define ";
+        if (!line.StartsWith(marker, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var nameMarker = line.IndexOf('@');
+        if (nameMarker < 0)
+        {
+            return false;
+        }
+
+        var openParenIndex = line.IndexOf('(', nameMarker);
+        if (openParenIndex < 0 || !TryFindMatchingParenthesis(line, openParenIndex, out var closeParenIndex))
+        {
+            return false;
+        }
+
+        var signaturePrefix = line[marker.Length..nameMarker].Trim();
+        var rawName = line[nameMarker..openParenIndex].Trim();
+        if (string.IsNullOrWhiteSpace(signaturePrefix) || string.IsNullOrWhiteSpace(rawName))
+        {
+            return false;
+        }
+
+        functionName = NormalizeFunctionName(rawName);
+        returnType = NormalizeType(signaturePrefix);
+        parameters = ParseParameters(line[(openParenIndex + 1)..closeParenIndex]);
+        return true;
+    }
+
     private static bool TryReadTypePrefix(string text, out string type, out string remainder)
     {
         var trimmed = text.TrimStart();
 
         if (TryReadDelimitedType(trimmed, '<', '>', out type, out remainder)
+            || TryReadDelimitedType(trimmed, '{', '}', out type, out remainder)
             || TryReadDelimitedType(trimmed, '[', ']', out type, out remainder)
             || TryReadKeywordType(trimmed, "ptr", out type, out remainder)
             || TryReadIntegerType(trimmed, out type, out remainder)
@@ -628,6 +771,35 @@ public static partial class LoweredIrLowerer
         return -1;
     }
 
+    private static bool TryFindMatchingParenthesis(string text, int openParenIndex, out int closeParenIndex)
+    {
+        closeParenIndex = -1;
+        if (openParenIndex < 0 || openParenIndex >= text.Length || text[openParenIndex] != '(')
+        {
+            return false;
+        }
+
+        var depth = 1;
+        for (var index = openParenIndex + 1; index < text.Length; index++)
+        {
+            if (text[index] == '(')
+            {
+                depth++;
+            }
+            else if (text[index] == ')')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    closeParenIndex = index;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static bool TryReadBracketedSegment(string text, int startIndex, out int segmentStart, out int segmentEnd)
     {
         segmentStart = -1;
@@ -749,7 +921,13 @@ public static partial class LoweredIrLowerer
 
     private static string NormalizeBlockName(string value)
     {
-        return value.Trim().TrimStart('%');
+        var trimmed = value.Trim().TrimStart('%');
+        if (trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"')
+        {
+            trimmed = trimmed[1..^1];
+        }
+
+        return trimmed;
     }
 
     private static string NormalizeIdentifier(string value)
@@ -757,6 +935,17 @@ public static partial class LoweredIrLowerer
         return value.Length > 0 && value.All(char.IsDigit)
             ? $"tmp.{value}"
             : value;
+    }
+
+    private static string NormalizeFunctionName(string value)
+    {
+        var trimmed = value.Trim().TrimStart('@');
+        if (trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"')
+        {
+            trimmed = trimmed[1..^1];
+        }
+
+        return NormalizeIdentifier(trimmed);
     }
 
     private static string NormalizeType(string typeText)
@@ -770,15 +959,27 @@ public static partial class LoweredIrLowerer
     private static LoweredParameter? ParseParameter(string parameter)
     {
         var trimmed = parameter.Trim();
-        var separatorIndex = trimmed.LastIndexOf(' ');
-        if (separatorIndex <= 0 || separatorIndex == trimmed.Length - 1)
+        if (!TryReadTypePrefix(trimmed, out var type, out var remainder)
+            || string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        remainder = StripLeadingArgumentAttributes(remainder);
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        var parameterName = ReadTopLevelToken(remainder);
+        if (string.IsNullOrWhiteSpace(parameterName))
         {
             return null;
         }
 
         return new LoweredParameter(
-            NormalizeValue(trimmed[(separatorIndex + 1)..]),
-            NormalizeType(trimmed[..separatorIndex]));
+            NormalizeValue(parameterName),
+            NormalizeType(type));
     }
 
     private static LoweredArgument? ParseArgument(string argument)
@@ -865,7 +1066,11 @@ public static partial class LoweredIrLowerer
     private static bool IsLeadingArgumentAttribute(string token)
     {
         return token is "align"
+            or "allocptr"
+            or "allocalign"
             or "byref"
+            or "captures"
+            or "dead_on_unwind"
             or "immarg"
             or "inalloca"
             or "inreg"
@@ -884,15 +1089,18 @@ public static partial class LoweredIrLowerer
             or "swiftself"
             or "swifterror"
             or "sret"
+            or "writable"
             or "writeonly"
             or "zeroext"
             || token.StartsWith("alignstack(", StringComparison.Ordinal)
             || token.StartsWith("byref(", StringComparison.Ordinal)
             || token.StartsWith("byval(", StringComparison.Ordinal)
+            || token.StartsWith("captures(", StringComparison.Ordinal)
             || token.StartsWith("dereferenceable(", StringComparison.Ordinal)
             || token.StartsWith("dereferenceable_or_null(", StringComparison.Ordinal)
             || token.StartsWith("elementtype(", StringComparison.Ordinal)
             || token.StartsWith("inalloca(", StringComparison.Ordinal)
+            || token.StartsWith("initializes(", StringComparison.Ordinal)
             || token.StartsWith("preallocated(", StringComparison.Ordinal)
             || token.StartsWith("range(", StringComparison.Ordinal)
             || token.StartsWith("sret(", StringComparison.Ordinal);
@@ -997,9 +1205,19 @@ public static partial class LoweredIrLowerer
         {
             if (escapedBytes[index] == '\\' && index + 2 < escapedBytes.Length)
             {
-                bytes.Add(Convert.ToByte(escapedBytes.Substring(index + 1, 2), 16));
-                index += 3;
-                continue;
+                if (Uri.IsHexDigit(escapedBytes[index + 1]) && Uri.IsHexDigit(escapedBytes[index + 2]))
+                {
+                    bytes.Add(Convert.ToByte(escapedBytes.Substring(index + 1, 2), 16));
+                    index += 3;
+                    continue;
+                }
+
+                if (escapedBytes[index + 1] is '\\' or '"')
+                {
+                    bytes.Add((byte)escapedBytes[index + 1]);
+                    index += 2;
+                    continue;
+                }
             }
 
             bytes.Add((byte)escapedBytes[index]);
@@ -1009,19 +1227,16 @@ public static partial class LoweredIrLowerer
         return bytes;
     }
 
-    [GeneratedRegex("^define\\s+(?<returnType>[^@]+?)\\s+@(?<name>[^\\s(]+)\\((?<parameters>[^)]*)\\)", RegexOptions.CultureInvariant)]
-    private static partial Regex FunctionHeaderRegex();
-
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex FunctionAliasRegex();
 
-    [GeneratedRegex("<[^>]+>|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|void", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("<[^>]+>|\\{[^}]+\\}|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|void", RegexOptions.CultureInvariant)]
     private static partial Regex CoreTypeRegex();
 
-    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,\\s*align\\s+\\d+)?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantByteArrayGlobalRegex();
 
-    [GeneratedRegex("^(?<name>[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^(?<name>\"[^\"]+\"|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
     private static partial Regex BasicBlockRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?<op>add|sub|mul|sdiv|udiv|srem|urem|and|or|xor|shl|lshr|ashr)(?:\\s+[^\\s]+)*\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
@@ -1039,19 +1254,16 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*select\\s+i1\\s+(?<condition>[^,]+),\\s+(?<valueType><[^>]+>|[^\\s]+)\\s+(?<trueValue>[^,]+),\\s+(?:<[^>]+>|[^\\s]+)\\s+(?<falseValue>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SelectInstructionRegex();
 
-    [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*phi\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<incoming>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*phi\\s+(?<type>\\{[^}]+\\}|<[^>]+>|[^\\s]+)\\s+(?<incoming>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex PhiInstructionRegex();
 
     [GeneratedRegex("^unreachable$", RegexOptions.CultureInvariant)]
     private static partial Regex UnreachableInstructionRegex();
 
-    [GeneratedRegex("^(?:%(?<result>[^\\s=]+)\\s*=\\s*)?(?:tail\\s+)?call\\s+(?<returnType>[^@]+?)\\s+@(?<callee>[^\\s(]+)\\((?<arguments>.*)\\)(?:\\s+#\\d+)?$", RegexOptions.CultureInvariant)]
-    private static partial Regex CallInstructionRegex();
-
-    [GeneratedRegex("^ret\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^ret\\s+(?<type>\\{[^}]+\\}|<[^>]+>|[^\\s]+)\\s+(?<value>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ReturnInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*icmp\\s+(?<predicate>[^\\s]+)\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*icmp(?:\\s+samesign)?\\s+(?<predicate>[^\\s]+)\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex CompareInstructionRegex();
 
     [GeneratedRegex("^br\\s+i1\\s+(?<condition>[^,]+),\\s+label\\s+%(?<trueLabel>[^,\\s]+),\\s+label\\s+%(?<falseLabel>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]

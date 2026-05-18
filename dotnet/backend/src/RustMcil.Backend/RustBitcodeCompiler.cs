@@ -6,23 +6,82 @@ namespace RustMcil.Backend;
 public static class RustBitcodeCompiler
 {
     public static string BuildLibraryBitcode(string cratePath, bool release = true, string? outputBitcodePath = null)
+        => BuildLibraryBitcode(
+            cratePath,
+            new RustBitcodeBuildOptions
+            {
+                Release = release,
+                OutputBitcodePath = outputBitcodePath
+            });
+
+    public static string BuildLibraryBitcode(string cratePath, RustBitcodeBuildOptions? options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cratePath);
 
-        var manifestPath = ResolveManifestPath(cratePath);
-        var cargoMetadata = ReadCargoMetadata(manifestPath);
+        options ??= new RustBitcodeBuildOptions();
+        ValidateOptions(options);
 
-        var buildArguments = new List<string>
+        var manifestPath = ResolveManifestPath(cratePath);
+        var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain);
+        var buildArguments = CreateBuildArguments(manifestPath, options);
+
+        RunProcess(
+            fileName: "cargo",
+            arguments: buildArguments,
+            workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
+
+        var artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, options.Release, cargoMetadata.LibraryTargetName, options.Target);
+        if (string.IsNullOrWhiteSpace(options.OutputBitcodePath))
         {
+            return artifactPath;
+        }
+
+        var outputFullPath = Path.GetFullPath(options.OutputBitcodePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(outputFullPath) ?? throw new InvalidOperationException("The bitcode output directory could not be determined."));
+        File.Copy(artifactPath, outputFullPath, overwrite: true);
+        return outputFullPath;
+    }
+
+    private static void ValidateOptions(RustBitcodeBuildOptions options)
+    {
+        if (!string.IsNullOrWhiteSpace(options.BuildStd) && string.IsNullOrWhiteSpace(options.Toolchain))
+        {
+            throw new InvalidOperationException("build-std requires an explicit cargo toolchain such as 'nightly'. Configure --toolchain when using --build-std.");
+        }
+    }
+
+    private static List<string> CreateBuildArguments(string manifestPath, RustBitcodeBuildOptions options)
+    {
+        var buildArguments = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(options.Toolchain))
+        {
+            buildArguments.Add($"+{options.Toolchain}");
+        }
+
+        buildArguments.AddRange(
+        [
             "rustc",
             "--manifest-path",
             manifestPath,
             "--lib"
-        };
+        ]);
 
-        if (release)
+        if (options.Release)
         {
             buildArguments.Add("--release");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.BuildStd))
+        {
+            buildArguments.Add("-Z");
+            buildArguments.Add($"build-std={options.BuildStd}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Target))
+        {
+            buildArguments.Add("--target");
+            buildArguments.Add(options.Target);
         }
 
         buildArguments.AddRange(
@@ -31,26 +90,16 @@ public static class RustBitcodeCompiler
             "--emit",
             "llvm-bc",
             "-C",
-            "overflow-checks=off",
-            "-C",
-            "panic=abort"
+            "overflow-checks=off"
         ]);
 
-        RunProcess(
-            fileName: "cargo",
-            arguments: buildArguments,
-            workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
-
-        var artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, release, cargoMetadata.LibraryTargetName);
-        if (string.IsNullOrWhiteSpace(outputBitcodePath))
+        if (options.PanicAbort)
         {
-            return artifactPath;
+            buildArguments.Add("-C");
+            buildArguments.Add("panic=abort");
         }
 
-        var outputFullPath = Path.GetFullPath(outputBitcodePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(outputFullPath) ?? throw new InvalidOperationException("The bitcode output directory could not be determined."));
-        File.Copy(artifactPath, outputFullPath, overwrite: true);
-        return outputFullPath;
+        return buildArguments;
     }
 
     private static string ResolveManifestPath(string cratePath)
@@ -78,11 +127,19 @@ public static class RustBitcodeCompiler
         throw new FileNotFoundException($"Cargo manifest not found for crate path '{cratePath}'.", candidatePath);
     }
 
-    private static CargoMetadata ReadCargoMetadata(string manifestPath)
+    private static CargoMetadata ReadCargoMetadata(string manifestPath, string? toolchain)
     {
+        var metadataArguments = new List<string>();
+        if (!string.IsNullOrWhiteSpace(toolchain))
+        {
+            metadataArguments.Add($"+{toolchain}");
+        }
+
+        metadataArguments.AddRange(["metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifestPath]);
+
         var metadataJson = RunProcess(
             fileName: "cargo",
-            arguments: ["metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifestPath],
+            arguments: metadataArguments,
             workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
 
         using var document = JsonDocument.Parse(metadataJson);
@@ -124,10 +181,12 @@ public static class RustBitcodeCompiler
         return new CargoMetadata(Path.GetFullPath(targetDirectory), targetName);
     }
 
-    private static string FindBitcodeArtifact(string targetDirectory, bool release, string libraryTargetName)
+    private static string FindBitcodeArtifact(string targetDirectory, bool release, string libraryTargetName, string? target)
     {
         var profileDirectory = release ? "release" : "debug";
-        var depsDirectory = Path.Combine(targetDirectory, profileDirectory, "deps");
+        var depsDirectory = string.IsNullOrWhiteSpace(target)
+            ? Path.Combine(targetDirectory, profileDirectory, "deps")
+            : Path.Combine(targetDirectory, ResolveTargetDirectoryName(target), profileDirectory, "deps");
         if (!Directory.Exists(depsDirectory))
         {
             throw new DirectoryNotFoundException($"Cargo target directory '{depsDirectory}' was not produced.");
@@ -145,6 +204,16 @@ public static class RustBitcodeCompiler
             .OrderByDescending(fileInfo => fileInfo.LastWriteTimeUtc)
             .Select(fileInfo => fileInfo.FullName)
             .First();
+    }
+
+    private static string ResolveTargetDirectoryName(string target)
+    {
+        if (Path.GetExtension(target).Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return Path.GetFileNameWithoutExtension(target);
+        }
+
+        return target;
     }
 
     private static string RunProcess(string fileName, IReadOnlyList<string> arguments, string workingDirectory)
@@ -167,9 +236,13 @@ public static class RustBitcodeCompiler
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException($"Failed to start process '{fileName}'.");
 
-        var standardOutput = process.StandardOutput.ReadToEnd();
-        var standardError = process.StandardError.ReadToEnd();
+        var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+        var standardErrorTask = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
+        Task.WaitAll(standardOutputTask, standardErrorTask);
+
+        var standardOutput = standardOutputTask.GetAwaiter().GetResult();
+        var standardError = standardErrorTask.GetAwaiter().GetResult();
 
         if (process.ExitCode != 0)
         {

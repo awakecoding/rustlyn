@@ -540,6 +540,153 @@ RunOptionalTest("MinEqSampleBuildsFromCargoManifest", MinEqSampleBuildsFromCargo
 RunOptionalTest("CallChainSampleBuildsFromCargoManifest", CallChainSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("CallChainCargoSummaryClassifiesAlias", CallChainCargoSummaryClassifiesAlias, failures);
 RunOptionalTest("PairRightSampleBuildsFromCargoManifest", PairRightSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("AllocProbeSampleBuildsFromCargoManifest", AllocProbeSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("StdFsSampleBuildsFromCargoManifest", StdFsSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeApiSampleBuildsFromCargoManifest", DotnetRuntimeApiSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeLoopSampleBuildsFromCargoManifest", DotnetRuntimeLoopSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeTextSampleBuildsFromCargoManifest", DotnetRuntimeTextSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeRoundtripSampleBuildsFromCargoManifest", DotnetRuntimeRoundtripSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeTransformSampleBuildsFromCargoManifest", DotnetRuntimeTransformSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTransformSampleBuildsFromCargoManifest", DotnetRuntimePathTransformSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathChangeSampleBuildsFromCargoManifest", DotnetRuntimePathChangeSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathCombineSampleBuildsFromCargoManifest", DotnetRuntimePathCombineSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathCombine3SampleBuildsFromCargoManifest", DotnetRuntimePathCombine3SampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeEnvPathSampleBuildsFromCargoManifest", DotnetRuntimeEnvPathSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeUserProfileSampleBuildsFromCargoManifest", DotnetRuntimeUserProfileSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeDualRootSampleBuildsFromCargoManifest", DotnetRuntimeDualRootSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeTripleRootSampleBuildsFromCargoManifest", DotnetRuntimeTripleRootSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeRelativePathSampleBuildsFromCargoManifest", DotnetRuntimeRelativePathSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeDirectoryNameSampleBuildsFromCargoManifest", DotnetRuntimeDirectoryNameSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimeFullPathSampleBuildsFromCargoManifest", DotnetRuntimeFullPathSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathRootSampleBuildsFromCargoManifest", DotnetRuntimePathRootSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFileNameSampleBuildsFromCargoManifest", DotnetRuntimePathFileNameSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathRecomposeSampleBuildsFromCargoManifest", DotnetRuntimePathRecomposeSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathRecomposeChangeSampleBuildsFromCargoManifest", DotnetRuntimePathRecomposeChangeSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathCrossRootSampleBuildsFromCargoManifest", DotnetRuntimePathCrossRootSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathBranchRootSampleBuildsFromCargoManifest", DotnetRuntimePathBranchRootSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTripleBranchSampleBuildsFromCargoManifest", DotnetRuntimePathTripleBranchSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathDoubleSelectSampleBuildsFromCargoManifest", DotnetRuntimePathDoubleSelectSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathRankedSelectSampleBuildsFromCargoManifest", DotnetRuntimePathRankedSelectSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathComboRankSampleBuildsFromCargoManifest", DotnetRuntimePathComboRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathElevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathElevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwelveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwelveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFourteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFourteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFifteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFifteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventeenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventeenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEighteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEighteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNineteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNineteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathTwentyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathTwentyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathThirtyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathThirtyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFortyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFortyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftySevenStageRankSampleBuildsFromCargoManifest, failures);
+
+RunOptionalTest("DotnetRuntimePathFiftyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathFiftyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathFiftyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSixtyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSixtyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathSeventyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathSeventyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathEightyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathEightyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathNinetyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathNinetyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredSixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredSixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredSevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredSevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredElevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredElevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwelveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwelveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFourteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFourteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFifteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFifteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredSixteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredSixteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredSeventeenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredSeventeenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredEighteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredEighteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredNineteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredNineteenStageRankSampleBuildsFromCargoManifest, failures);
 
 if (failures.Count == 0)
 {
@@ -8721,6 +8868,6821 @@ static void PairRightSampleBuildsFromCargoManifest()
     long packedPair = ((long)(uint)9 << 32) | (uint)3;
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "second_field_i32", [packedPair], llvmRoot);
     Assert(Equals(actualResult, 9), $"Expected Cargo-built second_field_i32 invocation to return 9, but got '{actualResult}'.");
+}
+
+static void AllocProbeSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("alloc_probe");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "alloc_string_len");
+
+    Assert(loweredModule.Globals.Count >= 1,
+        "Expected Cargo-built alloc_probe to preserve at least one lowered global for string data.");
+    Assert(function.Blocks.Any(static block => block.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.memcpy.p0.p0.i64")),
+        "Expected Cargo-built alloc_probe to preserve memcpy lowering inside alloc_string_len.");
+    Assert(function.Blocks.Any(static block => block.Instructions.OfType<LoweredPhiInstruction>().Any()),
+        "Expected Cargo-built alloc_probe to preserve at least one phi merge inside alloc_string_len.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "alloc_string_len", [], llvmRoot);
+    Assert(Equals(actualResult, 12), $"Expected Cargo-built alloc_string_len invocation to return 12, but got '{actualResult}'.");
+}
+
+static void StdFsSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("std_fs");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "std_fs_line_count");
+
+    Assert(loweredModule.Globals.Count >= 3,
+        "Expected Cargo-built std_fs to preserve the lowered path literal globals for the fixture lookup.");
+    Assert(function.Blocks.Any(static block => block.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee.Contains("read_to_string", StringComparison.Ordinal))),
+        "Expected Cargo-built std_fs to preserve the std::fs read_to_string call on the success path.");
+    Assert(function.Blocks.Any(static block => block.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "{ i64, i64 }")),
+        "Expected Cargo-built std_fs to preserve the aggregate phi that merges the memchr result pair.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_fs_line_count", [], llvmRoot);
+    Assert(Equals(actualResult, 3), $"Expected Cargo-built std_fs_line_count invocation to return 3, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeApiSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_api");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 4,
+        $"Expected Cargo-built dotnet_runtime_api to preserve four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_is_windows", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_api to preserve the rust_mcil_dotnet_is_windows bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_directory_separator_char", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_api to preserve the rust_mcil_dotnet_directory_separator_char bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_separator_char", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_api to preserve the rust_mcil_dotnet_path_separator_char bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_newline_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_api to preserve the rust_mcil_dotnet_newline_len bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_score", [], llvmRoot);
+    Assert(Equals(actualResult, 253), $"Expected Cargo-built dotnet_runtime_score invocation to return 253, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeLoopSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_loop");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_loop");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .ToArray();
+
+    Assert(function.Blocks.Count == 1,
+        $"Expected Cargo-built dotnet_runtime_loop to lower to one optimized block, but found {function.Blocks.Count} blocks.");
+    Assert(runtimeCalls.Length == 9,
+        $"Expected Cargo-built dotnet_runtime_loop to preserve nine managed runtime bridge calls across the unrolled loop body, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Count(static call => call.Callee == "rust_mcil_dotnet_math_max_i32") == 3,
+        "Expected Cargo-built dotnet_runtime_loop to preserve the rust_mcil_dotnet_math_max_i32 bridge call.");
+    Assert(runtimeCalls.Count(static call => call.Callee == "rust_mcil_dotnet_math_min_i32") == 3,
+        "Expected Cargo-built dotnet_runtime_loop to preserve the rust_mcil_dotnet_math_min_i32 bridge call.");
+    Assert(runtimeCalls.Count(static call => call.Callee == "rust_mcil_dotnet_bitops_popcount_u32") == 3,
+        "Expected Cargo-built dotnet_runtime_loop to preserve the rust_mcil_dotnet_bitops_popcount_u32 bridge call.");
+    Assert(function.Blocks.Single().Instructions.OfType<LoweredBinaryInstruction>().Count(static binary => binary.Operation == "lshr") == 2,
+        "Expected Cargo-built dotnet_runtime_loop to preserve the two right-shift operations from the unrolled mask updates.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_loop", [2, 45u], llvmRoot);
+    Assert(Equals(actualResult, 27), $"Expected Cargo-built dotnet_runtime_loop invocation to return 27, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeTextSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_text");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_text_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 3,
+        $"Expected Cargo-built dotnet_runtime_text to preserve three UTF-8 managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_text to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_text to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_text to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_text_score", [], llvmRoot);
+    Assert(Equals(actualResult, 189), $"Expected Cargo-built dotnet_runtime_text_score invocation to return 189, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeRoundtripSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_roundtrip");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_roundtrip_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 4,
+        $"Expected Cargo-built dotnet_runtime_roundtrip to preserve four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_roundtrip to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_roundtrip to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_roundtrip to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_roundtrip to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_roundtrip_score", [], llvmRoot);
+    Assert(Equals(actualResult, 196), $"Expected Cargo-built dotnet_runtime_roundtrip_score invocation to return 196, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeTransformSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_transform");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_transform_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 4,
+        $"Expected Cargo-built dotnet_runtime_transform to preserve four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_transform to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_transform to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_transform to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_transform to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_transform_score", [], llvmRoot);
+    Assert(Equals(actualResult, 335), $"Expected Cargo-built dotnet_runtime_transform_score invocation to return 335, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTransformSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_transform");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_transform_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 6,
+        $"Expected Cargo-built dotnet_runtime_path_transform to preserve six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_transform to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_transform_score", [], llvmRoot);
+    Assert(Equals(actualResult, 1563), $"Expected Cargo-built dotnet_runtime_path_transform_score invocation to return 1563, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathChangeSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_change");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_change_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 9,
+        $"Expected Cargo-built dotnet_runtime_path_change to preserve nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_change to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_change_score", [], llvmRoot);
+    Assert(Equals(actualResult, 10163), $"Expected Cargo-built dotnet_runtime_path_change_score invocation to return 10163, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathCombineSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_combine");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_combine_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 11,
+        $"Expected Cargo-built dotnet_runtime_path_combine to preserve eleven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_combine_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_copy_combine_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_combine_score", [], llvmRoot);
+    Assert(Equals(actualResult, 9573), $"Expected Cargo-built dotnet_runtime_path_combine_score invocation to return 9573, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathCombine3SampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_combine3");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_combine3_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 11,
+        $"Expected Cargo-built dotnet_runtime_path_combine3 to preserve eleven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combine3 to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_combine3_score", [], llvmRoot);
+    Assert(Equals(actualResult, 9595), $"Expected Cargo-built dotnet_runtime_path_combine3_score invocation to return 9595, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeEnvPathSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_env_path");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_env_path_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 13,
+        $"Expected Cargo-built dotnet_runtime_env_path to preserve thirteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_env_path to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_env_path_score", [], llvmRoot);
+    Assert(Equals(actualResult, 10595), $"Expected Cargo-built dotnet_runtime_env_path_score invocation to return 10595, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeUserProfileSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_user_profile");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_user_profile_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 13,
+        $"Expected Cargo-built dotnet_runtime_user_profile to preserve thirteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_user_profile_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_user_profile_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_user_profile_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_copy_user_profile_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_user_profile to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_user_profile_score", [], llvmRoot);
+    Assert(Equals(actualResult, 12717), $"Expected Cargo-built dotnet_runtime_user_profile_score invocation to return 12717, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeDualRootSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_dual_root");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_dual_root_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 20,
+        $"Expected Cargo-built dotnet_runtime_dual_root to preserve twenty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_combine3_utf8_len") == 2,
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve two rust_mcil_dotnet_path_combine3_utf8_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_copy_combine3_utf8") == 2,
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve two rust_mcil_dotnet_path_copy_combine3_utf8 bridge calls.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_get_file_name_len") == 2,
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve two rust_mcil_dotnet_path_get_file_name_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len") == 2,
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve two rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_copy_file_name_without_extension_utf8") == 2,
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve two rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge calls.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_dual_root to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_dual_root_score", [], llvmRoot);
+    Assert(Equals(actualResult, 11145), $"Expected Cargo-built dotnet_runtime_dual_root_score invocation to return 11145, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeTripleRootSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_triple_root");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_triple_root_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 27,
+        $"Expected Cargo-built dotnet_runtime_triple_root to preserve twenty-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_combine3_utf8_len") == 3,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve three rust_mcil_dotnet_path_combine3_utf8_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_copy_combine3_utf8") == 3,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve three rust_mcil_dotnet_path_copy_combine3_utf8 bridge calls.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_path_copy_file_name_without_extension_utf8") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_string_replace_utf8_len") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_string_replace_utf8_len bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_string_copy_replace_utf8") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_string_copy_replace_utf8 bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_string_contains") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_string_contains bridge calls.");
+    Assert(runtimeCalls.Count(static callee => callee == "rust_mcil_dotnet_string_index_of") == 2,
+        "Expected Cargo-built dotnet_runtime_triple_root to preserve two rust_mcil_dotnet_string_index_of bridge calls.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_triple_root_score", [], llvmRoot);
+    Assert(Equals(actualResult, 1018583), $"Expected Cargo-built dotnet_runtime_triple_root_score invocation to return 1018583, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeRelativePathSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_relative_path");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_relative_path_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 12,
+        $"Expected Cargo-built dotnet_runtime_relative_path to preserve twelve managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_get_file_name_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_relative_path_score", [], llvmRoot);
+    Assert(Equals(actualResult, 34095), $"Expected Cargo-built dotnet_runtime_relative_path_score invocation to return 34095, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeDirectoryNameSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_directory_name");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_directory_name_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 14,
+        $"Expected Cargo-built dotnet_runtime_directory_name to preserve fourteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_directory_name to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_directory_name_score", [], llvmRoot);
+    Assert(Equals(actualResult, 239012), $"Expected Cargo-built dotnet_runtime_directory_name_score invocation to return 239012, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimeFullPathSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_full_path");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_full_path_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 14,
+        $"Expected Cargo-built dotnet_runtime_full_path to preserve fourteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_full_path to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_full_path_score", [], llvmRoot);
+    Assert(Equals(actualResult, 524012), $"Expected Cargo-built dotnet_runtime_full_path_score invocation to return 524012, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathRootSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_root");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_root_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 16,
+        $"Expected Cargo-built dotnet_runtime_path_root to preserve sixteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_root to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_root_score", [], llvmRoot);
+    Assert(Equals(actualResult, 4738012), $"Expected Cargo-built dotnet_runtime_path_root_score invocation to return 4738012, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFileNameSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_file_name");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_file_name_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 18,
+        $"Expected Cargo-built dotnet_runtime_path_file_name to preserve eighteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_file_name to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_file_name_score", [], llvmRoot);
+    Assert(Equals(actualResult, 47379812), $"Expected Cargo-built dotnet_runtime_path_file_name_score invocation to return 47379812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathRecomposeSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_recompose");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_recompose_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 22,
+        $"Expected Cargo-built dotnet_runtime_path_recompose to preserve twenty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_recompose_score", [], llvmRoot);
+    Assert(Equals(actualResult, 50499812), $"Expected Cargo-built dotnet_runtime_path_recompose_score invocation to return 50499812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathRecomposeChangeSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_recompose_change");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_recompose_change_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 26,
+        $"Expected Cargo-built dotnet_runtime_path_recompose_change to preserve twenty-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_recompose_change to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_recompose_change_score", [], llvmRoot);
+    Assert(Equals(actualResult, 51110812), $"Expected Cargo-built dotnet_runtime_path_recompose_change_score invocation to return 51110812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathCrossRootSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_cross_root");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_cross_root_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 28,
+        $"Expected Cargo-built dotnet_runtime_path_cross_root to preserve twenty-eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_cross_root to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_cross_root_score", [], llvmRoot);
+    Assert(Equals(actualResult, 52116812), $"Expected Cargo-built dotnet_runtime_path_cross_root_score invocation to return 52116812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathBranchRootSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_branch_root");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_branch_root_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 46,
+        $"Expected Cargo-built dotnet_runtime_path_branch_root to preserve forty-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_branch_root to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_branch_root_score", [], llvmRoot);
+    Assert(Equals(actualResult, 152116812), $"Expected Cargo-built dotnet_runtime_path_branch_root_score invocation to return 152116812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTripleBranchSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_triple_branch");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_triple_branch_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 55,
+        $"Expected Cargo-built dotnet_runtime_path_triple_branch to preserve fifty-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_triple_branch to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_triple_branch_score", [], llvmRoot);
+    Assert(Equals(actualResult, 351105611), $"Expected Cargo-built dotnet_runtime_path_triple_branch_score invocation to return 351105611, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathDoubleSelectSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_double_select");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_double_select_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 63,
+        $"Expected Cargo-built dotnet_runtime_path_double_select to preserve sixty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_double_select to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_double_select_score", [], llvmRoot);
+    Assert(Equals(actualResult, 342006812), $"Expected Cargo-built dotnet_runtime_path_double_select_score invocation to return 342006812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathRankedSelectSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_ranked_select");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_ranked_select_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 63,
+        $"Expected Cargo-built dotnet_runtime_path_ranked_select to preserve sixty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ranked_select to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_ranked_select_score", [], llvmRoot);
+    Assert(Equals(actualResult, 342006812), $"Expected Cargo-built dotnet_runtime_path_ranked_select_score invocation to return 342006812, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathComboRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_combo_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_combo_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 63,
+        $"Expected Cargo-built dotnet_runtime_path_combo_rank to preserve sixty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_combo_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_combo_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 333121499), $"Expected Cargo-built dotnet_runtime_path_combo_rank_score invocation to return 333121499, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 80,
+        $"Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve eighty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twoStageRank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332311999), $"Expected Cargo-built dotnet_runtime_path_two_stage_rank_score invocation to return 332311999, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 94,
+        $"Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve ninety-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332231220), $"Expected Cargo-built dotnet_runtime_path_three_stage_rank_score invocation to return 332231220, but got '{actualResult}'.");
+}
+
+
+static void DotnetRuntimePathFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 103,
+        $"Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve one hundred three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332233109), $"Expected Cargo-built dotnet_runtime_path_four_stage_rank_score invocation to return 332233109, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 112,
+        $"Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve one hundred twelve managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232319), $"Expected Cargo-built dotnet_runtime_path_five_stage_rank_score invocation to return 332232319, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 131,
+        $"Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve one hundred thirty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232209), $"Expected Cargo-built dotnet_runtime_path_six_stage_rank_score invocation to return 332232209, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 144,
+        $"Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve one hundred forty-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232210), $"Expected Cargo-built dotnet_runtime_path_seven_stage_rank_score invocation to return 332232210, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 155,
+        $"Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve one hundred fifty-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232212), $"Expected Cargo-built dotnet_runtime_path_eight_stage_rank_score invocation to return 332232212, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 166,
+        $"Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve one hundred sixty-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_ten_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_ten_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 177,
+        $"Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve one hundred seventy-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_ten_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_ten_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_ten_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathElevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_eleven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_eleven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 188,
+        $"Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve one hundred eighty-eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stageRank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eleven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_eleven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_eleven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwelveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twelve_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twelve_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 199,
+        $"Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve one hundred ninety-nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twelve_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twelve_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twelve_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 210,
+        $"Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve two hundred ten managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFourteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fourteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fourteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 221,
+        $"Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve two hundred twenty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fourteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fourteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFifteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 232,
+        $"Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve two hundred thirty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 243,
+        $"Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve two hundred forty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSeventeenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_seventeen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_seventeen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 254,
+        $"Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve two hundred fifty-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_seventeen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_seventeen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathEighteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_eighteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_eighteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 265,
+        $"Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve two hundred sixty-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_eighteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_eighteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathNineteenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_nineteen_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_nineteen_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 276,
+        $"Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve two hundred seventy-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_nineteen_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_nineteen_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 287,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve two hundred eighty-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyOneStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_one_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_one_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 298,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve two hundred ninety-eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_one_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_one_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 309,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve three hundred nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_two_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 320,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve three hundred twenty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_three_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 331,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve three hundred thirty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_four_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 342,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve three hundred forty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_five_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentySixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 353,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve three hundred fifty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_six_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentySevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 364,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve three hundred sixty-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_seven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 375,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve three hundred seventy-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_eight_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathTwentyNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_twenty_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_twenty_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 386,
+        $"Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve three hundred eighty-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_twenty_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_twenty_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 397,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve three hundred ninety-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyOneStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_one_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_one_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 408,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve four hundred eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_one_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_one_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 419,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve four hundred nineteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_two_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 430,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve four hundred thirty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_three_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 441,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve four hundred forty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_four_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 452,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve four hundred fifty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_five_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtySixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 463,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve four hundred sixty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_six_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtySevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 474,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve four hundred seventy-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_seven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 485,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve four hundred eighty-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_eight_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathThirtyNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_thirty_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_thirty_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 496,
+        $"Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve four hundred ninety-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_thirty_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_thirty_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 507,
+        $"Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve five hundred seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyOneStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_one_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_one_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 518,
+        $"Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve five hundred eighteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_one_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_one_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 529,
+        $"Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve five hundred twenty-nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_two_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 540,
+        $"Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve five hundred forty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_three_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 551,
+        $"Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve five hundred fifty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_four_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 562,
+        $"Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve five hundred sixty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_five_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortySixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 573,
+        $"Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve five hundred seventy-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_six_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortySevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 584,
+        $"Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve five hundred eighty-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_seven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 595,
+        $"Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve five hundred ninety-five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_eight_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFortyNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_forty_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_forty_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 606,
+        $"Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve six hundred six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_forty_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_forty_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 617,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve six hundred seventeen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyOneStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_one_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_one_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 628,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve six hundred twenty-eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_one_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_one_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 639,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve six hundred thirty-nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_two_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 650,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve six hundred fifty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_three_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 661,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve six hundred sixty-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_four_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 672,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve six hundred seventy-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_five_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftySixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 683,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve six hundred eighty-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_six_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftySevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 694,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve six hundred ninety-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_seven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 705,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve seven hundred five managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_eight_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathFiftyNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_fifty_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_fifty_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 716,
+        $"Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve seven hundred sixteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_fifty_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_fifty_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 727,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve seven hundred twenty-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyOneStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_one_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_one_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 738,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve seven hundred thirty-eight managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_one_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_one_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyTwoStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_two_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_two_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 749,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve seven hundred forty-nine managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_two_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_two_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyThreeStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_three_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_three_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 760,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve seven hundred sixty managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_three_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_three_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyFourStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_four_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_four_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 771,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve seven hundred seventy-one managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_four_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_four_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyFiveStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_five_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_five_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 782,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve seven hundred eighty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_five_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_five_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtySixStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_six_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_six_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 793,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve seven hundred ninety-three managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_six_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_six_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtySevenStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_seven_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_seven_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 804,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve eight hundred four managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_seven_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_seven_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyEightStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_eight_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_eight_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 815,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve eight hundred fifteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_eight_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_eight_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSixtyNineStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_sixty_nine_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_sixty_nine_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 826,
+        $"Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve eight hundred twenty-six managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_sixty_nine_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_sixty_nine_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSeventyStageRankSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dotnet_runtime_path_seventy_stage_rank");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "dotnet_runtime_path_seventy_stage_rank_score");
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == 837,
+        $"Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve eight hundred thirty-seven managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        "Expected Cargo-built dotnet_runtime_path_seventy_stage_rank to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dotnet_runtime_path_seventy_stage_rank_score", [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built dotnet_runtime_path_seventy_stage_rank_score invocation to return 332232222, but got '{actualResult}'.");
+}
+
+static void DotnetRuntimePathSeventyOneStageRankSampleBuildsFromCargoManifest()
+{
+    ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_one_stage_rank",
+        "dotnet_runtime_path_seventy_one_stage_rank_score",
+        848,
+        "eight hundred forty-eight");
+}
+
+    static void DotnetRuntimePathSeventyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_two_stage_rank",
+        "dotnet_runtime_path_seventy_two_stage_rank_score",
+        859,
+        "eight hundred fifty-nine");
+    }
+
+    static void DotnetRuntimePathSeventyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_three_stage_rank",
+        "dotnet_runtime_path_seventy_three_stage_rank_score",
+        870,
+        "eight hundred seventy");
+    }
+
+static void DotnetRuntimePathSeventyFourStageRankSampleBuildsFromCargoManifest()
+{
+    ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_four_stage_rank",
+        "dotnet_runtime_path_seventy_four_stage_rank_score",
+        881,
+        "eight hundred eighty-one");
+}
+
+    static void DotnetRuntimePathSeventyFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_five_stage_rank",
+        "dotnet_runtime_path_seventy_five_stage_rank_score",
+        892,
+        "eight hundred ninety-two");
+    }
+
+    static void DotnetRuntimePathSeventySixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_six_stage_rank",
+        "dotnet_runtime_path_seventy_six_stage_rank_score",
+        903,
+        "nine hundred three");
+    }
+
+    static void DotnetRuntimePathSeventySevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_seven_stage_rank",
+        "dotnet_runtime_path_seventy_seven_stage_rank_score",
+        914,
+        "nine hundred fourteen");
+    }
+
+    static void DotnetRuntimePathSeventyEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_eight_stage_rank",
+        "dotnet_runtime_path_seventy_eight_stage_rank_score",
+        925,
+        "nine hundred twenty-five");
+    }
+
+    static void DotnetRuntimePathSeventyNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_seventy_nine_stage_rank",
+        "dotnet_runtime_path_seventy_nine_stage_rank_score",
+        936,
+        "nine hundred thirty-six");
+    }
+
+    static void DotnetRuntimePathEightyStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_stage_rank",
+        "dotnet_runtime_path_eighty_stage_rank_score",
+        947,
+        "nine hundred forty-seven");
+    }
+
+    static void DotnetRuntimePathEightyOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_one_stage_rank",
+        "dotnet_runtime_path_eighty_one_stage_rank_score",
+        958,
+        "nine hundred fifty-eight");
+    }
+
+    static void DotnetRuntimePathEightyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_two_stage_rank",
+        "dotnet_runtime_path_eighty_two_stage_rank_score",
+        969,
+        "nine hundred sixty-nine");
+    }
+
+    static void DotnetRuntimePathEightyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_three_stage_rank",
+        "dotnet_runtime_path_eighty_three_stage_rank_score",
+        980,
+        "nine hundred eighty");
+    }
+
+    static void DotnetRuntimePathEightyFourStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_four_stage_rank",
+        "dotnet_runtime_path_eighty_four_stage_rank_score",
+        991,
+        "nine hundred ninety-one");
+    }
+
+    static void DotnetRuntimePathEightyFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_five_stage_rank",
+        "dotnet_runtime_path_eighty_five_stage_rank_score",
+        1002,
+        "one thousand two");
+    }
+
+    static void DotnetRuntimePathEightySixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_six_stage_rank",
+        "dotnet_runtime_path_eighty_six_stage_rank_score",
+        1013,
+        "one thousand thirteen");
+    }
+
+    static void DotnetRuntimePathEightySevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_seven_stage_rank",
+        "dotnet_runtime_path_eighty_seven_stage_rank_score",
+        1024,
+        "one thousand twenty-four");
+    }
+
+    static void DotnetRuntimePathEightyEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_eight_stage_rank",
+        "dotnet_runtime_path_eighty_eight_stage_rank_score",
+        1035,
+        "one thousand thirty-five");
+    }
+
+    static void DotnetRuntimePathEightyNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_eighty_nine_stage_rank",
+        "dotnet_runtime_path_eighty_nine_stage_rank_score",
+        1046,
+        "one thousand forty-six");
+    }
+
+    static void DotnetRuntimePathNinetyStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_stage_rank",
+        "dotnet_runtime_path_ninety_stage_rank_score",
+        1057,
+        "one thousand fifty-seven");
+    }
+
+    static void DotnetRuntimePathNinetyOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_one_stage_rank",
+        "dotnet_runtime_path_ninety_one_stage_rank_score",
+        1068,
+        "one thousand sixty-eight");
+    }
+
+    static void DotnetRuntimePathNinetyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_two_stage_rank",
+        "dotnet_runtime_path_ninety_two_stage_rank_score",
+        1079,
+        "one thousand seventy-nine");
+    }
+
+    static void DotnetRuntimePathNinetyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_three_stage_rank",
+        "dotnet_runtime_path_ninety_three_stage_rank_score",
+        1090,
+        "one thousand ninety");
+    }
+
+    static void DotnetRuntimePathNinetyFourStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_four_stage_rank",
+        "dotnet_runtime_path_ninety_four_stage_rank_score",
+        1101,
+        "one thousand one hundred one");
+    }
+
+    static void DotnetRuntimePathNinetyFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_five_stage_rank",
+        "dotnet_runtime_path_ninety_five_stage_rank_score",
+        1112,
+        "one thousand one hundred twelve");
+    }
+
+    static void DotnetRuntimePathNinetySixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_six_stage_rank",
+        "dotnet_runtime_path_ninety_six_stage_rank_score",
+        1123,
+        "one thousand one hundred twenty-three");
+    }
+
+    static void DotnetRuntimePathNinetySevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_seven_stage_rank",
+        "dotnet_runtime_path_ninety_seven_stage_rank_score",
+        1134,
+        "one thousand one hundred thirty-four");
+    }
+
+    static void DotnetRuntimePathNinetyEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_eight_stage_rank",
+        "dotnet_runtime_path_ninety_eight_stage_rank_score",
+        1145,
+        "one thousand one hundred forty-five");
+    }
+
+    static void DotnetRuntimePathNinetyNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_ninety_nine_stage_rank",
+        "dotnet_runtime_path_ninety_nine_stage_rank_score",
+        1156,
+        "one thousand one hundred fifty-six");
+    }
+
+    static void DotnetRuntimePathOneHundredStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_stage_rank",
+        "dotnet_runtime_path_one_hundred_stage_rank_score",
+        1167,
+        "one thousand one hundred sixty-seven");
+    }
+
+    static void DotnetRuntimePathOneHundredOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_one_stage_rank",
+        "dotnet_runtime_path_one_hundred_one_stage_rank_score",
+        1178,
+        "one thousand one hundred seventy-eight");
+    }
+
+    static void DotnetRuntimePathOneHundredTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_two_stage_rank",
+        "dotnet_runtime_path_one_hundred_two_stage_rank_score",
+        1189,
+        "one thousand one hundred eighty-nine");
+    }
+
+    static void DotnetRuntimePathOneHundredThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_three_stage_rank",
+        "dotnet_runtime_path_one_hundred_three_stage_rank_score",
+        1200,
+        "one thousand two hundred");
+    }
+
+    static void DotnetRuntimePathOneHundredFourStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_four_stage_rank",
+        "dotnet_runtime_path_one_hundred_four_stage_rank_score",
+        1211,
+        "one thousand two hundred eleven");
+    }
+
+    static void DotnetRuntimePathOneHundredFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_five_stage_rank",
+        "dotnet_runtime_path_one_hundred_five_stage_rank_score",
+        1222,
+        "one thousand two hundred twenty-two");
+    }
+
+    static void DotnetRuntimePathOneHundredSixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_six_stage_rank",
+        "dotnet_runtime_path_one_hundred_six_stage_rank_score",
+        1233,
+        "one thousand two hundred thirty-three");
+    }
+
+    static void DotnetRuntimePathOneHundredSevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_seven_stage_rank",
+        "dotnet_runtime_path_one_hundred_seven_stage_rank_score",
+        1244,
+        "one thousand two hundred forty-four");
+    }
+
+    static void DotnetRuntimePathOneHundredEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_eight_stage_rank",
+        "dotnet_runtime_path_one_hundred_eight_stage_rank_score",
+        1255,
+        "one thousand two hundred fifty-five");
+    }
+
+    static void DotnetRuntimePathOneHundredNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_nine_stage_rank",
+        "dotnet_runtime_path_one_hundred_nine_stage_rank_score",
+        1266,
+        "one thousand two hundred sixty-six");
+    }
+
+    static void DotnetRuntimePathOneHundredTenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_ten_stage_rank",
+        "dotnet_runtime_path_one_hundred_ten_stage_rank_score",
+        1277,
+        "one thousand two hundred seventy-seven");
+    }
+
+    static void DotnetRuntimePathOneHundredElevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_eleven_stage_rank",
+        "dotnet_runtime_path_one_hundred_eleven_stage_rank_score",
+        1288,
+        "one thousand two hundred eighty-eight");
+    }
+
+    static void DotnetRuntimePathOneHundredTwelveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_twelve_stage_rank",
+        "dotnet_runtime_path_one_hundred_twelve_stage_rank_score",
+        1299,
+        "one thousand two hundred ninety-nine");
+    }
+
+    static void DotnetRuntimePathOneHundredThirteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_thirteen_stage_rank",
+        "dotnet_runtime_path_one_hundred_thirteen_stage_rank_score",
+        1310,
+        "one thousand three hundred ten");
+    }
+
+    static void DotnetRuntimePathOneHundredFourteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_fourteen_stage_rank",
+        "dotnet_runtime_path_one_hundred_fourteen_stage_rank_score",
+        1321,
+        "one thousand three hundred twenty-one");
+    }
+
+    static void DotnetRuntimePathOneHundredFifteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_fifteen_stage_rank",
+        "dotnet_runtime_path_one_hundred_fifteen_stage_rank_score",
+        1332,
+        "one thousand three hundred thirty-two");
+    }
+
+    static void DotnetRuntimePathOneHundredSixteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+        "dotnet_runtime_path_one_hundred_sixteen_stage_rank",
+        "dotnet_runtime_path_one_hundred_sixteen_stage_rank_score",
+        1343,
+        "one thousand three hundred forty-three");
+    }
+
+    static void DotnetRuntimePathOneHundredSeventeenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_seventeen_stage_rank",
+            "dotnet_runtime_path_one_hundred_seventeen_stage_rank_score",
+            1354,
+            "one thousand three hundred fifty-four");
+    }
+
+    static void DotnetRuntimePathOneHundredEighteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_eighteen_stage_rank",
+            "dotnet_runtime_path_one_hundred_eighteen_stage_rank_score",
+            1365,
+            "one thousand three hundred sixty-five");
+    }
+
+    static void DotnetRuntimePathOneHundredNineteenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_nineteen_stage_rank",
+            "dotnet_runtime_path_one_hundred_nineteen_stage_rank_score",
+            1376,
+            "one thousand three hundred seventy-six");
+    }
+
+static void ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+    string sampleName,
+    string functionName,
+    int expectedRuntimeCallCount,
+    string expectedRuntimeCallCountText)
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode(sampleName);
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(function => function.Name == functionName);
+
+    var runtimeCalls = function.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => call.Callee.StartsWith("rust_mcil_dotnet_", StringComparison.Ordinal))
+        .Select(static call => call.Callee)
+        .ToArray();
+
+    Assert(runtimeCalls.Length == expectedRuntimeCallCount,
+        $"Expected Cargo-built {sampleName} to preserve {expectedRuntimeCallCountText} managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_copy_current_directory_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_temp_path_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_temp_path_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_temp_path_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_copy_temp_path_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_documents_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_documents_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_documents_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_copy_documents_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_full_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_full_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_full_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_full_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_root_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_root_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_root_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_root_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_relative_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_relative_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_relative_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_relative_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_directory_name_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_directory_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_directory_name_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_directory_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_combine3_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_combine3_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_combine3_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_combine3_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_file_name_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_file_name_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_change_extension_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_change_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_change_extension_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_change_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_path_copy_file_name_without_extension_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_replace_utf8_len", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_string_replace_utf8_len bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_copy_replace_utf8", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_string_copy_replace_utf8 bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_contains", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_string_contains bridge call.");
+    Assert(runtimeCalls.Contains("rust_mcil_dotnet_string_index_of", StringComparer.Ordinal),
+        $"Expected Cargo-built {sampleName} to preserve the rust_mcil_dotnet_string_index_of bridge call.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, functionName, [], llvmRoot);
+    Assert(Equals(actualResult, 332232222), $"Expected Cargo-built {functionName} invocation to return 332232222, but got '{actualResult}'.");
 }
 
 static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcode(string sampleName)
