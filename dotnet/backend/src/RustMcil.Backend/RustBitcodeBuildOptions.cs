@@ -6,6 +6,8 @@ public sealed record RustBitcodeBuildOptions
 
     public string? OutputBitcodePath { get; init; }
 
+    public string? BinaryTargetName { get; init; }
+
     public string? Toolchain { get; init; }
 
     public string? Target { get; init; }

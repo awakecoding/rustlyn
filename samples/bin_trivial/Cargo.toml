@@ -1,0 +1,4 @@
+[package]
+name = "bin_trivial"
+version = "0.1.0"
+edition = "2024"

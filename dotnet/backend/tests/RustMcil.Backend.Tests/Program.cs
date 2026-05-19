@@ -454,6 +454,7 @@ RunOptionalTest("MinEqSampleInvokesViaBackend", MinEqSampleInvokesViaBackend, fa
 RunOptionalTest("GlobalInitSampleInvokesViaBackend", GlobalInitSampleInvokesViaBackend, failures);
 RunOptionalTest("PairI64SampleInvokesViaBackend", PairI64SampleInvokesViaBackend, failures);
 RunOptionalTest("AddSampleBuildsFromCargoManifest", AddSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("BinTrivialSampleBuildsFromCargoManifest", BinTrivialSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AndSampleBuildsFromCargoManifest", AndSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("ShlSampleBuildsFromCargoManifest", ShlSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AshrSampleBuildsFromCargoManifest", AshrSampleBuildsFromCargoManifest, failures);
@@ -6173,6 +6174,17 @@ static void AddSampleBuildsFromCargoManifest()
 
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "add_i32", [3, 4], llvmRoot);
     Assert(Equals(actualResult, 7), $"Expected Cargo-built add_i32 invocation to return 7, but got '{actualResult}'.");
+}
+
+static void BinTrivialSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("bin_trivial", "bin_trivial");
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for Cargo-built bin_trivial.");
+
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "main"), "Expected Cargo-built bin_trivial to preserve a main entrypoint symbol.");
+    Assert(moduleSummary.BasicBlockCount > 0, $"Expected Cargo-built bin_trivial to contain at least one basic block, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(moduleSummary.InstructionCount > 0, $"Expected Cargo-built bin_trivial to contain at least one instruction, but found {moduleSummary.InstructionCount.ToString(CultureInfo.InvariantCulture)}.");
 }
 
 static void AndSampleBuildsFromCargoManifest()
@@ -15944,6 +15956,28 @@ static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcode(string samp
 
     var bitcodePath = Path.Combine(Path.GetTempPath(), $"rust-msil-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
     RustBitcodeCompiler.BuildLibraryBitcode(cratePath, outputBitcodePath: bitcodePath);
+    return (bitcodePath, llvmRoot);
+}
+
+static (string BitcodePath, string LlvmRoot) BuildCargoBinarySampleBitcode(string sampleName, string binaryTargetName)
+{
+    var workspaceRoot = FindWorkspaceRoot();
+    if (workspaceRoot is null)
+    {
+        throw new InvalidOperationException("Workspace root could not be determined.");
+    }
+
+    var cratePath = Path.Combine(workspaceRoot, "samples", sampleName);
+    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
+    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
+
+    if (!Directory.Exists(cratePath) || !File.Exists(llvmOptPath))
+    {
+        throw new SkipTestException($"Cargo binary sample '{sampleName}' or llvm-prebuilt distro is not available yet.");
+    }
+
+    var bitcodePath = Path.Combine(Path.GetTempPath(), $"rust-msil-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
+    RustBitcodeCompiler.BuildBinaryBitcode(cratePath, binaryTargetName, outputBitcodePath: bitcodePath);
     return (bitcodePath, llvmRoot);
 }
 

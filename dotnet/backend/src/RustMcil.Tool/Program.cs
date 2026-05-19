@@ -85,7 +85,7 @@ if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputP
 {
     try
     {
-        var bitcodePath = RustBitcodeCompiler.BuildLibraryBitcode(cratePath, translateBuildOptions);
+        var bitcodePath = RustBitcodeCompiler.BuildBitcode(cratePath, translateBuildOptions);
         LoweredAssemblyEmitter.EmitBitcode(bitcodePath, translateOutputPath, translateLlvmRoot);
         Console.WriteLine($"Bitcode: {Path.GetFullPath(bitcodePath)}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(translateOutputPath)}");
@@ -116,7 +116,7 @@ if (TryParseInvokeArguments(args, out var invokeArtifactPath, out var invokeMeth
 Console.Error.WriteLine("Usage: RustMcil.Tool inspect <path-to-bc> [--llvm-root <path>]");
 Console.Error.WriteLine("   or: RustMcil.Tool lower <path-to-bc> [--llvm-root <path>]");
 Console.Error.WriteLine("   or: RustMcil.Tool emit <path-to-bc> --out <path-to-dll> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: RustMcil.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--llvm-root <path>]");
+Console.Error.WriteLine("   or: RustMcil.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: RustMcil.Tool invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]   (types: i32, i64, u32, u64)");
 return 1;
 
@@ -146,6 +146,13 @@ static bool TryParseTranslateArguments(string[] args, out string cratePath, out 
         if (string.Equals(args[index], "--bitcode-out", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
         {
             buildOptions = buildOptions with { OutputBitcodePath = args[index + 1] };
+            index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--bin", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            buildOptions = buildOptions with { BinaryTargetName = args[index + 1] };
             index++;
             continue;
         }

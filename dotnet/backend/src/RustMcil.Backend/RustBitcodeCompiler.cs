@@ -6,7 +6,7 @@ namespace RustMcil.Backend;
 public static class RustBitcodeCompiler
 {
     public static string BuildLibraryBitcode(string cratePath, bool release = true, string? outputBitcodePath = null)
-        => BuildLibraryBitcode(
+        => BuildBitcode(
             cratePath,
             new RustBitcodeBuildOptions
             {
@@ -15,6 +15,19 @@ public static class RustBitcodeCompiler
             });
 
     public static string BuildLibraryBitcode(string cratePath, RustBitcodeBuildOptions? options)
+        => BuildBitcode(cratePath, options);
+
+    public static string BuildBinaryBitcode(string cratePath, string binaryTargetName, bool release = true, string? outputBitcodePath = null)
+        => BuildBitcode(
+            cratePath,
+            new RustBitcodeBuildOptions
+            {
+                Release = release,
+                OutputBitcodePath = outputBitcodePath,
+                BinaryTargetName = binaryTargetName
+            });
+
+    public static string BuildBitcode(string cratePath, RustBitcodeBuildOptions? options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cratePath);
 
@@ -22,7 +35,7 @@ public static class RustBitcodeCompiler
         ValidateOptions(options);
 
         var manifestPath = ResolveManifestPath(cratePath);
-        var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain);
+        var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain, options.BinaryTargetName);
         var buildArguments = CreateBuildArguments(manifestPath, options);
 
         RunProcess(
@@ -30,7 +43,7 @@ public static class RustBitcodeCompiler
             arguments: buildArguments,
             workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
 
-        var artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, options.Release, cargoMetadata.LibraryTargetName, options.Target);
+        var artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, options.Release, cargoMetadata.TargetName, options.Target);
         if (string.IsNullOrWhiteSpace(options.OutputBitcodePath))
         {
             return artifactPath;
@@ -48,6 +61,11 @@ public static class RustBitcodeCompiler
         {
             throw new InvalidOperationException("build-std requires an explicit cargo toolchain such as 'nightly'. Configure --toolchain when using --build-std.");
         }
+
+        if (options.BinaryTargetName is not null && string.IsNullOrWhiteSpace(options.BinaryTargetName))
+        {
+            throw new InvalidOperationException("Binary target names must be non-empty when --bin is specified.");
+        }
     }
 
     private static List<string> CreateBuildArguments(string manifestPath, RustBitcodeBuildOptions options)
@@ -63,9 +81,18 @@ public static class RustBitcodeCompiler
         [
             "rustc",
             "--manifest-path",
-            manifestPath,
-            "--lib"
+            manifestPath
         ]);
+
+        if (string.IsNullOrWhiteSpace(options.BinaryTargetName))
+        {
+            buildArguments.Add("--lib");
+        }
+        else
+        {
+            buildArguments.Add("--bin");
+            buildArguments.Add(options.BinaryTargetName);
+        }
 
         if (options.Release)
         {
@@ -127,7 +154,7 @@ public static class RustBitcodeCompiler
         throw new FileNotFoundException($"Cargo manifest not found for crate path '{cratePath}'.", candidatePath);
     }
 
-    private static CargoMetadata ReadCargoMetadata(string manifestPath, string? toolchain)
+    private static CargoMetadata ReadCargoMetadata(string manifestPath, string? toolchain, string? binaryTargetName)
     {
         var metadataArguments = new List<string>();
         if (!string.IsNullOrWhiteSpace(toolchain))
@@ -159,26 +186,49 @@ public static class RustBitcodeCompiler
             throw new InvalidOperationException($"Cargo metadata did not contain a package entry for manifest '{manifestPath}'.");
         }
 
-        var libraryTarget = package.GetProperty("targets")
-            .EnumerateArray()
-            .FirstOrDefault(targetElement =>
+        var selectedTarget = SelectTarget(package, manifestPath, binaryTargetName);
+
+        var targetDirectory = root.GetProperty("target_directory").GetString();
+        var targetName = selectedTarget.GetProperty("name").GetString();
+        if (string.IsNullOrWhiteSpace(targetDirectory) || string.IsNullOrWhiteSpace(targetName))
+        {
+            throw new InvalidOperationException($"Cargo metadata for '{manifestPath}' was missing target directory or target name.");
+        }
+
+        return new CargoMetadata(Path.GetFullPath(targetDirectory), targetName);
+    }
+
+    private static JsonElement SelectTarget(JsonElement package, string manifestPath, string? binaryTargetName)
+    {
+        var targets = package.GetProperty("targets").EnumerateArray();
+
+        if (string.IsNullOrWhiteSpace(binaryTargetName))
+        {
+            var libraryTarget = targets.FirstOrDefault(targetElement =>
                 targetElement.GetProperty("kind")
                     .EnumerateArray()
                     .Any(kindElement => string.Equals(kindElement.GetString(), "lib", StringComparison.Ordinal)));
 
-        if (libraryTarget.ValueKind == JsonValueKind.Undefined)
-        {
-            throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a library target yet. The current translate command only supports crates with a [lib] target.");
+            if (libraryTarget.ValueKind != JsonValueKind.Undefined)
+            {
+                return libraryTarget;
+            }
+
+            throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a library target yet. The current translate command only supports crates with a [lib] target unless --bin <name> is specified.");
         }
 
-        var targetDirectory = root.GetProperty("target_directory").GetString();
-        var targetName = libraryTarget.GetProperty("name").GetString();
-        if (string.IsNullOrWhiteSpace(targetDirectory) || string.IsNullOrWhiteSpace(targetName))
+        var binaryTarget = targets.FirstOrDefault(targetElement =>
+            string.Equals(targetElement.GetProperty("name").GetString(), binaryTargetName, StringComparison.Ordinal)
+            && targetElement.GetProperty("kind")
+                .EnumerateArray()
+                .Any(kindElement => string.Equals(kindElement.GetString(), "bin", StringComparison.Ordinal)));
+
+        if (binaryTarget.ValueKind != JsonValueKind.Undefined)
         {
-            throw new InvalidOperationException($"Cargo metadata for '{manifestPath}' was missing target directory or library target name.");
+            return binaryTarget;
         }
 
-        return new CargoMetadata(Path.GetFullPath(targetDirectory), targetName);
+        throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a binary target named '{binaryTargetName}'.");
     }
 
     private static string FindBitcodeArtifact(string targetDirectory, bool release, string libraryTargetName, string? target)
@@ -193,7 +243,11 @@ public static class RustBitcodeCompiler
         }
 
         var normalizedTargetName = libraryTargetName.Replace('-', '_');
-        var candidates = Directory.GetFiles(depsDirectory, $"{normalizedTargetName}-*.bc", SearchOption.TopDirectoryOnly);
+        var exactCandidate = Path.Combine(depsDirectory, $"{normalizedTargetName}.bc");
+        var candidates = Directory.GetFiles(depsDirectory, $"{normalizedTargetName}-*.bc", SearchOption.TopDirectoryOnly)
+            .Concat(File.Exists(exactCandidate) ? [exactCandidate] : [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         if (candidates.Length == 0)
         {
             throw new FileNotFoundException($"No LLVM bitcode artifact matching '{normalizedTargetName}-*.bc' was found in '{depsDirectory}'.");
@@ -253,5 +307,5 @@ public static class RustBitcodeCompiler
         return standardOutput;
     }
 
-    private sealed record CargoMetadata(string TargetDirectory, string LibraryTargetName);
+    private sealed record CargoMetadata(string TargetDirectory, string TargetName);
 }
