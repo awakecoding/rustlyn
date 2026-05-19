@@ -6,6 +6,66 @@ namespace RustMcil.Backend;
 
 public static class RuntimeBridgeHelpers
 {
+    public static int CommandLineArgCount()
+    {
+        return Environment.GetCommandLineArgs().Length;
+    }
+
+    public static int Utf8CommandLineArgLength(int index)
+    {
+        return Encoding.UTF8.GetByteCount(GetCommandLineArg(index));
+    }
+
+    public static int CopyUtf8CommandLineArg(int index, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return WriteUtf8String(GetCommandLineArg(index), destinationPointer, destinationCapacity);
+    }
+
+    public static void ConsoleWriteLineUtf8(IntPtr valuePointer, long valueLength)
+    {
+        Console.WriteLine(ReadUtf8String(valuePointer, valueLength));
+    }
+
+    public static void ConsoleWritePrefixedLineUtf8(IntPtr pathPointer, long pathLength, int lineNumber, IntPtr valuePointer, long valueLength)
+    {
+        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{lineNumber}:{ReadUtf8String(valuePointer, valueLength)}");
+    }
+
+    public static void ConsoleWritePathLineUtf8(IntPtr pathPointer, long pathLength, IntPtr valuePointer, long valueLength)
+    {
+        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{ReadUtf8String(valuePointer, valueLength)}");
+    }
+
+    public static void ConsoleWriteNumberedLineUtf8(int lineNumber, IntPtr valuePointer, long valueLength)
+    {
+        Console.WriteLine($"{lineNumber}:{ReadUtf8String(valuePointer, valueLength)}");
+    }
+
+    public static void ConsoleWriteI32(int value)
+    {
+        Console.WriteLine(value);
+    }
+
+    public static void ConsoleWritePathCountUtf8(IntPtr pathPointer, long pathLength, int value)
+    {
+        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{value}");
+    }
+
+    public static int Utf8ReadAllLinesCount(IntPtr pathPointer, long pathLength)
+    {
+        return File.ReadAllLines(ReadUtf8String(pathPointer, pathLength)).Length;
+    }
+
+    public static int Utf8ReadAllLinesLineLength(IntPtr pathPointer, long pathLength, int index)
+    {
+        return Encoding.UTF8.GetByteCount(GetUtf8FileLine(pathPointer, pathLength, index));
+    }
+
+    public static int CopyUtf8ReadAllLinesLine(IntPtr pathPointer, long pathLength, int index, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return WriteUtf8String(GetUtf8FileLine(pathPointer, pathLength, index), destinationPointer, destinationCapacity);
+    }
+
     public static int Utf8PathGetRootLengthUtf8(IntPtr pathPointer, long pathLength)
     {
         return Encoding.UTF8.GetByteCount(GetRootUtf8Path(pathPointer, pathLength));
@@ -302,6 +362,28 @@ public static class RuntimeBridgeHelpers
         var bytes = new byte[checked((int)length)];
         Marshal.Copy(pointer, bytes, 0, bytes.Length);
         return Encoding.UTF8.GetString(bytes);
+    }
+
+    private static string GetCommandLineArg(int index)
+    {
+        var args = Environment.GetCommandLineArgs();
+        if ((uint)index >= (uint)args.Length)
+        {
+            throw new IndexOutOfRangeException($"Command line argument index {index} was outside the available range 0..{args.Length - 1}.");
+        }
+
+        return args[index];
+    }
+
+    private static string GetUtf8FileLine(IntPtr pathPointer, long pathLength, int index)
+    {
+        var lines = File.ReadAllLines(ReadUtf8String(pathPointer, pathLength));
+        if ((uint)index >= (uint)lines.Length)
+        {
+            throw new IndexOutOfRangeException($"File line index {index} was outside the available range 0..{lines.Length - 1}.");
+        }
+
+        return lines[index];
     }
 
     private static int WriteUtf8String(string value, IntPtr destinationPointer, long destinationCapacity)

@@ -38,12 +38,30 @@ public static class RustBitcodeCompiler
         var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain, options.BinaryTargetName);
         var buildArguments = CreateBuildArguments(manifestPath, options);
 
-        RunProcess(
-            fileName: "cargo",
-            arguments: buildArguments,
-            workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
+        string? buildFailure = null;
 
-        var artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, options.Release, cargoMetadata.TargetName, options.Target);
+        try
+        {
+            RunProcess(
+                fileName: "cargo",
+                arguments: buildArguments,
+                workingDirectory: Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory());
+        }
+        catch (InvalidOperationException ex) when (!string.IsNullOrWhiteSpace(options.BinaryTargetName))
+        {
+            buildFailure = ex.Message;
+        }
+
+        string artifactPath;
+        try
+        {
+            artifactPath = FindBitcodeArtifact(cargoMetadata.TargetDirectory, options.Release, cargoMetadata.TargetName, options.Target);
+        }
+        catch when (buildFailure is not null)
+        {
+            throw new InvalidOperationException(buildFailure);
+        }
+
         if (string.IsNullOrWhiteSpace(options.OutputBitcodePath))
         {
             return artifactPath;

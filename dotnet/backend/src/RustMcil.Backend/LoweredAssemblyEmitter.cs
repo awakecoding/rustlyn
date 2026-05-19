@@ -1,11 +1,14 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace RustMcil.Backend;
 
 public static class LoweredAssemblyEmitter
 {
     private const string GeneratedTypeName = "RustMcil.GeneratedModule";
+    private const string GeneratedEntrypointTypeName = "GeneratedEntryPoint";
 
     public static void EmitBitcode(string artifactPath, string outputAssemblyPath, string? llvmRoot = null)
     {
@@ -25,7 +28,12 @@ public static class LoweredAssemblyEmitter
         Directory.CreateDirectory(Path.GetDirectoryName(outputFullPath) ?? throw new InvalidOperationException("Output directory could not be determined."));
 
         var assemblyName = Path.GetFileNameWithoutExtension(outputFullPath);
-        var assembly = AssemblyDefinition.CreateAssembly(new AssemblyNameDefinition(assemblyName, new Version(1, 0, 0, 0)), assemblyName, ModuleKind.Dll);
+        var emittedFunctions = GetReachableFunctions(loweredModule.Functions);
+        var consoleEntrypoint = TrySelectConsoleEntrypoint(emittedFunctions);
+        var assembly = AssemblyDefinition.CreateAssembly(
+            new AssemblyNameDefinition(assemblyName, new Version(1, 0, 0, 0)),
+            assemblyName,
+            consoleEntrypoint is null ? ModuleKind.Dll : ModuleKind.Console);
         var module = assembly.MainModule;
 
         var generatedType = new TypeDefinition(
@@ -38,7 +46,6 @@ public static class LoweredAssemblyEmitter
 
         var vectorHelpers = EmitVectorHelpers(module, generatedType);
         var memoryHelpers = EmitMemoryHelpers(module, generatedType);
-        var emittedFunctions = GetReachableFunctions(loweredModule.Functions);
         var pointerBackedGlobals = CollectPointerBackedGlobals(emittedFunctions);
 
         var methodMap = new Dictionary<string, MethodDefinition>(StringComparer.Ordinal);
@@ -82,7 +89,127 @@ public static class LoweredAssemblyEmitter
             EmitFunctionBody(module, methodMap[function.Name], function, methodMap, fieldMap, globalMap, vectorHelpers, memoryHelpers);
         }
 
+        if (consoleEntrypoint is not null)
+        {
+            EmitConsoleEntrypoint(module, methodMap, consoleEntrypoint);
+        }
+
         assembly.Write(outputFullPath);
+
+        if (consoleEntrypoint is not null)
+        {
+            WriteRuntimeConfig(outputFullPath);
+            CopyRuntimeSupportAssembly(outputFullPath);
+        }
+    }
+
+    private static LoweredFunction? TrySelectConsoleEntrypoint(IReadOnlyList<LoweredFunction> functions)
+    {
+        var mainFunction = functions.SingleOrDefault(static function => string.Equals(function.Name, "main", StringComparison.Ordinal));
+        if (mainFunction is null)
+        {
+            return null;
+        }
+
+        if (mainFunction.Parameters.Count != 0)
+        {
+            return null;
+        }
+
+        if (!string.Equals(mainFunction.ReturnType, "void", StringComparison.Ordinal)
+            && !string.Equals(mainFunction.ReturnType, "i32", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return mainFunction;
+    }
+
+    private static void EmitConsoleEntrypoint(ModuleDefinition module, IReadOnlyDictionary<string, MethodDefinition> methodMap, LoweredFunction consoleEntrypoint)
+    {
+        var generatedEntrypointType = new TypeDefinition(
+            "RustMcil",
+            GeneratedEntrypointTypeName,
+            TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class,
+            module.TypeSystem.Object);
+
+        module.Types.Add(generatedEntrypointType);
+
+        var wrapperMethod = new MethodDefinition(
+            "Main",
+            MethodAttributes.Public | MethodAttributes.Static,
+            module.TypeSystem.Int32);
+
+        wrapperMethod.Parameters.Add(new ParameterDefinition("args", ParameterAttributes.None, module.ImportReference(typeof(string[]))));
+        wrapperMethod.Body.InitLocals = true;
+        wrapperMethod.Body.MaxStackSize = 2;
+        generatedEntrypointType.Methods.Add(wrapperMethod);
+
+        var il = wrapperMethod.Body.GetILProcessor();
+        var targetMethod = methodMap[consoleEntrypoint.Name];
+        il.Append(il.Create(OpCodes.Call, targetMethod));
+
+        if (string.Equals(consoleEntrypoint.ReturnType, "void", StringComparison.Ordinal))
+        {
+            il.Append(il.Create(OpCodes.Ldc_I4_0));
+        }
+
+        il.Append(il.Create(OpCodes.Ret));
+        module.EntryPoint = wrapperMethod;
+    }
+
+    private static void WriteRuntimeConfig(string outputAssemblyPath)
+    {
+        var runtimeConfigPath = Path.ChangeExtension(outputAssemblyPath, ".runtimeconfig.json");
+        var runtimeConfig = new
+        {
+            runtimeOptions = new
+            {
+                tfm = $"net{Environment.Version.Major}.{Environment.Version.Minor}",
+                framework = new
+                {
+                    name = "Microsoft.NETCore.App",
+                    version = GetCurrentRuntimeVersion()
+                },
+                rollForward = "LatestPatch"
+            }
+        };
+
+        File.WriteAllText(
+            runtimeConfigPath,
+            JsonSerializer.Serialize(runtimeConfig, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private static string GetCurrentRuntimeVersion()
+    {
+        var description = RuntimeInformation.FrameworkDescription;
+        var separatorIndex = description.LastIndexOf(' ');
+        if (separatorIndex >= 0 && separatorIndex < description.Length - 1)
+        {
+            return description[(separatorIndex + 1)..];
+        }
+
+        return Environment.Version.ToString();
+    }
+
+    private static void CopyRuntimeSupportAssembly(string outputAssemblyPath)
+    {
+        var supportAssemblyPath = typeof(RuntimeBridgeHelpers).Assembly.Location;
+        if (string.IsNullOrWhiteSpace(supportAssemblyPath) || !File.Exists(supportAssemblyPath))
+        {
+            return;
+        }
+
+        var destinationPath = Path.Combine(
+            Path.GetDirectoryName(outputAssemblyPath) ?? throw new InvalidOperationException("Output directory could not be determined."),
+            Path.GetFileName(supportAssemblyPath));
+
+        if (string.Equals(Path.GetFullPath(destinationPath), Path.GetFullPath(supportAssemblyPath), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        File.Copy(supportAssemblyPath, destinationPath, overwrite: true);
     }
 
     private static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions)
@@ -2113,6 +2240,78 @@ public static class LoweredAssemblyEmitter
             var popCountMethod = typeof(System.Numerics.BitOperations).GetMethod(nameof(System.Numerics.BitOperations.PopCount), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(uint)])
                 ?? throw new InvalidOperationException("BitOperations.PopCount(uint) could not be resolved.");
             methodReference = module.ImportReference(popCountMethod);
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_command_line_arg_count", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.CommandLineArgCount));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_command_line_arg_utf8_len", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.Utf8CommandLineArgLength));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_copy_command_line_arg_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.CopyUtf8CommandLineArg));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_line_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWriteLineUtf8));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_prefixed_line_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWritePrefixedLineUtf8));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_path_line_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWritePathLineUtf8));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_numbered_line_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWriteNumberedLineUtf8));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_i32", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWriteI32));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_path_count_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWritePathCountUtf8));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_file_read_all_lines_count", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.Utf8ReadAllLinesCount));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_file_read_all_lines_line_utf8_len", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.Utf8ReadAllLinesLineLength));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "rust_mcil_dotnet_file_copy_read_all_lines_line_utf8", StringComparison.Ordinal))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.CopyUtf8ReadAllLinesLine));
+            return true;
         }
 
         if (string.Equals(call.Callee, "rust_mcil_dotnet_string_contains", StringComparison.Ordinal))

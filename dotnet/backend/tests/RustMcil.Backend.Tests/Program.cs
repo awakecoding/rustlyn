@@ -455,6 +455,17 @@ RunOptionalTest("GlobalInitSampleInvokesViaBackend", GlobalInitSampleInvokesViaB
 RunOptionalTest("PairI64SampleInvokesViaBackend", PairI64SampleInvokesViaBackend, failures);
 RunOptionalTest("AddSampleBuildsFromCargoManifest", AddSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("BinTrivialSampleBuildsFromCargoManifest", BinTrivialSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("BinTrivialSampleEmitsRunnableConsoleAssembly", BinTrivialSampleEmitsRunnableConsoleAssembly, failures);
+RunOptionalTest("DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput", DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveHiddenFilenamesSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveHiddenFilenamesSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveNumberedSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveNumberedSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveHiddenFilenamesNumberedSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveHiddenFilenamesNumberedSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveListMatchesSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveListMatchesSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveCountSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveCountSingleFileSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("LousygrepPrimitiveCountSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveCountSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("AndSampleBuildsFromCargoManifest", AndSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("ShlSampleBuildsFromCargoManifest", ShlSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AshrSampleBuildsFromCargoManifest", AshrSampleBuildsFromCargoManifest, failures);
@@ -6185,6 +6196,513 @@ static void BinTrivialSampleBuildsFromCargoManifest()
     Assert(moduleSummary.Functions.Any(static function => function.Name == "main"), "Expected Cargo-built bin_trivial to preserve a main entrypoint symbol.");
     Assert(moduleSummary.BasicBlockCount > 0, $"Expected Cargo-built bin_trivial to contain at least one basic block, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
     Assert(moduleSummary.InstructionCount > 0, $"Expected Cargo-built bin_trivial to contain at least one instruction, but found {moduleSummary.InstructionCount.ToString(CultureInfo.InvariantCulture)}.");
+}
+
+static void BinTrivialSampleEmitsRunnableConsoleAssembly()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("bin_trivial", "bin_trivial");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted bin_trivial console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+}
+
+static void DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("dotnet_runtime_args", "dotnet_runtime_args");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("alpha-runtime");
+    startInfo.ArgumentList.Add("runtime");
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted dotnet_runtime_args console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, "alpha-runtime", StringComparison.Ordinal),
+        $"Expected emitted dotnet_runtime_args console assembly to print 'alpha-runtime', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        $"{fixturePath}:alpha-runtime",
+        $"{fixturePath}:runtime-beta",
+        $"{secondFixturePath}:runtime-gamma"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        "alpha-runtime",
+        "runtime-beta"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted single-file lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted single-file lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-n");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        "2:alpha-runtime",
+        "4:runtime-beta"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted numbered single-file lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted numbered single-file lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveNumberedSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-n");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        $"{fixturePath}:2:alpha-runtime",
+        $"{fixturePath}:4:runtime-beta",
+        $"{secondFixturePath}:2:runtime-gamma"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted numbered lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted numbered lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveHiddenFilenamesSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-h");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        "alpha-runtime",
+        "runtime-beta",
+        "runtime-gamma"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted hidden-filename lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted hidden-filename lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveHiddenFilenamesNumberedSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-h");
+    startInfo.ArgumentList.Add("-n");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        "2:alpha-runtime",
+        "4:runtime-beta",
+        "2:runtime-gamma"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted hidden-filename numbered lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted hidden-filename numbered lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveListMatchesSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-l");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        fixturePath,
+        secondFixturePath
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted list-matches lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted list-matches lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveCountSingleFileSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-c");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted count single-file lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, "2", StringComparison.Ordinal),
+        $"Expected emitted count single-file lousygrep_primitive console assembly to print '2', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void LousygrepPrimitiveCountSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("lousygrep_primitive", "lousygrep_primitive");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("-c");
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        $"{fixturePath}:2",
+        $"{secondFixturePath}:1"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted count lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted count lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
 }
 
 static void AndSampleBuildsFromCargoManifest()
@@ -16331,6 +16849,12 @@ file sealed class TemporaryFile : IDisposable
         if (File.Exists(Path))
         {
             File.Delete(Path);
+        }
+
+        var runtimeConfigPath = System.IO.Path.ChangeExtension(Path, ".runtimeconfig.json");
+        if (File.Exists(runtimeConfigPath))
+        {
+            File.Delete(runtimeConfigPath);
         }
     }
 }

@@ -481,6 +481,26 @@ $sampleChecks = @{
         Expected = 189
         SupportedModes = @("Cargo")
     }
+    dotnet_runtime_args = @{
+        Arguments = @("alpha-runtime", "runtime")
+        ExpectedOutput = "alpha-runtime"
+        BinaryTarget = "dotnet_runtime_args"
+        SupportedModes = @("Cargo")
+    }
+    lousygrep_primitive = @{
+        Arguments = @(
+            "runtime",
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"),
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt")
+        )
+        ExpectedOutput = @(
+            "$((Join-Path $workspaceRoot 'samples\lousygrep_primitive\fixtures\input.txt')):alpha-runtime",
+            "$((Join-Path $workspaceRoot 'samples\lousygrep_primitive\fixtures\input.txt')):runtime-beta",
+            "$((Join-Path $workspaceRoot 'samples\lousygrep_primitive\fixtures\second.txt')):runtime-gamma"
+        )
+        BinaryTarget = "lousygrep_primitive"
+        SupportedModes = @("Cargo")
+    }
     dotnet_runtime_roundtrip = @{
         Method = "dotnet_runtime_roundtrip_score"
         Arguments = @()
@@ -1611,8 +1631,28 @@ function Invoke-TranslateSmokeCheck {
 
     $translatedBitcodePath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}.bc" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
     $translatedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
+    $translatedRuntimeConfigPath = [System.IO.Path]::ChangeExtension($translatedAssemblyPath, ".runtimeconfig.json")
+    $translatedBackendAssemblyPath = Join-Path ([System.IO.Path]::GetDirectoryName($translatedAssemblyPath)) "RustMcil.Backend.dll"
     try {
-        dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- translate $CratePath --out $translatedAssemblyPath --bitcode-out $translatedBitcodePath | Out-Null
+        $translateCommand = @(
+            'run',
+            '--project',
+            '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
+            '--',
+            'translate',
+            $CratePath,
+            '--out',
+            $translatedAssemblyPath,
+            '--bitcode-out',
+            $translatedBitcodePath
+        )
+
+        if ($Check.ContainsKey("BinaryTarget")) {
+            $translateCommand += '--bin'
+            $translateCommand += $Check.BinaryTarget
+        }
+
+        & dotnet @translateCommand | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run translate failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
@@ -1627,33 +1667,63 @@ function Invoke-TranslateSmokeCheck {
             throw "dotnet run lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        $invokeCommand = @(
-            'run',
-            '--project',
-            '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
-            '--',
-            'invoke',
-            $translatedBitcodePath,
-            '--method',
-            $Check.Method
-        )
+        if ($Check.ContainsKey("ExpectedOutput")) {
+            if (-not (Test-Path $translatedRuntimeConfigPath)) {
+                throw "Translated console sample '$CurrentSample' did not produce runtimeconfig '$translatedRuntimeConfigPath'."
+            }
 
-        foreach ($argument in $arguments) {
-            $invokeCommand += '--arg'
-            $invokeCommand += (Format-InvokeArgument -Value $argument)
+            if (-not (Test-Path $translatedBackendAssemblyPath)) {
+                throw "Translated console sample '$CurrentSample' did not copy runtime support assembly '$translatedBackendAssemblyPath'."
+            }
+
+            $consoleOutput = & dotnet $translatedAssemblyPath @arguments 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet run translated console failed for '$CurrentSample' with exit code $LASTEXITCODE`n$($consoleOutput | Out-String)"
+            }
+
+            $actual = (($consoleOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 }) -join [Environment]::NewLine
+            $expectedOutput = if ($Check.ExpectedOutput -is [System.Array]) {
+                (($Check.ExpectedOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 }) -join [Environment]::NewLine
+            }
+            else {
+                [string]$Check.ExpectedOutput
+            }
+
+            if ($actual -ne $expectedOutput) {
+                throw "Translated console sample '$CurrentSample' printed '$actual', expected '$expectedOutput'."
+            }
+
+            Write-Host ("PASS {0} (cargo console) => {1}" -f $CurrentSample, $actual)
         }
+        else {
+            $invokeCommand = @(
+                'run',
+                '--project',
+                '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
+                '--',
+                'invoke',
+                $translatedBitcodePath,
+                '--method',
+                $Check.Method
+            )
 
-        $invokeOutput = & dotnet @invokeCommand 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet run invoke failed for translated '$CurrentSample' with exit code $LASTEXITCODE`n$($invokeOutput | Out-String)"
+            foreach ($argument in $arguments) {
+                $invokeCommand += '--arg'
+                $invokeCommand += (Format-InvokeArgument -Value $argument)
+            }
+
+            $invokeOutput = & dotnet @invokeCommand 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet run invoke failed for translated '$CurrentSample' with exit code $LASTEXITCODE`n$($invokeOutput | Out-String)"
+            }
+
+            $actual = (($invokeOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1)
+            if ($actual -ne [string]$Check.Expected) {
+                throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
+            }
+
+            Write-Host ("PASS {0} (cargo) => {1}" -f $CurrentSample, $actual)
         }
-
-        $actual = (($invokeOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1)
-        if ($actual -ne [string]$Check.Expected) {
-            throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
-        }
-
-        Write-Host ("PASS {0} (cargo) => {1}" -f $CurrentSample, $actual)
     }
     finally {
         if ($Check.ContainsKey("Cleanup")) {
@@ -1662,6 +1732,14 @@ function Invoke-TranslateSmokeCheck {
 
         if (Test-Path $translatedAssemblyPath) {
             Remove-Item -Force $translatedAssemblyPath
+        }
+
+        if (Test-Path $translatedRuntimeConfigPath) {
+            Remove-Item -Force $translatedRuntimeConfigPath
+        }
+
+        if (Test-Path $translatedBackendAssemblyPath) {
+            Remove-Item -Force $translatedBackendAssemblyPath
         }
 
         if (Test-Path $translatedBitcodePath) {
