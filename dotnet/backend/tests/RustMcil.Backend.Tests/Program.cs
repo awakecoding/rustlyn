@@ -687,6 +687,30 @@ RunOptionalTest("DotnetRuntimePathOneHundredSixteenStageRankSampleBuildsFromCarg
 RunOptionalTest("DotnetRuntimePathOneHundredSeventeenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredSeventeenStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("DotnetRuntimePathOneHundredEighteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredEighteenStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("DotnetRuntimePathOneHundredNineteenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredNineteenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredTwentyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredTwentyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyFourStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyFourStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyFiveStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyFiveStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtySixStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtySixStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtySevenStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtySevenStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyEightStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyEightStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredThirtyNineStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredThirtyNineStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFortyStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest, failures);
 
 if (failures.Count == 0)
 {
@@ -15607,6 +15631,222 @@ static void DotnetRuntimePathSeventyFourStageRankSampleBuildsFromCargoManifest()
             "dotnet_runtime_path_one_hundred_nineteen_stage_rank_score",
             1376,
             "one thousand three hundred seventy-six");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_stage_rank_score",
+            1387,
+            "one thousand three hundred eighty-seven");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_one_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_one_stage_rank_score",
+            1398,
+            "one thousand three hundred ninety-eight");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_two_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_two_stage_rank_score",
+            1409,
+            "one thousand four hundred nine");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_three_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_three_stage_rank_score",
+            1420,
+            "one thousand four hundred twenty");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyFourStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_four_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_four_stage_rank_score",
+            1431,
+            "one thousand four hundred thirty-one");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_five_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_five_stage_rank_score",
+            1442,
+            "one thousand four hundred forty-two");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentySixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_six_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_six_stage_rank_score",
+            1453,
+            "one thousand four hundred fifty-three");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentySevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_seven_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_seven_stage_rank_score",
+            1464,
+            "one thousand four hundred sixty-four");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_eight_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_eight_stage_rank_score",
+            1475,
+            "one thousand four hundred seventy-five");
+    }
+
+    static void DotnetRuntimePathOneHundredTwentyNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_twenty_nine_stage_rank",
+            "dotnet_runtime_path_one_hundred_twenty_nine_stage_rank_score",
+            1486,
+            "one thousand four hundred eighty-six");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_stage_rank_score",
+            1497,
+            "one thousand four hundred ninety-seven");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_one_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_one_stage_rank_score",
+            1508,
+            "one thousand five hundred eight");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_two_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_two_stage_rank_score",
+            1519,
+            "one thousand five hundred nineteen");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_three_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_three_stage_rank_score",
+            1530,
+            "one thousand five hundred thirty");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyFourStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_four_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_four_stage_rank_score",
+            1541,
+            "one thousand five hundred forty-one");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyFiveStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_five_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_five_stage_rank_score",
+            1552,
+            "one thousand five hundred fifty-two");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtySixStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_six_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_six_stage_rank_score",
+            1563,
+            "one thousand five hundred sixty-three");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtySevenStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_seven_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_seven_stage_rank_score",
+            1574,
+            "one thousand five hundred seventy-four");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyEightStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_eight_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_eight_stage_rank_score",
+            1585,
+            "one thousand five hundred eighty-five");
+    }
+
+    static void DotnetRuntimePathOneHundredThirtyNineStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_thirty_nine_stage_rank",
+            "dotnet_runtime_path_one_hundred_thirty_nine_stage_rank_score",
+            1596,
+            "one thousand five hundred ninety-six");
+    }
+
+    static void DotnetRuntimePathOneHundredFortyStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_forty_stage_rank",
+            "dotnet_runtime_path_one_hundred_forty_stage_rank_score",
+            1607,
+            "one thousand six hundred seven");
+    }
+
+    static void DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_forty_one_stage_rank",
+            "dotnet_runtime_path_one_hundred_forty_one_stage_rank_score",
+            1618,
+            "one thousand six hundred eighteen");
+    }
+
+    static void DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_forty_two_stage_rank",
+            "dotnet_runtime_path_one_hundred_forty_two_stage_rank_score",
+            1629,
+            "one thousand six hundred twenty-nine");
+    }
+
+    static void DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest()
+    {
+        ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
+            "dotnet_runtime_path_one_hundred_forty_three_stage_rank",
+            "dotnet_runtime_path_one_hundred_forty_three_stage_rank_score",
+            1640,
+            "one thousand six hundred forty");
     }
 
 static void ValidateDotnetRuntimePathStageRankSampleBuildsFromCargoManifest(
