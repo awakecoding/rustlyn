@@ -30,6 +30,7 @@ public static class LoweredAssemblyEmitter
         var assemblyName = Path.GetFileNameWithoutExtension(outputFullPath);
         var emittedFunctions = GetReachableFunctions(loweredModule.Functions);
         var consoleEntrypoint = TrySelectConsoleEntrypoint(emittedFunctions);
+        var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions);
         var assembly = AssemblyDefinition.CreateAssembly(
             new AssemblyNameDefinition(assemblyName, new Version(1, 0, 0, 0)),
             assemblyName,
@@ -91,7 +92,7 @@ public static class LoweredAssemblyEmitter
 
         if (consoleEntrypoint is not null)
         {
-            EmitConsoleEntrypoint(module, methodMap, consoleEntrypoint);
+            EmitConsoleEntrypoint(module, methodMap, consoleEntrypoint, requiresAvaloniaSupport);
         }
 
         assembly.Write(outputFullPath);
@@ -99,9 +100,15 @@ public static class LoweredAssemblyEmitter
         if (consoleEntrypoint is not null)
         {
             WriteRuntimeConfig(outputFullPath);
-            CopyRuntimeSupportAssembly(outputFullPath);
+            CopyRuntimeSupportAssemblies(outputFullPath, requiresAvaloniaSupport);
         }
     }
+
+    private static bool RequiresAvaloniaSupport(IReadOnlyList<LoweredFunction> functions)
+        => functions.SelectMany(static function => function.Blocks)
+            .SelectMany(static block => block.Instructions)
+            .OfType<LoweredCallInstruction>()
+            .Any(static call => call.Callee.StartsWith("rust_mcil_avalonia_", StringComparison.Ordinal));
 
     private static LoweredFunction? TrySelectConsoleEntrypoint(IReadOnlyList<LoweredFunction> functions)
     {
@@ -125,7 +132,7 @@ public static class LoweredAssemblyEmitter
         return mainFunction;
     }
 
-    private static void EmitConsoleEntrypoint(ModuleDefinition module, IReadOnlyDictionary<string, MethodDefinition> methodMap, LoweredFunction consoleEntrypoint)
+    private static void EmitConsoleEntrypoint(ModuleDefinition module, IReadOnlyDictionary<string, MethodDefinition> methodMap, LoweredFunction consoleEntrypoint, bool requiresStaThread)
     {
         var generatedEntrypointType = new TypeDefinition(
             "RustMcil",
@@ -141,6 +148,13 @@ public static class LoweredAssemblyEmitter
             module.TypeSystem.Int32);
 
         wrapperMethod.Parameters.Add(new ParameterDefinition("args", ParameterAttributes.None, module.ImportReference(typeof(string[]))));
+        if (requiresStaThread)
+        {
+            var staThreadConstructor = typeof(STAThreadAttribute).GetConstructor(Type.EmptyTypes)
+                ?? throw new InvalidOperationException("STAThreadAttribute constructor could not be resolved.");
+            wrapperMethod.CustomAttributes.Add(new CustomAttribute(module.ImportReference(staThreadConstructor)));
+        }
+
         wrapperMethod.Body.InitLocals = true;
         wrapperMethod.Body.MaxStackSize = 2;
         generatedEntrypointType.Methods.Add(wrapperMethod);
@@ -192,9 +206,18 @@ public static class LoweredAssemblyEmitter
         return Environment.Version.ToString();
     }
 
-    private static void CopyRuntimeSupportAssembly(string outputAssemblyPath)
+    private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, bool requiresAvaloniaSupport)
     {
-        var supportAssemblyPath = typeof(RuntimeBridgeHelpers).Assembly.Location;
+        CopySupportAssembly(typeof(RuntimeBridgeHelpers).Assembly.Location, outputAssemblyPath);
+
+        if (requiresAvaloniaSupport)
+        {
+            CopyAvaloniaSupportFiles(outputAssemblyPath);
+        }
+    }
+
+    private static void CopySupportAssembly(string supportAssemblyPath, string outputAssemblyPath)
+    {
         if (string.IsNullOrWhiteSpace(supportAssemblyPath) || !File.Exists(supportAssemblyPath))
         {
             return;
@@ -210,6 +233,69 @@ public static class LoweredAssemblyEmitter
         }
 
         File.Copy(supportAssemblyPath, destinationPath, overwrite: true);
+    }
+
+    private static void CopyAvaloniaSupportFiles(string outputAssemblyPath)
+    {
+        var supportAssemblyPath = typeof(RustMcil.AvaloniaSupport.AvaloniaBridge).Assembly.Location;
+        if (string.IsNullOrWhiteSpace(supportAssemblyPath) || !File.Exists(supportAssemblyPath))
+        {
+            return;
+        }
+
+        var sourceDirectory = Path.GetDirectoryName(supportAssemblyPath)
+            ?? throw new InvalidOperationException("Avalonia support assembly directory could not be determined.");
+        var outputDirectory = Path.GetDirectoryName(outputAssemblyPath)
+            ?? throw new InvalidOperationException("Output directory could not be determined.");
+
+        foreach (var sourcePath in Directory.GetFiles(sourceDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+        {
+            CopyFileToDirectory(sourcePath, outputDirectory);
+        }
+
+        var runtimesDirectory = Path.Combine(sourceDirectory, "runtimes");
+        if (Directory.Exists(runtimesDirectory))
+        {
+            CopyDirectory(runtimesDirectory, Path.Combine(outputDirectory, "runtimes"));
+            CopyCurrentRuntimeNativeAssets(runtimesDirectory, outputDirectory);
+        }
+    }
+
+    private static void CopyCurrentRuntimeNativeAssets(string runtimesDirectory, string outputDirectory)
+    {
+        var nativeDirectory = Path.Combine(runtimesDirectory, RuntimeInformation.RuntimeIdentifier, "native");
+        if (!Directory.Exists(nativeDirectory))
+        {
+            return;
+        }
+
+        foreach (var sourcePath in Directory.GetFiles(nativeDirectory, "*", SearchOption.TopDirectoryOnly))
+        {
+            CopyFileToDirectory(sourcePath, outputDirectory);
+        }
+    }
+
+    private static void CopyFileToDirectory(string sourcePath, string outputDirectory)
+    {
+        var destinationPath = Path.Combine(outputDirectory, Path.GetFileName(sourcePath));
+        if (string.Equals(Path.GetFullPath(destinationPath), Path.GetFullPath(sourcePath), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        File.Copy(sourcePath, destinationPath, overwrite: true);
+    }
+
+    private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+        foreach (var sourcePath in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDirectory, sourcePath);
+            var destinationPath = Path.Combine(destinationDirectory, relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? destinationDirectory);
+            File.Copy(sourcePath, destinationPath, overwrite: true);
+        }
     }
 
     private static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions)
@@ -2193,6 +2279,11 @@ public static class LoweredAssemblyEmitter
         MethodReference? methodReference = null;
         FieldReference? fieldReference = null;
 
+        if (TryEmitAvaloniaBridgeCall(module, il, parameters, locals, fieldMap, call))
+        {
+            return true;
+        }
+
         if (string.Equals(call.Callee, "rust_mcil_dotnet_is_windows", StringComparison.Ordinal))
         {
             EnsureRuntimeBridgeArgumentCount(call, expectedArgumentCount: 0);
@@ -2531,6 +2622,44 @@ public static class LoweredAssemblyEmitter
 
         il.Append(il.Create(OpCodes.Call, module.ImportReference(newLineGetter)));
         il.Append(il.Create(OpCodes.Callvirt, module.ImportReference(stringLengthGetter)));
+        return true;
+    }
+
+    private static bool TryEmitAvaloniaBridgeCall(ModuleDefinition module, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, IReadOnlyDictionary<string, FieldDefinition> fieldMap, LoweredCallInstruction call)
+    {
+        var bridgeCall = call.Callee switch
+        {
+            "rust_mcil_avalonia_run_app" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.RunApp), ArgumentCount: 0),
+            "rust_mcil_avalonia_window_new" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.CreateWindow), ArgumentCount: 0),
+            "rust_mcil_avalonia_stack_panel_new" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.CreateStackPanel), ArgumentCount: 0),
+            "rust_mcil_avalonia_text_block_new" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.CreateTextBlock), ArgumentCount: 0),
+            "rust_mcil_avalonia_button_new" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.CreateButton), ArgumentCount: 0),
+            "rust_mcil_avalonia_window_set_title_utf8" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetWindowTitleUtf8), ArgumentCount: 3),
+            "rust_mcil_avalonia_window_set_size" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetWindowSize), ArgumentCount: 3),
+            "rust_mcil_avalonia_window_set_content" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetWindowContent), ArgumentCount: 2),
+            "rust_mcil_avalonia_stack_panel_set_spacing" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetStackPanelSpacing), ArgumentCount: 2),
+            "rust_mcil_avalonia_stack_panel_set_margin" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetStackPanelMargin), ArgumentCount: 2),
+            "rust_mcil_avalonia_stack_panel_add_child" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.AddStackPanelChild), ArgumentCount: 2),
+            "rust_mcil_avalonia_text_block_set_text_utf8" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetTextBlockTextUtf8), ArgumentCount: 3),
+            "rust_mcil_avalonia_button_set_content_utf8" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetButtonContentUtf8), ArgumentCount: 3),
+            "rust_mcil_avalonia_button_set_on_click" => (MethodName: nameof(RustMcil.AvaloniaSupport.AvaloniaBridge.SetButtonOnClick), ArgumentCount: 3),
+            _ => default
+        };
+
+        if (bridgeCall.MethodName is null)
+        {
+            return false;
+        }
+
+        EnsureRuntimeBridgeArgumentCount(call, bridgeCall.ArgumentCount);
+        foreach (var argument in call.Arguments)
+        {
+            LoadValue(il, parameters, locals, argument.Type, argument.Value, fieldMap);
+        }
+
+        var bridgeMethod = typeof(RustMcil.AvaloniaSupport.AvaloniaBridge).GetMethod(bridgeCall.MethodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            ?? throw new InvalidOperationException($"Avalonia bridge method '{bridgeCall.MethodName}' could not be resolved.");
+        il.Append(il.Create(OpCodes.Call, module.ImportReference(bridgeMethod)));
         return true;
     }
 

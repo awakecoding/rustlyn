@@ -27,7 +27,9 @@ The goal is not to recreate the old SDK packaging and project-system experience 
 
 ### 1. Sample crates
 
-`samples/` contains small Rust crates that isolate specific behaviors such as arithmetic, control flow, comparisons, vector reductions, and adjacent transformed loops.
+`samples/` contains small Rust crates that isolate specific behaviors such as arithmetic, control flow, comparisons, vector reductions, adjacent transformed loops, and managed runtime bridge calls.
+
+`samples/avalonia_hello` is the first desktop-app bridge fixture. Its Rust entrypoint calls `rust_mcil_avalonia_run_app`, and exported Rust callbacks build a real window with a stack panel, text block, and button through explicit `rust_mcil_avalonia_*` bridge calls. The support assembly owns Avalonia startup, object handles, and event dispatch, while Rust owns UI composition and the click behavior that updates the text. The sample is deliberately scoped to proving the Rust bitcode -> managed assembly -> Avalonia control API path; it is not generated Avalonia bindings, XAML translation, data binding, or general delegate support.
 
 ### 2. Bitcode production
 
@@ -53,6 +55,8 @@ The current design has two especially important ownership boundaries:
 
 - `LoweredIrLowerer.cs`: responsible for parsing and normalizing the lowered IR surface
 - `LoweredAssemblyEmitter.cs`: responsible for managed IL emission, helper generation, intrinsic dispatch, and runtime glue
+
+Runtime bridge support assemblies live beside the backend when a slice needs managed functionality that should not be generated as IL directly. The Avalonia slice uses this pattern so the emitter recognizes the bridge symbol family, adds the appropriate entrypoint metadata, copies the support dependencies with the generated assembly, and leaves Avalonia lifetime/threading details inside the support assembly.
 
 When a slice fails, the intended workflow is to patch the direct owner rather than layering fixes across unrelated surfaces.
 

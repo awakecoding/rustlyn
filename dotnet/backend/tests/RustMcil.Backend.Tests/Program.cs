@@ -456,6 +456,8 @@ RunOptionalTest("PairI64SampleInvokesViaBackend", PairI64SampleInvokesViaBackend
 RunOptionalTest("AddSampleBuildsFromCargoManifest", AddSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("BinTrivialSampleBuildsFromCargoManifest", BinTrivialSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("BinTrivialSampleEmitsRunnableConsoleAssembly", BinTrivialSampleEmitsRunnableConsoleAssembly, failures);
+RunOptionalTest("AvaloniaHelloSampleBuildsFromCargoManifest", AvaloniaHelloSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("AvaloniaHelloSampleEmitsRunnableSmokeOutput", AvaloniaHelloSampleEmitsRunnableSmokeOutput, failures);
 RunOptionalTest("DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput", DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput, failures);
@@ -6231,6 +6233,112 @@ static void BinTrivialSampleEmitsRunnableConsoleAssembly()
 
     Assert(process.ExitCode == 0,
         $"Expected emitted bin_trivial console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+}
+
+static void AvaloniaHelloSampleBuildsFromCargoManifest()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("avalonia_hello", "avalonia_hello");
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var mainFunction = loweredModule.Functions.Single(static function => function.Name == "main");
+    var buildUiFunction = loweredModule.Functions.Single(static function => function.Name == "avalonia_build_ui");
+    var onClickFunction = loweredModule.Functions.Single(static function => function.Name == "avalonia_on_click");
+
+    Assert(mainFunction.ReturnType == "i32", $"Expected Cargo-built avalonia_hello main to lower to return type i32, but got '{mainFunction.ReturnType}'.");
+    Assert(mainFunction.Parameters.Count == 0, $"Expected Cargo-built avalonia_hello main to have no parameters, but got {mainFunction.Parameters.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(buildUiFunction.ReturnType == "i32", $"Expected Cargo-built avalonia_build_ui to lower to return type i32, but got '{buildUiFunction.ReturnType}'.");
+    Assert(buildUiFunction.Parameters.Count == 0, $"Expected Cargo-built avalonia_build_ui to have no parameters, but got {buildUiFunction.Parameters.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(onClickFunction.ReturnType == "void", $"Expected Cargo-built avalonia_on_click to lower to return type void, but got '{onClickFunction.ReturnType}'.");
+    Assert(onClickFunction.Parameters.Count == 2, $"Expected Cargo-built avalonia_on_click to have two parameters, but got {onClickFunction.Parameters.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var mainBridgeCalls = mainFunction.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Where(static call => string.Equals(call.Callee, "rust_mcil_avalonia_run_app", StringComparison.Ordinal))
+        .ToArray();
+    Assert(mainBridgeCalls.Length == 1, $"Expected Cargo-built avalonia_hello main to preserve one rust_mcil_avalonia_run_app call, but found {mainBridgeCalls.Length.ToString(CultureInfo.InvariantCulture)}.");
+
+    var buildUiBridgeCalls = buildUiFunction.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Select(static call => call.Callee)
+        .ToHashSet(StringComparer.Ordinal);
+    foreach (var expectedBridgeCall in new[]
+             {
+                 "rust_mcil_avalonia_window_new",
+                 "rust_mcil_avalonia_stack_panel_new",
+                 "rust_mcil_avalonia_text_block_new",
+                 "rust_mcil_avalonia_button_new",
+                 "rust_mcil_avalonia_window_set_title_utf8",
+                 "rust_mcil_avalonia_text_block_set_text_utf8",
+                 "rust_mcil_avalonia_button_set_content_utf8",
+                 "rust_mcil_avalonia_button_set_on_click",
+                 "rust_mcil_avalonia_stack_panel_add_child",
+                 "rust_mcil_avalonia_window_set_content"
+             })
+    {
+        Assert(buildUiBridgeCalls.Contains(expectedBridgeCall), $"Expected Cargo-built avalonia_build_ui to call {expectedBridgeCall}.");
+    }
+
+    var onClickBridgeCalls = onClickFunction.Blocks
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Select(static call => call.Callee)
+        .ToHashSet(StringComparer.Ordinal);
+    Assert(onClickBridgeCalls.Contains("rust_mcil_avalonia_text_block_set_text_utf8"), "Expected Cargo-built avalonia_on_click to update the TextBlock through rust_mcil_avalonia_text_block_set_text_utf8.");
+}
+
+static void AvaloniaHelloSampleEmitsRunnableSmokeOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("avalonia_hello", "avalonia_hello");
+    var tempDirectory = Path.Combine(Path.GetTempPath(), $"rust-msil-avalonia-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDirectory);
+
+    try
+    {
+        var assemblyPath = Path.Combine(tempDirectory, "avalonia_hello.dll");
+        LoweredAssemblyEmitter.EmitBitcode(bitcodePath, assemblyPath, llvmRoot);
+
+        var runtimeConfigPath = Path.ChangeExtension(assemblyPath, ".runtimeconfig.json");
+        Assert(File.Exists(runtimeConfigPath), $"Expected emitted Avalonia assembly '{assemblyPath}' to include a sibling runtimeconfig file.");
+        Assert(File.Exists(Path.Combine(tempDirectory, "RustMcil.Backend.dll")), "Expected emitted Avalonia assembly to copy RustMcil.Backend.dll.");
+        Assert(File.Exists(Path.Combine(tempDirectory, "RustMcil.AvaloniaSupport.dll")), "Expected emitted Avalonia assembly to copy RustMcil.AvaloniaSupport.dll.");
+        Assert(File.Exists(Path.Combine(tempDirectory, "Avalonia.Controls.dll")), "Expected emitted Avalonia assembly to copy Avalonia.Controls.dll.");
+        Assert(Directory.Exists(Path.Combine(tempDirectory, "runtimes")), "Expected emitted Avalonia assembly to copy native runtime assets.");
+
+        var startInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "dotnet",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add(assemblyPath);
+        startInfo.ArgumentList.Add("--smoke");
+
+        using var process = System.Diagnostics.Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start the emitted Avalonia smoke assembly with dotnet.");
+
+        var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+        var standardErrorTask = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        Task.WaitAll(standardOutputTask, standardErrorTask);
+
+        var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+        var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+
+        Assert(process.ExitCode == 0,
+            $"Expected emitted avalonia_hello smoke assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+        Assert(string.Equals(standardOutput, "avalonia:rust-ui:ok", StringComparison.Ordinal),
+            $"Expected emitted avalonia_hello smoke assembly to print 'avalonia:rust-ui:ok', but printed '{standardOutput}'. stderr: '{standardError}'.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDirectory))
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
 }
 
 static void DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput()

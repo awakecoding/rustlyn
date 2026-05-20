@@ -53,6 +53,17 @@ Run the backend regression harness:
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj
 ```
 
+Try the first Avalonia bridge sample:
+
+```powershell
+.\scripts\Test-Smoke.ps1 -Sample avalonia_hello -Mode Cargo
+dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- translate .\samples\avalonia_hello --out .\artifacts\scratch\avalonia_hello.dll --bitcode-out .\artifacts\scratch\avalonia_hello.bc --bin avalonia_hello
+dotnet .\artifacts\scratch\avalonia_hello.dll --smoke
+dotnet .\artifacts\scratch\avalonia_hello.dll
+```
+
+`samples/avalonia_hello` is a Rust-composed UI bridge proof. Rust creates the window, stack panel, text block, and button through backend-recognized Avalonia bridge calls; the support assembly owns the real Avalonia objects, application lifetime, object handles, and click callback dispatch back into generated Rust. The smoke run prints `avalonia:rust-ui:ok`. This is still a narrow bridge fixture, not generated Avalonia bindings, XAML translation, or data binding.
+
 ## Documentation
 
 - [Original Eric Sink design](docs/original-eric-sink-design.md)

@@ -487,6 +487,12 @@ $sampleChecks = @{
         BinaryTarget = "dotnet_runtime_args"
         SupportedModes = @("Cargo")
     }
+    avalonia_hello = @{
+        Arguments = @("--smoke")
+        ExpectedOutput = "avalonia:rust-ui:ok"
+        BinaryTarget = "avalonia_hello"
+        SupportedModes = @("Cargo")
+    }
     lousygrep_primitive = @{
         Arguments = @(
             "runtime",
@@ -1629,11 +1635,14 @@ function Invoke-TranslateSmokeCheck {
         $cleanupState = $prepared.State
     }
 
-    $translatedBitcodePath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}.bc" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
-    $translatedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
+    $translatedOutputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
+    $translatedBitcodePath = Join-Path $translatedOutputDirectory ("{0}.bc" -f $CurrentSample)
+    $translatedAssemblyPath = Join-Path $translatedOutputDirectory ("{0}.dll" -f $CurrentSample)
     $translatedRuntimeConfigPath = [System.IO.Path]::ChangeExtension($translatedAssemblyPath, ".runtimeconfig.json")
     $translatedBackendAssemblyPath = Join-Path ([System.IO.Path]::GetDirectoryName($translatedAssemblyPath)) "RustMcil.Backend.dll"
     try {
+        New-Item -ItemType Directory -Path $translatedOutputDirectory -Force | Out-Null
+
         $translateCommand = @(
             'run',
             '--project',
@@ -1730,20 +1739,8 @@ function Invoke-TranslateSmokeCheck {
             & $Check.Cleanup $cleanupState
         }
 
-        if (Test-Path $translatedAssemblyPath) {
-            Remove-Item -Force $translatedAssemblyPath
-        }
-
-        if (Test-Path $translatedRuntimeConfigPath) {
-            Remove-Item -Force $translatedRuntimeConfigPath
-        }
-
-        if (Test-Path $translatedBackendAssemblyPath) {
-            Remove-Item -Force $translatedBackendAssemblyPath
-        }
-
-        if (Test-Path $translatedBitcodePath) {
-            Remove-Item -Force $translatedBitcodePath
+        if (Test-Path $translatedOutputDirectory) {
+            Remove-Item -Recurse -Force $translatedOutputDirectory
         }
     }
 }
