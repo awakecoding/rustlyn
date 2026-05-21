@@ -116,16 +116,48 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -19;
     }
 
+    let combined_path = match system::io::path::combine(&current_directory, &file_name) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = file_name.release();
+            let _ = current_directory.release();
+            return -20;
+        }
+    };
+
+    let combined_len = match combined_path.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = combined_path.release();
+            let _ = file_name.release();
+            let _ = current_directory.release();
+            return -21;
+        }
+    };
+
+    if combined_len <= char_len {
+        let _ = combined_path.release();
+        let _ = file_name.release();
+        let _ = current_directory.release();
+        return -22;
+    }
+
+    if combined_path.release().is_err() {
+        let _ = file_name.release();
+        let _ = current_directory.release();
+        return -23;
+    }
+
     if file_name.release().is_err() {
         let _ = current_directory.release();
-        return -20;
+        return -24;
     }
 
     let file_name_without_extension = match system::io::path::get_file_name_without_extension(&current_directory) {
         Ok(value) => value,
         Err(_) => {
             let _ = current_directory.release();
-            return -21;
+            return -25;
         }
     };
 
@@ -134,19 +166,19 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         Err(_) => {
             let _ = file_name_without_extension.release();
             let _ = current_directory.release();
-            return -22;
+            return -26;
         }
     };
 
     if stem_len <= 0 || stem_len > file_name_len {
         let _ = file_name_without_extension.release();
         let _ = current_directory.release();
-        return -23;
+        return -27;
     }
 
     if file_name_without_extension.release().is_err() {
         let _ = current_directory.release();
-        return -24;
+        return -28;
     }
 
     if current_directory.release().is_err() {

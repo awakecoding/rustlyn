@@ -972,6 +972,21 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                 Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetFileName string-handle binding to report no exception.");
                 Assert(fileNameHandle > 0, "Expected generated Path.GetFileName string-handle binding to return a managed string handle.");
                 Assert(ManagedInteropRuntime.GetObject<string>(fileNameHandle) == Path.GetFileName(tempPath), "Expected generated Path.GetFileName binding to match System.IO.Path.GetFileName.");
+
+                var tempRootHandle = ManagedInteropRuntime.AddObjectHandle(Path.GetTempPath());
+                try
+                {
+                    var combinedPathHandle = RuntimeBridgeHelpers.BindgenSystemIoPathCombineStringString(tempRootHandle, fileNameHandle, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.Combine string-handle binding to report no exception.");
+                    Assert(combinedPathHandle > 0, "Expected generated Path.Combine string-handle binding to return a managed string handle.");
+                    Assert(ManagedInteropRuntime.GetObject<string>(combinedPathHandle) == tempPath, "Expected generated Path.Combine binding to reconstruct the temporary path.");
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(combinedPathHandle) == 0, "Expected generated combined path string handle release to succeed.");
+                }
+                finally
+                {
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(tempRootHandle) == 0, "Expected generated temp-root string handle release to succeed.");
+                }
+
                 Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(fileNameHandle) == 0, "Expected generated file-name string handle release to succeed.");
 
                 var stemHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetFileNameWithoutExtensionString(pathHandle, exceptionOutPointer);
