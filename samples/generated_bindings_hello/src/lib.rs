@@ -121,6 +121,34 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -20;
     }
 
+    let file_name_without_extension = match system::io::path::get_file_name_without_extension(&current_directory) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -21;
+        }
+    };
+
+    let stem_len = match file_name_without_extension.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = file_name_without_extension.release();
+            let _ = current_directory.release();
+            return -22;
+        }
+    };
+
+    if stem_len <= 0 || stem_len > file_name_len {
+        let _ = file_name_without_extension.release();
+        let _ = current_directory.release();
+        return -23;
+    }
+
+    if file_name_without_extension.release().is_err() {
+        let _ = current_directory.release();
+        return -24;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }

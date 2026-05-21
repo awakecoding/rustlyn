@@ -13,6 +13,7 @@ unsafe extern "C" {
     ) -> i32;
     fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_get_file_name_string(path_handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_len(handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;
@@ -160,6 +161,18 @@ pub mod io {
             let mut exception_handle = 0;
             let object_handle = unsafe {
                 super::super::rust_mcil_bindgen_system_io_path_get_file_name_string(
+                    path.handle(),
+                    &mut exception_handle,
+                )
+            };
+            Exception::from_handle(exception_handle)?;
+            Ok(ManagedString::from_handle(object_handle))
+        }
+
+        pub fn get_file_name_without_extension(path: &ManagedString) -> Result<ManagedString, Exception> {
+            let mut exception_handle = 0;
+            let object_handle = unsafe {
+                super::super::rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string(
                     path.handle(),
                     &mut exception_handle,
                 )
