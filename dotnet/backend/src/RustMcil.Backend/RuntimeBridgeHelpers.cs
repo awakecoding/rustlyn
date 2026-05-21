@@ -23,32 +23,32 @@ public static partial class RuntimeBridgeHelpers
 
     public static void ConsoleWriteLineUtf8(IntPtr valuePointer, long valueLength)
     {
-        Console.WriteLine(ReadUtf8String(valuePointer, valueLength));
+        RustMcil.Os.HostConsole.WriteLineUtf8(valuePointer, valueLength);
     }
 
     public static void ConsoleWritePrefixedLineUtf8(IntPtr pathPointer, long pathLength, int lineNumber, IntPtr valuePointer, long valueLength)
     {
-        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{lineNumber}:{ReadUtf8String(valuePointer, valueLength)}");
+        RustMcil.Os.HostConsole.WritePrefixedLineUtf8(pathPointer, pathLength, lineNumber, valuePointer, valueLength);
     }
 
     public static void ConsoleWritePathLineUtf8(IntPtr pathPointer, long pathLength, IntPtr valuePointer, long valueLength)
     {
-        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{ReadUtf8String(valuePointer, valueLength)}");
+        RustMcil.Os.HostConsole.WritePathLineUtf8(pathPointer, pathLength, valuePointer, valueLength);
     }
 
     public static void ConsoleWriteNumberedLineUtf8(int lineNumber, IntPtr valuePointer, long valueLength)
     {
-        Console.WriteLine($"{lineNumber}:{ReadUtf8String(valuePointer, valueLength)}");
+        RustMcil.Os.HostConsole.WriteNumberedLineUtf8(lineNumber, valuePointer, valueLength);
     }
 
     public static void ConsoleWriteI32(int value)
     {
-        Console.WriteLine(value);
+        RustMcil.Os.HostConsole.WriteI32(value);
     }
 
     public static void ConsoleWritePathCountUtf8(IntPtr pathPointer, long pathLength, int value)
     {
-        Console.WriteLine($"{ReadUtf8String(pathPointer, pathLength)}:{value}");
+        RustMcil.Os.HostConsole.WritePathCountUtf8(pathPointer, pathLength, value);
     }
 
     public static int Utf8ReadAllLinesCount(IntPtr pathPointer, long pathLength)

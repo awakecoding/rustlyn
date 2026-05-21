@@ -120,7 +120,7 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 
 Started with behavior-preserving project shells: `RustMcil.Runtime` and `RustMcil.Os` now exist beside `RustMcil.Interop`, and `RustMcil.Backend` references both. No helper methods have moved yet. This establishes the dependency direction for later migration slices while keeping the existing emitter mappings and support assembly copying unchanged.
 
-The first compatibility facade is now in place. `RustMcil.Runtime.NumericRuntime` owns the `rem_euclid` helpers, `RustMcil.Os.HostEnvironment` owns command-line argument counting plus UTF-8 argument length/copy helpers, and the existing Backend `RuntimeBridgeHelpers` methods forward to those new owners so emitted Rust symbols stay stable while migration proceeds. Emitted console assemblies now copy `RustMcil.Runtime.dll` and `RustMcil.Os.dll` beside the transitional Backend facade assembly.
+The first compatibility facade is now in place. `RustMcil.Runtime.NumericRuntime` owns the `rem_euclid` helpers, `RustMcil.Os.HostEnvironment` owns command-line argument counting plus UTF-8 argument length/copy helpers, `RustMcil.Os.HostConsole` owns console output helpers, and the existing Backend `RuntimeBridgeHelpers` methods forward to those new owners so emitted Rust symbols stay stable while migration proceeds. Emitted console assemblies now copy `RustMcil.Runtime.dll` and `RustMcil.Os.dll` beside the transitional Backend facade assembly.
 
 Intended ownership:
 
@@ -132,7 +132,7 @@ Validation:
 
 ```powershell
 dotnet build -c Release .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj
-dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- RuntimeSplitFacadeForwardsNumericHelpers RuntimeSplitFacadeForwardsOsHelpers
+dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- RuntimeSplitFacadeForwardsNumericHelpers RuntimeSplitFacadeForwardsOsHelpers RuntimeSplitFacadeForwardsConsoleHelpers
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_args -Mode Cargo -Configuration Release
 ```

@@ -25,6 +25,7 @@ RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapT
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
 RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNumericHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsConsoleHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17703,6 +17704,49 @@ static void RuntimeSplitFacadeForwardsOsHelpers()
     {
         Marshal.FreeHGlobal(destination);
     }
+}
+
+static void RuntimeSplitFacadeForwardsConsoleHelpers()
+{
+    var originalOut = Console.Out;
+    using var writer = new StringWriter(CultureInfo.InvariantCulture);
+    var valuePointer = CopyUtf8TestString("hello-console", out var valueLength);
+    var pathPointer = CopyUtf8TestString("sample.txt", out var pathLength);
+    try
+    {
+        Console.SetOut(writer);
+
+        RuntimeBridgeHelpers.ConsoleWriteLineUtf8(valuePointer, valueLength);
+        RuntimeBridgeHelpers.ConsoleWritePrefixedLineUtf8(pathPointer, pathLength, 7, valuePointer, valueLength);
+        RuntimeBridgeHelpers.ConsoleWritePathLineUtf8(pathPointer, pathLength, valuePointer, valueLength);
+        RuntimeBridgeHelpers.ConsoleWriteNumberedLineUtf8(9, valuePointer, valueLength);
+        RuntimeBridgeHelpers.ConsoleWriteI32(42);
+        RuntimeBridgeHelpers.ConsoleWritePathCountUtf8(pathPointer, pathLength, 3);
+    }
+    finally
+    {
+        Console.SetOut(originalOut);
+        Marshal.FreeHGlobal(valuePointer);
+        Marshal.FreeHGlobal(pathPointer);
+    }
+
+    var expected = string.Join(Environment.NewLine,
+        "hello-console",
+        "sample.txt:7:hello-console",
+        "sample.txt:hello-console",
+        "9:hello-console",
+        "42",
+        "sample.txt:3") + Environment.NewLine;
+    Assert(string.Equals(writer.ToString(), expected, StringComparison.Ordinal), "Expected Backend console facade to forward UTF-8 and numeric writes through the OS console helper.");
+}
+
+static IntPtr CopyUtf8TestString(string value, out int length)
+{
+    var bytes = Encoding.UTF8.GetBytes(value);
+    length = bytes.Length;
+    var pointer = Marshal.AllocHGlobal(bytes.Length);
+    Marshal.Copy(bytes, 0, pointer, bytes.Length);
+    return pointer;
 }
 
 static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()
