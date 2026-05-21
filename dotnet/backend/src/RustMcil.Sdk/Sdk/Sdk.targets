@@ -12,7 +12,13 @@
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
 
   <Target Name="Clean">
-    <Delete Files="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath);$(RustMcilRuntimeConfigOutputPath)" />
+    <ItemGroup>
+      <_RustMcilCleanFile Include="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath);$(RustMcilRuntimeConfigOutputPath)" />
+      <_RustMcilSupportAssembly Include="$(RustMcilSupportAssemblyNames)" />
+      <_RustMcilCleanFile Include="$(OutputPath)%(_RustMcilSupportAssembly.Identity)" />
+    </ItemGroup>
+
+    <Delete Files="@(_RustMcilCleanFile)" />
   </Target>
 
   <Target Name="Restore" />

@@ -31,6 +31,7 @@ $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 $workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
 $fixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"
 $secondFixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt"
+$supportAssemblyNames = @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")
 
 if (Test-Path $scratchProjectRoot) {
     Remove-Item -Recurse -Force $scratchProjectRoot
@@ -165,7 +166,7 @@ if (-not (Test-Path $workloadBitcodePath)) {
 }
 
 $workloadOutputDirectory = Split-Path -Parent $workloadOutputAssembly
-foreach ($supportAssemblyName in @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")) {
+foreach ($supportAssemblyName in $supportAssemblyNames) {
     $supportAssemblyPath = Join-Path $workloadOutputDirectory $supportAssemblyName
     if (-not (Test-Path $supportAssemblyPath)) {
         throw "Expected packaged-SDK workload output to include copied support assembly: $supportAssemblyPath"
@@ -203,6 +204,26 @@ if ($actualWorkloadOutput -ne $expectedWorkloadOutput) {
     throw "Expected packaged MSBuild SDK generated-bindings workload to print '$expectedWorkloadOutput', got '$actualWorkloadOutput'."
 }
 
+Push-Location $scratchProjectRoot
+$previousNuGetPackages = $env:NUGET_PACKAGES
+try {
+    $env:NUGET_PACKAGES = $nugetPackages
+    dotnet clean $workloadProjectPath -c $Configuration /nologo | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaged MSBuild SDK generated-bindings workload clean failed with exit code $LASTEXITCODE."
+    }
+}
+finally {
+    $env:NUGET_PACKAGES = $previousNuGetPackages
+    Pop-Location
+}
+
+foreach ($outputPath in @($workloadOutputAssembly, $workloadRuntimeConfigPath, $workloadBitcodePath) + ($supportAssemblyNames | ForEach-Object { Join-Path $workloadOutputDirectory $_ })) {
+    if (Test-Path $outputPath) {
+        throw "Expected packaged MSBuild SDK workload clean to remove generated output: $outputPath"
+    }
+}
+
 Write-Host "PASS msbuild_add_packaged (nuget sdk) => 42"
 Write-Host "PASS bin_trivial (nuget sdk inferred bin) => exit 0"
-Write-Host "PASS generated_bindings_lousygrep (nuget sdk support assemblies)"
+Write-Host "PASS generated_bindings_lousygrep (nuget sdk support assemblies + clean)"

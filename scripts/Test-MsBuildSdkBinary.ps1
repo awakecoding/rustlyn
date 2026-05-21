@@ -18,6 +18,7 @@ $inferredRuntimeConfigPath = Join-Path $workspaceRoot "samples\msbuild_bin_infer
 $inferredBitcodePath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\obj\$Configuration\net10.0\bin_trivial.bc"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
 $toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
+$supportAssemblyNames = @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")
 
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
@@ -53,6 +54,14 @@ if (-not (Test-Path $bitcodePath)) {
     throw "Expected translated binary bitcode was not created: $bitcodePath"
 }
 
+$outputDirectory = Split-Path -Parent $outputAssembly
+foreach ($supportAssemblyName in $supportAssemblyNames) {
+    $supportAssemblyPath = Join-Path $outputDirectory $supportAssemblyName
+    if (-not (Test-Path $supportAssemblyPath)) {
+        throw "Expected translated binary output to include copied support assembly: $supportAssemblyPath"
+    }
+}
+
 $consoleOutput = & dotnet $outputAssembly 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "Translated MSBuild SDK binary sample failed with exit code $LASTEXITCODE.`n$($consoleOutput | Out-String)"
@@ -75,7 +84,7 @@ finally {
     $env:MSBuildSDKsPath = $previousMsBuildSdksPath
 }
 
-foreach ($outputPath in @($outputAssembly, $runtimeConfigPath, $bitcodePath)) {
+foreach ($outputPath in @($outputAssembly, $runtimeConfigPath, $bitcodePath) + ($supportAssemblyNames | ForEach-Object { Join-Path $outputDirectory $_ })) {
     if (Test-Path $outputPath) {
         throw "Expected clean to remove translated binary output: $outputPath"
     }
@@ -91,6 +100,14 @@ if (-not (Test-Path $inferredRuntimeConfigPath)) {
 
 if (-not (Test-Path $inferredBitcodePath)) {
     throw "Expected inferred translated binary bitcode was not created: $inferredBitcodePath"
+}
+
+$inferredOutputDirectory = Split-Path -Parent $inferredOutputAssembly
+foreach ($supportAssemblyName in $supportAssemblyNames) {
+    $supportAssemblyPath = Join-Path $inferredOutputDirectory $supportAssemblyName
+    if (-not (Test-Path $supportAssemblyPath)) {
+        throw "Expected inferred translated binary output to include copied support assembly: $supportAssemblyPath"
+    }
 }
 
 $inferredConsoleOutput = & dotnet $inferredOutputAssembly 2>&1
@@ -115,7 +132,7 @@ finally {
     $env:MSBuildSDKsPath = $previousMsBuildSdksPath
 }
 
-foreach ($outputPath in @($inferredOutputAssembly, $inferredRuntimeConfigPath, $inferredBitcodePath)) {
+foreach ($outputPath in @($inferredOutputAssembly, $inferredRuntimeConfigPath, $inferredBitcodePath) + ($supportAssemblyNames | ForEach-Object { Join-Path $inferredOutputDirectory $_ })) {
     if (Test-Path $outputPath) {
         throw "Expected clean to remove inferred translated binary output: $outputPath"
     }
