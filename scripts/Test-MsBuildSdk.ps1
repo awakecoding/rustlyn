@@ -77,16 +77,24 @@ if (-not (Test-Path $generatedCargoManifestPath)) {
 }
 
 $generatedCargoManifest = Get-Content $generatedCargoManifestPath -Raw
-if ($generatedCargoManifest -notmatch "\[dependencies\.profile_probe\]") {
+if ($generatedCargoManifest -notmatch "profile_probe = \{ path = '.+profile_probe' \}") {
     throw "Expected generated Cargo manifest to contain a profile_probe RustReference dependency."
 }
 
-if ($generatedCargoManifest -notmatch "\[dependencies\.cfg-if\]") {
+if ($generatedCargoManifest -notmatch "cfg-if = \{ version = '1\.0\.0', default-features = false \}") {
     throw "Expected generated Cargo manifest to contain a cfg-if RustCrateReference dependency."
+}
+
+if ($generatedCargoManifest -notmatch "bitflags = \{ version = '2\.9\.4', default-features = false, features = \['std','serde'\] \}") {
+    throw "Expected generated Cargo manifest to contain a bitflags RustCrateReference dependency."
 }
 
 if ($generatedCargoManifest -notmatch 'default-features = false') {
     throw "Expected generated Cargo manifest to preserve RustCrateReference DefaultFeatures metadata."
+}
+
+if ($generatedCargoManifest -notmatch "features = \['std','serde'\]") {
+    throw "Expected generated Cargo manifest to preserve RustCrateReference Features metadata."
 }
 
 $invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
@@ -115,10 +123,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $generatedResult = ($generatedInvokeOutput | Select-Object -Last 1).Trim()
-if ($generatedResult -ne "77") {
-    throw "Expected generated Cargo sample to invoke generated_cargo_score() => 77, got '$generatedResult'."
+if ($generatedResult -ne "83") {
+    throw "Expected generated Cargo sample to invoke generated_cargo_score() => 83, got '$generatedResult'."
 }
 
 Write-Host "PASS msbuild_add (msbuild sdk) => 42"
 Write-Host "PASS msbuild_sourcegear_aliases (sourcegear property aliases) => 11"
-Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + RustReference/RustCrateReference) => 77"
+Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + RustReference/RustCrateReference features) => 83"

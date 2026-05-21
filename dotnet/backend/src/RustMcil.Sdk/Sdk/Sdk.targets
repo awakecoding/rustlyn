@@ -58,11 +58,12 @@
       <_RustMcilGeneratedCargoLine Include="[[bin]]" Condition="'$(OutputType)' == 'Exe'" />
       <_RustMcilGeneratedCargoLine Include="name = &quot;$(RustMcilBinaryTarget)&quot;" Condition="'$(OutputType)' == 'Exe'" />
       <_RustMcilGeneratedCargoLine Include="path = '$(RustMcilGeneratedCargoSourcePath)'" Condition="'$(OutputType)' == 'Exe'" />
-      <_RustMcilGeneratedCargoLine Include="[dependencies.%(RustReference.Name)]" Condition="'@(RustReference)' != ''" />
-      <_RustMcilGeneratedCargoLine Include="path = '%(RustReference.FullPath)'" Condition="'@(RustReference)' != ''" />
-      <_RustMcilGeneratedCargoLine Include="[dependencies.%(RustCrateReference.Identity)]" Condition="'@(RustCrateReference)' != ''" />
-      <_RustMcilGeneratedCargoLine Include="version = &quot;%(RustCrateReference.Version)&quot;" Condition="'@(RustCrateReference)' != ''" />
-      <_RustMcilGeneratedCargoLine Include="default-features = %(RustCrateReference.DefaultFeatures)" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="[dependencies]" Condition="'@(RustReference)' != '' or '@(RustCrateReference)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="%(RustReference.Name) = { path = '%(RustReference.FullPath)' }" Condition="'@(RustReference)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)' }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' == '' and '%(RustCrateReference.Features)' == ''" />
+      <_RustMcilGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', default-features = %(RustCrateReference.DefaultFeatures) }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != '' and '%(RustCrateReference.Features)' == ''" />
+      <_RustMcilGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', features = ['$([System.String]::Copy('%(RustCrateReference.Features)').Replace(&quot;,&quot;, &quot;','&quot;))'] }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' == '' and '%(RustCrateReference.Features)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', default-features = %(RustCrateReference.DefaultFeatures), features = ['$([System.String]::Copy('%(RustCrateReference.Features)').Replace(&quot;,&quot;, &quot;','&quot;))'] }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != '' and '%(RustCrateReference.Features)' != ''" />
     </ItemGroup>
 
     <WriteLinesToFile File="$(RustMcilGeneratedCargoProjectPath)\Cargo.toml" Lines="@(_RustMcilGeneratedCargoLine)" Overwrite="true" />
