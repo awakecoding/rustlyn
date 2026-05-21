@@ -23,6 +23,7 @@ unsafe extern "C" {
     fn rust_mcil_bindgen_system_io_path_get_relative_path_string_string(relative_to_handle: i32, path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_get_temp_path(exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_has_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_is_path_rooted_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_len(handle: i32, exception_out: *mut i32) -> i32;
@@ -293,6 +294,18 @@ pub mod io {
             let mut exception_handle = 0;
             let value = unsafe {
                 super::super::rust_mcil_bindgen_system_io_path_has_extension_string(
+                    path.handle(),
+                    &mut exception_handle,
+                )
+            };
+            Exception::from_handle(exception_handle)?;
+            Ok(value)
+        }
+
+        pub fn is_path_fully_qualified(path: &ManagedString) -> Result<i32, Exception> {
+            let mut exception_handle = 0;
+            let value = unsafe {
+                super::super::rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string(
                     path.handle(),
                     &mut exception_handle,
                 )

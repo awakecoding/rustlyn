@@ -365,6 +365,23 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -60;
     }
 
+    let full_temp_is_fully_qualified = match system::io::path::is_path_fully_qualified(&full_temp_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -61;
+        }
+    };
+
+    if full_temp_is_fully_qualified == 0 {
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -62;
+    }
+
     let temp_root = match system::io::path::get_path_root(&full_temp_path) {
         Ok(value) => value,
         Err(_) => {

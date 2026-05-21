@@ -26,6 +26,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Path.GetRelativePath(string, string)", typeof(Path), nameof(Path.GetRelativePath), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetTempPath()", typeof(Path), nameof(Path.GetTempPath), []),
                 ManagedApiRequirement.Method("System.IO.Path.HasExtension(string)", typeof(Path), nameof(Path.HasExtension), [typeof(string)]),
+                ManagedApiRequirement.Method("System.IO.Path.IsPathFullyQualified(string)", typeof(Path), nameof(Path.IsPathFullyQualified), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.IsPathRooted(string)", typeof(Path), nameof(Path.IsPathRooted), [typeof(string)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
@@ -93,6 +94,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_has_extension_string",
                     ["fn rust_mcil_bindgen_system_io_path_has_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string",
+                    ["fn rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_is_path_rooted_string",
                     ["fn rust_mcil_bindgen_system_io_path_is_path_rooted_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
@@ -260,6 +264,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         StaticMethod(typeof(Path), nameof(Path.HasExtension), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
+                    "rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string",
+                    "BindgenSystemIoPathIsPathFullyQualifiedString",
+                    [I32("pathHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
+                        StaticMethod(typeof(Path), nameof(Path.IsPathFullyQualified), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
+                Glue(
                     "rust_mcil_bindgen_system_io_path_is_path_rooted_string",
                     "BindgenSystemIoPathIsPathRootedString",
                     [I32("pathHandle"), Pointer("exceptionOutPointer")],
@@ -404,6 +414,13 @@ public sealed record BindingSurface(
                     RustWrapperContainer.IoPath,
                     "pub fn has_extension(path: &ManagedString) -> Result<i32, Exception>",
                     "rust_mcil_bindgen_system_io_path_has_extension_string",
+                    ["path.handle()"],
+                    "value",
+                    RustWrapperResult.BooleanAsInt()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn is_path_fully_qualified(path: &ManagedString) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string",
                     ["path.handle()"],
                     "value",
                     RustWrapperResult.BooleanAsInt()),
