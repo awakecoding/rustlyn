@@ -39,6 +39,28 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -8;
     }
 
+    let roundtrip_directory = match system::ManagedString::from_utf8_parts(
+        directory_buffer.as_ptr(),
+        written as i64,
+    ) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -9;
+        }
+    };
+
+    if system::console::write_line(&roundtrip_directory).is_err() {
+        let _ = roundtrip_directory.release();
+        let _ = current_directory.release();
+        return -10;
+    }
+
+    if roundtrip_directory.release().is_err() {
+        let _ = current_directory.release();
+        return -11;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }

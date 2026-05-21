@@ -923,6 +923,12 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
             Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string copy binding to report no exception.");
             Assert(copiedLength == byteLength, "Expected generated string copy binding to return the required UTF-8 length.");
             Assert(!string.IsNullOrWhiteSpace(copiedText), "Expected generated string copy binding to round-trip a non-empty string.");
+
+            var clonedStringHandle = RuntimeBridgeHelpers.BindgenSystemStringFromUtf8(destination, byteLength, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String-from-UTF-8 binding to report no exception.");
+            Assert(clonedStringHandle > 0, "Expected generated String-from-UTF-8 binding to return a managed string handle.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineString(clonedStringHandle) == 0, "Expected generated Console.WriteLine string-handle binding to accept a Rust-created managed string.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(clonedStringHandle) == 0, "Expected generated Rust-created string handle release to succeed.");
         }
         finally
         {

@@ -142,6 +142,19 @@ impl ManagedString {
         Self { handle }
     }
 
+    pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception> {
+        let mut exception_handle = 0;
+        let string_handle = unsafe {
+            rust_mcil_bindgen_system_string_from_utf8(
+                value_ptr,
+                value_len,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(Self::from_handle(string_handle))
+    }
+
     pub fn handle(&self) -> i32 {
         self.handle
     }

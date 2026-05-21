@@ -86,7 +86,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
 - `dotnet/backend/src/RustMcil.Tool/`: CLI for inspect, lower, emit, invoke, and translate flows
 - `dotnet/backend/src/RustMcil.Backend/`: lowering and IL emission logic
-- `dotnet/backend/src/RustMcil.Bindings/`: tiny generated .NET binding prototype for Rust wrapper output and managed glue source
+- `dotnet/backend/src/RustMcil.Bindings/`: tiny generated .NET binding prototype for Rust wrapper output, managed glue source, and managed string handles created from Rust UTF-8 buffers
 - `dotnet/backend/src/RustMcil.Bindings.Tool/`: build-time generator for backend managed binding glue
 - `dotnet/backend/src/RustMcil.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
 - `dotnet/backend/tests/RustMcil.Backend.Tests/`: focused regression harness for lowering and runtime behavior

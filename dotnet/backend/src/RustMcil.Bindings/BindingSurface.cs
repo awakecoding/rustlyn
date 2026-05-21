@@ -43,6 +43,9 @@ public sealed record BindingSurface(
                     "rust_mcil_bindgen_system_io_file_read_all_lines_string",
                     ["fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
+                    "rust_mcil_bindgen_system_string_from_utf8",
+                    ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
                     "rust_mcil_bindgen_system_string_utf8_len",
                     ["fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
@@ -127,6 +130,12 @@ public sealed record BindingSurface(
                     [I32("pathHandle"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(File), nameof(File.ReadAllLines), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_from_utf8",
+                    "BindgenSystemStringFromUtf8",
+                    [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        Utf8String("valuePointer", "valueLength")))),
                 Glue(
                     "rust_mcil_bindgen_system_string_utf8_len",
                     "BindgenSystemStringUtf8Length",

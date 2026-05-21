@@ -11,6 +11,7 @@ unsafe extern "C" {
         exception_out: *mut i32,
     ) -> i32;
     fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_copy_utf8(
         handle: i32,
@@ -145,6 +146,19 @@ pub struct ManagedString {
 impl ManagedString {
     fn from_handle(handle: i32) -> Self {
         Self { handle }
+    }
+
+    pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception> {
+        let mut exception_handle = 0;
+        let string_handle = unsafe {
+            rust_mcil_bindgen_system_string_from_utf8(
+                value_ptr,
+                value_len,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(Self::from_handle(string_handle))
     }
 
     pub fn handle(&self) -> i32 {
