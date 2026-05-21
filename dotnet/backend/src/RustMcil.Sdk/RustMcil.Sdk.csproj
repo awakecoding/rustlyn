@@ -9,10 +9,24 @@
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <RustMcilToolProject>..\RustMcil.Tool\RustMcil.Tool.csproj</RustMcilToolProject>
+    <RustMcilToolPublishDir>$(MSBuildProjectDirectory)\obj\rustmcil-tool\$(Configuration)\</RustMcilToolPublishDir>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PublishRustMcilToolForPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk\Sdk.props" />
     <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk\Sdk.targets" />
   </ItemGroup>
+
+  <Target Name="PublishRustMcilToolForPackage">
+    <MSBuild Projects="$(RustMcilToolProject)" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(RustMcilToolPublishDir);SelfContained=false;UseAppHost=false" />
+    <ItemGroup>
+      <_RustMcilToolPackageFile Include="$(RustMcilToolPublishDir)**\*" />
+      <TfmSpecificPackageFile Include="@(_RustMcilToolPackageFile)">
+        <PackagePath>tools\net10.0\%(_RustMcilToolPackageFile.RecursiveDir)%(_RustMcilToolPackageFile.Filename)%(_RustMcilToolPackageFile.Extension)</PackagePath>
+        <BuildAction>None</BuildAction>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
 </Project>

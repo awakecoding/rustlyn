@@ -66,7 +66,7 @@ Try the first local MSBuild SDK facade:
 .\scripts\Test-MsBuildSdkPackage.ps1 -Configuration Release
 ```
 
-The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. The second script packs `RustMcil.Sdk` into `artifacts/scratch/packages` and verifies NuGet-style SDK resolution from a generated scratch `.rsproj`.
+The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. The second script packs `RustMcil.Sdk` into `artifacts/scratch/packages`, bundles a published `RustMcil.Tool` under `tools/net10.0`, and verifies NuGet-style SDK resolution from a generated scratch `.rsproj` without passing a source-tree tool path.
 
 Try the first Avalonia bridge sample:
 

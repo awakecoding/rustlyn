@@ -15,6 +15,7 @@
     <RustMcilBitcodeOutputPath Condition="'$(RustMcilBitcodeOutputPath)' == ''">$(IntermediateOutputPath)$(AssemblyName).bc</RustMcilBitcodeOutputPath>
     <RustMcilToolProject Condition="'$(RustMcilToolProject)' == ''">$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\RustMcil.Tool.csproj</RustMcilToolProject>
     <RustMcilToolConfiguration Condition="'$(RustMcilToolConfiguration)' == ''">$(Configuration)</RustMcilToolConfiguration>
+    <RustMcilToolDll Condition="'$(RustMcilToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll')">$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll</RustMcilToolDll>
     <RustMcilToolDll Condition="'$(RustMcilToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\bin\$(RustMcilToolConfiguration)\net10.0\RustMcil.Tool.dll')">$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\bin\$(RustMcilToolConfiguration)\net10.0\RustMcil.Tool.dll</RustMcilToolDll>
     <RustMcilCargoRelease Condition="'$(RustMcilCargoRelease)' == '' and '$(Configuration)' == 'Debug'">false</RustMcilCargoRelease>
     <RustMcilCargoRelease Condition="'$(RustMcilCargoRelease)' == ''">true</RustMcilCargoRelease>
