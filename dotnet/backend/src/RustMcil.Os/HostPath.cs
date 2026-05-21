@@ -43,6 +43,37 @@ public static class HostPath
             destinationCapacity);
     }
 
+    public static int Utf8PathGetFileNameWithoutExtensionLengthUtf8(IntPtr pathPointer, long pathLength)
+    {
+        return InteropUtf8.GetByteCount(GetFileNameWithoutExtensionUtf8Path(pathPointer, pathLength));
+    }
+
+    public static int CopyUtf8PathGetFileNameWithoutExtension(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetFileNameWithoutExtensionUtf8Path(pathPointer, pathLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int Utf8PathGetFileNameLengthUtf8(IntPtr pathPointer, long pathLength)
+    {
+        return InteropUtf8.GetByteCount(GetFileNameUtf8Path(pathPointer, pathLength));
+    }
+
+    public static int CopyUtf8PathGetFileName(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetFileNameUtf8Path(pathPointer, pathLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int Utf8PathGetFileNameLength(IntPtr pathPointer, long pathLength)
+    {
+        return GetFileNameUtf8Path(pathPointer, pathLength).Length;
+    }
+
     private static string CombineUtf8Paths(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength)
     {
         return Path.Combine(
@@ -64,5 +95,15 @@ public static class HostPath
             InteropUtf8.ReadString(pathPointer, pathLength),
             InteropUtf8.ReadString(extensionPointer, extensionLength))
             ?? string.Empty;
+    }
+
+    private static string GetFileNameUtf8Path(IntPtr pathPointer, long pathLength)
+    {
+        return Path.GetFileName(InteropUtf8.ReadString(pathPointer, pathLength)) ?? string.Empty;
+    }
+
+    private static string GetFileNameWithoutExtensionUtf8Path(IntPtr pathPointer, long pathLength)
+    {
+        return Path.GetFileNameWithoutExtension(InteropUtf8.ReadString(pathPointer, pathLength)) ?? string.Empty;
     }
 }

@@ -30,6 +30,7 @@ RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileH
 RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeForwardsEnvironmentPathHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathCombineHelpers", RuntimeSplitFacadeForwardsPathCombineHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathChangeExtensionHelpers", RuntimeSplitFacadeForwardsPathChangeExtensionHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsPathFileNameHelpers", RuntimeSplitFacadeForwardsPathFileNameHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17847,6 +17848,31 @@ static void RuntimeSplitFacadeForwardsPathChangeExtensionHelpers()
     {
         Marshal.FreeHGlobal(pathPointer);
         Marshal.FreeHGlobal(extensionPointer);
+    }
+}
+
+static void RuntimeSplitFacadeForwardsPathFileNameHelpers()
+{
+    var path = Path.Combine("root", "sample.file.txt");
+    var pathPointer = CopyUtf8TestString(path, out var pathLength);
+    try
+    {
+        var expectedFileName = Path.GetFileName(path) ?? string.Empty;
+        var expectedFileNameBytes = Encoding.UTF8.GetBytes(expectedFileName);
+        Assert(RustMcil.Os.HostPath.Utf8PathGetFileNameLengthUtf8(pathPointer, pathLength) == expectedFileNameBytes.Length, "Expected OS path helper to expose Path.GetFileName UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathGetFileNameLengthUtf8(pathPointer, pathLength) == RustMcil.Os.HostPath.Utf8PathGetFileNameLengthUtf8(pathPointer, pathLength), "Expected Backend runtime facade to forward Path.GetFileName UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathGetFileNameLength(pathPointer, pathLength) == expectedFileName.Length, "Expected Backend runtime facade to forward Path.GetFileName character length.");
+        AssertPathCopy("Path.GetFileName", expectedFileNameBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetFileName(pathPointer, pathLength, destination, expectedFileNameBytes.Length));
+
+        var expectedStem = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+        var expectedStemBytes = Encoding.UTF8.GetBytes(expectedStem);
+        Assert(RustMcil.Os.HostPath.Utf8PathGetFileNameWithoutExtensionLengthUtf8(pathPointer, pathLength) == expectedStemBytes.Length, "Expected OS path helper to expose Path.GetFileNameWithoutExtension UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathGetFileNameWithoutExtensionLengthUtf8(pathPointer, pathLength) == RustMcil.Os.HostPath.Utf8PathGetFileNameWithoutExtensionLengthUtf8(pathPointer, pathLength), "Expected Backend runtime facade to forward Path.GetFileNameWithoutExtension UTF-8 byte length.");
+        AssertPathCopy("Path.GetFileNameWithoutExtension", expectedStemBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetFileNameWithoutExtension(pathPointer, pathLength, destination, expectedStemBytes.Length));
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(pathPointer);
     }
 }
 

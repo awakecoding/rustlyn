@@ -190,15 +190,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathGetFileNameWithoutExtensionLengthUtf8(IntPtr pathPointer, long pathLength)
     {
-        return Encoding.UTF8.GetByteCount(Path.GetFileNameWithoutExtension(ReadUtf8String(pathPointer, pathLength)));
+        return RustMcil.Os.HostPath.Utf8PathGetFileNameWithoutExtensionLengthUtf8(pathPointer, pathLength);
     }
 
     public static int CopyUtf8PathGetFileNameWithoutExtension(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            Path.GetFileNameWithoutExtension(ReadUtf8String(pathPointer, pathLength)),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetFileNameWithoutExtension(pathPointer, pathLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8StringReplaceLength(
@@ -230,15 +227,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathGetFileNameLengthUtf8(IntPtr pathPointer, long pathLength)
     {
-        return Encoding.UTF8.GetByteCount(Path.GetFileName(ReadUtf8String(pathPointer, pathLength)));
+        return RustMcil.Os.HostPath.Utf8PathGetFileNameLengthUtf8(pathPointer, pathLength);
     }
 
     public static int CopyUtf8PathGetFileName(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            Path.GetFileName(ReadUtf8String(pathPointer, pathLength)),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetFileName(pathPointer, pathLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8StringContains(IntPtr haystackPointer, long haystackLength, IntPtr needlePointer, long needleLength)
@@ -269,7 +263,7 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathGetFileNameLength(IntPtr pathPointer, long pathLength)
     {
-        return Path.GetFileName(ReadUtf8String(pathPointer, pathLength)).Length;
+        return RustMcil.Os.HostPath.Utf8PathGetFileNameLength(pathPointer, pathLength);
     }
 
     public static void InitializeWtf8PathBuffer(IntPtr destination, IntPtr source, long length)
