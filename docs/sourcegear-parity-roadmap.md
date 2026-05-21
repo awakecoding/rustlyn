@@ -10,7 +10,7 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 | --- | --- | --- | --- | --- |
 | SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | Future MSBuild wrapper | Not started | Add only after a cargo driver is stable |
 | Synthetic Cargo project generation from project metadata | `artifacts/decompiled/rsbuild-program/Program.decompiled.cs` | Future cargo/MSBuild driver | Not started | Generate a temporary Cargo build directory from explicit tool options |
-| Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `cargo -Z build-std=core` and `cargo -Z build-std=core,alloc` are validated, but no full sysroot parity yet | Validate `cargo -Z build-std` for `std` |
+| Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `cargo -Z build-std` rungs for `core`, `core,alloc`, and `std,panic_abort` are validated against focused fixtures, but no full sysroot/fake-link replacement decision yet | Use std-rung evidence to decide whether fake-link remains deferred |
 | Fake linker handoff to `.bc` | `artifacts/sdk-0.1.5/extracted/tools/rsfakelink/` | Optional future `RustMcil.FakeLink` | Not started | Implement only if modern Cargo cannot capture whole-program bitcode reliably |
 | LLVM-to-CIL compiler backend | Historical `sgllvm`/`sgcil`/`llvm2cil` notes | `LoweredIrLowerer`, `LoweredAssemblyEmitter` | Active, sample-driven | Keep expanding data-model coverage with permanent fixtures |
 | Runtime helpers for LLVM semantics | Historical `sgrt.dll` notes | Future `RustMcil.Runtime` | Partial helpers embedded in backend | Split memops, overflow, vector, atomics, and entry wrappers into runtime support |
@@ -101,6 +101,8 @@ The first rung is now promoted as `build_std_core_probe`, reusing the `#![no_std
 
 The second rung is now promoted as `build_std_alloc_probe`, using `samples/alloc_only_probe` with `#![no_std]`, `extern crate alloc`, a tiny fixed global allocator, and `--toolchain nightly --build-std core,alloc`. It validates alloc shim capture plus emitted invocation with `alloc_vec_capacity_score() == 4`. This rung also promoted support for optimized functions whose first lowered block has a non-canonical label instead of literally `start` or `entry`.
 
+The third rung is now promoted as `build_std_std_probe`, reusing `samples/std_fs` with `--toolchain nightly --build-std std,panic_abort`. It validates std-backed path construction, `std::fs::read_to_string`, bitcode inspection/lowering, and emitted invocation with `std_fs_line_count() == 3`.
+
 Validation:
 
 ```powershell
@@ -108,6 +110,8 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 .\scripts\Test-Smoke.ps1 -Sample build_std_core_probe -Mode Cargo -Configuration Release
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- AllocOnlyProbeBuildsWithBuildStdAlloc
 .\scripts\Test-Smoke.ps1 -Sample build_std_alloc_probe -Mode Cargo -Configuration Release
+dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- StdFsBuildsWithBuildStdStd
+.\scripts\Test-Smoke.ps1 -Sample build_std_std_probe -Mode Cargo -Configuration Release
 ```
 
 ## Non-Goals For The First Recovery Pass

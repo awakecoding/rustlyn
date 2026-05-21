@@ -744,6 +744,7 @@ RunOptionalTest("DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCar
 RunOptionalTest("DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AddSampleBuildsWithBuildStdCore", AddSampleBuildsWithBuildStdCore, failures);
 RunOptionalTest("AllocOnlyProbeBuildsWithBuildStdAlloc", AllocOnlyProbeBuildsWithBuildStdAlloc, failures);
+RunOptionalTest("StdFsBuildsWithBuildStdStd", StdFsBuildsWithBuildStdStd, failures);
 
 if (failures.Count == 0)
 {
@@ -6721,6 +6722,42 @@ static void AllocOnlyProbeBuildsWithBuildStdAlloc()
 
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "alloc_vec_capacity_score", [], llvmRoot);
     Assert(Equals(actualResult, 4), $"Expected build-std alloc probe invocation to return 4, but got '{actualResult}'.");
+}
+
+static void StdFsBuildsWithBuildStdStd()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "std_fs",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort"
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_fs.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_fs_line_count"), "Expected build-std std_fs to contain std_fs_line_count.");
+    Assert(moduleSummary.Globals.Count >= 3, $"Expected build-std std_fs to preserve path and panic globals, but found {moduleSummary.Globals.Count.ToString(CultureInfo.InvariantCulture)} globals.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "std_fs_line_count");
+    Assert(function.Blocks.Count >= 1, "Expected build-std std_fs_line_count to lower at least one block.");
+    Assert(function.Blocks.Any(static block => block.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee.Contains("read_to_string", StringComparison.Ordinal))),
+        "Expected build-std std_fs to preserve the std::fs read_to_string call on the success path.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_fs_line_count", [], llvmRoot);
+    Assert(Equals(actualResult, 3), $"Expected build-std std_fs_line_count invocation to return 3, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()

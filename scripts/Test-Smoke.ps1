@@ -38,6 +38,15 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "core,alloc"
     }
+    build_std_std_probe = @{
+        CratePath = Join-Path $workspaceRoot "samples\std_fs"
+        Method = "std_fs_line_count"
+        Arguments = @()
+        Expected = 3
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     and = @{
         Method = "and_i32"
         Arguments = @(6, 3)
