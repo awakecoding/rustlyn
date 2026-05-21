@@ -52,6 +52,10 @@
       <_RustMcilGeneratedCargoLine Include="name = &quot;$(_RustMcilCargoPackageName)&quot;" />
       <_RustMcilGeneratedCargoLine Include="version = &quot;$(Version)&quot;" />
       <_RustMcilGeneratedCargoLine Include="edition = &quot;$(RustEdition)&quot;" />
+      <_RustMcilGeneratedCargoLine Include="autobins = false" />
+      <_RustMcilGeneratedCargoLine Include="autoexamples = false" />
+      <_RustMcilGeneratedCargoLine Include="autotests = false" />
+      <_RustMcilGeneratedCargoLine Include="autobenches = false" />
       <_RustMcilGeneratedCargoLine Include="[lib]" Condition="'$(OutputType)' != 'Exe'" />
       <_RustMcilGeneratedCargoLine Include="crate-type = [&quot;lib&quot;]" Condition="'$(OutputType)' != 'Exe'" />
       <_RustMcilGeneratedCargoLine Include="path = '$(RustMcilGeneratedCargoSourcePath)'" Condition="'$(OutputType)' != 'Exe'" />

@@ -77,6 +77,12 @@ if (-not (Test-Path $generatedCargoManifestPath)) {
 }
 
 $generatedCargoManifest = Get-Content $generatedCargoManifestPath -Raw
+foreach ($autoTargetGuard in @("autobins = false", "autoexamples = false", "autotests = false", "autobenches = false")) {
+    if ($generatedCargoManifest -notmatch [regex]::Escape($autoTargetGuard)) {
+        throw "Expected generated Cargo manifest to contain SourceGear-style auto-target guard '$autoTargetGuard'."
+    }
+}
+
 if ($generatedCargoManifest -notmatch "profile_probe = \{ path = '.+profile_probe' \}") {
     throw "Expected generated Cargo manifest to contain a profile_probe RustReference dependency."
 }
@@ -95,6 +101,21 @@ if ($generatedCargoManifest -notmatch 'default-features = false') {
 
 if ($generatedCargoManifest -notmatch "features = \['std','serde'\]") {
     throw "Expected generated Cargo manifest to preserve RustCrateReference Features metadata."
+}
+
+$generatedCargoMetadataJson = cargo metadata --no-deps --format-version 1 --manifest-path $generatedCargoManifestPath
+if ($LASTEXITCODE -ne 0) {
+    throw "cargo metadata failed for generated Cargo manifest with exit code $LASTEXITCODE."
+}
+
+$generatedCargoMetadata = $generatedCargoMetadataJson | ConvertFrom-Json
+$generatedCargoTargets = @($generatedCargoMetadata.packages[0].targets)
+if ($generatedCargoTargets | Where-Object { $_.name -eq "stray_auto_bin" }) {
+    throw "Expected generated Cargo manifest to suppress the stray auto-discovered bin target."
+}
+
+if ($generatedCargoTargets | Where-Object { $_.kind -contains "bin" }) {
+    throw "Expected generated Cargo manifest not to expose auto-discovered bin targets for library projects."
 }
 
 $invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
@@ -129,4 +150,4 @@ if ($generatedResult -ne "83") {
 
 Write-Host "PASS msbuild_add (msbuild sdk) => 42"
 Write-Host "PASS msbuild_sourcegear_aliases (sourcegear property aliases) => 11"
-Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + RustReference/RustCrateReference features) => 83"
+Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + SourceGear auto-target guards + dependencies) => 83"
