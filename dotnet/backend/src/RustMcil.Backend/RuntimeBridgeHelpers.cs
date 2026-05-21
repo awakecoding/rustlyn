@@ -180,15 +180,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathChangeExtensionLengthUtf8(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength)
     {
-        return Encoding.UTF8.GetByteCount(ChangeExtensionUtf8Path(pathPointer, pathLength, extensionPointer, extensionLength));
+        return RustMcil.Os.HostPath.Utf8PathChangeExtensionLengthUtf8(pathPointer, pathLength, extensionPointer, extensionLength);
     }
 
     public static int CopyUtf8PathChangeExtension(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            ChangeExtensionUtf8Path(pathPointer, pathLength, extensionPointer, extensionLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathChangeExtension(pathPointer, pathLength, extensionPointer, extensionLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetFileNameWithoutExtensionLengthUtf8(IntPtr pathPointer, long pathLength)
@@ -371,14 +368,6 @@ public static partial class RuntimeBridgeHelpers
             ReadUtf8String(oldPointer, oldLength),
             ReadUtf8String(newPointer, newLength),
             StringComparison.Ordinal);
-    }
-
-    private static string ChangeExtensionUtf8Path(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength)
-    {
-        return Path.ChangeExtension(
-            ReadUtf8String(pathPointer, pathLength),
-            ReadUtf8String(extensionPointer, extensionLength))
-            ?? string.Empty;
     }
 
     private static string GetDirectoryNameUtf8Path(IntPtr pathPointer, long pathLength)

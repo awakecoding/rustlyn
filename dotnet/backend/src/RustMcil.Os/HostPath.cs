@@ -30,6 +30,19 @@ public static class HostPath
             destinationCapacity);
     }
 
+    public static int Utf8PathChangeExtensionLengthUtf8(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength)
+    {
+        return InteropUtf8.GetByteCount(ChangeExtensionUtf8Path(pathPointer, pathLength, extensionPointer, extensionLength));
+    }
+
+    public static int CopyUtf8PathChangeExtension(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            ChangeExtensionUtf8Path(pathPointer, pathLength, extensionPointer, extensionLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
     private static string CombineUtf8Paths(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength)
     {
         return Path.Combine(
@@ -43,5 +56,13 @@ public static class HostPath
             InteropUtf8.ReadString(firstPointer, firstLength),
             InteropUtf8.ReadString(secondPointer, secondLength),
             InteropUtf8.ReadString(thirdPointer, thirdLength));
+    }
+
+    private static string ChangeExtensionUtf8Path(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength)
+    {
+        return Path.ChangeExtension(
+            InteropUtf8.ReadString(pathPointer, pathLength),
+            InteropUtf8.ReadString(extensionPointer, extensionLength))
+            ?? string.Empty;
     }
 }

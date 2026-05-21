@@ -29,6 +29,7 @@ RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsCo
 RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeForwardsEnvironmentPathHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathCombineHelpers", RuntimeSplitFacadeForwardsPathCombineHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsPathChangeExtensionHelpers", RuntimeSplitFacadeForwardsPathChangeExtensionHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17827,6 +17828,25 @@ static void RuntimeSplitFacadeForwardsPathCombineHelpers()
         Marshal.FreeHGlobal(firstPointer);
         Marshal.FreeHGlobal(secondPointer);
         Marshal.FreeHGlobal(thirdPointer);
+    }
+}
+
+static void RuntimeSplitFacadeForwardsPathChangeExtensionHelpers()
+{
+    var pathPointer = CopyUtf8TestString(Path.Combine("root", "sample.txt"), out var pathLength);
+    var extensionPointer = CopyUtf8TestString(".log", out var extensionLength);
+    try
+    {
+        var expected = Path.ChangeExtension(Path.Combine("root", "sample.txt"), ".log") ?? string.Empty;
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        Assert(RustMcil.Os.HostPath.Utf8PathChangeExtensionLengthUtf8(pathPointer, pathLength, extensionPointer, extensionLength) == expectedBytes.Length, "Expected OS path helper to expose Path.ChangeExtension UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathChangeExtensionLengthUtf8(pathPointer, pathLength, extensionPointer, extensionLength) == RustMcil.Os.HostPath.Utf8PathChangeExtensionLengthUtf8(pathPointer, pathLength, extensionPointer, extensionLength), "Expected Backend runtime facade to forward Path.ChangeExtension UTF-8 byte length.");
+        AssertPathCopy("Path.ChangeExtension", expectedBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathChangeExtension(pathPointer, pathLength, extensionPointer, extensionLength, destination, expectedBytes.Length));
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(pathPointer);
+        Marshal.FreeHGlobal(extensionPointer);
     }
 }
 
