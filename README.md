@@ -75,6 +75,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - [Original Eric Sink design](docs/original-eric-sink-design.md)
 - [Revived design in this repo](docs/revived-design.md)
 - [SourceGear parity roadmap](docs/sourcegear-parity-roadmap.md)
+- [SourceGear fake-link decision](docs/sourcegear-fake-link-decision.md)
 - [Deep reconstruction notes](docs/reconstruction-notes.md)
 - [Contributor and agent workflow](AGENTS.md)
 

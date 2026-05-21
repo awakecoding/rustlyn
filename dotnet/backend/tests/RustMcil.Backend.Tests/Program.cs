@@ -26,6 +26,7 @@ RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindi
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
+RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -17665,6 +17666,22 @@ static void RustBitcodeBuildArgumentsIncludeBuildStdFeatures()
     Assert(ContainsAdjacent(arguments, "-Z", "build-std=core,alloc"), "Expected cargo arguments to include build-std components.");
     Assert(ContainsAdjacent(arguments, "-Z", "build-std-features=panic_immediate_abort"), "Expected cargo arguments to include build-std features.");
     Assert(ContainsAdjacent(arguments, "--target", "x86_64-pc-windows-msvc"), "Expected cargo arguments to include the configured target.");
+}
+
+static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Toolchain = "nightly",
+        BuildStd = "std,panic_abort",
+        Target = "x86_64-pc-windows-msvc"
+    };
+
+    var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
+    Assert(ContainsAdjacent(arguments, "-Z", "build-std=std,panic_abort"), "Expected cargo arguments to request the std build-std rung.");
+    Assert(ContainsAdjacent(arguments, "--emit", "llvm-bc"), "Expected cargo arguments to request LLVM bitcode directly.");
+    Assert(arguments.All(static argument => !argument.Contains("rsfakelink", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid the historical rsfakelink path.");
+    Assert(arguments.All(static argument => !argument.Contains("linker", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid linker replacement until a fixture proves it is needed.");
 }
 
 file sealed class SkipTestException(string message) : Exception(message);

@@ -35,7 +35,7 @@ The goal is not to recreate the old SDK packaging and project-system experience 
 
 `scripts/Build-SampleBitcode.ps1` builds a sample to LLVM bitcode and writes the result under `artifacts/out/`.
 
-For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode. The translate path also carries SourceGear-recovery options for `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, with `rust-src` preflight diagnostics when build-std is requested.
+For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode. The translate path also carries SourceGear-recovery options for `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, with `rust-src` preflight diagnostics when build-std is requested. The current fake-link decision keeps the historical `rsfakelink` approach deferred until a focused fixture proves direct Cargo bitcode emission cannot capture the required artifact.
 
 ### 3. Inspection and lowering
 
@@ -81,7 +81,7 @@ Compared with Eric Sink's original design, this revived repo intentionally chang
 - from historical proof-of-concept packaging to repeatable local validation in repo
 - from implicit compiler behavior to aggressively pinned sample-by-sample coverage
 
-The tracked recovery plan for closing those gaps is [SourceGear parity roadmap](sourcegear-parity-roadmap.md).
+The tracked recovery plan for closing those gaps is [SourceGear parity roadmap](sourcegear-parity-roadmap.md), with the current fake-link gate recorded in [SourceGear fake-link decision](sourcegear-fake-link-decision.md).
 
 ## Current Repository Shape
 
