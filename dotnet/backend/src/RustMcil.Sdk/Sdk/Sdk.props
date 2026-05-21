@@ -5,6 +5,13 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
     <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+    <DefaultLanguageSourceExtension Condition="'$(DefaultLanguageSourceExtension)' == ''">.rs</DefaultLanguageSourceExtension>
+    <Language Condition="'$(Language)' == ''">Rust</Language>
+    <TargetRuntime Condition="'$(TargetRuntime)' == ''">Managed</TargetRuntime>
+    <AlwaysUseNumericalSuffixInItemNames Condition="'$(AlwaysUseNumericalSuffixInItemNames)' == ''">true</AlwaysUseNumericalSuffixInItemNames>
+    <DefineCommonItemSchemas Condition="'$(DefineCommonItemSchemas)' == ''">true</DefineCommonItemSchemas>
+    <DefineCommonReferenceSchemas Condition="'$(DefineCommonReferenceSchemas)' == ''">true</DefineCommonReferenceSchemas>
+    <DefineCommonCapabilities Condition="'$(DefineCommonCapabilities)' == ''">true</DefineCommonCapabilities>
 
     <OutputPath Condition="'$(OutputPath)' == ''">$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\</OutputPath>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(MSBuildProjectDirectory)\obj\</BaseIntermediateOutputPath>

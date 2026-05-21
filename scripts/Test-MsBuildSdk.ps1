@@ -21,6 +21,28 @@ $generatedCargoManifestPath = Join-Path $workspaceRoot "samples\msbuild_generate
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
 $toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
 
+function Assert-MsBuildProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedValue
+    )
+
+    $propertyValue = (& dotnet msbuild $ProjectPath "-getProperty:$Name" -nologo | Select-Object -Last 1).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "MSBuild property evaluation failed for '$Name' with exit code $LASTEXITCODE."
+    }
+
+    if ($propertyValue -ne $ExpectedValue) {
+        throw "Expected MSBuild property '$Name' to evaluate to '$ExpectedValue', got '$propertyValue'."
+    }
+}
+
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
     throw "RustMcil.Tool build failed with exit code $LASTEXITCODE."
@@ -29,6 +51,14 @@ if ($LASTEXITCODE -ne 0) {
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
     $env:MSBuildSDKsPath = $sdkRoot
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefaultLanguageSourceExtension" -ExpectedValue ".rs"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "Language" -ExpectedValue "Rust"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "TargetRuntime" -ExpectedValue "Managed"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "AlwaysUseNumericalSuffixInItemNames" -ExpectedValue "true"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefineCommonItemSchemas" -ExpectedValue "true"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefineCommonReferenceSchemas" -ExpectedValue "true"
+    Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefineCommonCapabilities" -ExpectedValue "true"
+
     dotnet build $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK sample build failed with exit code $LASTEXITCODE."
@@ -149,5 +179,6 @@ if ($generatedResult -ne "83") {
 }
 
 Write-Host "PASS msbuild_add (msbuild sdk) => 42"
+Write-Host "PASS msbuild_project_system_metadata (sourcegear language properties)"
 Write-Host "PASS msbuild_sourcegear_aliases (sourcegear property aliases) => 11"
 Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + SourceGear auto-target guards + dependencies) => 83"
