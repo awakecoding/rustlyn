@@ -108,6 +108,7 @@ public static class RustBindingGenerator
     {
         return method.Result.Kind switch
         {
+            RustWrapperResultKind.BooleanAsInt => $"Ok({method.ResultVariableName})",
             RustWrapperResultKind.ObjectHandle => $"Ok({method.Result.RustType}::from_handle({method.ResultVariableName}))",
             _ => throw new NotSupportedException($"Rust wrapper result kind '{method.Result.Kind}' is not supported.")
         };

@@ -1007,6 +1007,11 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                     Assert(ManagedInteropRuntime.GetObject<string>(changedExtensionHandle) == Path.GetExtension(Path.ChangeExtension(tempPath, ".log")), "Expected generated Path.GetExtension binding to match System.IO.Path.GetExtension.");
                     Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(changedExtensionHandle) == 0, "Expected generated changed-extension string handle release to succeed.");
 
+                    var changedHasExtension = RuntimeBridgeHelpers.BindgenSystemIoPathHasExtensionString(changedPathHandle, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.HasExtension string-handle binding to report no exception.");
+                    Assert(changedHasExtension == 1, "Expected generated Path.HasExtension string-handle binding to return true for a changed extension path.");
+                    Assert((changedHasExtension != 0) == Path.HasExtension(Path.ChangeExtension(tempPath, ".log")), "Expected generated Path.HasExtension binding to match System.IO.Path.HasExtension.");
+
                     Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(changedPathHandle) == 0, "Expected generated changed path string handle release to succeed.");
                 }
                 finally

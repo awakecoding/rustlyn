@@ -234,6 +234,25 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -33;
     }
 
+    let changed_has_extension = match system::io::path::has_extension(&changed_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = changed_extension.release();
+            let _ = changed_path.release();
+            let _ = file_name_without_extension.release();
+            let _ = current_directory.release();
+            return -57;
+        }
+    };
+
+    if changed_has_extension == 0 {
+        let _ = changed_extension.release();
+        let _ = changed_path.release();
+        let _ = file_name_without_extension.release();
+        let _ = current_directory.release();
+        return -58;
+    }
+
     if changed_extension.release().is_err() {
         let _ = changed_path.release();
         let _ = file_name_without_extension.release();

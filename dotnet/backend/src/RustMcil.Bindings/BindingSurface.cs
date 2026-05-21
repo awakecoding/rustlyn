@@ -25,6 +25,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Path.GetPathRoot(string)", typeof(Path), nameof(Path.GetPathRoot), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetRelativePath(string, string)", typeof(Path), nameof(Path.GetRelativePath), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetTempPath()", typeof(Path), nameof(Path.GetTempPath), []),
+                ManagedApiRequirement.Method("System.IO.Path.HasExtension(string)", typeof(Path), nameof(Path.HasExtension), [typeof(string)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
@@ -88,6 +89,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_get_temp_path",
                     ["fn rust_mcil_bindgen_system_io_path_get_temp_path(exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_has_extension_string",
+                    ["fn rust_mcil_bindgen_system_io_path_has_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
@@ -246,6 +250,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(Path), nameof(Path.GetTempPath), [], [])))),
                 Glue(
+                    "rust_mcil_bindgen_system_io_path_has_extension_string",
+                    "BindgenSystemIoPathHasExtensionString",
+                    [I32("pathHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
+                        StaticMethod(typeof(Path), nameof(Path.HasExtension), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
+                Glue(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     "BindgenSystemStringFromUtf8",
                     [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
@@ -379,7 +389,14 @@ public sealed record BindingSurface(
                     "rust_mcil_bindgen_system_io_path_get_temp_path",
                     [],
                     "object_handle",
-                    RustWrapperResult.ObjectHandle("ManagedString"))
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn has_extension(path: &ManagedString) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_io_path_has_extension_string",
+                    ["path.handle()"],
+                    "value",
+                    RustWrapperResult.BooleanAsInt())
             ]);
     }
 
@@ -484,12 +501,16 @@ public enum RustWrapperContainer
 
 public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustType)
 {
+    public static RustWrapperResult BooleanAsInt()
+        => new(RustWrapperResultKind.BooleanAsInt, RustType: null);
+
     public static RustWrapperResult ObjectHandle(string rustType)
         => new(RustWrapperResultKind.ObjectHandle, rustType);
 }
 
 public enum RustWrapperResultKind
 {
+    BooleanAsInt,
     ObjectHandle
 }
 
