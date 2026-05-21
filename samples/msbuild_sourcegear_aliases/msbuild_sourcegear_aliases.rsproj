@@ -1,7 +1,7 @@
 <Project Sdk="RustMcil.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_sourcegear_aliases</AssemblyName>
-    <RustMcilCratePath>..\profile_probe</RustMcilCratePath>
+    <RustCratePath>..\profile_probe</RustCratePath>
     <RustToolchain>+nightly</RustToolchain>
     <RustDebugOrRelease>debug</RustDebugOrRelease>
   </PropertyGroup>

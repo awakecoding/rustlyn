@@ -1,0 +1,11 @@
+<Project Sdk="RustMcil.Sdk">
+  <PropertyGroup>
+    <AssemblyName>msbuild_generated_cargo</AssemblyName>
+    <RustEdition>2024</RustEdition>
+  </PropertyGroup>
+  <ItemGroup>
+    <RustReference Include="..\profile_probe">
+      <Name>profile_probe</Name>
+    </RustReference>
+  </ItemGroup>
+</Project>
