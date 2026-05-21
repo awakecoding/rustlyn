@@ -1,0 +1,39 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <Target Name="Build" DependsOnTargets="RustMcilTranslate" />
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+
+  <Target Name="Clean">
+    <Delete Files="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath)" />
+  </Target>
+
+  <Target Name="Restore" />
+
+  <Target Name="RustMcilTranslate">
+    <MakeDir Directories="$(OutputPath);$(IntermediateOutputPath)" />
+
+    <PropertyGroup>
+      <_RustMcilToolInvocation Condition="'$(RustMcilToolDll)' != ''">dotnet &quot;$(RustMcilToolDll)&quot;</_RustMcilToolInvocation>
+      <_RustMcilToolInvocation Condition="'$(RustMcilToolDll)' == ''">dotnet run -c &quot;$(RustMcilToolConfiguration)&quot; --project &quot;$(RustMcilToolProject)&quot; --</_RustMcilToolInvocation>
+      <_RustMcilTranslateCommand>$(_RustMcilToolInvocation) translate &quot;$(RustMcilCratePath)&quot; --out &quot;$(RustMcilOutputPath)&quot; --bitcode-out &quot;$(RustMcilBitcodeOutputPath)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilBinaryTarget)' != ''">$(_RustMcilTranslateCommand) --bin &quot;$(RustMcilBinaryTarget)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilCargoRelease)' == 'false'">$(_RustMcilTranslateCommand) --debug</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilToolchain)' != ''">$(_RustMcilTranslateCommand) --toolchain &quot;$(RustMcilToolchain)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilTarget)' != ''">$(_RustMcilTranslateCommand) --target &quot;$(RustMcilTarget)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilBuildStd)' != ''">$(_RustMcilTranslateCommand) --build-std &quot;$(RustMcilBuildStd)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilBuildStdFeatures)' != ''">$(_RustMcilTranslateCommand) --build-std-features &quot;$(RustMcilBuildStdFeatures)&quot;</_RustMcilTranslateCommand>
+      <_RustMcilTranslateCommand Condition="'$(RustMcilLlvmRoot)' != ''">$(_RustMcilTranslateCommand) --llvm-root &quot;$(RustMcilLlvmRoot)&quot;</_RustMcilTranslateCommand>
+    </PropertyGroup>
+
+    <Message Text="RustMcil: translating $(RustMcilCratePath) -> $(RustMcilOutputPath)" Importance="High" />
+    <Exec Command="$(_RustMcilTranslateCommand)" EnvironmentVariables="MSBuildSDKsPath=" />
+
+    <ItemGroup>
+      <FileWrites Include="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath)" />
+    </ItemGroup>
+  </Target>
+</Project>

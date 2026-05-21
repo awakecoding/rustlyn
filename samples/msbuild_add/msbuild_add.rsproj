@@ -1,0 +1,6 @@
+<Project Sdk="RustMcil.Sdk">
+  <PropertyGroup>
+    <AssemblyName>msbuild_add</AssemblyName>
+    <RustMcilCratePath>..\add</RustMcilCratePath>
+  </PropertyGroup>
+</Project>

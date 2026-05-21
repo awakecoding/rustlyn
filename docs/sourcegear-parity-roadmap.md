@@ -8,7 +8,7 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 
 | Old SourceGear capability | Evidence | Revived owner | Current status | First parity target |
 | --- | --- | --- | --- | --- |
-| SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | Future MSBuild wrapper | Not started | Add only after a cargo driver is stable |
+| SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | `RustMcil.Sdk` local MSBuild facade | Started with a thin local SDK that delegates to `RustMcil.Tool translate` | Add cargo-driver/project metadata features before packaging as a NuGet SDK |
 | Synthetic Cargo project generation from project metadata | `artifacts/decompiled/rsbuild-program/Program.decompiled.cs` | Future cargo/MSBuild driver | Not started | Generate a temporary Cargo build directory from explicit tool options |
 | Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `cargo -Z build-std` rungs for `core`, `core,alloc`, and `std,panic_abort` are validated against focused fixtures; fake-link remains deferred by decision record | Continue std/environment/path/time fixtures before adding custom sysroot tooling |
 | Fake linker handoff to `.bc` | `artifacts/sdk-0.1.5/extracted/tools/rsfakelink/` | Optional future `RustMcil.FakeLink` | Deferred by [SourceGear fake-link decision](sourcegear-fake-link-decision.md) | Reopen only when a focused fixture proves Cargo cannot capture the required bitcode |
@@ -143,9 +143,19 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_full_path,dotnet_runtime_directory_name,dotnet_runtime_path_branch_root -Mode Cargo -Configuration Release
 ```
 
+### Slice 7: Local MSBuild SDK Facade
+
+Started with a local `RustMcil.Sdk` under `dotnet/backend/src`. This is the first SDK-style `.rsproj` recovery slice: `samples/msbuild_add/msbuild_add.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and the SDK `Build` target delegates to the existing `RustMcil.Tool translate` command. The slice deliberately avoids synthetic Cargo project generation and NuGet packaging; it proves the project-system handoff first while keeping the cargo/backend driver as the owner of translation behavior.
+
+Validation:
+
+```powershell
+.\scripts\Test-MsBuildSdk.ps1 -Configuration Release
+```
+
 ## Non-Goals For The First Recovery Pass
 
-- Recreating the old MSBuild SDK before the compiler/runtime/bindings work is stable.
+- Recreating the full old packaged MSBuild SDK before the compiler/runtime/bindings work is stable.
 - Checking generated binding crates into the repo as a huge static snapshot.
 - Cloning the old xargo-era sysroot design if `cargo -Z build-std` works.
 - Treating the current Avalonia bridge as a substitute for generated managed API bindings.
