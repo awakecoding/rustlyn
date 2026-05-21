@@ -1,0 +1,8 @@
+<Project Sdk="RustMcil.Sdk">
+  <PropertyGroup>
+    <AssemblyName>msbuild_bin_trivial</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RustMcilCratePath>..\bin_trivial</RustMcilCratePath>
+    <RustMcilBinaryTarget>bin_trivial</RustMcilBinaryTarget>
+  </PropertyGroup>
+</Project>

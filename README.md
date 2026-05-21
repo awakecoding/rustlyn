@@ -63,10 +63,11 @@ Try the first local MSBuild SDK facade:
 
 ```powershell
 .\scripts\Test-MsBuildSdk.ps1 -Configuration Release
+.\scripts\Test-MsBuildSdkBinary.ps1 -Configuration Release
 .\scripts\Test-MsBuildSdkPackage.ps1 -Configuration Release
 ```
 
-The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. The second script packs `RustMcil.Sdk` into `artifacts/scratch/packages`, bundles a published `RustMcil.Tool` under `tools/net10.0`, and verifies NuGet-style SDK resolution from a generated scratch `.rsproj` without passing a source-tree tool path.
+The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. The binary script builds `samples/msbuild_bin_trivial/msbuild_bin_trivial.rsproj`, uses `RustMcilBinaryTarget`, runs the emitted console assembly, and verifies `Clean` removes the generated assembly, bitcode, and runtimeconfig. The package script packs `RustMcil.Sdk` into `artifacts/scratch/packages`, bundles a published `RustMcil.Tool` under `tools/net10.0`, and verifies NuGet-style SDK resolution from generated scratch library and binary `.rsproj` projects without passing a source-tree tool path.
 
 Try the first Avalonia bridge sample:
 

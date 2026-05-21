@@ -15,10 +15,15 @@ $packagePath = Join-Path $packageSource "RustMcil.Sdk.0.1.0-local.nupkg"
 $scratchProjectRoot = Join-Path $workspaceRoot "artifacts\scratch\msbuild-sdk-package"
 $nugetPackages = Join-Path $scratchProjectRoot "nuget-packages"
 $projectPath = Join-Path $scratchProjectRoot "msbuild_add_packaged.rsproj"
+$binaryProjectPath = Join-Path $scratchProjectRoot "msbuild_bin_trivial_packaged.rsproj"
 $nugetConfigPath = Join-Path $scratchProjectRoot "NuGet.config"
 $outputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_add_packaged.dll"
 $bitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\msbuild_add_packaged.bc"
+$binaryOutputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_bin_trivial_packaged.dll"
+$binaryRuntimeConfigPath = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_bin_trivial_packaged.runtimeconfig.json"
+$binaryBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\msbuild_bin_trivial_packaged.bc"
 $addCratePath = Join-Path $workspaceRoot "samples\add"
+$binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 
 if (Test-Path $scratchProjectRoot) {
     Remove-Item -Recurse -Force $scratchProjectRoot
@@ -62,6 +67,18 @@ $projectXml = @"
 "@
 Set-Content -Path $projectPath -Value $projectXml -Encoding UTF8
 
+$binaryProjectXml = @"
+<Project Sdk="RustMcil.Sdk/0.1.0-local">
+    <PropertyGroup>
+        <AssemblyName>msbuild_bin_trivial_packaged</AssemblyName>
+        <OutputType>Exe</OutputType>
+        <RustMcilCratePath>$binTrivialCratePath</RustMcilCratePath>
+        <RustMcilBinaryTarget>bin_trivial</RustMcilBinaryTarget>
+    </PropertyGroup>
+</Project>
+"@
+Set-Content -Path $binaryProjectPath -Value $binaryProjectXml -Encoding UTF8
+
 $packageSourceUri = [System.Uri]::new($packageSource + [System.IO.Path]::DirectorySeparatorChar).AbsoluteUri
 $nugetConfigXml = @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -82,6 +99,11 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Packaged MSBuild SDK sample build failed with exit code $LASTEXITCODE."
     }
+
+    dotnet build $binaryProjectPath -c $Configuration /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaged MSBuild SDK binary sample build failed with exit code $LASTEXITCODE."
+    }
 }
 finally {
     $env:NUGET_PACKAGES = $previousNuGetPackages
@@ -96,6 +118,18 @@ if (-not (Test-Path $bitcodePath)) {
     throw "Expected packaged-SDK translated bitcode was not created: $bitcodePath"
 }
 
+if (-not (Test-Path $binaryOutputAssembly)) {
+    throw "Expected packaged-SDK translated binary assembly was not created: $binaryOutputAssembly"
+}
+
+if (-not (Test-Path $binaryRuntimeConfigPath)) {
+    throw "Expected packaged-SDK translated binary runtimeconfig was not created: $binaryRuntimeConfigPath"
+}
+
+if (-not (Test-Path $binaryBitcodePath)) {
+    throw "Expected packaged-SDK translated binary bitcode was not created: $binaryBitcodePath"
+}
+
 $invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "Packaged MSBuild SDK sample invoke failed with exit code $LASTEXITCODE."
@@ -106,4 +140,15 @@ if ($result -ne "42") {
     throw "Expected packaged MSBuild SDK sample to invoke add_i32(19, 23) => 42, got '$result'."
 }
 
+$binaryOutput = & dotnet $binaryOutputAssembly 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Packaged MSBuild SDK binary sample failed with exit code $LASTEXITCODE.`n$($binaryOutput | Out-String)"
+}
+
+$actualBinaryOutput = (($binaryOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 }) -join [Environment]::NewLine
+if ($actualBinaryOutput -ne "") {
+    throw "Expected packaged MSBuild SDK binary sample to produce no stdout/stderr, got '$actualBinaryOutput'."
+}
+
 Write-Host "PASS msbuild_add_packaged (nuget sdk) => 42"
+Write-Host "PASS msbuild_bin_trivial_packaged (nuget sdk bin) => exit 0"

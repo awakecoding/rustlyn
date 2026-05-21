@@ -8,7 +8,7 @@
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
 
   <Target Name="Clean">
-    <Delete Files="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath)" />
+    <Delete Files="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath);$(RustMcilRuntimeConfigOutputPath)" />
   </Target>
 
   <Target Name="Restore" />
@@ -33,7 +33,7 @@
     <Exec Command="$(_RustMcilTranslateCommand)" EnvironmentVariables="MSBuildSDKsPath=" />
 
     <ItemGroup>
-      <FileWrites Include="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath)" />
+      <FileWrites Include="$(RustMcilOutputPath);$(RustMcilBitcodeOutputPath);$(RustMcilRuntimeConfigOutputPath)" />
     </ItemGroup>
   </Target>
 </Project>
