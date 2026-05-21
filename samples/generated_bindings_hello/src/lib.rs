@@ -205,15 +205,51 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -30;
     }
 
+    let changed_extension = match system::io::path::get_extension(&changed_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = changed_path.release();
+            let _ = file_name_without_extension.release();
+            let _ = current_directory.release();
+            return -31;
+        }
+    };
+
+    let changed_extension_len = match changed_extension.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = changed_extension.release();
+            let _ = changed_path.release();
+            let _ = file_name_without_extension.release();
+            let _ = current_directory.release();
+            return -32;
+        }
+    };
+
+    if changed_extension_len <= 0 {
+        let _ = changed_extension.release();
+        let _ = changed_path.release();
+        let _ = file_name_without_extension.release();
+        let _ = current_directory.release();
+        return -33;
+    }
+
+    if changed_extension.release().is_err() {
+        let _ = changed_path.release();
+        let _ = file_name_without_extension.release();
+        let _ = current_directory.release();
+        return -34;
+    }
+
     if changed_path.release().is_err() {
         let _ = file_name_without_extension.release();
         let _ = current_directory.release();
-        return -31;
+        return -35;
     }
 
     if file_name_without_extension.release().is_err() {
         let _ = current_directory.release();
-        return -32;
+        return -36;
     }
 
     if current_directory.release().is_err() {
