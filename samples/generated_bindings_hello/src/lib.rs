@@ -252,11 +252,39 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -36;
     }
 
-    let temp_path = match system::io::path::get_temp_path() {
+    let directory_name = match system::io::path::get_directory_name(&current_directory) {
         Ok(value) => value,
         Err(_) => {
             let _ = current_directory.release();
             return -37;
+        }
+    };
+
+    let directory_name_len = match directory_name.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = directory_name.release();
+            let _ = current_directory.release();
+            return -38;
+        }
+    };
+
+    if directory_name_len <= 0 || directory_name_len >= char_len {
+        let _ = directory_name.release();
+        let _ = current_directory.release();
+        return -39;
+    }
+
+    if directory_name.release().is_err() {
+        let _ = current_directory.release();
+        return -40;
+    }
+
+    let temp_path = match system::io::path::get_temp_path() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -41;
         }
     };
 
@@ -265,19 +293,19 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         Err(_) => {
             let _ = temp_path.release();
             let _ = current_directory.release();
-            return -38;
+            return -42;
         }
     };
 
     if temp_len <= 0 {
         let _ = temp_path.release();
         let _ = current_directory.release();
-        return -39;
+        return -43;
     }
 
     if temp_path.release().is_err() {
         let _ = current_directory.release();
-        return -40;
+        return -44;
     }
 
     if current_directory.release().is_err() {
