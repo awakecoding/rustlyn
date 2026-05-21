@@ -19,6 +19,46 @@ public static class HostEnvironment
         return InteropUtf8.CopyString(GetCommandLineArg(index), destinationPointer, destinationCapacity);
     }
 
+    public static int Utf8DocumentsLength()
+    {
+        return InteropUtf8.GetByteCount(GetSpecialFolder(Environment.SpecialFolder.MyDocuments));
+    }
+
+    public static int CopyUtf8Documents(IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(GetSpecialFolder(Environment.SpecialFolder.MyDocuments), destinationPointer, destinationCapacity);
+    }
+
+    public static int Utf8TempPathLength()
+    {
+        return InteropUtf8.GetByteCount(Path.GetTempPath());
+    }
+
+    public static int CopyUtf8TempPath(IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(Path.GetTempPath(), destinationPointer, destinationCapacity);
+    }
+
+    public static int Utf8UserProfileLength()
+    {
+        return InteropUtf8.GetByteCount(GetSpecialFolder(Environment.SpecialFolder.UserProfile));
+    }
+
+    public static int CopyUtf8UserProfile(IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(GetSpecialFolder(Environment.SpecialFolder.UserProfile), destinationPointer, destinationCapacity);
+    }
+
+    public static int Utf8CurrentDirectoryLength()
+    {
+        return InteropUtf8.GetByteCount(Environment.CurrentDirectory);
+    }
+
+    public static int CopyUtf8CurrentDirectory(IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(Environment.CurrentDirectory, destinationPointer, destinationCapacity);
+    }
+
     private static string GetCommandLineArg(int index)
     {
         var args = Environment.GetCommandLineArgs();
@@ -28,5 +68,10 @@ public static class HostEnvironment
         }
 
         return args[index];
+    }
+
+    private static string GetSpecialFolder(Environment.SpecialFolder folder)
+    {
+        return Environment.GetFolderPath(folder);
     }
 }

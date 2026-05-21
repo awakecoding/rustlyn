@@ -120,48 +120,42 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8DocumentsLength()
     {
-        return Encoding.UTF8.GetByteCount(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+        return RustMcil.Os.HostEnvironment.Utf8DocumentsLength();
     }
 
     public static int CopyUtf8Documents(IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostEnvironment.CopyUtf8Documents(destinationPointer, destinationCapacity);
     }
 
     public static int Utf8TempPathLength()
     {
-        return Encoding.UTF8.GetByteCount(Path.GetTempPath());
+        return RustMcil.Os.HostEnvironment.Utf8TempPathLength();
     }
 
     public static int CopyUtf8TempPath(IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(Path.GetTempPath(), destinationPointer, destinationCapacity);
+        return RustMcil.Os.HostEnvironment.CopyUtf8TempPath(destinationPointer, destinationCapacity);
     }
 
     public static int Utf8UserProfileLength()
     {
-        return Encoding.UTF8.GetByteCount(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        return RustMcil.Os.HostEnvironment.Utf8UserProfileLength();
     }
 
     public static int CopyUtf8UserProfile(IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostEnvironment.CopyUtf8UserProfile(destinationPointer, destinationCapacity);
     }
 
     public static int Utf8CurrentDirectoryLength()
     {
-        return Encoding.UTF8.GetByteCount(Environment.CurrentDirectory);
+        return RustMcil.Os.HostEnvironment.Utf8CurrentDirectoryLength();
     }
 
     public static int CopyUtf8CurrentDirectory(IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(Environment.CurrentDirectory, destinationPointer, destinationCapacity);
+        return RustMcil.Os.HostEnvironment.CopyUtf8CurrentDirectory(destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathCombine3LengthUtf8(IntPtr firstPointer, long firstLength, IntPtr secondPointer, long secondLength, IntPtr thirdPointer, long thirdLength)

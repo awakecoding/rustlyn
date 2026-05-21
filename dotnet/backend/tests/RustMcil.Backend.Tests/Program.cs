@@ -27,6 +27,7 @@ RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNu
 RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsConsoleHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeForwardsEnvironmentPathHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17770,6 +17771,55 @@ static void RuntimeSplitFacadeForwardsFileHelpers()
     finally
     {
         Marshal.FreeHGlobal(pathPointer);
+    }
+}
+
+static void RuntimeSplitFacadeForwardsEnvironmentPathHelpers()
+{
+    AssertUtf8FacadeCopy(
+        "current directory",
+        Environment.CurrentDirectory,
+        RustMcil.Os.HostEnvironment.Utf8CurrentDirectoryLength,
+        RuntimeBridgeHelpers.Utf8CurrentDirectoryLength,
+        RuntimeBridgeHelpers.CopyUtf8CurrentDirectory);
+    AssertUtf8FacadeCopy(
+        "temp path",
+        Path.GetTempPath(),
+        RustMcil.Os.HostEnvironment.Utf8TempPathLength,
+        RuntimeBridgeHelpers.Utf8TempPathLength,
+        RuntimeBridgeHelpers.CopyUtf8TempPath);
+    AssertUtf8FacadeCopy(
+        "user profile",
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        RustMcil.Os.HostEnvironment.Utf8UserProfileLength,
+        RuntimeBridgeHelpers.Utf8UserProfileLength,
+        RuntimeBridgeHelpers.CopyUtf8UserProfile);
+    AssertUtf8FacadeCopy(
+        "documents",
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        RustMcil.Os.HostEnvironment.Utf8DocumentsLength,
+        RuntimeBridgeHelpers.Utf8DocumentsLength,
+        RuntimeBridgeHelpers.CopyUtf8Documents);
+}
+
+static void AssertUtf8FacadeCopy(string label, string expected, Func<int> ownerLength, Func<int> facadeLength, Func<IntPtr, long, int> facadeCopy)
+{
+    var expectedBytes = Encoding.UTF8.GetBytes(expected);
+    Assert(ownerLength() == expectedBytes.Length, $"Expected OS environment helper to expose {label} UTF-8 byte length.");
+    Assert(facadeLength() == ownerLength(), $"Expected Backend runtime facade to forward {label} UTF-8 byte length.");
+
+    var destination = Marshal.AllocHGlobal(expectedBytes.Length);
+    try
+    {
+        var copiedLength = facadeCopy(destination, expectedBytes.Length);
+        var actualBytes = new byte[expectedBytes.Length];
+        Marshal.Copy(destination, actualBytes, 0, actualBytes.Length);
+        Assert(copiedLength == expectedBytes.Length, $"Expected Backend runtime facade to return copied {label} UTF-8 byte length.");
+        Assert(actualBytes.SequenceEqual(expectedBytes), $"Expected Backend runtime facade to copy {label} UTF-8 bytes through the OS environment helper.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(destination);
     }
 }
 
