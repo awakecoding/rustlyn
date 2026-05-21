@@ -28,6 +28,7 @@ RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpe
 RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsConsoleHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeForwardsEnvironmentPathHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsPathCombineHelpers", RuntimeSplitFacadeForwardsPathCombineHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17800,6 +17801,50 @@ static void RuntimeSplitFacadeForwardsEnvironmentPathHelpers()
         RustMcil.Os.HostEnvironment.Utf8DocumentsLength,
         RuntimeBridgeHelpers.Utf8DocumentsLength,
         RuntimeBridgeHelpers.CopyUtf8Documents);
+}
+
+static void RuntimeSplitFacadeForwardsPathCombineHelpers()
+{
+    var firstPointer = CopyUtf8TestString("root", out var firstLength);
+    var secondPointer = CopyUtf8TestString("child", out var secondLength);
+    var thirdPointer = CopyUtf8TestString("leaf.txt", out var thirdLength);
+    try
+    {
+        var expectedCombine = Path.Combine("root", "child");
+        var expectedCombineBytes = Encoding.UTF8.GetBytes(expectedCombine);
+        Assert(RustMcil.Os.HostPath.Utf8PathCombineLengthUtf8(firstPointer, firstLength, secondPointer, secondLength) == expectedCombineBytes.Length, "Expected OS path helper to expose Path.Combine UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathCombineLengthUtf8(firstPointer, firstLength, secondPointer, secondLength) == RustMcil.Os.HostPath.Utf8PathCombineLengthUtf8(firstPointer, firstLength, secondPointer, secondLength), "Expected Backend runtime facade to forward Path.Combine UTF-8 byte length.");
+        AssertPathCopy("Path.Combine", expectedCombineBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathCombine(firstPointer, firstLength, secondPointer, secondLength, destination, expectedCombineBytes.Length));
+
+        var expectedCombine3 = Path.Combine("root", "child", "leaf.txt");
+        var expectedCombine3Bytes = Encoding.UTF8.GetBytes(expectedCombine3);
+        Assert(RustMcil.Os.HostPath.Utf8PathCombine3LengthUtf8(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength) == expectedCombine3Bytes.Length, "Expected OS path helper to expose Path.Combine3 UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathCombine3LengthUtf8(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength) == RustMcil.Os.HostPath.Utf8PathCombine3LengthUtf8(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength), "Expected Backend runtime facade to forward Path.Combine3 UTF-8 byte length.");
+        AssertPathCopy("Path.Combine3", expectedCombine3Bytes, destination => RuntimeBridgeHelpers.CopyUtf8PathCombine3(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength, destination, expectedCombine3Bytes.Length));
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(firstPointer);
+        Marshal.FreeHGlobal(secondPointer);
+        Marshal.FreeHGlobal(thirdPointer);
+    }
+}
+
+static void AssertPathCopy(string label, byte[] expectedBytes, Func<IntPtr, int> copy)
+{
+    var destination = Marshal.AllocHGlobal(expectedBytes.Length);
+    try
+    {
+        var copiedLength = copy(destination);
+        var actualBytes = new byte[expectedBytes.Length];
+        Marshal.Copy(destination, actualBytes, 0, actualBytes.Length);
+        Assert(copiedLength == expectedBytes.Length, $"Expected Backend runtime facade to return copied {label} UTF-8 byte length.");
+        Assert(actualBytes.SequenceEqual(expectedBytes), $"Expected Backend runtime facade to copy {label} UTF-8 bytes through the OS path helper.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(destination);
+    }
 }
 
 static void AssertUtf8FacadeCopy(string label, string expected, Func<int> ownerLength, Func<int> facadeLength, Func<IntPtr, long, int> facadeCopy)

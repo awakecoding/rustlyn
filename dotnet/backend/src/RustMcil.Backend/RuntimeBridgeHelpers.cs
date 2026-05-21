@@ -160,28 +160,22 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathCombine3LengthUtf8(IntPtr firstPointer, long firstLength, IntPtr secondPointer, long secondLength, IntPtr thirdPointer, long thirdLength)
     {
-        return Encoding.UTF8.GetByteCount(CombineUtf8Paths(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength));
+        return RustMcil.Os.HostPath.Utf8PathCombine3LengthUtf8(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength);
     }
 
     public static int CopyUtf8PathCombine3(IntPtr firstPointer, long firstLength, IntPtr secondPointer, long secondLength, IntPtr thirdPointer, long thirdLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            CombineUtf8Paths(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathCombine3(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathCombineLengthUtf8(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength)
     {
-        return Encoding.UTF8.GetByteCount(CombineUtf8Paths(leftPointer, leftLength, rightPointer, rightLength));
+        return RustMcil.Os.HostPath.Utf8PathCombineLengthUtf8(leftPointer, leftLength, rightPointer, rightLength);
     }
 
     public static int CopyUtf8PathCombine(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            CombineUtf8Paths(leftPointer, leftLength, rightPointer, rightLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathCombine(leftPointer, leftLength, rightPointer, rightLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathChangeExtensionLengthUtf8(IntPtr pathPointer, long pathLength, IntPtr extensionPointer, long extensionLength)
@@ -409,21 +403,6 @@ public static partial class RuntimeBridgeHelpers
         return Path.GetRelativePath(
             ReadUtf8String(relativeToPointer, relativeToLength),
             ReadUtf8String(pathPointer, pathLength));
-    }
-
-    private static string CombineUtf8Paths(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength)
-    {
-        return Path.Combine(
-            ReadUtf8String(leftPointer, leftLength),
-            ReadUtf8String(rightPointer, rightLength));
-    }
-
-    private static string CombineUtf8Paths(IntPtr firstPointer, long firstLength, IntPtr secondPointer, long secondLength, IntPtr thirdPointer, long thirdLength)
-    {
-        return Path.Combine(
-            ReadUtf8String(firstPointer, firstLength),
-            ReadUtf8String(secondPointer, secondLength),
-            ReadUtf8String(thirdPointer, thirdLength));
     }
 
     private static IntPtr CopyToUnmanaged(IntPtr source, long length)
