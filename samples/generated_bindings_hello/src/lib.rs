@@ -358,22 +358,62 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -49;
     }
 
+    let relative_temp_path = match system::io::path::get_relative_path(&temp_root, &full_temp_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = temp_root.release();
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -50;
+        }
+    };
+
+    let relative_temp_len = match relative_temp_path.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = relative_temp_path.release();
+            let _ = temp_root.release();
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -51;
+        }
+    };
+
+    if relative_temp_len <= 0 || relative_temp_len > full_temp_len {
+        let _ = relative_temp_path.release();
+        let _ = temp_root.release();
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -52;
+    }
+
+    if relative_temp_path.release().is_err() {
+        let _ = temp_root.release();
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -53;
+    }
+
     if temp_root.release().is_err() {
         let _ = full_temp_path.release();
         let _ = temp_path.release();
         let _ = current_directory.release();
-        return -50;
+        return -54;
     }
 
     if full_temp_path.release().is_err() {
         let _ = temp_path.release();
         let _ = current_directory.release();
-        return -51;
+        return -55;
     }
 
     if temp_path.release().is_err() {
         let _ = current_directory.release();
-        return -52;
+        return -56;
     }
 
     if current_directory.release().is_err() {

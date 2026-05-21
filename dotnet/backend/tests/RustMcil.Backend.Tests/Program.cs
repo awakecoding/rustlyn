@@ -1037,6 +1037,13 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                 Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetPathRoot string-handle binding to report no exception.");
                 Assert(pathRootHandle > 0, "Expected generated Path.GetPathRoot string-handle binding to return a managed string handle.");
                 Assert(ManagedInteropRuntime.GetObject<string>(pathRootHandle) == Path.GetPathRoot(Path.GetFullPath(tempPath)), "Expected generated Path.GetPathRoot binding to match System.IO.Path.GetPathRoot.");
+
+                var relativePathHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetRelativePathStringString(pathRootHandle, fullPathHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetRelativePath string-handle binding to report no exception.");
+                Assert(relativePathHandle > 0, "Expected generated Path.GetRelativePath string-handle binding to return a managed string handle.");
+                Assert(ManagedInteropRuntime.GetObject<string>(relativePathHandle) == Path.GetRelativePath(Path.GetPathRoot(Path.GetFullPath(tempPath))!, Path.GetFullPath(tempPath)), "Expected generated Path.GetRelativePath binding to match System.IO.Path.GetRelativePath.");
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(relativePathHandle) == 0, "Expected generated relative-path string handle release to succeed.");
+
                 Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(pathRootHandle) == 0, "Expected generated path-root string handle release to succeed.");
 
                 Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(fullPathHandle) == 0, "Expected generated full-path string handle release to succeed.");
