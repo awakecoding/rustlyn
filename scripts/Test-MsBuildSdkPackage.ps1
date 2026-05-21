@@ -16,14 +16,21 @@ $scratchProjectRoot = Join-Path $workspaceRoot "artifacts\scratch\msbuild-sdk-pa
 $nugetPackages = Join-Path $scratchProjectRoot "nuget-packages"
 $projectPath = Join-Path $scratchProjectRoot "msbuild_add_packaged.rsproj"
 $binaryProjectPath = Join-Path $scratchProjectRoot "msbuild_bin_trivial_packaged.rsproj"
+$workloadProjectPath = Join-Path $scratchProjectRoot "msbuild_generated_bindings_lousygrep_packaged.rsproj"
 $nugetConfigPath = Join-Path $scratchProjectRoot "NuGet.config"
 $outputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_add_packaged.dll"
 $bitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\msbuild_add_packaged.bc"
 $binaryOutputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\bin_trivial.dll"
 $binaryRuntimeConfigPath = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\bin_trivial.runtimeconfig.json"
 $binaryBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\bin_trivial.bc"
+$workloadOutputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\generated_bindings_lousygrep.dll"
+$workloadRuntimeConfigPath = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\generated_bindings_lousygrep.runtimeconfig.json"
+$workloadBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\generated_bindings_lousygrep.bc"
 $addCratePath = Join-Path $workspaceRoot "samples\add"
 $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
+$workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
+$fixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"
+$secondFixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt"
 
 if (Test-Path $scratchProjectRoot) {
     Remove-Item -Recurse -Force $scratchProjectRoot
@@ -78,6 +85,17 @@ $binaryProjectXml = @"
 "@
 Set-Content -Path $binaryProjectPath -Value $binaryProjectXml -Encoding UTF8
 
+$workloadProjectXml = @"
+<Project Sdk="RustMcil.Sdk/0.1.0-local">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <AssemblyName>generated_bindings_lousygrep</AssemblyName>
+        <RustMcilCratePath>$workloadCratePath</RustMcilCratePath>
+    </PropertyGroup>
+</Project>
+"@
+Set-Content -Path $workloadProjectPath -Value $workloadProjectXml -Encoding UTF8
+
 $packageSourceUri = [System.Uri]::new($packageSource + [System.IO.Path]::DirectorySeparatorChar).AbsoluteUri
 $nugetConfigXml = @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -102,6 +120,11 @@ try {
     dotnet build $binaryProjectPath -c $Configuration /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "Packaged MSBuild SDK binary sample build failed with exit code $LASTEXITCODE."
+    }
+
+    dotnet build $workloadProjectPath -c $Configuration /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaged MSBuild SDK generated-bindings workload build failed with exit code $LASTEXITCODE."
     }
 }
 finally {
@@ -129,6 +152,26 @@ if (-not (Test-Path $binaryBitcodePath)) {
     throw "Expected packaged-SDK translated binary bitcode was not created: $binaryBitcodePath"
 }
 
+if (-not (Test-Path $workloadOutputAssembly)) {
+    throw "Expected packaged-SDK generated-bindings workload assembly was not created: $workloadOutputAssembly"
+}
+
+if (-not (Test-Path $workloadRuntimeConfigPath)) {
+    throw "Expected packaged-SDK generated-bindings workload runtimeconfig was not created: $workloadRuntimeConfigPath"
+}
+
+if (-not (Test-Path $workloadBitcodePath)) {
+    throw "Expected packaged-SDK generated-bindings workload bitcode was not created: $workloadBitcodePath"
+}
+
+$workloadOutputDirectory = Split-Path -Parent $workloadOutputAssembly
+foreach ($supportAssemblyName in @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")) {
+    $supportAssemblyPath = Join-Path $workloadOutputDirectory $supportAssemblyName
+    if (-not (Test-Path $supportAssemblyPath)) {
+        throw "Expected packaged-SDK workload output to include copied support assembly: $supportAssemblyPath"
+    }
+}
+
 $invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "Packaged MSBuild SDK sample invoke failed with exit code $LASTEXITCODE."
@@ -149,5 +192,17 @@ if ($actualBinaryOutput -ne "") {
     throw "Expected packaged MSBuild SDK binary sample to produce no stdout/stderr, got '$actualBinaryOutput'."
 }
 
+$workloadOutput = & dotnet $workloadOutputAssembly runtime $fixturePath $secondFixturePath 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Packaged MSBuild SDK generated-bindings workload failed with exit code $LASTEXITCODE.`n$($workloadOutput | Out-String)"
+}
+
+$actualWorkloadOutput = (($workloadOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 }) -join [Environment]::NewLine
+$expectedWorkloadOutput = @("alpha-runtime", "runtime-beta", "runtime-gamma") -join [Environment]::NewLine
+if ($actualWorkloadOutput -ne $expectedWorkloadOutput) {
+    throw "Expected packaged MSBuild SDK generated-bindings workload to print '$expectedWorkloadOutput', got '$actualWorkloadOutput'."
+}
+
 Write-Host "PASS msbuild_add_packaged (nuget sdk) => 42"
 Write-Host "PASS bin_trivial (nuget sdk inferred bin) => exit 0"
+Write-Host "PASS generated_bindings_lousygrep (nuget sdk support assemblies)"
