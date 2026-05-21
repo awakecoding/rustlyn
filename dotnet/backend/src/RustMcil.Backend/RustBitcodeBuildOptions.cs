@@ -14,5 +14,7 @@ public sealed record RustBitcodeBuildOptions
 
     public string? BuildStd { get; init; }
 
+    public string? BuildStdFeatures { get; init; }
+
     public bool PanicAbort { get; init; } = true;
 }

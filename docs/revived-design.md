@@ -35,7 +35,7 @@ The goal is not to recreate the old SDK packaging and project-system experience 
 
 `scripts/Build-SampleBitcode.ps1` builds a sample to LLVM bitcode and writes the result under `artifacts/out/`.
 
-For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode.
+For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode. The translate path also carries SourceGear-recovery options for `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, with `rust-src` preflight diagnostics when build-std is requested.
 
 ### 3. Inspection and lowering
 

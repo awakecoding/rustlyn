@@ -23,6 +23,9 @@ RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototype
 RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
 RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
+RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
+RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
+RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -17430,6 +17433,20 @@ static void Assert(bool condition, string message)
     }
 }
 
+static bool ContainsAdjacent(IReadOnlyList<string> values, string first, string second)
+{
+    for (var index = 0; index < values.Count - 1; index++)
+    {
+        if (string.Equals(values[index], first, StringComparison.Ordinal)
+            && string.Equals(values[index + 1], second, StringComparison.Ordinal))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static string? FindWorkspaceRoot()
 {
     var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -17445,6 +17462,40 @@ static string? FindWorkspaceRoot()
     }
 
     return null;
+}
+
+static void RustBitcodeBuildStdRequiresToolchain()
+{
+    var options = new RustBitcodeBuildOptions { BuildStd = "core" };
+    ExpectException<InvalidOperationException>(() => RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options));
+}
+
+static void RustBitcodeBuildStdFeaturesRequireBuildStd()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Toolchain = "nightly",
+        BuildStdFeatures = "panic_immediate_abort"
+    };
+
+    ExpectException<InvalidOperationException>(() => RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options));
+}
+
+static void RustBitcodeBuildArgumentsIncludeBuildStdFeatures()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Toolchain = "nightly",
+        BuildStd = "core,alloc",
+        BuildStdFeatures = "panic_immediate_abort",
+        Target = "x86_64-pc-windows-msvc"
+    };
+
+    var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
+    Assert(arguments.Contains("+nightly"), "Expected cargo arguments to include the configured toolchain.");
+    Assert(ContainsAdjacent(arguments, "-Z", "build-std=core,alloc"), "Expected cargo arguments to include build-std components.");
+    Assert(ContainsAdjacent(arguments, "-Z", "build-std-features=panic_immediate_abort"), "Expected cargo arguments to include build-std features.");
+    Assert(ContainsAdjacent(arguments, "--target", "x86_64-pc-windows-msvc"), "Expected cargo arguments to include the configured target.");
 }
 
 file sealed class SkipTestException(string message) : Exception(message);

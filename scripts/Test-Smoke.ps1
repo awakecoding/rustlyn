@@ -1702,6 +1702,26 @@ function Invoke-TranslateSmokeCheck {
             $translateCommand += $Check.BinaryTarget
         }
 
+        if ($Check.ContainsKey("Toolchain")) {
+            $translateCommand += '--toolchain'
+            $translateCommand += $Check.Toolchain
+        }
+
+        if ($Check.ContainsKey("Target")) {
+            $translateCommand += '--target'
+            $translateCommand += $Check.Target
+        }
+
+        if ($Check.ContainsKey("BuildStd")) {
+            $translateCommand += '--build-std'
+            $translateCommand += $Check.BuildStd
+        }
+
+        if ($Check.ContainsKey("BuildStdFeatures")) {
+            $translateCommand += '--build-std-features'
+            $translateCommand += $Check.BuildStdFeatures
+        }
+
         & dotnet @translateCommand | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run translate failed for '$CurrentSample' with exit code $LASTEXITCODE"

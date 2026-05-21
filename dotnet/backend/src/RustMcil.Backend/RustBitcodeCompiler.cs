@@ -35,8 +35,11 @@ public static class RustBitcodeCompiler
         ValidateOptions(options);
 
         var manifestPath = ResolveManifestPath(cratePath);
+        var crateDirectory = Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory();
+        ValidateTargetPath(options, crateDirectory);
+        PreflightBuildStd(options, crateDirectory);
         var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain, options.BinaryTargetName);
-        var buildArguments = CreateBuildArguments(manifestPath, options);
+        var buildArguments = CreateCargoRustcArguments(manifestPath, options);
 
         string? buildFailure = null;
 
@@ -73,6 +76,14 @@ public static class RustBitcodeCompiler
         return outputFullPath;
     }
 
+    public static IReadOnlyList<string> CreateCargoRustcArguments(string manifestPath, RustBitcodeBuildOptions options)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+        ValidateOptions(options);
+
+        return CreateBuildArguments(manifestPath, options);
+    }
+
     private static void ValidateOptions(RustBitcodeBuildOptions options)
     {
         if (!string.IsNullOrWhiteSpace(options.BuildStd) && string.IsNullOrWhiteSpace(options.Toolchain))
@@ -80,9 +91,56 @@ public static class RustBitcodeCompiler
             throw new InvalidOperationException("build-std requires an explicit cargo toolchain such as 'nightly'. Configure --toolchain when using --build-std.");
         }
 
+        if (!string.IsNullOrWhiteSpace(options.BuildStdFeatures) && string.IsNullOrWhiteSpace(options.BuildStd))
+        {
+            throw new InvalidOperationException("build-std-features requires --build-std. Configure --build-std when using --build-std-features.");
+        }
+
         if (options.BinaryTargetName is not null && string.IsNullOrWhiteSpace(options.BinaryTargetName))
         {
             throw new InvalidOperationException("Binary target names must be non-empty when --bin is specified.");
+        }
+    }
+
+    private static void ValidateTargetPath(RustBitcodeBuildOptions options, string crateDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(options.Target)
+            || !Path.GetExtension(options.Target).Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var targetPath = Path.IsPathFullyQualified(options.Target)
+            ? options.Target
+            : Path.Combine(crateDirectory, options.Target);
+
+        if (!File.Exists(targetPath))
+        {
+            throw new FileNotFoundException($"Rust target JSON '{options.Target}' was not found.", targetPath);
+        }
+    }
+
+    private static void PreflightBuildStd(RustBitcodeBuildOptions options, string workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(options.BuildStd))
+        {
+            return;
+        }
+
+        var sysroot = RunProcess(
+            fileName: "rustc",
+            arguments: [$"+{options.Toolchain}", "--print", "sysroot"],
+            workingDirectory: workingDirectory).Trim();
+
+        if (string.IsNullOrWhiteSpace(sysroot))
+        {
+            throw new InvalidOperationException($"rustc +{options.Toolchain} --print sysroot did not return a sysroot path.");
+        }
+
+        var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+        if (!Directory.Exists(rustSourcePath))
+        {
+            throw new InvalidOperationException($"build-std requires the rust-src component for toolchain '{options.Toolchain}'. Install it with: rustup component add rust-src --toolchain {options.Toolchain}.");
         }
     }
 
@@ -121,6 +179,12 @@ public static class RustBitcodeCompiler
         {
             buildArguments.Add("-Z");
             buildArguments.Add($"build-std={options.BuildStd}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.BuildStdFeatures))
+        {
+            buildArguments.Add("-Z");
+            buildArguments.Add($"build-std-features={options.BuildStdFeatures}");
         }
 
         if (!string.IsNullOrWhiteSpace(options.Target))

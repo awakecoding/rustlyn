@@ -10,7 +10,7 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 | --- | --- | --- | --- | --- |
 | SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | Future MSBuild wrapper | Not started | Add only after a cargo driver is stable |
 | Synthetic Cargo project generation from project metadata | `artifacts/decompiled/rsbuild-program/Program.decompiled.cs` | Future cargo/MSBuild driver | Not started | Generate a temporary Cargo build directory from explicit tool options |
-| Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; no full sysroot parity | Validate `cargo -Z build-std` for `core`, then `alloc`, then `std` |
+| Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `--build-std` and `--build-std-features` plumbing is present, but no full sysroot parity yet | Validate `cargo -Z build-std` for `core`, then `alloc`, then `std` |
 | Fake linker handoff to `.bc` | `artifacts/sdk-0.1.5/extracted/tools/rsfakelink/` | Optional future `RustMcil.FakeLink` | Not started | Implement only if modern Cargo cannot capture whole-program bitcode reliably |
 | LLVM-to-CIL compiler backend | Historical `sgllvm`/`sgcil`/`llvm2cil` notes | `LoweredIrLowerer`, `LoweredAssemblyEmitter` | Active, sample-driven | Keep expanding data-model coverage with permanent fixtures |
 | Runtime helpers for LLVM semantics | Historical `sgrt.dll` notes | Future `RustMcil.Runtime` | Partial helpers embedded in backend | Split memops, overflow, vector, atomics, and entry wrappers into runtime support |
@@ -94,6 +94,8 @@ Validation:
 ### Slice 5: `std` Compatibility Ladder
 
 Promote normal Rust source using `core`, then `alloc`, then `std::fs`, environment, paths, console IO, and time. Add `RustMcil.Os` APIs only when a fixture exposes the missing behavior.
+
+The cargo driver now accepts `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, validates `rust-src` before build-std runs, and exposes the same options through smoke descriptors. This makes the next rung measurable without making nightly or `rust-src` a default test dependency.
 
 ## Non-Goals For The First Recovery Pass
 
