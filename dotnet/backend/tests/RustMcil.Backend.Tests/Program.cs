@@ -968,6 +968,12 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
             var pathHandle = ManagedInteropRuntime.AddObjectHandle(tempPath);
             try
             {
+                var fileNameHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetFileNameString(pathHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetFileName string-handle binding to report no exception.");
+                Assert(fileNameHandle > 0, "Expected generated Path.GetFileName string-handle binding to return a managed string handle.");
+                Assert(ManagedInteropRuntime.GetObject<string>(fileNameHandle) == Path.GetFileName(tempPath), "Expected generated Path.GetFileName binding to match System.IO.Path.GetFileName.");
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(fileNameHandle) == 0, "Expected generated file-name string handle release to succeed.");
+
                 var arrayHandle = RuntimeBridgeHelpers.BindgenSystemIoFileReadAllLinesString(pathHandle, exceptionOutPointer);
                 Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated File.ReadAllLines string-handle binding to report no exception.");
                 Assert(arrayHandle > 0, "Expected generated File.ReadAllLines string-handle binding to return a managed string array handle.");

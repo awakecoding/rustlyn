@@ -3,7 +3,8 @@ namespace RustMcil.Bindings;
 public sealed record BindingSurface(
     IReadOnlyList<ManagedApiRequirement> Requirements,
     IReadOnlyList<RustExternBinding> Externs,
-    IReadOnlyList<ManagedGlueBinding> ManagedGlueBindings)
+    IReadOnlyList<ManagedGlueBinding> ManagedGlueBindings,
+    IReadOnlyList<RustWrapperMethod> RustWrapperMethods)
 {
     public static BindingSurface CreateTinyBclSurface()
     {
@@ -14,6 +15,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Property("System.Environment.CurrentDirectory", typeof(Environment), nameof(Environment.CurrentDirectory)),
                 ManagedApiRequirement.Method("System.IO.Directory.GetCurrentDirectory()", typeof(Directory), nameof(Directory.GetCurrentDirectory), []),
                 ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
+                ManagedApiRequirement.Method("System.IO.Path.GetFileName(string)", typeof(Path), nameof(Path.GetFileName), [typeof(string)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
@@ -47,6 +49,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_file_read_all_lines_string",
                     ["fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_get_file_name_string",
+                    ["fn rust_mcil_bindgen_system_io_path_get_file_name_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
@@ -145,6 +150,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(File), nameof(File.ReadAllLines), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
+                    "rust_mcil_bindgen_system_io_path_get_file_name_string",
+                    "BindgenSystemIoPathGetFileNameString",
+                    [I32("pathHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(Path), nameof(Path.GetFileName), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
+                Glue(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     "BindgenSystemStringFromUtf8",
                     [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
@@ -207,6 +218,15 @@ public sealed record BindingSurface(
                     "BindgenSystemObjectRelease",
                     [I32("objectHandle")],
                     ManagedGlueOperation.ReturnExceptionHandle(ManagedGlueResult.ReleaseObject("objectHandle")))
+            ],
+            [
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn get_file_name(path: &ManagedString) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_io_path_get_file_name_string",
+                    ["path.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString"))
             ]);
     }
 
@@ -295,6 +315,30 @@ public enum ManagedApiRequirementKind
 }
 
 public sealed record RustExternBinding(string Symbol, IReadOnlyList<string> SignatureLines);
+
+public sealed record RustWrapperMethod(
+    RustWrapperContainer Container,
+    string Signature,
+    string ExternSymbol,
+    IReadOnlyList<string> Arguments,
+    string ResultVariableName,
+    RustWrapperResult Result);
+
+public enum RustWrapperContainer
+{
+    IoPath
+}
+
+public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustType)
+{
+    public static RustWrapperResult ObjectHandle(string rustType)
+        => new(RustWrapperResultKind.ObjectHandle, rustType);
+}
+
+public enum RustWrapperResultKind
+{
+    ObjectHandle
+}
 
 public sealed record ManagedGlueBinding(
     string Symbol,

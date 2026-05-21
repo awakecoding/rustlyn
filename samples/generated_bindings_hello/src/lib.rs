@@ -93,6 +93,34 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -16;
     }
 
+    let file_name = match system::io::path::get_file_name(&current_directory) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -17;
+        }
+    };
+
+    let file_name_len = match file_name.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = file_name.release();
+            let _ = current_directory.release();
+            return -18;
+        }
+    };
+
+    if file_name_len <= 0 || file_name_len > char_len {
+        let _ = file_name.release();
+        let _ = current_directory.release();
+        return -19;
+    }
+
+    if file_name.release().is_err() {
+        let _ = current_directory.release();
+        return -20;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }

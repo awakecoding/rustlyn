@@ -28,11 +28,92 @@ public static class RustBindingGenerator
 
         builder.AppendLine("}");
         builder.AppendLine();
-        builder.Append(RustWrapperBody);
+        builder.Append(GenerateRustWrapperBody(surface));
         return builder.ToString();
     }
 
-    private const string RustWrapperBody = """
+    private static string GenerateRustWrapperBody(BindingSurface surface)
+    {
+        return RustWrapperBodyTemplate.Replace(
+            "{{IO_PATH_METHODS}}",
+            GenerateRustWrapperMethods(surface.RustWrapperMethods, RustWrapperContainer.IoPath, "        "),
+            StringComparison.Ordinal);
+    }
+
+    private static string GenerateRustWrapperMethods(IReadOnlyList<RustWrapperMethod> methods, RustWrapperContainer container, string indent)
+    {
+        var builder = new StringBuilder();
+        var selectedMethods = methods.Where(method => method.Container == container).ToArray();
+        for (var index = 0; index < selectedMethods.Length; index++)
+        {
+            if (index > 0)
+            {
+                builder.AppendLine();
+            }
+
+            AppendRustWrapperMethod(builder, selectedMethods[index], indent);
+        }
+
+        return builder.ToString().TrimEnd('\r', '\n');
+    }
+
+    private static void AppendRustWrapperMethod(StringBuilder builder, RustWrapperMethod method, string indent)
+    {
+        builder.Append(indent);
+        builder.Append(method.Signature);
+        builder.AppendLine(" {");
+        builder.Append(indent);
+        builder.AppendLine("    let mut exception_handle = 0;");
+        builder.Append(indent);
+        builder.Append("    let ");
+        builder.Append(method.ResultVariableName);
+        builder.AppendLine(" = unsafe {");
+        builder.Append(indent);
+        builder.Append("        ");
+        builder.Append(GetRustWrapperSymbolAccess(method));
+        builder.AppendLine("(");
+        foreach (var argument in method.Arguments)
+        {
+            builder.Append(indent);
+            builder.Append("            ");
+            builder.Append(argument);
+            builder.AppendLine(",");
+        }
+
+        builder.Append(indent);
+        builder.AppendLine("            &mut exception_handle,");
+        builder.Append(indent);
+        builder.AppendLine("        )");
+        builder.Append(indent);
+        builder.AppendLine("    };");
+        builder.Append(indent);
+        builder.AppendLine("    Exception::from_handle(exception_handle)?;");
+        builder.Append(indent);
+        builder.Append("    ");
+        builder.AppendLine(FormatRustWrapperSuccess(method));
+        builder.Append(indent);
+        builder.AppendLine("}");
+    }
+
+    private static string GetRustWrapperSymbolAccess(RustWrapperMethod method)
+    {
+        return method.Container switch
+        {
+            RustWrapperContainer.IoPath => $"super::super::{method.ExternSymbol}",
+            _ => throw new NotSupportedException($"Rust wrapper container '{method.Container}' is not supported.")
+        };
+    }
+
+    private static string FormatRustWrapperSuccess(RustWrapperMethod method)
+    {
+        return method.Result.Kind switch
+        {
+            RustWrapperResultKind.ObjectHandle => $"Ok({method.Result.RustType}::from_handle({method.ResultVariableName}))",
+            _ => throw new NotSupportedException($"Rust wrapper result kind '{method.Result.Kind}' is not supported.")
+        };
+    }
+
+    private const string RustWrapperBodyTemplate = """
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Exception {
     handle: i32,
@@ -142,6 +223,12 @@ pub mod io {
             Exception::from_handle(exception_handle)?;
             Ok(ManagedStringArray::from_handle(object_handle))
         }
+    }
+
+    pub mod path {
+        use crate::system::{Exception, ManagedString};
+
+{{IO_PATH_METHODS}}
     }
 }
 
