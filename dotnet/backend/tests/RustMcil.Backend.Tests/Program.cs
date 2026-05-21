@@ -17684,6 +17684,25 @@ static void RuntimeSplitFacadeForwardsOsHelpers()
     var expectedArgumentCount = Environment.GetCommandLineArgs().Length;
     Assert(RustMcil.Os.HostEnvironment.CommandLineArgCount() == expectedArgumentCount, "Expected OS host environment helper to expose the process argument count.");
     Assert(RuntimeBridgeHelpers.CommandLineArgCount() == RustMcil.Os.HostEnvironment.CommandLineArgCount(), "Expected Backend runtime facade to forward command-line argument count.");
+
+    var expectedArgument = Environment.GetCommandLineArgs()[0];
+    var expectedBytes = Encoding.UTF8.GetBytes(expectedArgument);
+    Assert(RustMcil.Os.HostEnvironment.Utf8CommandLineArgLength(0) == expectedBytes.Length, "Expected OS host environment helper to expose command-line argument UTF-8 byte length.");
+    Assert(RuntimeBridgeHelpers.Utf8CommandLineArgLength(0) == RustMcil.Os.HostEnvironment.Utf8CommandLineArgLength(0), "Expected Backend runtime facade to forward command-line argument UTF-8 byte length.");
+
+    var destination = Marshal.AllocHGlobal(expectedBytes.Length);
+    try
+    {
+        var copiedLength = RuntimeBridgeHelpers.CopyUtf8CommandLineArg(0, destination, expectedBytes.Length);
+        var actualBytes = new byte[expectedBytes.Length];
+        Marshal.Copy(destination, actualBytes, 0, actualBytes.Length);
+        Assert(copiedLength == expectedBytes.Length, "Expected Backend runtime facade to return copied command-line argument UTF-8 byte length.");
+        Assert(actualBytes.SequenceEqual(expectedBytes), "Expected Backend runtime facade to copy command-line argument UTF-8 bytes through the OS helper.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(destination);
+    }
 }
 
 static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()

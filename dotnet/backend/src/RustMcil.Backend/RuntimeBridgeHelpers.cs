@@ -13,12 +13,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8CommandLineArgLength(int index)
     {
-        return Encoding.UTF8.GetByteCount(GetCommandLineArg(index));
+        return RustMcil.Os.HostEnvironment.Utf8CommandLineArgLength(index);
     }
 
     public static int CopyUtf8CommandLineArg(int index, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(GetCommandLineArg(index), destinationPointer, destinationCapacity);
+        return RustMcil.Os.HostEnvironment.CopyUtf8CommandLineArg(index, destinationPointer, destinationCapacity);
     }
 
     public static void ConsoleWriteLineUtf8(IntPtr valuePointer, long valueLength)
@@ -346,17 +346,6 @@ public static partial class RuntimeBridgeHelpers
         var bytes = new byte[checked((int)length)];
         Marshal.Copy(pointer, bytes, 0, bytes.Length);
         return Encoding.UTF8.GetString(bytes);
-    }
-
-    private static string GetCommandLineArg(int index)
-    {
-        var args = Environment.GetCommandLineArgs();
-        if ((uint)index >= (uint)args.Length)
-        {
-            throw new IndexOutOfRangeException($"Command line argument index {index} was outside the available range 0..{args.Length - 1}.");
-        }
-
-        return args[index];
     }
 
     private static string GetUtf8FileLine(IntPtr pathPointer, long pathLength, int index)
