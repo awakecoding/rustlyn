@@ -20,6 +20,15 @@ $sampleChecks = @{
         Arguments = @(3, 4)
         Expected = 7
     }
+    build_std_core_probe = @{
+        CratePath = Join-Path $workspaceRoot "samples\add"
+        Method = "add_i32"
+        Arguments = @(19, 23)
+        Expected = 42
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "core"
+    }
     and = @{
         Method = "and_i32"
         Arguments = @(6, 3)

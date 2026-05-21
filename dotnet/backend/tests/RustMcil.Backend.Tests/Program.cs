@@ -742,6 +742,7 @@ RunOptionalTest("DotnetRuntimePathOneHundredFortyStageRankSampleBuildsFromCargoM
 RunOptionalTest("DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest, failures);
+RunOptionalTest("AddSampleBuildsWithBuildStdCore", AddSampleBuildsWithBuildStdCore, failures);
 
 if (failures.Count == 0)
 {
@@ -6650,6 +6651,40 @@ static void AddSampleBuildsFromCargoManifest()
 
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "add_i32", [3, 4], llvmRoot);
     Assert(Equals(actualResult, 7), $"Expected Cargo-built add_i32 invocation to return 7, but got '{actualResult}'.");
+}
+
+static void AddSampleBuildsWithBuildStdCore()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "add",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "core"
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std core add.");
+    Assert(moduleSummary.Functions.Count == 1, $"Expected build-std core add to contain one function, but found {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "add_i32"), "Expected build-std core add to contain add_i32.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "add_i32");
+    Assert(function.Blocks.Count == 1, $"Expected build-std core add_i32 to lower to one block, but got {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "add_i32", [19, 23], llvmRoot);
+    Assert(Equals(actualResult, 42), $"Expected build-std core add_i32 invocation to return 42, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
@@ -17097,6 +17132,29 @@ static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcode(string samp
     return (bitcodePath, llvmRoot);
 }
 
+static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcodeWithOptions(string sampleName, RustBitcodeBuildOptions options)
+{
+    var workspaceRoot = FindWorkspaceRoot();
+    if (workspaceRoot is null)
+    {
+        throw new InvalidOperationException("Workspace root could not be determined.");
+    }
+
+    var cratePath = Path.Combine(workspaceRoot, "samples", sampleName);
+    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
+    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
+
+    if (!Directory.Exists(cratePath) || !File.Exists(llvmOptPath))
+    {
+        throw new SkipTestException($"Cargo sample '{sampleName}' or llvm-prebuilt distro is not available yet.");
+    }
+
+    var bitcodePath = Path.Combine(Path.GetTempPath(), $"rust-msil-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
+    RustBitcodeCompiler.BuildBitcode(cratePath, options with { OutputBitcodePath = bitcodePath });
+
+    return (bitcodePath, llvmRoot);
+}
+
 static (string BitcodePath, string LlvmRoot) BuildCargoBinarySampleBitcode(string sampleName, string binaryTargetName)
 {
     var workspaceRoot = FindWorkspaceRoot();
@@ -17445,6 +17503,44 @@ static bool ContainsAdjacent(IReadOnlyList<string> values, string first, string 
     }
 
     return false;
+}
+
+static bool TryGetRustcSysroot(string toolchain, out string sysroot)
+{
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "rustc",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add($"+{toolchain}");
+    startInfo.ArgumentList.Add("--print");
+    startInfo.ArgumentList.Add("sysroot");
+
+    try
+    {
+        using var process = System.Diagnostics.Process.Start(startInfo);
+        if (process is null)
+        {
+            sysroot = string.Empty;
+            return false;
+        }
+
+        var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+        var standardErrorTask = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        Task.WaitAll(standardOutputTask, standardErrorTask);
+
+        sysroot = standardOutputTask.GetAwaiter().GetResult().Trim();
+        return process.ExitCode == 0 && !string.IsNullOrWhiteSpace(sysroot);
+    }
+    catch
+    {
+        sysroot = string.Empty;
+        return false;
+    }
 }
 
 static string? FindWorkspaceRoot()
