@@ -8,7 +8,7 @@ public static partial class RuntimeBridgeHelpers
 {
     public static int CommandLineArgCount()
     {
-        return Environment.GetCommandLineArgs().Length;
+        return RustMcil.Os.HostEnvironment.CommandLineArgCount();
     }
 
     public static int Utf8CommandLineArgLength(int index)
@@ -274,28 +274,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int RemEuclidI32(int left, int right)
     {
-        if (right == 0)
-        {
-            throw new DivideByZeroException();
-        }
-
-        var remainder = left % right;
-        return remainder < 0
-            ? remainder + Math.Abs(right)
-            : remainder;
+        return RustMcil.Runtime.NumericRuntime.RemEuclidI32(left, right);
     }
 
     public static long RemEuclidI64(long left, long right)
     {
-        if (right == 0)
-        {
-            throw new DivideByZeroException();
-        }
-
-        var remainder = left % right;
-        return remainder < 0
-            ? remainder + Math.Abs(right)
-            : remainder;
+        return RustMcil.Runtime.NumericRuntime.RemEuclidI64(left, right);
     }
 
     public static int Utf8PathGetFileNameLength(IntPtr pathPointer, long pathLength)

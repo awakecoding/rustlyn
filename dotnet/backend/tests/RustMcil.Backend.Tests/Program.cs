@@ -23,6 +23,8 @@ RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototype
 RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
 RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
+RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNumericHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17666,6 +17668,22 @@ static void RustBitcodeBuildArgumentsIncludeBuildStdFeatures()
     Assert(ContainsAdjacent(arguments, "-Z", "build-std=core,alloc"), "Expected cargo arguments to include build-std components.");
     Assert(ContainsAdjacent(arguments, "-Z", "build-std-features=panic_immediate_abort"), "Expected cargo arguments to include build-std features.");
     Assert(ContainsAdjacent(arguments, "--target", "x86_64-pc-windows-msvc"), "Expected cargo arguments to include the configured target.");
+}
+
+static void RuntimeSplitFacadeForwardsNumericHelpers()
+{
+    Assert(RustMcil.Runtime.NumericRuntime.RemEuclidI32(-5, 3) == 1, "Expected Runtime numeric rem_euclid i32 helper to match Rust semantics.");
+    Assert(RuntimeBridgeHelpers.RemEuclidI32(-5, 3) == RustMcil.Runtime.NumericRuntime.RemEuclidI32(-5, 3), "Expected Backend runtime facade to forward i32 rem_euclid.");
+    Assert(RustMcil.Runtime.NumericRuntime.RemEuclidI64(-17, 5) == 3, "Expected Runtime numeric rem_euclid i64 helper to match Rust semantics.");
+    Assert(RuntimeBridgeHelpers.RemEuclidI64(-17, 5) == RustMcil.Runtime.NumericRuntime.RemEuclidI64(-17, 5), "Expected Backend runtime facade to forward i64 rem_euclid.");
+    ExpectException<DivideByZeroException>(() => RustMcil.Runtime.NumericRuntime.RemEuclidI32(1, 0));
+}
+
+static void RuntimeSplitFacadeForwardsOsHelpers()
+{
+    var expectedArgumentCount = Environment.GetCommandLineArgs().Length;
+    Assert(RustMcil.Os.HostEnvironment.CommandLineArgCount() == expectedArgumentCount, "Expected OS host environment helper to expose the process argument count.");
+    Assert(RuntimeBridgeHelpers.CommandLineArgCount() == RustMcil.Os.HostEnvironment.CommandLineArgCount(), "Expected Backend runtime facade to forward command-line argument count.");
 }
 
 static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()

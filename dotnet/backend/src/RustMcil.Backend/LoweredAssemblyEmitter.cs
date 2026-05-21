@@ -214,6 +214,8 @@ public static class LoweredAssemblyEmitter
     private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, bool requiresAvaloniaSupport)
     {
         CopySupportAssembly(typeof(RuntimeBridgeHelpers).Assembly.Location, outputAssemblyPath);
+        CopySupportAssembly(typeof(RustMcil.Runtime.NumericRuntime).Assembly.Location, outputAssemblyPath);
+        CopySupportAssembly(typeof(RustMcil.Os.HostEnvironment).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(RustMcil.Interop.ManagedInteropRuntime).Assembly.Location, outputAssemblyPath);
 
         if (requiresAvaloniaSupport)
