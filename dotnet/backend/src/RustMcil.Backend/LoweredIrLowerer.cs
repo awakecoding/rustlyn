@@ -259,7 +259,7 @@ public static partial class LoweredIrLowerer
         {
             return new LoweredReturnInstruction(
                 NormalizeType(returnMatch.Groups["type"].Value),
-                NormalizeValue(returnMatch.Groups["value"].Value));
+                NormalizeValue(StripTrailingInstructionMetadata(returnMatch.Groups["value"].Value)));
         }
 
         var compareMatch = CompareInstructionRegex().Match(line);
@@ -912,6 +912,28 @@ public static partial class LoweredIrLowerer
         }
 
         return trimmed;
+    }
+
+    private static string StripTrailingInstructionMetadata(string value)
+    {
+        var remaining = value.Trim();
+
+        while (true)
+        {
+            var commaIndex = FindTopLevelComma(remaining);
+            if (commaIndex < 0)
+            {
+                return remaining;
+            }
+
+            var suffix = remaining[(commaIndex + 1)..].TrimStart();
+            if (!suffix.StartsWith('!'))
+            {
+                return remaining;
+            }
+
+            remaining = remaining[..commaIndex].TrimEnd();
+        }
     }
 
     private static string NormalizeResultName(string value)

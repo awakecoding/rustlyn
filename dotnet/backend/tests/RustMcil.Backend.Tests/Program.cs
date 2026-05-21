@@ -35,6 +35,8 @@ RunTest("RuntimeSplitFacadeForwardsPathResolutionHelpers", RuntimeSplitFacadeFor
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
+RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLeadingPlus, failures);
+RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
 RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -17675,6 +17677,33 @@ static void RustBitcodeBuildArgumentsIncludeBuildStdFeatures()
     Assert(ContainsAdjacent(arguments, "-Z", "build-std=core,alloc"), "Expected cargo arguments to include build-std components.");
     Assert(ContainsAdjacent(arguments, "-Z", "build-std-features=panic_immediate_abort"), "Expected cargo arguments to include build-std features.");
     Assert(ContainsAdjacent(arguments, "--target", "x86_64-pc-windows-msvc"), "Expected cargo arguments to include the configured target.");
+}
+
+static void RustBitcodeToolchainAcceptsLeadingPlus()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Toolchain = "+nightly"
+    };
+
+    var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
+    Assert(arguments.Contains("+nightly"), "Expected cargo arguments to include a single leading-plus toolchain selector.");
+    Assert(!arguments.Contains("++nightly"), "Expected cargo arguments to normalize SourceGear-style leading-plus toolchain values.");
+}
+
+static void LowererStripsTrailingMetadataFromReturnValue()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @profile_probe_score() {
+start:
+  ret i32 11, !dbg !15
+}
+""");
+
+    var instruction = module.Functions.Single().Blocks.Single().Instructions.Single();
+        Assert(instruction is LoweredReturnInstruction, $"Expected a lowered return instruction, got {instruction.GetType().Name}.");
+        var returnInstruction = (LoweredReturnInstruction)instruction;
+    Assert(returnInstruction.Value == "11", $"Expected return value metadata to be stripped, got '{returnInstruction.Value}'.");
 }
 
 static void RuntimeSplitFacadeForwardsNumericHelpers()

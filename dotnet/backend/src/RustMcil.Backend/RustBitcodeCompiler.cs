@@ -32,6 +32,7 @@ public static class RustBitcodeCompiler
         ArgumentException.ThrowIfNullOrWhiteSpace(cratePath);
 
         options ??= new RustBitcodeBuildOptions();
+        options = NormalizeOptions(options);
         ValidateOptions(options);
 
         var manifestPath = ResolveManifestPath(cratePath);
@@ -79,6 +80,7 @@ public static class RustBitcodeCompiler
     public static IReadOnlyList<string> CreateCargoRustcArguments(string manifestPath, RustBitcodeBuildOptions options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+        options = NormalizeOptions(options);
         ValidateOptions(options);
 
         return CreateBuildArguments(manifestPath, options);
@@ -100,6 +102,30 @@ public static class RustBitcodeCompiler
         {
             throw new InvalidOperationException("Binary target names must be non-empty when --bin is specified.");
         }
+    }
+
+    private static RustBitcodeBuildOptions NormalizeOptions(RustBitcodeBuildOptions options)
+    {
+        var normalizedToolchain = NormalizeToolchainName(options.Toolchain);
+        return string.Equals(normalizedToolchain, options.Toolchain, StringComparison.Ordinal)
+            ? options
+            : options with { Toolchain = normalizedToolchain };
+    }
+
+    private static string? NormalizeToolchainName(string? toolchain)
+    {
+        if (string.IsNullOrWhiteSpace(toolchain))
+        {
+            return null;
+        }
+
+        var normalized = toolchain.Trim();
+        while (normalized.StartsWith("+", StringComparison.Ordinal))
+        {
+            normalized = normalized[1..];
+        }
+
+        return normalized;
     }
 
     private static void ValidateTargetPath(RustBitcodeBuildOptions options, string crateDirectory)

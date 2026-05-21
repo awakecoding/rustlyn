@@ -16,7 +16,5 @@
     <RustMcilToolDll Condition="'$(RustMcilToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll')">$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll</RustMcilToolDll>
     <RustMcilToolDll Condition="'$(RustMcilToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\bin\$(RustMcilToolConfiguration)\net10.0\RustMcil.Tool.dll')">$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\bin\$(RustMcilToolConfiguration)\net10.0\RustMcil.Tool.dll</RustMcilToolDll>
     <RustMcilSupportAssemblyNames Condition="'$(RustMcilSupportAssemblyNames)' == ''">RustMcil.Backend.dll;RustMcil.Runtime.dll;RustMcil.Os.dll;RustMcil.Interop.dll</RustMcilSupportAssemblyNames>
-    <RustMcilCargoRelease Condition="'$(RustMcilCargoRelease)' == '' and '$(Configuration)' == 'Debug'">false</RustMcilCargoRelease>
-    <RustMcilCargoRelease Condition="'$(RustMcilCargoRelease)' == ''">true</RustMcilCargoRelease>
   </PropertyGroup>
 </Project>
