@@ -348,6 +348,23 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -46;
     }
 
+    let full_temp_is_rooted = match system::io::path::is_path_rooted(&full_temp_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -59;
+        }
+    };
+
+    if full_temp_is_rooted == 0 {
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -60;
+    }
+
     let temp_root = match system::io::path::get_path_root(&full_temp_path) {
         Ok(value) => value,
         Err(_) => {

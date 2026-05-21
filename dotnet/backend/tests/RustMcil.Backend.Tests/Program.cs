@@ -1038,6 +1038,11 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                 Assert(fullPathHandle > 0, "Expected generated Path.GetFullPath string-handle binding to return a managed string handle.");
                 Assert(ManagedInteropRuntime.GetObject<string>(fullPathHandle) == Path.GetFullPath(tempPath), "Expected generated Path.GetFullPath binding to match System.IO.Path.GetFullPath.");
 
+                var fullPathIsRooted = RuntimeBridgeHelpers.BindgenSystemIoPathIsPathRootedString(fullPathHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.IsPathRooted string-handle binding to report no exception.");
+                Assert(fullPathIsRooted == 1, "Expected generated Path.IsPathRooted string-handle binding to return true for a full path.");
+                Assert((fullPathIsRooted != 0) == Path.IsPathRooted(Path.GetFullPath(tempPath)), "Expected generated Path.IsPathRooted binding to match System.IO.Path.IsPathRooted.");
+
                 var pathRootHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetPathRootString(fullPathHandle, exceptionOutPointer);
                 Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetPathRoot string-handle binding to report no exception.");
                 Assert(pathRootHandle > 0, "Expected generated Path.GetPathRoot string-handle binding to return a managed string handle.");
