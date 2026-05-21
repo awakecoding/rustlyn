@@ -4,9 +4,7 @@
     <RustEdition>2024</RustEdition>
   </PropertyGroup>
   <ItemGroup>
-    <RustReference Include="..\profile_probe">
-      <Name>profile_probe</Name>
-    </RustReference>
+    <RustReference Include="..\profile_probe" />
     <RustCrateReference Include="cfg-if">
       <Version>1.0.0</Version>
       <DefaultFeatures>false</DefaultFeatures>
