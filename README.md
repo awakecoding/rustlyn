@@ -90,6 +90,8 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - `dotnet/backend/src/RustMcil.Bindings/`: tiny generated .NET binding prototype for Rust wrapper output, managed glue source, metadata-backed wrapper methods, and managed string handles created from Rust UTF-8 buffers
 - `dotnet/backend/src/RustMcil.Bindings.Tool/`: build-time generator for backend managed binding glue
 - `dotnet/backend/src/RustMcil.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
+- `dotnet/backend/src/RustMcil.Runtime/`: future home for LLVM/runtime semantic helpers
+- `dotnet/backend/src/RustMcil.Os/`: future home for host OS and Rust `std` compatibility helpers
 - `dotnet/backend/tests/RustMcil.Backend.Tests/`: focused regression harness for lowering and runtime behavior
 - `artifacts/decompiled/`: decompiled text extracted from the historical SDK for reference
 - `artifacts/sdk-0.1.5/extracted/`: kept textual package contents and metadata from the published SDK snapshot

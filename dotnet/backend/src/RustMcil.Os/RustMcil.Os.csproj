@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>RustMcil.Os</AssemblyName>
+    <RootNamespace>RustMcil.Os</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RustMcil.Interop\RustMcil.Interop.csproj" />
+  </ItemGroup>
+</Project>

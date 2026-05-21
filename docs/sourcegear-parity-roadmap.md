@@ -116,6 +116,22 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 .\scripts\Test-Smoke.ps1 -Sample build_std_std_probe -Mode Cargo -Configuration Release
 ```
 
+### Slice 6: Runtime And OS Assembly Split
+
+Started with behavior-preserving project shells: `RustMcil.Runtime` and `RustMcil.Os` now exist beside `RustMcil.Interop`, and `RustMcil.Backend` references both. No helper methods have moved yet. This establishes the dependency direction for later migration slices while keeping the existing emitter mappings and support assembly copying unchanged.
+
+Intended ownership:
+
+- `RustMcil.Runtime`: LLVM/runtime semantics such as panic-abort helpers, allocator shims, memops, vector helpers, atomics, and future entry wrappers.
+- `RustMcil.Os`: host OS and Rust `std` compatibility helpers such as command-line arguments, console output, file reads, environment directories, path operations, and UTF-8 path/string bridge helpers.
+- `RustMcil.Interop`: reusable managed object handles, exception handles, UTF-8 primitives, and release semantics.
+
+Validation:
+
+```powershell
+dotnet build -c Release .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj
+```
+
 ## Non-Goals For The First Recovery Pass
 
 - Recreating the old MSBuild SDK before the compiler/runtime/bindings work is stable.

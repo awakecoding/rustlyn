@@ -20,6 +20,8 @@
     <ProjectReference Include="..\RustMcil.AvaloniaSupport\RustMcil.AvaloniaSupport.csproj" />
     <ProjectReference Include="..\RustMcil.Bindings\RustMcil.Bindings.csproj" />
     <ProjectReference Include="..\RustMcil.Interop\RustMcil.Interop.csproj" />
+    <ProjectReference Include="..\RustMcil.Os\RustMcil.Os.csproj" />
+    <ProjectReference Include="..\RustMcil.Runtime\RustMcil.Runtime.csproj" />
     <PackageReference Include="LLVMSharp.Interop" Version="20.1.2" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
   </ItemGroup>
