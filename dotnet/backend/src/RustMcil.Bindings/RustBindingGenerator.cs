@@ -69,7 +69,19 @@ pub mod console {
 }
 
 pub mod environment {
-    use crate::system::{Exception, ManagedStringArray};
+    use crate::system::{Exception, ManagedString, ManagedStringArray};
+
+    pub fn current_directory() -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let object_handle = unsafe {
+            super::rust_mcil_bindgen_system_environment_current_directory(
+                &mut exception_handle,
+            )
+        };
+
+        Exception::from_handle(exception_handle)?;
+        Ok(ManagedString::from_handle(object_handle))
+    }
 
     pub fn get_command_line_args() -> Result<ManagedStringArray, Exception> {
         let mut exception_handle = 0;

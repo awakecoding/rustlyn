@@ -49,13 +49,14 @@ Started with UTF-8 pointer/length helpers, exception message/type queries, integ
 
 ### Slice 3: Generated Binding Prototype
 
-Started with `RustMcil.Bindings`, which emits the `samples/generated_bindings_hello` Rust wrapper module over `rust_mcil_bindgen_*` symbols. The backend maps those symbols to managed glue that uses `RustMcil.Interop` handles, UTF-8 helpers, and exception handles. The current generated surface includes `System.Console.WriteLine`, `System.IO.Directory.GetCurrentDirectory`, `System.IO.File.ReadAllLines`, `System.String`, managed string construction from Rust UTF-8 buffers, `System.String[]`, and ordinal `System.String.Contains`. Continue by emitting more Rust wrapper methods from the same binding description instead of keeping wrapper bodies fixed.
+Started with `RustMcil.Bindings`, which emits the `samples/generated_bindings_hello` Rust wrapper module over `rust_mcil_bindgen_*` symbols. The backend maps those symbols to managed glue that uses `RustMcil.Interop` handles, UTF-8 helpers, and exception handles. The current generated surface includes `System.Console.WriteLine`, `System.Environment.CurrentDirectory` as a static property, `System.IO.Directory.GetCurrentDirectory`, `System.IO.File.ReadAllLines`, `System.String`, managed string construction from Rust UTF-8 buffers, `System.String[]`, and ordinal `System.String.Contains`. Continue by emitting more Rust wrapper methods from the same binding description instead of keeping wrapper bodies fixed.
 
 First target APIs:
 
 - `System.String`
 - `System.Console.WriteLine`
 - `System.Environment.GetCommandLineArgs`
+- `System.Environment.CurrentDirectory`
 - `System.IO.File.ReadAllLines`
 - `System.IO.Directory.GetCurrentDirectory`
 
@@ -67,7 +68,7 @@ Validation:
 
 ### Slice 4: Generated-Bindings Lousygrep
 
-Promoted `samples/generated_bindings_lousygrep` as the canonical lousygrep smoke via `-Sample lousygrep`. It uses generated bindings for `Environment.GetCommandLineArgs`, `File.ReadAllLines`, `String.Contains`, string array access, string UTF-8 copy, object release, and console output. `lousygrep_primitive` remains as legacy handwritten bridge coverage while generated bindings take over the main workload validation path. `RustMcil.Bindings` now also owns the `rust_mcil_bindgen_*` to runtime-helper glue map consumed by the backend emitter, and `RustMcil.Bindings.Tool` generates the backend managed helper partial into `obj` during the backend build. Managed helper source is assembled from signature, exception convention, result-operation metadata, and reflected managed expression metadata for calls such as `Console.WriteLine`, `Environment.GetCommandLineArgs`, `Directory.GetCurrentDirectory`, `File.ReadAllLines`, and `String.Contains`. The generated `ManagedString` wrapper can now construct a managed `System.String` handle from Rust-owned UTF-8 bytes. Continue by adding more binding shapes that describe constructors, properties, overload selection, and generated Rust wrapper methods from the same metadata.
+Promoted `samples/generated_bindings_lousygrep` as the canonical lousygrep smoke via `-Sample lousygrep`. It uses generated bindings for `Environment.GetCommandLineArgs`, `File.ReadAllLines`, `String.Contains`, string array access, string UTF-8 copy, object release, and console output. `lousygrep_primitive` remains as legacy handwritten bridge coverage while generated bindings take over the main workload validation path. `RustMcil.Bindings` now also owns the `rust_mcil_bindgen_*` to runtime-helper glue map consumed by the backend emitter, and `RustMcil.Bindings.Tool` generates the backend managed helper partial into `obj` during the backend build. Managed helper source is assembled from signature, exception convention, result-operation metadata, and reflected managed expression metadata for calls and properties such as `Console.WriteLine`, `Environment.GetCommandLineArgs`, `Environment.CurrentDirectory`, `Directory.GetCurrentDirectory`, `File.ReadAllLines`, and `String.Contains`. The generated `ManagedString` wrapper can now construct a managed `System.String` handle from Rust-owned UTF-8 bytes. Continue by adding more binding shapes that describe constructors, instance properties, overload selection, and generated Rust wrapper methods from the same metadata.
 
 Validation:
 

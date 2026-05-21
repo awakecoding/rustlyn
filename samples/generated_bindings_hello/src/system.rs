@@ -4,6 +4,7 @@ unsafe extern "C" {
     fn rust_mcil_bindgen_system_console_write_line_utf8(value_ptr: *const u8, value_len: i64) -> i32;
     fn rust_mcil_bindgen_system_console_write_line_string(handle: i32) -> i32;
     fn rust_mcil_bindgen_system_environment_get_command_line_args(exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_environment_current_directory(exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_directory_get_current_directory(exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_file_read_all_lines_utf8(
         path_ptr: *const u8,
@@ -75,7 +76,19 @@ pub mod console {
 }
 
 pub mod environment {
-    use crate::system::{Exception, ManagedStringArray};
+    use crate::system::{Exception, ManagedString, ManagedStringArray};
+
+    pub fn current_directory() -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let object_handle = unsafe {
+            super::rust_mcil_bindgen_system_environment_current_directory(
+                &mut exception_handle,
+            )
+        };
+
+        Exception::from_handle(exception_handle)?;
+        Ok(ManagedString::from_handle(object_handle))
+    }
 
     pub fn get_command_line_args() -> Result<ManagedStringArray, Exception> {
         let mut exception_handle = 0;

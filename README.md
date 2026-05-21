@@ -81,7 +81,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 ## Repo Map
 
 - `samples/`: narrow Rust crates used as regression fixtures
-- `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment, directory, and string APIs
+- `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, and string APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
 - `dotnet/backend/src/RustMcil.Tool/`: CLI for inspect, lower, emit, invoke, and translate flows

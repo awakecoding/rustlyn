@@ -17,6 +17,9 @@ public abstract record ManagedGlueExpression
     public static ManagedGlueExpression StaticMethod(Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => new ManagedGlueStaticMethodExpression(declaringType, methodName, parameterTypes, arguments);
 
+    public static ManagedGlueExpression StaticProperty(Type declaringType, string propertyName)
+        => new ManagedGlueStaticPropertyExpression(declaringType, propertyName);
+
     public static ManagedGlueExpression InstanceMethod(ManagedGlueExpression instance, Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => new ManagedGlueInstanceMethodExpression(instance, declaringType, methodName, parameterTypes, arguments);
 
@@ -101,6 +104,28 @@ public sealed record ManagedGlueStaticMethodExpression(
         foreach (var argument in arguments)
         {
             argument.Validate();
+        }
+    }
+}
+
+public sealed record ManagedGlueStaticPropertyExpression(Type DeclaringType, string PropertyName) : ManagedGlueExpression
+{
+    public override string ToCode()
+        => $"{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}";
+
+    public override void Validate()
+    {
+        var property = DeclaringType.GetProperty(PropertyName)
+            ?? throw new InvalidOperationException($"Managed glue static property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' could not be resolved.");
+        if (property.GetIndexParameters().Length != 0)
+        {
+            throw new InvalidOperationException($"Managed glue property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' is an indexed property.");
+        }
+
+        var getter = property.GetMethod;
+        if (getter is null || !getter.IsStatic)
+        {
+            throw new InvalidOperationException($"Managed glue property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' is not a static gettable property.");
         }
     }
 }

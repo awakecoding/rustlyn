@@ -11,6 +11,7 @@ public sealed record BindingSurface(
             [
                 ManagedApiRequirement.Method("System.Console.WriteLine(string)", typeof(Console), nameof(Console.WriteLine), [typeof(string)]),
                 ManagedApiRequirement.Method("System.Environment.GetCommandLineArgs()", typeof(Environment), nameof(Environment.GetCommandLineArgs), []),
+                ManagedApiRequirement.Property("System.Environment.CurrentDirectory", typeof(Environment), nameof(Environment.CurrentDirectory)),
                 ManagedApiRequirement.Method("System.IO.Directory.GetCurrentDirectory()", typeof(Directory), nameof(Directory.GetCurrentDirectory), []),
                 ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
@@ -27,6 +28,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_environment_get_command_line_args",
                     ["fn rust_mcil_bindgen_system_environment_get_command_line_args(exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_environment_current_directory",
+                    ["fn rust_mcil_bindgen_system_environment_current_directory(exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_directory_get_current_directory",
                     ["fn rust_mcil_bindgen_system_io_directory_get_current_directory(exception_out: *mut i32) -> i32;"]),
@@ -112,6 +116,12 @@ public sealed record BindingSurface(
                     [Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(Environment), nameof(Environment.GetCommandLineArgs), [], [])))),
+                Glue(
+                    "rust_mcil_bindgen_system_environment_current_directory",
+                    "BindgenSystemEnvironmentCurrentDirectory",
+                    [Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticProperty(typeof(Environment), nameof(Environment.CurrentDirectory))))),
                 Glue(
                     "rust_mcil_bindgen_system_io_directory_get_current_directory",
                     "BindgenSystemIoDirectoryGetCurrentDirectory",
@@ -211,21 +221,27 @@ public sealed record BindingSurface(
     private static ManagedGlueExpression StaticMethod(Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => ManagedGlueExpression.StaticMethod(declaringType, methodName, parameterTypes, arguments);
 
+    private static ManagedGlueExpression StaticProperty(Type declaringType, string propertyName)
+        => ManagedGlueExpression.StaticProperty(declaringType, propertyName);
+
     private static ManagedGlueExpression InstanceMethod(ManagedGlueExpression instance, Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => ManagedGlueExpression.InstanceMethod(instance, declaringType, methodName, parameterTypes, arguments);
 }
 
-public sealed record ManagedApiRequirement(string DisplayName, Type Type, string? MethodName, IReadOnlyList<Type> ParameterTypes)
+public sealed record ManagedApiRequirement(string DisplayName, Type Type, ManagedApiRequirementKind Kind, string? MemberName, IReadOnlyList<Type> ParameterTypes)
 {
     public static ManagedApiRequirement ForType(string displayName, Type type)
-        => new(displayName, type, MethodName: null, []);
+        => new(displayName, type, ManagedApiRequirementKind.Type, MemberName: null, []);
 
     public static ManagedApiRequirement Method(string displayName, Type type, string methodName, IReadOnlyList<Type> parameterTypes)
-        => new(displayName, type, methodName, parameterTypes);
+        => new(displayName, type, ManagedApiRequirementKind.Method, methodName, parameterTypes);
+
+    public static ManagedApiRequirement Property(string displayName, Type type, string propertyName)
+        => new(displayName, type, ManagedApiRequirementKind.Property, propertyName, []);
 
     public void Validate()
     {
-        if (MethodName is null)
+        if (Kind == ManagedApiRequirementKind.Type)
         {
             if (Type.FullName is null)
             {
@@ -235,9 +251,34 @@ public sealed record ManagedApiRequirement(string DisplayName, Type Type, string
             return;
         }
 
-        _ = Type.GetMethod(MethodName, ParameterTypes.ToArray())
-            ?? throw new InvalidOperationException($"Managed binding requirement '{DisplayName}' could not be resolved.");
+        if (Kind == ManagedApiRequirementKind.Method)
+        {
+            _ = Type.GetMethod(MemberName ?? string.Empty, ParameterTypes.ToArray())
+                ?? throw new InvalidOperationException($"Managed binding requirement '{DisplayName}' could not be resolved.");
+            return;
+        }
+
+        if (Kind == ManagedApiRequirementKind.Property)
+        {
+            var property = Type.GetProperty(MemberName ?? string.Empty)
+                ?? throw new InvalidOperationException($"Managed binding requirement '{DisplayName}' could not be resolved.");
+            if (property.GetMethod is null)
+            {
+                throw new InvalidOperationException($"Managed binding requirement '{DisplayName}' does not expose a getter.");
+            }
+
+            return;
+        }
+
+        throw new NotSupportedException($"Managed binding requirement kind '{Kind}' is not supported.");
     }
+}
+
+public enum ManagedApiRequirementKind
+{
+    Type,
+    Method,
+    Property
 }
 
 public sealed record RustExternBinding(string Symbol, IReadOnlyList<string> SignatureLines);

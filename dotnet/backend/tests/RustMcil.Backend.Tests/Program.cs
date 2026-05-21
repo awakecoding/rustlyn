@@ -937,6 +937,12 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
 
         Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(stringHandle) == 0, "Expected generated object release binding to succeed.");
 
+        var environmentDirectoryHandle = RuntimeBridgeHelpers.BindgenSystemEnvironmentCurrentDirectory(exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Environment.CurrentDirectory property binding to report no exception.");
+        Assert(environmentDirectoryHandle > 0, "Expected generated Environment.CurrentDirectory property binding to return a managed string handle.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineString(environmentDirectoryHandle) == 0, "Expected generated Console.WriteLine string-handle binding to accept a property-returned managed string.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(environmentDirectoryHandle) == 0, "Expected generated Environment.CurrentDirectory property string handle release to succeed.");
+
         var argsHandle = RuntimeBridgeHelpers.BindgenSystemEnvironmentGetCommandLineArgs(exceptionOutPointer);
         Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Environment.GetCommandLineArgs binding to report no exception.");
         Assert(argsHandle > 0, "Expected generated Environment.GetCommandLineArgs binding to return a managed string array handle.");

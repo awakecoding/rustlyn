@@ -61,6 +61,25 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -11;
     }
 
+    let environment_directory = match system::environment::current_directory() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -12;
+        }
+    };
+
+    if system::console::write_line(&environment_directory).is_err() {
+        let _ = environment_directory.release();
+        let _ = current_directory.release();
+        return -13;
+    }
+
+    if environment_directory.release().is_err() {
+        let _ = current_directory.release();
+        return -14;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }
