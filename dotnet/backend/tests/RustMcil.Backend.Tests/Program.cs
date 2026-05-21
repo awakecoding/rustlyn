@@ -2,14 +2,27 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Runtime.InteropServices;
+using System.Text;
 using RustMcil.Backend;
+using RustMcil.Bindings;
+using RustMcil.Interop;
 
 var failures = new List<string>();
+var requestedTests = args.Length == 0 ? null : args.ToHashSet(StringComparer.Ordinal);
 
 RunTest("MissingFileThrows", MissingFileThrows, failures);
 RunTest("ShortFileThrows", ShortFileThrows, failures);
 RunTest("ValidBitcodeMagicIsRecognized", ValidBitcodeMagicIsRecognized, failures);
 RunTest("InvalidBitcodeMagicIsRejected", InvalidBitcodeMagicIsRejected, failures);
+RunTest("ManagedHandleStoreTracksObjects", ManagedHandleStoreTracksObjects, failures);
+RunTest("ManagedHandleStoreTracksExceptions", ManagedHandleStoreTracksExceptions, failures);
+RunTest("ManagedHandleStoreRejectsInvalidHandles", ManagedHandleStoreRejectsInvalidHandles, failures);
+RunTest("InteropUtf8RoundTripsStrings", InteropUtf8RoundTripsStrings, failures);
+RunTest("ManagedInteropRuntimeExposesExceptionText", ManagedInteropRuntimeExposesExceptionText, failures);
+RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototypeUsesInteropHandles, failures);
+RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
+RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
+RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -459,6 +472,7 @@ RunOptionalTest("BinTrivialSampleEmitsRunnableConsoleAssembly", BinTrivialSample
 RunOptionalTest("AvaloniaHelloSampleBuildsFromCargoManifest", AvaloniaHelloSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AvaloniaHelloSampleEmitsRunnableSmokeOutput", AvaloniaHelloSampleEmitsRunnableSmokeOutput, failures);
 RunOptionalTest("DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput", DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput, failures);
+RunOptionalTest("GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput", GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSampleEmitsRunnableConsoleOutput, failures);
@@ -769,6 +783,337 @@ static void InvalidBitcodeMagicIsRejected()
 
     Assert(!report.LooksLikeLlvmBitcode, "Expected invalid LLVM bitcode magic to be rejected.");
     Assert(report.MagicBytes == "DEADBEEF", $"Expected magic bytes DEADBEEF but got {report.MagicBytes}.");
+}
+
+static void ManagedHandleStoreTracksObjects()
+{
+    var store = new ManagedHandleStore();
+    var handle = store.AddObject("hello");
+
+    Assert(!handle.IsNull, "Expected allocated object handle to be non-null.");
+    Assert(store.Count == 1, $"Expected one tracked handle, but found {store.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(store.GetObject<string>(handle) == "hello", "Expected object handle to resolve the original string value.");
+    Assert(store.TryGetObject<string>(handle, out var value) && value == "hello", "Expected TryGetObject to resolve the original string value.");
+    Assert(!store.TryGetObject<FileInfo>(handle, out _), "Expected TryGetObject to reject mismatched object types.");
+    Assert(store.Release(handle), "Expected releasing an existing object handle to succeed.");
+    Assert(store.Count == 0, $"Expected no tracked handles after release, but found {store.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(!store.Release(handle), "Expected releasing an already released object handle to return false.");
+}
+
+static void ManagedHandleStoreTracksExceptions()
+{
+    var store = new ManagedHandleStore();
+    var exception = new InvalidOperationException("interop failure");
+    var handle = store.AddException(exception);
+
+    Assert(!handle.IsNull, "Expected allocated exception handle to be non-null.");
+    Assert(ReferenceEquals(store.GetException(handle), exception), "Expected exception handle to resolve the original exception instance.");
+    Assert(store.TryGetException(handle, out var resolved) && ReferenceEquals(resolved, exception), "Expected TryGetException to resolve the original exception instance.");
+    ExpectException<InvalidOperationException>(() => store.GetObject<Exception>(handle.Value));
+    ExpectException<InvalidOperationException>(() => store.Release(new ManagedObjectHandle(handle.Value)));
+    Assert(store.Release(handle), "Expected releasing an exception handle to succeed.");
+}
+
+static void ManagedHandleStoreRejectsInvalidHandles()
+{
+    var store = new ManagedHandleStore();
+
+    ExpectException<KeyNotFoundException>(() => store.GetObject<object>(0));
+    ExpectException<KeyNotFoundException>(() => store.GetObject<object>(42));
+    Assert(!store.TryGetObject<object>(new ManagedObjectHandle(42), out _), "Expected TryGetObject to return false for missing handles.");
+    ExpectException<ArgumentNullException>(() => store.AddObject(null!));
+    ExpectException<ArgumentNullException>(() => store.AddException(null!));
+}
+
+static void InteropUtf8RoundTripsStrings()
+{
+    const string value = "hello runtime";
+    var bytes = Encoding.UTF8.GetBytes(value);
+    var pointer = Marshal.AllocHGlobal(bytes.Length);
+    try
+    {
+        Marshal.Copy(bytes, 0, pointer, bytes.Length);
+        Assert(InteropUtf8.ReadString(pointer, bytes.Length) == value, "Expected UTF-8 pointer/length data to decode to the original string.");
+        Assert(InteropUtf8.ReadString(IntPtr.Zero, 0) == string.Empty, "Expected zero-length UTF-8 input to decode to an empty string.");
+        Assert(InteropUtf8.GetByteCount(value) == bytes.Length, "Expected UTF-8 byte count helper to match Encoding.UTF8.");
+
+        var destination = Marshal.AllocHGlobal(5);
+        try
+        {
+            var requiredLength = InteropUtf8.CopyString(value, destination, 5);
+            var copied = new byte[5];
+            Marshal.Copy(destination, copied, 0, copied.Length);
+            Assert(requiredLength == bytes.Length, "Expected UTF-8 copy helper to return the full required byte length.");
+            Assert(Encoding.UTF8.GetString(copied) == "hello", "Expected UTF-8 copy helper to respect destination capacity.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+
+        ExpectException<ArgumentOutOfRangeException>(() => InteropUtf8.ReadString(pointer, -1));
+        ExpectException<ArgumentNullException>(() => InteropUtf8.ReadString(IntPtr.Zero, 1));
+        ExpectException<ArgumentOutOfRangeException>(() => InteropUtf8.CopyString(value, IntPtr.Zero, -1));
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(pointer);
+    }
+}
+
+static void ManagedInteropRuntimeExposesExceptionText()
+{
+    ManagedInteropRuntime.Clear();
+    try
+    {
+        var objectHandle = ManagedInteropRuntime.AddObjectHandle(new StringBuilder("tracked"));
+        var exceptionHandle = ManagedInteropRuntime.AddExceptionHandle(new InvalidOperationException("interop failure"));
+
+        Assert(ManagedInteropRuntime.HandleCount == 2, $"Expected two tracked runtime handles, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+        Assert(ManagedInteropRuntime.GetObject<StringBuilder>(objectHandle).ToString() == "tracked", "Expected runtime object handle to resolve the tracked object.");
+        Assert(ManagedInteropRuntime.GetExceptionMessage(exceptionHandle) == "interop failure", "Expected runtime exception helper to expose the exception message.");
+        Assert(ManagedInteropRuntime.GetExceptionTypeName(exceptionHandle).EndsWith("InvalidOperationException", StringComparison.Ordinal), "Expected runtime exception helper to expose the exception type name.");
+
+        var messageLength = ManagedInteropRuntime.GetExceptionMessageUtf8Length(exceptionHandle);
+        var destination = Marshal.AllocHGlobal(messageLength);
+        try
+        {
+            var requiredLength = ManagedInteropRuntime.CopyExceptionMessageUtf8(exceptionHandle, destination, messageLength);
+            var copied = new byte[messageLength];
+            Marshal.Copy(destination, copied, 0, copied.Length);
+            Assert(requiredLength == messageLength, "Expected copied exception message length to match the reported UTF-8 length.");
+            Assert(Encoding.UTF8.GetString(copied) == "interop failure", "Expected copied exception message to round-trip through UTF-8.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+
+        Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected runtime exception handle release to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected runtime object handle release to succeed.");
+        Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no runtime handles after release, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    }
+    finally
+    {
+        ManagedInteropRuntime.Clear();
+    }
+}
+
+static void GeneratedBindingPrototypeUsesInteropHandles()
+{
+    ManagedInteropRuntime.Clear();
+    var exceptionOutPointer = Marshal.AllocHGlobal(sizeof(int));
+    try
+    {
+        var stringHandle = RuntimeBridgeHelpers.BindgenSystemIoDirectoryGetCurrentDirectory(exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Directory.GetCurrentDirectory binding to report no exception.");
+        Assert(stringHandle > 0, "Expected generated Directory.GetCurrentDirectory binding to return a managed string handle.");
+
+        var byteLength = RuntimeBridgeHelpers.BindgenSystemStringUtf8Length(stringHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string length binding to report no exception.");
+        Assert(byteLength > 0, "Expected generated string length binding to report a non-empty current directory.");
+
+        var destination = Marshal.AllocHGlobal(byteLength);
+        try
+        {
+            var copiedLength = RuntimeBridgeHelpers.BindgenSystemStringCopyUtf8(stringHandle, destination, byteLength, exceptionOutPointer);
+            var copiedBytes = new byte[copiedLength];
+            Marshal.Copy(destination, copiedBytes, 0, copiedBytes.Length);
+            var copiedText = Encoding.UTF8.GetString(copiedBytes);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string copy binding to report no exception.");
+            Assert(copiedLength == byteLength, "Expected generated string copy binding to return the required UTF-8 length.");
+            Assert(!string.IsNullOrWhiteSpace(copiedText), "Expected generated string copy binding to round-trip a non-empty string.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(stringHandle) == 0, "Expected generated object release binding to succeed.");
+
+        var argsHandle = RuntimeBridgeHelpers.BindgenSystemEnvironmentGetCommandLineArgs(exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Environment.GetCommandLineArgs binding to report no exception.");
+        Assert(argsHandle > 0, "Expected generated Environment.GetCommandLineArgs binding to return a managed string array handle.");
+
+        var argsLength = RuntimeBridgeHelpers.BindgenSystemStringArrayLength(argsHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated command-line args length binding to report no exception.");
+        Assert(argsLength > 0, "Expected generated command-line args binding to expose at least the executable path.");
+
+        var firstArgHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayGet(argsHandle, 0, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated command-line args get binding to report no exception.");
+        Assert(firstArgHandle > 0, "Expected generated command-line args get binding to return a managed string handle.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(firstArgHandle) == 0, "Expected generated command-line string handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(argsHandle) == 0, "Expected generated command-line string array handle release to succeed.");
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"rust-msil-bindgen-{Guid.NewGuid():N}.txt");
+        File.WriteAllLines(tempPath, ["alpha-runtime", "beta"]);
+        try
+        {
+            var pathHandle = ManagedInteropRuntime.AddObjectHandle(tempPath);
+            try
+            {
+                var arrayHandle = RuntimeBridgeHelpers.BindgenSystemIoFileReadAllLinesString(pathHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated File.ReadAllLines string-handle binding to report no exception.");
+                Assert(arrayHandle > 0, "Expected generated File.ReadAllLines string-handle binding to return a managed string array handle.");
+
+                var arrayLength = RuntimeBridgeHelpers.BindgenSystemStringArrayLength(arrayHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string array length binding to report no exception.");
+                Assert(arrayLength == 2, $"Expected generated string array length binding to report two lines, but got {arrayLength.ToString(CultureInfo.InvariantCulture)}.");
+
+                var lineHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayGet(arrayHandle, 0, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string array get binding to report no exception.");
+                Assert(lineHandle > 0, "Expected generated string array get binding to return a managed string handle.");
+
+                var needleHandle = ManagedInteropRuntime.AddObjectHandle("runtime");
+                try
+                {
+                    var contains = RuntimeBridgeHelpers.BindgenSystemStringContainsString(lineHandle, needleHandle, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Contains string-handle binding to report no exception.");
+                    Assert(contains == 1, "Expected generated String.Contains string-handle binding to find the needle in the first line.");
+                }
+                finally
+                {
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(needleHandle) == 0, "Expected generated needle string handle release to succeed.");
+                }
+
+                Assert(RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineString(lineHandle) == 0, "Expected generated Console.WriteLine string-handle binding to succeed.");
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(lineHandle) == 0, "Expected generated string handle release to succeed.");
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(arrayHandle) == 0, "Expected generated string array handle release to succeed.");
+            }
+            finally
+            {
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(pathHandle) == 0, "Expected generated path string handle release to succeed.");
+            }
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+
+        var exceptionHandle = RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineUtf8(IntPtr.Zero, 1);
+        Assert(exceptionHandle > 0, "Expected generated Console.WriteLine binding to return an exception handle for invalid UTF-8 input.");
+        Assert(ManagedInteropRuntime.GetExceptionMessage(exceptionHandle).Contains("UTF-8", StringComparison.Ordinal), "Expected generated Console.WriteLine failure to be tracked in the interop exception store.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(exceptionOutPointer);
+        ManagedInteropRuntime.Clear();
+    }
+}
+
+static void GeneratedBindingGeneratorMatchesFixture()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "generated_bindings_hello", "src", "system.rs");
+    var fixtureText = File.ReadAllText(fixturePath);
+    var generatedText = RustBindingGenerator.GenerateSystemModule(BindingSurface.CreateTinyBclSurface());
+
+    Assert(
+        NormalizeLineEndings(generatedText) == NormalizeLineEndings(fixtureText),
+        "Expected generated System bindings to match the checked-in generated_bindings_hello fixture.");
+}
+
+static void GeneratedBindingGlueMapTargetsRuntimeHelpers()
+{
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var externSymbols = surface.Externs.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
+    var glueSymbols = surface.ManagedGlueBindings.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
+
+    Assert(externSymbols.SetEquals(glueSymbols), "Expected every generated extern to have exactly one managed glue binding.");
+    Assert(surface.ManagedGlueBindings.Count == glueSymbols.Count, "Expected generated managed glue bindings to have unique symbols.");
+
+    foreach (var binding in surface.ManagedGlueBindings)
+    {
+        binding.Validate();
+
+        var helperMethod = typeof(RuntimeBridgeHelpers).GetMethod(
+            binding.RuntimeBridgeHelperMethodName,
+            BindingFlags.Public | BindingFlags.Static);
+        Assert(helperMethod is not null, $"Expected generated managed glue binding '{binding.Symbol}' to target an existing RuntimeBridgeHelpers method.");
+        var runtimeHelperMethod = helperMethod ?? throw new InvalidOperationException($"Generated managed glue binding '{binding.Symbol}' targets a missing RuntimeBridgeHelpers method.");
+        Assert(runtimeHelperMethod.ReturnType == typeof(int), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to return int.");
+
+        var actualParameters = runtimeHelperMethod.GetParameters();
+        Assert(actualParameters.Length == binding.Parameters.Count, $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to match the binding parameter count.");
+        for (var index = 0; index < binding.Parameters.Count; index++)
+        {
+            var expectedParameter = binding.Parameters[index];
+            var actualParameter = actualParameters[index];
+            Assert(actualParameter.Name == expectedParameter.Name, $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' parameter {index.ToString(CultureInfo.InvariantCulture)} to be named '{expectedParameter.Name}'.");
+            Assert(actualParameter.ParameterType == ResolveManagedGlueParameterType(expectedParameter.TypeName), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' parameter '{expectedParameter.Name}' to have type '{expectedParameter.TypeName}'.");
+        }
+
+        if (binding.Operation.ExceptionConvention == ManagedGlueExceptionConvention.WriteExceptionOut)
+        {
+            Assert(
+                binding.Parameters.Any(parameter => string.Equals(parameter.Name, binding.Operation.ExceptionOutParameterName, StringComparison.Ordinal)),
+                $"Expected generated managed glue binding '{binding.Symbol}' to declare its exception-out parameter.");
+        }
+    }
+}
+
+static Type ResolveManagedGlueParameterType(string typeName)
+    => typeName switch
+    {
+        "int" => typeof(int),
+        "long" => typeof(long),
+        "IntPtr" => typeof(IntPtr),
+        _ => throw new NotSupportedException($"Managed glue parameter type '{typeName}' is not supported by the regression harness.")
+    };
+
+static void GeneratedBindingManagedGlueBuildOutputMatchesGenerator()
+{
+    var buildOutputPath = GetBackendGeneratedBindingGluePath();
+    Assert(File.Exists(buildOutputPath), $"Expected generated managed binding glue build output '{buildOutputPath}' to exist.");
+
+    var buildOutputText = File.ReadAllText(buildOutputPath);
+    var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingSurface.CreateTinyBclSurface());
+
+    Assert(
+        NormalizeLineEndings(generatedText) == NormalizeLineEndings(buildOutputText),
+        $"Expected generated managed binding glue build output to match RustMcil.Bindings. {DescribeFirstTextDifference(generatedText, buildOutputText)}");
+}
+
+static string GetBackendGeneratedBindingGluePath()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var targetFrameworkDirectory = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    var configurationDirectory = Directory.GetParent(targetFrameworkDirectory)?.FullName
+        ?? throw new InvalidOperationException("Test configuration directory could not be determined.");
+
+    return Path.Combine(
+        workspaceRoot,
+        "dotnet",
+        "backend",
+        "src",
+        "RustMcil.Backend",
+        "obj",
+        Path.GetFileName(configurationDirectory),
+        Path.GetFileName(targetFrameworkDirectory),
+        "Generated",
+        "RuntimeBridgeHelpers.Bindings.g.cs");
+}
+
+static string NormalizeLineEndings(string value)
+    => value.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd();
+
+static string DescribeFirstTextDifference(string actual, string expected)
+{
+    var actualLines = NormalizeLineEndings(actual).Split('\n');
+    var expectedLines = NormalizeLineEndings(expected).Split('\n');
+    var lineCount = Math.Min(actualLines.Length, expectedLines.Length);
+
+    for (var index = 0; index < lineCount; index++)
+    {
+        if (!string.Equals(actualLines[index], expectedLines[index], StringComparison.Ordinal))
+        {
+            return $"First difference at line {(index + 1).ToString(CultureInfo.InvariantCulture)}: generated '{actualLines[index]}', fixture '{expectedLines[index]}'.";
+        }
+    }
+
+    return $"Generated line count {actualLines.Length.ToString(CultureInfo.InvariantCulture)}, fixture line count {expectedLines.Length.ToString(CultureInfo.InvariantCulture)}.";
 }
 
 static void AddSampleProducesModuleSummary()
@@ -6427,6 +6772,55 @@ static void LousygrepPrimitiveSampleEmitsRunnableConsoleOutput()
         $"Expected emitted lousygrep_primitive console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
     Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
         $"Expected emitted lousygrep_primitive console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
+}
+
+static void GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("generated_bindings_lousygrep", "generated_bindings_lousygrep");
+    var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
+    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var runtimeConfigPath = Path.ChangeExtension(tempAssembly.Path, ".runtimeconfig.json");
+    Assert(File.Exists(runtimeConfigPath), $"Expected emitted console assembly '{tempAssembly.Path}' to include a sibling runtimeconfig file.");
+
+    var startInfo = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+    startInfo.ArgumentList.Add(tempAssembly.Path);
+    startInfo.ArgumentList.Add("runtime");
+    startInfo.ArgumentList.Add(fixturePath);
+    startInfo.ArgumentList.Add(secondFixturePath);
+
+    using var process = System.Diagnostics.Process.Start(startInfo)
+        ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
+
+    var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+    var standardErrorTask = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    Task.WaitAll(standardOutputTask, standardErrorTask);
+
+    var standardOutput = standardOutputTask.GetAwaiter().GetResult().Trim();
+    var standardError = standardErrorTask.GetAwaiter().GetResult().Trim();
+    var expectedOutput = string.Join(Environment.NewLine,
+    [
+        "alpha-runtime",
+        "runtime-beta",
+        "runtime-gamma"
+    ]);
+
+    Assert(process.ExitCode == 0,
+        $"Expected emitted generated_bindings_lousygrep console assembly to exit with code 0, but got {process.ExitCode.ToString(CultureInfo.InvariantCulture)}. stdout: '{standardOutput}' stderr: '{standardError}'.");
+    Assert(string.Equals(standardOutput, expectedOutput, StringComparison.Ordinal),
+        $"Expected emitted generated_bindings_lousygrep console assembly to print '{expectedOutput}', but printed '{standardOutput}'. stderr: '{standardError}'.");
 }
 
 static void LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput()
@@ -16855,8 +17249,13 @@ static void AssertUnmanagedPairI64Result(Action<IntPtr> assertion)
     }
 }
 
-static void RunTest(string name, Action test, ICollection<string> failures)
+void RunTest(string name, Action test, ICollection<string> failures)
 {
+    if (requestedTests is not null && !requestedTests.Contains(name))
+    {
+        return;
+    }
+
     try
     {
         test();
@@ -16868,8 +17267,13 @@ static void RunTest(string name, Action test, ICollection<string> failures)
     }
 }
 
-static void RunOptionalTest(string name, Action test, ICollection<string> failures)
+void RunOptionalTest(string name, Action test, ICollection<string> failures)
 {
+    if (requestedTests is not null && !requestedTests.Contains(name))
+    {
+        return;
+    }
+
     try
     {
         test();

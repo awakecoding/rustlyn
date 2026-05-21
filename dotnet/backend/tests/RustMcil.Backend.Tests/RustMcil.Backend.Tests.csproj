@@ -7,5 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RustMcil.Backend\RustMcil.Backend.csproj" />
+    <ProjectReference Include="..\..\src\RustMcil.Bindings\RustMcil.Bindings.csproj" />
+    <ProjectReference Include="..\..\src\RustMcil.Interop\RustMcil.Interop.csproj" />
   </ItemGroup>
 </Project>

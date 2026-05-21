@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RustMcil.Backend;
 
-public static class RuntimeBridgeHelpers
+public static partial class RuntimeBridgeHelpers
 {
     public static int CommandLineArgCount()
     {
@@ -397,6 +397,16 @@ public static class RuntimeBridgeHelpers
         }
 
         return bytes.Length;
+    }
+
+    private static void WriteExceptionOut(IntPtr exceptionOutPointer, int exceptionHandle)
+    {
+        if (exceptionOutPointer == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(exceptionOutPointer), "Generated binding calls must provide an exception out pointer.");
+        }
+
+        Marshal.WriteInt32(exceptionOutPointer, exceptionHandle);
     }
 
     private static string ReplaceUtf8String(

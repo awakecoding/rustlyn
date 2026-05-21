@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>RustMcil.Bindings</AssemblyName>
+    <RootNamespace>RustMcil.Bindings</RootNamespace>
+  </PropertyGroup>
+</Project>

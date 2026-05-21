@@ -38,6 +38,12 @@ Run a focused smoke test on that sample:
 .\scripts\Test-Smoke.ps1 -Sample add -Mode Bitcode
 ```
 
+Run the canonical generated-bindings lousygrep workload:
+
+```powershell
+.\scripts\Test-Smoke.ps1 -Sample lousygrep -Mode Cargo -Configuration Release
+```
+
 Drive the backend tool directly:
 
 ```powershell
@@ -68,15 +74,21 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 
 - [Original Eric Sink design](docs/original-eric-sink-design.md)
 - [Revived design in this repo](docs/revived-design.md)
+- [SourceGear parity roadmap](docs/sourcegear-parity-roadmap.md)
 - [Deep reconstruction notes](docs/reconstruction-notes.md)
 - [Contributor and agent workflow](AGENTS.md)
 
 ## Repo Map
 
 - `samples/`: narrow Rust crates used as regression fixtures
+- `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment, directory, and string APIs
+- `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
 - `dotnet/backend/src/RustMcil.Tool/`: CLI for inspect, lower, emit, invoke, and translate flows
 - `dotnet/backend/src/RustMcil.Backend/`: lowering and IL emission logic
+- `dotnet/backend/src/RustMcil.Bindings/`: tiny generated .NET binding prototype for Rust wrapper output and managed glue source
+- `dotnet/backend/src/RustMcil.Bindings.Tool/`: build-time generator for backend managed binding glue
+- `dotnet/backend/src/RustMcil.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
 - `dotnet/backend/tests/RustMcil.Backend.Tests/`: focused regression harness for lowering and runtime behavior
 - `artifacts/decompiled/`: decompiled text extracted from the historical SDK for reference
 - `artifacts/sdk-0.1.5/extracted/`: kept textual package contents and metadata from the published SDK snapshot

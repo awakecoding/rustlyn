@@ -4,7 +4,11 @@ param(
 
     [Parameter(Mandatory = $false)]
     [ValidateSet("Bitcode", "Cargo")]
-    [string]$Mode = "Bitcode"
+    [string]$Mode = "Bitcode",
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("Debug", "Release")]
+    [string]$Configuration = "Debug"
 )
 
 $ErrorActionPreference = "Stop"
@@ -469,6 +473,12 @@ $sampleChecks = @{
         Expected = 253
         SupportedModes = @("Cargo")
     }
+    generated_bindings_hello = @{
+        Method = "generated_bindings_score"
+        Arguments = @()
+        Expected = 100
+        SupportedModes = @("Cargo")
+    }
     dotnet_runtime_loop = @{
         Method = "dotnet_runtime_loop"
         Arguments = @(2, [uint32]45)
@@ -493,6 +503,21 @@ $sampleChecks = @{
         BinaryTarget = "avalonia_hello"
         SupportedModes = @("Cargo")
     }
+    lousygrep = @{
+        CratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
+        Arguments = @(
+            "runtime",
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"),
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt")
+        )
+        ExpectedOutput = @(
+            "alpha-runtime",
+            "runtime-beta",
+            "runtime-gamma"
+        )
+        BinaryTarget = "generated_bindings_lousygrep"
+        SupportedModes = @("Cargo")
+    }
     lousygrep_primitive = @{
         Arguments = @(
             "runtime",
@@ -505,6 +530,20 @@ $sampleChecks = @{
             "$((Join-Path $workspaceRoot 'samples\lousygrep_primitive\fixtures\second.txt')):runtime-gamma"
         )
         BinaryTarget = "lousygrep_primitive"
+        SupportedModes = @("Cargo")
+    }
+    generated_bindings_lousygrep = @{
+        Arguments = @(
+            "runtime",
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"),
+            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt")
+        )
+        ExpectedOutput = @(
+            "alpha-runtime",
+            "runtime-beta",
+            "runtime-gamma"
+        )
+        BinaryTarget = "generated_bindings_lousygrep"
         SupportedModes = @("Cargo")
     }
     dotnet_runtime_roundtrip = @{
@@ -1556,19 +1595,19 @@ function Invoke-SmokeCheck {
         $cleanupState = $prepared.State
     }
 
-    dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $ArtifactPath
+    dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $ArtifactPath
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet run inspect failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
-    dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $ArtifactPath | Out-Null
+    dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $ArtifactPath | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet run lower failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
     $emittedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
     try {
-        dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
@@ -1645,6 +1684,8 @@ function Invoke-TranslateSmokeCheck {
 
         $translateCommand = @(
             'run',
+            '-c',
+            $Configuration,
             '--project',
             '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
             '--',
@@ -1666,12 +1707,12 @@ function Invoke-TranslateSmokeCheck {
             throw "dotnet run translate failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $translatedBitcodePath
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $translatedBitcodePath
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run inspect failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $translatedBitcodePath | Out-Null
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $translatedBitcodePath | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
@@ -1707,6 +1748,8 @@ function Invoke-TranslateSmokeCheck {
         else {
             $invokeCommand = @(
                 'run',
+                '-c',
+                $Configuration,
                 '--project',
                 '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
                 '--',
@@ -1784,7 +1827,7 @@ function Format-InvokeArgument {
 
 Push-Location $workspaceRoot
 try {
-    dotnet build ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
+    dotnet build -c $Configuration ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet build failed with exit code $LASTEXITCODE"
     }
@@ -1800,7 +1843,12 @@ try {
         }
 
         if ($Mode -eq "Cargo") {
-            $cratePath = Join-Path $workspaceRoot (Join-Path "samples" $currentSample)
+            $cratePath = if ($check.ContainsKey("CratePath")) {
+                $check.CratePath
+            }
+            else {
+                Join-Path $workspaceRoot (Join-Path "samples" $currentSample)
+            }
             Invoke-TranslateSmokeCheck -CurrentSample $currentSample -CratePath $cratePath -Check $check
             continue
         }

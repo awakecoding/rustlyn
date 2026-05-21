@@ -1,5 +1,6 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using RustMcil.Bindings;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -9,6 +10,10 @@ public static class LoweredAssemblyEmitter
 {
     private const string GeneratedTypeName = "RustMcil.GeneratedModule";
     private const string GeneratedEntrypointTypeName = "GeneratedEntryPoint";
+    private static readonly IReadOnlyDictionary<string, string> GeneratedBindingRuntimeHelpers = BindingSurface
+        .CreateTinyBclSurface()
+        .ManagedGlueBindings
+        .ToDictionary(static binding => binding.Symbol, static binding => binding.RuntimeBridgeHelperMethodName, StringComparer.Ordinal);
 
     public static void EmitBitcode(string artifactPath, string outputAssemblyPath, string? llvmRoot = null)
     {
@@ -209,6 +214,7 @@ public static class LoweredAssemblyEmitter
     private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, bool requiresAvaloniaSupport)
     {
         CopySupportAssembly(typeof(RuntimeBridgeHelpers).Assembly.Location, outputAssemblyPath);
+        CopySupportAssembly(typeof(RustMcil.Interop.ManagedInteropRuntime).Assembly.Location, outputAssemblyPath);
 
         if (requiresAvaloniaSupport)
         {
@@ -2354,6 +2360,12 @@ public static class LoweredAssemblyEmitter
         if (string.Equals(call.Callee, "rust_mcil_dotnet_console_write_line_utf8", StringComparison.Ordinal))
         {
             EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.ConsoleWriteLineUtf8));
+            return true;
+        }
+
+        if (GeneratedBindingRuntimeHelpers.TryGetValue(call.Callee, out var generatedBindingHelperName))
+        {
+            EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, generatedBindingHelperName);
             return true;
         }
 

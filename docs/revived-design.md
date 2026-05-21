@@ -58,6 +58,10 @@ The current design has two especially important ownership boundaries:
 
 Runtime bridge support assemblies live beside the backend when a slice needs managed functionality that should not be generated as IL directly. The Avalonia slice uses this pattern so the emitter recognizes the bridge symbol family, adds the appropriate entrypoint metadata, copies the support dependencies with the generated assembly, and leaves Avalonia lifetime/threading details inside the support assembly.
 
+`RustMcil.Interop` is the first recovered SourceGear-parity runtime layer. It owns reusable managed object and exception handles, UTF-8 pointer/length helpers, and exception text queries that future generated .NET bindings can share instead of growing one-off bridge stores per sample.
+
+`RustMcil.Bindings` is the first generated-bindings parity foothold. It emits the generated-style Rust wrapper module checked into `samples/generated_bindings_hello`, owns the `rust_mcil_bindgen_*` managed glue map consumed by the backend emitter, and generates the backend `RuntimeBridgeHelpers.Bindings.g.cs` partial at build time through `RustMcil.Bindings.Tool`. Managed glue is now assembled from per-binding signature, exception convention, result-operation metadata, and reflected managed expression metadata instead of fixed whole-method templates or raw C# value snippets. The mapped helpers return object and exception handles through `RustMcil.Interop`. The current fixed BCL surface covers console output, command-line arguments, current directory, file line reads, string arrays, string UTF-8 copy, and ordinal string contains. `samples/generated_bindings_lousygrep` uses that generated binding surface for the lousygrep workload, including argv, file IO, string matching, and output.
+
 When a slice fails, the intended workflow is to patch the direct owner rather than layering fixes across unrelated surfaces.
 
 ### 5. Validation surfaces
@@ -77,11 +81,17 @@ Compared with Eric Sink's original design, this revived repo intentionally chang
 - from historical proof-of-concept packaging to repeatable local validation in repo
 - from implicit compiler behavior to aggressively pinned sample-by-sample coverage
 
+The tracked recovery plan for closing those gaps is [SourceGear parity roadmap](sourcegear-parity-roadmap.md).
+
 ## Current Repository Shape
 
 - `samples/`: narrow frontend fixtures
+- `samples/generated_bindings_hello/`: generated-style .NET binding fixture over `System.Console`, `System.IO.Directory`, and `System.String`
+- `samples/generated_bindings_lousygrep/`: canonical lousygrep-style generated-bindings fixture over `System.Environment.GetCommandLineArgs`, `System.IO.File.ReadAllLines`, `System.String[]`, and `System.String.Contains`
 - `scripts/`: repeatable PowerShell workflows
+- `dotnet/backend/src/RustMcil.Bindings/`: generated Rust binding prototype and output-shape tests
 - `dotnet/backend/src/RustMcil.Backend/`: backend implementation
+- `dotnet/backend/src/RustMcil.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
 - `dotnet/backend/src/RustMcil.Tool/`: command-line entry point
 - `dotnet/backend/tests/`: backend regression harness
 - `artifacts/decompiled/` and `artifacts/sdk-0.1.5/extracted/`: historical reference material only

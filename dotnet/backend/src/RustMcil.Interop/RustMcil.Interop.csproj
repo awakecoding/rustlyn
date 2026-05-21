@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>RustMcil.Interop</AssemblyName>
+    <RootNamespace>RustMcil.Interop</RootNamespace>
+  </PropertyGroup>
+</Project>
