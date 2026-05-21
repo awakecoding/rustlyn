@@ -63,9 +63,10 @@ Try the first local MSBuild SDK facade:
 
 ```powershell
 .\scripts\Test-MsBuildSdk.ps1 -Configuration Release
+.\scripts\Test-MsBuildSdkPackage.ps1 -Configuration Release
 ```
 
-This builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`.
+The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `RustMcil.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. The second script packs `RustMcil.Sdk` into `artifacts/scratch/packages` and verifies NuGet-style SDK resolution from a generated scratch `.rsproj`.
 
 Try the first Avalonia bridge sample:
 
@@ -100,7 +101,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - `dotnet/backend/src/RustMcil.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
 - `dotnet/backend/src/RustMcil.Runtime/`: future home for LLVM/runtime semantic helpers
 - `dotnet/backend/src/RustMcil.Os/`: future home for host OS and Rust `std` compatibility helpers
-- `dotnet/backend/src/RustMcil.Sdk/`: local SDK-style MSBuild facade that delegates `.rsproj` builds to the backend translate driver
+- `dotnet/backend/src/RustMcil.Sdk/`: local and packable SDK-style MSBuild facade that delegates `.rsproj` builds to the backend translate driver
 - `dotnet/backend/tests/RustMcil.Backend.Tests/`: focused regression harness for lowering and runtime behavior
 - `artifacts/decompiled/`: decompiled text extracted from the historical SDK for reference
 - `artifacts/sdk-0.1.5/extracted/`: kept textual package contents and metadata from the published SDK snapshot

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>RustMcil.Sdk</PackageId>
+    <Version>0.1.0-local</Version>
+    <Authors>rust-msil</Authors>
+    <Description>Local MSBuild SDK facade for translating Rust crates into managed assemblies with RustMcil.Tool.</Description>
+    <PackageTags>rust;msil;msbuild;sdk</PackageTags>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk\Sdk.props" />
+    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk\Sdk.targets" />
+  </ItemGroup>
+</Project>

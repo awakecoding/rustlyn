@@ -37,7 +37,7 @@ The goal is not to recreate the old SDK packaging and project-system experience 
 
 For cargo-driven paths, `RustMcil.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode. The translate path also carries SourceGear-recovery options for `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, with `rust-src` preflight diagnostics when build-std is requested. The current fake-link decision keeps the historical `rsfakelink` approach deferred until a focused fixture proves direct Cargo bitcode emission cannot capture the required artifact.
 
-`RustMcil.Sdk` is the first local MSBuild facade slice. It is intentionally thin: an SDK-style `.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and its `Build` target delegates to `RustMcil.Tool translate`. This starts recovering the SourceGear SDK developer experience without duplicating cargo orchestration or backend behavior inside MSBuild.
+`RustMcil.Sdk` is the first MSBuild facade slice. It is intentionally thin: an SDK-style `.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and the SDK can also be packed into a local NuGet package for `Sdk="RustMcil.Sdk/<version>"` resolution. Its `Build` target delegates to `RustMcil.Tool translate`. This starts recovering the SourceGear SDK developer experience without duplicating cargo orchestration or backend behavior inside MSBuild.
 
 ### 3. Inspection and lowering
 
@@ -99,7 +99,7 @@ The tracked recovery plan for closing those gaps is [SourceGear parity roadmap](
 - `dotnet/backend/src/RustMcil.Runtime/`: shell for future LLVM/runtime semantic helpers
 - `dotnet/backend/src/RustMcil.Os/`: shell for future host OS and Rust `std` compatibility helpers
 - `dotnet/backend/src/RustMcil.Tool/`: command-line entry point
-- `dotnet/backend/src/RustMcil.Sdk/`: local SDK-style MSBuild facade that delegates `.rsproj` builds to `RustMcil.Tool translate`
+- `dotnet/backend/src/RustMcil.Sdk/`: local and packable SDK-style MSBuild facade that delegates `.rsproj` builds to `RustMcil.Tool translate`
 - `dotnet/backend/tests/`: backend regression harness
 - `artifacts/decompiled/` and `artifacts/sdk-0.1.5/extracted/`: historical reference material only
 
