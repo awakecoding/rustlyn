@@ -68,54 +68,42 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8PathGetRootLengthUtf8(IntPtr pathPointer, long pathLength)
     {
-        return Encoding.UTF8.GetByteCount(GetRootUtf8Path(pathPointer, pathLength));
+        return RustMcil.Os.HostPath.Utf8PathGetRootLengthUtf8(pathPointer, pathLength);
     }
 
     public static int CopyUtf8PathGetRoot(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            GetRootUtf8Path(pathPointer, pathLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetRoot(pathPointer, pathLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetFullPathLengthUtf8(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength)
     {
-        return Encoding.UTF8.GetByteCount(GetFullUtf8Path(pathPointer, pathLength, basePointer, baseLength));
+        return RustMcil.Os.HostPath.Utf8PathGetFullPathLengthUtf8(pathPointer, pathLength, basePointer, baseLength);
     }
 
     public static int CopyUtf8PathGetFullPath(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            GetFullUtf8Path(pathPointer, pathLength, basePointer, baseLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetFullPath(pathPointer, pathLength, basePointer, baseLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetDirectoryNameLengthUtf8(IntPtr pathPointer, long pathLength)
     {
-        return Encoding.UTF8.GetByteCount(GetDirectoryNameUtf8Path(pathPointer, pathLength));
+        return RustMcil.Os.HostPath.Utf8PathGetDirectoryNameLengthUtf8(pathPointer, pathLength);
     }
 
     public static int CopyUtf8PathGetDirectoryName(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            GetDirectoryNameUtf8Path(pathPointer, pathLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetDirectoryName(pathPointer, pathLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetRelativeLengthUtf8(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength)
     {
-        return Encoding.UTF8.GetByteCount(GetRelativeUtf8Path(relativeToPointer, relativeToLength, pathPointer, pathLength));
+        return RustMcil.Os.HostPath.Utf8PathGetRelativeLengthUtf8(relativeToPointer, relativeToLength, pathPointer, pathLength);
     }
 
     public static int CopyUtf8PathGetRelative(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(
-            GetRelativeUtf8Path(relativeToPointer, relativeToLength, pathPointer, pathLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Os.HostPath.CopyUtf8PathGetRelative(relativeToPointer, relativeToLength, pathPointer, pathLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8DocumentsLength()
@@ -362,30 +350,6 @@ public static partial class RuntimeBridgeHelpers
             ReadUtf8String(oldPointer, oldLength),
             ReadUtf8String(newPointer, newLength),
             StringComparison.Ordinal);
-    }
-
-    private static string GetDirectoryNameUtf8Path(IntPtr pathPointer, long pathLength)
-    {
-        return Path.GetDirectoryName(ReadUtf8String(pathPointer, pathLength)) ?? string.Empty;
-    }
-
-    private static string GetFullUtf8Path(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength)
-    {
-        return Path.GetFullPath(
-            ReadUtf8String(pathPointer, pathLength),
-            ReadUtf8String(basePointer, baseLength));
-    }
-
-    private static string GetRootUtf8Path(IntPtr pathPointer, long pathLength)
-    {
-        return Path.GetPathRoot(ReadUtf8String(pathPointer, pathLength)) ?? string.Empty;
-    }
-
-    private static string GetRelativeUtf8Path(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength)
-    {
-        return Path.GetRelativePath(
-            ReadUtf8String(relativeToPointer, relativeToLength),
-            ReadUtf8String(pathPointer, pathLength));
     }
 
     private static IntPtr CopyToUnmanaged(IntPtr source, long length)

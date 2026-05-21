@@ -4,6 +4,58 @@ namespace RustMcil.Os;
 
 public static class HostPath
 {
+    public static int Utf8PathGetRootLengthUtf8(IntPtr pathPointer, long pathLength)
+    {
+        return InteropUtf8.GetByteCount(GetRootUtf8Path(pathPointer, pathLength));
+    }
+
+    public static int CopyUtf8PathGetRoot(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetRootUtf8Path(pathPointer, pathLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int Utf8PathGetFullPathLengthUtf8(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength)
+    {
+        return InteropUtf8.GetByteCount(GetFullUtf8Path(pathPointer, pathLength, basePointer, baseLength));
+    }
+
+    public static int CopyUtf8PathGetFullPath(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetFullUtf8Path(pathPointer, pathLength, basePointer, baseLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int Utf8PathGetDirectoryNameLengthUtf8(IntPtr pathPointer, long pathLength)
+    {
+        return InteropUtf8.GetByteCount(GetDirectoryNameUtf8Path(pathPointer, pathLength));
+    }
+
+    public static int CopyUtf8PathGetDirectoryName(IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetDirectoryNameUtf8Path(pathPointer, pathLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int Utf8PathGetRelativeLengthUtf8(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength)
+    {
+        return InteropUtf8.GetByteCount(GetRelativeUtf8Path(relativeToPointer, relativeToLength, pathPointer, pathLength));
+    }
+
+    public static int CopyUtf8PathGetRelative(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength, IntPtr destinationPointer, long destinationCapacity)
+    {
+        return InteropUtf8.CopyString(
+            GetRelativeUtf8Path(relativeToPointer, relativeToLength, pathPointer, pathLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
     public static int Utf8PathCombine3LengthUtf8(IntPtr firstPointer, long firstLength, IntPtr secondPointer, long secondLength, IntPtr thirdPointer, long thirdLength)
     {
         return InteropUtf8.GetByteCount(CombineUtf8Paths(firstPointer, firstLength, secondPointer, secondLength, thirdPointer, thirdLength));
@@ -95,6 +147,30 @@ public static class HostPath
             InteropUtf8.ReadString(pathPointer, pathLength),
             InteropUtf8.ReadString(extensionPointer, extensionLength))
             ?? string.Empty;
+    }
+
+    private static string GetDirectoryNameUtf8Path(IntPtr pathPointer, long pathLength)
+    {
+        return Path.GetDirectoryName(InteropUtf8.ReadString(pathPointer, pathLength)) ?? string.Empty;
+    }
+
+    private static string GetFullUtf8Path(IntPtr pathPointer, long pathLength, IntPtr basePointer, long baseLength)
+    {
+        return Path.GetFullPath(
+            InteropUtf8.ReadString(pathPointer, pathLength),
+            InteropUtf8.ReadString(basePointer, baseLength));
+    }
+
+    private static string GetRootUtf8Path(IntPtr pathPointer, long pathLength)
+    {
+        return Path.GetPathRoot(InteropUtf8.ReadString(pathPointer, pathLength)) ?? string.Empty;
+    }
+
+    private static string GetRelativeUtf8Path(IntPtr relativeToPointer, long relativeToLength, IntPtr pathPointer, long pathLength)
+    {
+        return Path.GetRelativePath(
+            InteropUtf8.ReadString(relativeToPointer, relativeToLength),
+            InteropUtf8.ReadString(pathPointer, pathLength));
     }
 
     private static string GetFileNameUtf8Path(IntPtr pathPointer, long pathLength)

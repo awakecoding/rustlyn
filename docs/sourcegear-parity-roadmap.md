@@ -120,7 +120,7 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 
 Started with behavior-preserving project shells: `RustMcil.Runtime` and `RustMcil.Os` now exist beside `RustMcil.Interop`, and `RustMcil.Backend` references both. No helper methods have moved yet. This establishes the dependency direction for later migration slices while keeping the existing emitter mappings and support assembly copying unchanged.
 
-The first compatibility facade is now in place. `RustMcil.Runtime.NumericRuntime` owns the `rem_euclid` helpers, `RustMcil.Os.HostEnvironment` owns command-line argument counting plus UTF-8 argument/environment path helpers, `RustMcil.Os.HostConsole` owns console output helpers, `RustMcil.Os.HostFileSystem` owns `File.ReadAllLines` UTF-8 helpers, `RustMcil.Os.HostPath` owns `Path.Combine`, `Path.ChangeExtension`, `Path.GetFileName`, and `Path.GetFileNameWithoutExtension` UTF-8 helpers, and the existing Backend `RuntimeBridgeHelpers` methods forward to those new owners so emitted Rust symbols stay stable while migration proceeds. Emitted console assemblies now copy `RustMcil.Runtime.dll` and `RustMcil.Os.dll` beside the transitional Backend facade assembly.
+The first compatibility facade is now in place. `RustMcil.Runtime.NumericRuntime` owns the `rem_euclid` helpers, `RustMcil.Os.HostEnvironment` owns command-line argument counting plus UTF-8 argument/environment path helpers, `RustMcil.Os.HostConsole` owns console output helpers, `RustMcil.Os.HostFileSystem` owns `File.ReadAllLines` UTF-8 helpers, `RustMcil.Os.HostPath` owns `Path.Combine`, `Path.ChangeExtension`, `Path.GetFileName`, `Path.GetFileNameWithoutExtension`, `Path.GetFullPath`, `Path.GetPathRoot`, `Path.GetDirectoryName`, and `Path.GetRelativePath` UTF-8 helpers, and the existing Backend `RuntimeBridgeHelpers` methods forward to those new owners so emitted Rust symbols stay stable while migration proceeds. Emitted console assemblies now copy `RustMcil.Runtime.dll` and `RustMcil.Os.dll` beside the transitional Backend facade assembly.
 
 Intended ownership:
 
@@ -132,7 +132,7 @@ Validation:
 
 ```powershell
 dotnet build -c Release .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj
-dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- RuntimeSplitFacadeForwardsNumericHelpers RuntimeSplitFacadeForwardsOsHelpers RuntimeSplitFacadeForwardsConsoleHelpers RuntimeSplitFacadeForwardsFileHelpers RuntimeSplitFacadeForwardsEnvironmentPathHelpers RuntimeSplitFacadeForwardsPathCombineHelpers RuntimeSplitFacadeForwardsPathChangeExtensionHelpers RuntimeSplitFacadeForwardsPathFileNameHelpers
+dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- RuntimeSplitFacadeForwardsNumericHelpers RuntimeSplitFacadeForwardsOsHelpers RuntimeSplitFacadeForwardsConsoleHelpers RuntimeSplitFacadeForwardsFileHelpers RuntimeSplitFacadeForwardsEnvironmentPathHelpers RuntimeSplitFacadeForwardsPathCombineHelpers RuntimeSplitFacadeForwardsPathChangeExtensionHelpers RuntimeSplitFacadeForwardsPathFileNameHelpers RuntimeSplitFacadeForwardsPathResolutionHelpers
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_args -Mode Cargo -Configuration Release
 .\scripts\Test-Smoke.ps1 -Sample lousygrep_primitive -Mode Cargo -Configuration Release
@@ -140,6 +140,7 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_path_combine,dotnet_runtime_path_combine3 -Mode Cargo -Configuration Release
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_path_change -Mode Cargo -Configuration Release
 .\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_path_file_name -Mode Cargo -Configuration Release
+.\scripts\Test-Smoke.ps1 -Sample dotnet_runtime_full_path,dotnet_runtime_directory_name,dotnet_runtime_path_branch_root -Mode Cargo -Configuration Release
 ```
 
 ## Non-Goals For The First Recovery Pass

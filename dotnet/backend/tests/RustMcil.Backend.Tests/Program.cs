@@ -31,6 +31,7 @@ RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeFo
 RunTest("RuntimeSplitFacadeForwardsPathCombineHelpers", RuntimeSplitFacadeForwardsPathCombineHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathChangeExtensionHelpers", RuntimeSplitFacadeForwardsPathChangeExtensionHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathFileNameHelpers", RuntimeSplitFacadeForwardsPathFileNameHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsPathResolutionHelpers", RuntimeSplitFacadeForwardsPathResolutionHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17873,6 +17874,53 @@ static void RuntimeSplitFacadeForwardsPathFileNameHelpers()
     finally
     {
         Marshal.FreeHGlobal(pathPointer);
+    }
+}
+
+static void RuntimeSplitFacadeForwardsPathResolutionHelpers()
+{
+    var relativePath = Path.Combine("samples", "std_fs", "fixtures", "input.txt");
+    var basePath = Directory.GetCurrentDirectory();
+    var relativePathPointer = CopyUtf8TestString(relativePath, out var relativePathLength);
+    var basePathPointer = CopyUtf8TestString(basePath, out var basePathLength);
+    try
+    {
+        var fullPath = Path.GetFullPath(relativePath, basePath);
+        var fullPathBytes = Encoding.UTF8.GetBytes(fullPath);
+        Assert(RustMcil.Os.HostPath.Utf8PathGetFullPathLengthUtf8(relativePathPointer, relativePathLength, basePathPointer, basePathLength) == fullPathBytes.Length, "Expected OS path helper to expose Path.GetFullPath UTF-8 byte length.");
+        Assert(RuntimeBridgeHelpers.Utf8PathGetFullPathLengthUtf8(relativePathPointer, relativePathLength, basePathPointer, basePathLength) == RustMcil.Os.HostPath.Utf8PathGetFullPathLengthUtf8(relativePathPointer, relativePathLength, basePathPointer, basePathLength), "Expected Backend runtime facade to forward Path.GetFullPath UTF-8 byte length.");
+        AssertPathCopy("Path.GetFullPath", fullPathBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetFullPath(relativePathPointer, relativePathLength, basePathPointer, basePathLength, destination, fullPathBytes.Length));
+
+        var fullPathPointer = CopyUtf8TestString(fullPath, out var fullPathLength);
+        try
+        {
+            var root = Path.GetPathRoot(fullPath) ?? string.Empty;
+            var rootBytes = Encoding.UTF8.GetBytes(root);
+            Assert(RustMcil.Os.HostPath.Utf8PathGetRootLengthUtf8(fullPathPointer, fullPathLength) == rootBytes.Length, "Expected OS path helper to expose Path.GetPathRoot UTF-8 byte length.");
+            Assert(RuntimeBridgeHelpers.Utf8PathGetRootLengthUtf8(fullPathPointer, fullPathLength) == RustMcil.Os.HostPath.Utf8PathGetRootLengthUtf8(fullPathPointer, fullPathLength), "Expected Backend runtime facade to forward Path.GetPathRoot UTF-8 byte length.");
+            AssertPathCopy("Path.GetPathRoot", rootBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetRoot(fullPathPointer, fullPathLength, destination, rootBytes.Length));
+
+            var directoryName = Path.GetDirectoryName(fullPath) ?? string.Empty;
+            var directoryNameBytes = Encoding.UTF8.GetBytes(directoryName);
+            Assert(RustMcil.Os.HostPath.Utf8PathGetDirectoryNameLengthUtf8(fullPathPointer, fullPathLength) == directoryNameBytes.Length, "Expected OS path helper to expose Path.GetDirectoryName UTF-8 byte length.");
+            Assert(RuntimeBridgeHelpers.Utf8PathGetDirectoryNameLengthUtf8(fullPathPointer, fullPathLength) == RustMcil.Os.HostPath.Utf8PathGetDirectoryNameLengthUtf8(fullPathPointer, fullPathLength), "Expected Backend runtime facade to forward Path.GetDirectoryName UTF-8 byte length.");
+            AssertPathCopy("Path.GetDirectoryName", directoryNameBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetDirectoryName(fullPathPointer, fullPathLength, destination, directoryNameBytes.Length));
+
+            var relative = Path.GetRelativePath(basePath, fullPath);
+            var relativeBytes = Encoding.UTF8.GetBytes(relative);
+            Assert(RustMcil.Os.HostPath.Utf8PathGetRelativeLengthUtf8(basePathPointer, basePathLength, fullPathPointer, fullPathLength) == relativeBytes.Length, "Expected OS path helper to expose Path.GetRelativePath UTF-8 byte length.");
+            Assert(RuntimeBridgeHelpers.Utf8PathGetRelativeLengthUtf8(basePathPointer, basePathLength, fullPathPointer, fullPathLength) == RustMcil.Os.HostPath.Utf8PathGetRelativeLengthUtf8(basePathPointer, basePathLength, fullPathPointer, fullPathLength), "Expected Backend runtime facade to forward Path.GetRelativePath UTF-8 byte length.");
+            AssertPathCopy("Path.GetRelativePath", relativeBytes, destination => RuntimeBridgeHelpers.CopyUtf8PathGetRelative(basePathPointer, basePathLength, fullPathPointer, fullPathLength, destination, relativeBytes.Length));
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(fullPathPointer);
+        }
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(relativePathPointer);
+        Marshal.FreeHGlobal(basePathPointer);
     }
 }
 
