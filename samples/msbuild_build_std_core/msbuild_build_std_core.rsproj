@@ -1,0 +1,8 @@
+<Project Sdk="RustMcil.Sdk">
+  <PropertyGroup>
+    <AssemblyName>msbuild_build_std_core</AssemblyName>
+    <RustMcilCratePath>..\add</RustMcilCratePath>
+    <RustMcilToolchain>nightly</RustMcilToolchain>
+    <RustMcilBuildStd>core</RustMcilBuildStd>
+  </PropertyGroup>
+</Project>

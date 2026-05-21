@@ -8,7 +8,7 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 
 | Old SourceGear capability | Evidence | Revived owner | Current status | First parity target |
 | --- | --- | --- | --- | --- |
-| SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | `RustMcil.Sdk` MSBuild facade | Started with a thin local and packable SDK that bundles `RustMcil.Tool`, delegates to `translate`, and validates library plus binary Cargo targets | Add cargo-driver/project metadata features before publishing as a real NuGet SDK |
+| SDK-style `.rsproj` build with `dotnet build` | `artifacts/sdk-0.1.5/extracted/Sdk/`, `artifacts/sdk-0.1.5/extracted/build/` | `RustMcil.Sdk` MSBuild facade | Started with a thin local and packable SDK that bundles `RustMcil.Tool`, delegates to `translate`, and validates library, binary, and build-std Cargo targets | Add cargo-driver/project metadata features before publishing as a real NuGet SDK |
 | Synthetic Cargo project generation from project metadata | `artifacts/decompiled/rsbuild-program/Program.decompiled.cs` | Future cargo/MSBuild driver | Not started | Generate a temporary Cargo build directory from explicit tool options |
 | Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `cargo -Z build-std` rungs for `core`, `core,alloc`, and `std,panic_abort` are validated against focused fixtures; fake-link remains deferred by decision record | Continue std/environment/path/time fixtures before adding custom sysroot tooling |
 | Fake linker handoff to `.bc` | `artifacts/sdk-0.1.5/extracted/tools/rsfakelink/` | Optional future `RustMcil.FakeLink` | Deferred by [SourceGear fake-link decision](sourcegear-fake-link-decision.md) | Reopen only when a focused fixture proves Cargo cannot capture the required bitcode |
@@ -97,7 +97,7 @@ Promote normal Rust source using `core`, then `alloc`, then `std::fs`, environme
 
 The cargo driver now accepts `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, validates `rust-src` before build-std runs, and exposes the same options through smoke descriptors. This makes the ladder measurable without making nightly or `rust-src` a default test dependency.
 
-The first rung is now promoted as `build_std_core_probe`, reusing the `#![no_std]` `samples/add` crate with `--toolchain nightly --build-std core`. It validates bitcode capture, inspection, lowering, emission, and invocation with `add_i32(19, 23) == 42`.
+The first rung is now promoted as `build_std_core_probe`, reusing the `#![no_std]` `samples/add` crate with `--toolchain nightly --build-std core`. It validates bitcode capture, inspection, lowering, emission, and invocation with `add_i32(19, 23) == 42`. The same rung is also exposed through `samples/msbuild_build_std_core/msbuild_build_std_core.rsproj`, proving the SDK property surface can drive `RustMcilToolchain=nightly` and `RustMcilBuildStd=core` instead of requiring direct CLI flags.
 
 The second rung is now promoted as `build_std_alloc_probe`, using `samples/alloc_only_probe` with `#![no_std]`, `extern crate alloc`, a tiny fixed global allocator, and `--toolchain nightly --build-std core,alloc`. It validates alloc shim capture plus emitted invocation with `alloc_vec_capacity_score() == 4`. This rung also promoted support for optimized functions whose first lowered block has a non-canonical label instead of literally `start` or `entry`.
 
@@ -110,6 +110,7 @@ Validation:
 ```powershell
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- AddSampleBuildsWithBuildStdCore
 .\scripts\Test-Smoke.ps1 -Sample build_std_core_probe -Mode Cargo -Configuration Release
+.\scripts\Test-MsBuildSdkBuildStd.ps1 -Configuration Release
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- AllocOnlyProbeBuildsWithBuildStdAlloc
 .\scripts\Test-Smoke.ps1 -Sample build_std_alloc_probe -Mode Cargo -Configuration Release
 dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj -- StdFsBuildsWithBuildStdStd
@@ -145,13 +146,14 @@ dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\Ru
 
 ### Slice 7: Local MSBuild SDK Facade
 
-Started with a local `RustMcil.Sdk` under `dotnet/backend/src`. This is the first SDK-style `.rsproj` recovery slice: `samples/msbuild_add/msbuild_add.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and the SDK `Build` target delegates to the existing `RustMcil.Tool translate` command. `samples/msbuild_bin_trivial/msbuild_bin_trivial.rsproj` now validates `RustMcilBinaryTarget` for a Cargo binary target, runs the emitted console assembly, and verifies `Clean` removes the generated assembly, bitcode, and runtimeconfig. The SDK is also packable as `RustMcil.Sdk/0.1.0-local`, bundles a published `RustMcil.Tool` under `tools/net10.0`, and scratch validation projects resolve it through NuGet-style `Sdk="RustMcil.Sdk/<version>"` package lookup from `artifacts/scratch/packages` without passing a source-tree `RustMcilToolDll` override. The slice deliberately avoids synthetic Cargo project generation and public package publication; it proves the project-system/package/tool handoff first while keeping the cargo/backend driver as the owner of translation behavior.
+Started with a local `RustMcil.Sdk` under `dotnet/backend/src`. This is the first SDK-style `.rsproj` recovery slice: `samples/msbuild_add/msbuild_add.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and the SDK `Build` target delegates to the existing `RustMcil.Tool translate` command. `samples/msbuild_bin_trivial/msbuild_bin_trivial.rsproj` now validates `RustMcilBinaryTarget` for a Cargo binary target, runs the emitted console assembly, and verifies `Clean` removes the generated assembly, bitcode, and runtimeconfig. `samples/msbuild_build_std_core/msbuild_build_std_core.rsproj` validates the SourceGear sysroot-recovery property surface by driving `--toolchain nightly --build-std core` through MSBuild properties. The SDK is also packable as `RustMcil.Sdk/0.1.0-local`, bundles a published `RustMcil.Tool` under `tools/net10.0`, and scratch validation projects resolve it through NuGet-style `Sdk="RustMcil.Sdk/<version>"` package lookup from `artifacts/scratch/packages` without passing a source-tree `RustMcilToolDll` override. The slice deliberately avoids synthetic Cargo project generation and public package publication; it proves the project-system/package/tool handoff first while keeping the cargo/backend driver as the owner of translation behavior.
 
 Validation:
 
 ```powershell
 .\scripts\Test-MsBuildSdk.ps1 -Configuration Release
 .\scripts\Test-MsBuildSdkBinary.ps1 -Configuration Release
+.\scripts\Test-MsBuildSdkBuildStd.ps1 -Configuration Release
 .\scripts\Test-MsBuildSdkPackage.ps1 -Configuration Release
 ```
 
