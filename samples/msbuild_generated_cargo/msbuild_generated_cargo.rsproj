@@ -7,5 +7,9 @@
     <RustReference Include="..\profile_probe">
       <Name>profile_probe</Name>
     </RustReference>
+    <RustCrateReference Include="cfg-if">
+      <Version>1.0.0</Version>
+      <DefaultFeatures>false</DefaultFeatures>
+    </RustCrateReference>
   </ItemGroup>
 </Project>

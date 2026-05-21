@@ -45,6 +45,7 @@
     <MakeDir Directories="$(RustMcilGeneratedCargoProjectPath)" />
 
     <Error Text="RustReference '%(RustReference.Identity)' requires Name metadata for generated Cargo manifest dependencies." Condition="'@(RustReference)' != '' and '%(RustReference.Name)' == ''" />
+    <Error Text="RustCrateReference '%(RustCrateReference.Identity)' requires Version metadata for generated Cargo manifest dependencies." Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.Version)' == ''" />
 
     <ItemGroup>
       <_RustMcilGeneratedCargoLine Include="[package]" />
@@ -59,6 +60,9 @@
       <_RustMcilGeneratedCargoLine Include="path = '$(RustMcilGeneratedCargoSourcePath)'" Condition="'$(OutputType)' == 'Exe'" />
       <_RustMcilGeneratedCargoLine Include="[dependencies.%(RustReference.Name)]" Condition="'@(RustReference)' != ''" />
       <_RustMcilGeneratedCargoLine Include="path = '%(RustReference.FullPath)'" Condition="'@(RustReference)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="[dependencies.%(RustCrateReference.Identity)]" Condition="'@(RustCrateReference)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="version = &quot;%(RustCrateReference.Version)&quot;" Condition="'@(RustCrateReference)' != ''" />
+      <_RustMcilGeneratedCargoLine Include="default-features = %(RustCrateReference.DefaultFeatures)" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != ''" />
     </ItemGroup>
 
     <WriteLinesToFile File="$(RustMcilGeneratedCargoProjectPath)\Cargo.toml" Lines="@(_RustMcilGeneratedCargoLine)" Overwrite="true" />

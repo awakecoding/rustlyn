@@ -81,6 +81,14 @@ if ($generatedCargoManifest -notmatch "\[dependencies\.profile_probe\]") {
     throw "Expected generated Cargo manifest to contain a profile_probe RustReference dependency."
 }
 
+if ($generatedCargoManifest -notmatch "\[dependencies\.cfg-if\]") {
+    throw "Expected generated Cargo manifest to contain a cfg-if RustCrateReference dependency."
+}
+
+if ($generatedCargoManifest -notmatch 'default-features = false') {
+    throw "Expected generated Cargo manifest to preserve RustCrateReference DefaultFeatures metadata."
+}
+
 $invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "MSBuild SDK sample invoke failed with exit code $LASTEXITCODE."
@@ -107,10 +115,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $generatedResult = ($generatedInvokeOutput | Select-Object -Last 1).Trim()
-if ($generatedResult -ne "60") {
-    throw "Expected generated Cargo sample to invoke generated_cargo_score() => 60, got '$generatedResult'."
+if ($generatedResult -ne "77") {
+    throw "Expected generated Cargo sample to invoke generated_cargo_score() => 77, got '$generatedResult'."
 }
 
 Write-Host "PASS msbuild_add (msbuild sdk) => 42"
 Write-Host "PASS msbuild_sourcegear_aliases (sourcegear property aliases) => 11"
-Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + RustReference) => 60"
+Write-Host "PASS msbuild_generated_cargo (generated Cargo manifest + RustReference/RustCrateReference) => 77"
