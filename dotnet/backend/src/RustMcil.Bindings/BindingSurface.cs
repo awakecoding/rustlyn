@@ -15,6 +15,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Directory.GetCurrentDirectory()", typeof(Directory), nameof(Directory.GetCurrentDirectory), []),
                 ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
+                ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
                 ManagedApiRequirement.ForType("System.String[]", typeof(string[]))
             ],
@@ -49,6 +50,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_string_len",
+                    ["fn rust_mcil_bindgen_system_string_len(handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_utf8_len",
                     ["fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
@@ -147,6 +151,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         Utf8String("valuePointer", "valueLength")))),
                 Glue(
+                    "rust_mcil_bindgen_system_string_len",
+                    "BindgenSystemStringLength",
+                    [I32("stringHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        InstanceProperty(ManagedObject(typeof(string), "stringHandle"), typeof(string), nameof(string.Length))))),
+                Glue(
                     "rust_mcil_bindgen_system_string_utf8_len",
                     "BindgenSystemStringUtf8Length",
                     [I32("stringHandle"), Pointer("exceptionOutPointer")],
@@ -226,6 +236,9 @@ public sealed record BindingSurface(
 
     private static ManagedGlueExpression InstanceMethod(ManagedGlueExpression instance, Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => ManagedGlueExpression.InstanceMethod(instance, declaringType, methodName, parameterTypes, arguments);
+
+    private static ManagedGlueExpression InstanceProperty(ManagedGlueExpression instance, Type declaringType, string propertyName)
+        => ManagedGlueExpression.InstanceProperty(instance, declaringType, propertyName);
 }
 
 public sealed record ManagedApiRequirement(string DisplayName, Type Type, ManagedApiRequirementKind Kind, string? MemberName, IReadOnlyList<Type> ParameterTypes)

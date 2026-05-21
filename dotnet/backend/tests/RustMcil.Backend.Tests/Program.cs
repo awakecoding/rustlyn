@@ -924,6 +924,10 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
             Assert(copiedLength == byteLength, "Expected generated string copy binding to return the required UTF-8 length.");
             Assert(!string.IsNullOrWhiteSpace(copiedText), "Expected generated string copy binding to round-trip a non-empty string.");
 
+            var charLength = RuntimeBridgeHelpers.BindgenSystemStringLength(stringHandle, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Length property binding to report no exception.");
+            Assert(charLength == copiedText.Length, "Expected generated String.Length property binding to match the copied managed string length.");
+
             var clonedStringHandle = RuntimeBridgeHelpers.BindgenSystemStringFromUtf8(destination, byteLength, exceptionOutPointer);
             Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String-from-UTF-8 binding to report no exception.");
             Assert(clonedStringHandle > 0, "Expected generated String-from-UTF-8 binding to return a managed string handle.");

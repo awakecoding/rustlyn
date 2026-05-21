@@ -80,6 +80,19 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -14;
     }
 
+    let char_len = match current_directory.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -15;
+        }
+    };
+
+    if char_len <= 0 || char_len > directory_len {
+        let _ = current_directory.release();
+        return -16;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }

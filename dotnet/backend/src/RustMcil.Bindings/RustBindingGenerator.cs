@@ -171,6 +171,15 @@ impl ManagedString {
         self.handle
     }
 
+    pub fn len(&self) -> Result<i32, Exception> {
+        let mut exception_handle = 0;
+        let length = unsafe {
+            rust_mcil_bindgen_system_string_len(self.handle, &mut exception_handle)
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(length)
+    }
+
     pub fn utf8_len(&self) -> Result<i32, Exception> {
         let mut exception_handle = 0;
         let length = unsafe {

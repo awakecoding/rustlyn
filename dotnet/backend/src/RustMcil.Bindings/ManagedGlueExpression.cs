@@ -23,6 +23,9 @@ public abstract record ManagedGlueExpression
     public static ManagedGlueExpression InstanceMethod(ManagedGlueExpression instance, Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => new ManagedGlueInstanceMethodExpression(instance, declaringType, methodName, parameterTypes, arguments);
 
+    public static ManagedGlueExpression InstanceProperty(ManagedGlueExpression instance, Type declaringType, string propertyName)
+        => new ManagedGlueInstancePropertyExpression(instance, declaringType, propertyName);
+
     public static ManagedGlueExpression Utf8ByteCount(ManagedGlueExpression value)
         => new ManagedGlueUtf8ByteCountExpression(value);
 
@@ -158,6 +161,29 @@ public sealed record ManagedGlueInstanceMethodExpression(
         if (method.IsStatic)
         {
             throw new InvalidOperationException($"Managed glue method '{ManagedGlueCode.TypeName(DeclaringType)}.{MethodName}' is static, not an instance method.");
+        }
+    }
+}
+
+public sealed record ManagedGlueInstancePropertyExpression(ManagedGlueExpression Instance, Type DeclaringType, string PropertyName) : ManagedGlueExpression
+{
+    public override string ToCode()
+        => $"{Instance.ToCode()}.{PropertyName}";
+
+    public override void Validate()
+    {
+        Instance.Validate();
+        var property = DeclaringType.GetProperty(PropertyName)
+            ?? throw new InvalidOperationException($"Managed glue instance property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' could not be resolved.");
+        if (property.GetIndexParameters().Length != 0)
+        {
+            throw new InvalidOperationException($"Managed glue property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' is an indexed property.");
+        }
+
+        var getter = property.GetMethod;
+        if (getter is null || getter.IsStatic)
+        {
+            throw new InvalidOperationException($"Managed glue property '{ManagedGlueCode.TypeName(DeclaringType)}.{PropertyName}' is not an instance gettable property.");
         }
     }
 }
