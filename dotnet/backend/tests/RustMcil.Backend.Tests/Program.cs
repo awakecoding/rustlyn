@@ -743,6 +743,7 @@ RunOptionalTest("DotnetRuntimePathOneHundredFortyOneStageRankSampleBuildsFromCar
 RunOptionalTest("DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyTwoStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest", DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AddSampleBuildsWithBuildStdCore", AddSampleBuildsWithBuildStdCore, failures);
+RunOptionalTest("AllocOnlyProbeBuildsWithBuildStdAlloc", AllocOnlyProbeBuildsWithBuildStdAlloc, failures);
 
 if (failures.Count == 0)
 {
@@ -6685,6 +6686,41 @@ static void AddSampleBuildsWithBuildStdCore()
 
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "add_i32", [19, 23], llvmRoot);
     Assert(Equals(actualResult, 42), $"Expected build-std core add_i32 invocation to return 42, but got '{actualResult}'.");
+}
+
+static void AllocOnlyProbeBuildsWithBuildStdAlloc()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "alloc_only_probe",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "core,alloc"
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std alloc probe.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "alloc_vec_capacity_score"), "Expected build-std alloc probe to contain alloc_vec_capacity_score.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name.Contains("rust_alloc", StringComparison.Ordinal)), "Expected build-std alloc probe to contain the Rust global allocator shim.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "alloc_vec_capacity_score");
+    Assert(function.Blocks.Count == 1, $"Expected build-std alloc probe to lower to one block, but got {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(!string.Equals(function.Blocks[0].Name, "start", StringComparison.Ordinal) && !string.Equals(function.Blocks[0].Name, "entry", StringComparison.Ordinal), "Expected build-std alloc probe to pin an optimized non-canonical entry block label.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "alloc_vec_capacity_score", [], llvmRoot);
+    Assert(Equals(actualResult, 4), $"Expected build-std alloc probe invocation to return 4, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()

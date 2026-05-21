@@ -29,6 +29,15 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "core"
     }
+    build_std_alloc_probe = @{
+        CratePath = Join-Path $workspaceRoot "samples\alloc_only_probe"
+        Method = "alloc_vec_capacity_score"
+        Arguments = @()
+        Expected = 4
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "core,alloc"
+    }
     and = @{
         Method = "and_i32"
         Arguments = @(6, 3)

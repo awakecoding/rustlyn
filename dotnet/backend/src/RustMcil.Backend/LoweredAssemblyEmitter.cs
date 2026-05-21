@@ -381,13 +381,6 @@ public static class LoweredAssemblyEmitter
         {
             throw new NotSupportedException($"Function '{function.Name}' does not contain any blocks.");
         }
-
-        var entryBlock = function.Blocks[0];
-        if (!string.Equals(entryBlock.Name, "start", StringComparison.Ordinal) && !string.Equals(entryBlock.Name, "entry", StringComparison.Ordinal))
-        {
-            throw new NotSupportedException($"Function '{function.Name}' starts in block '{entryBlock.Name}'. The emitter expects the first block to be 'start' or 'entry'.");
-        }
-
         if (ShouldStubPreconditionCheck(function))
         {
             method.Body.InitLocals = true;
