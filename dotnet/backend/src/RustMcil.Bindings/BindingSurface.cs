@@ -15,6 +15,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Property("System.Environment.CurrentDirectory", typeof(Environment), nameof(Environment.CurrentDirectory)),
                 ManagedApiRequirement.Method("System.IO.Directory.GetCurrentDirectory()", typeof(Directory), nameof(Directory.GetCurrentDirectory), []),
                 ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
+                ManagedApiRequirement.Method("System.IO.Path.ChangeExtension(string, string)", typeof(Path), nameof(Path.ChangeExtension), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.Combine(string, string)", typeof(Path), nameof(Path.Combine), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetFileName(string)", typeof(Path), nameof(Path.GetFileName), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetFileNameWithoutExtension(string)", typeof(Path), nameof(Path.GetFileNameWithoutExtension), [typeof(string)]),
@@ -51,6 +52,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_file_read_all_lines_string",
                     ["fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_change_extension_string_string",
+                    ["fn rust_mcil_bindgen_system_io_path_change_extension_string_string(path_handle: i32, extension_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_combine_string_string",
                     ["fn rust_mcil_bindgen_system_io_path_combine_string_string(path1_handle: i32, path2_handle: i32, exception_out: *mut i32) -> i32;"]),
@@ -158,6 +162,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(File), nameof(File.ReadAllLines), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
+                    "rust_mcil_bindgen_system_io_path_change_extension_string_string",
+                    "BindgenSystemIoPathChangeExtensionStringString",
+                    [I32("pathHandle"), I32("extensionHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(Path), nameof(Path.ChangeExtension), [typeof(string), typeof(string)], [ManagedObject(typeof(string), "pathHandle"), ManagedObject(typeof(string), "extensionHandle")])))),
+                Glue(
                     "rust_mcil_bindgen_system_io_path_combine_string_string",
                     "BindgenSystemIoPathCombineStringString",
                     [I32("path1Handle"), I32("path2Handle"), Pointer("exceptionOutPointer")],
@@ -240,6 +250,13 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.ReturnExceptionHandle(ManagedGlueResult.ReleaseObject("objectHandle")))
             ],
             [
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn change_extension(path: &ManagedString, extension: &ManagedString) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_io_path_change_extension_string_string",
+                    ["path.handle()", "extension.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
                 new RustWrapperMethod(
                     RustWrapperContainer.IoPath,
                     "pub fn combine(path1: &ManagedString, path2: &ManagedString) -> Result<ManagedString, Exception>",

@@ -987,6 +987,20 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                     Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(tempRootHandle) == 0, "Expected generated temp-root string handle release to succeed.");
                 }
 
+                var extensionHandle = ManagedInteropRuntime.AddObjectHandle(".log");
+                try
+                {
+                    var changedPathHandle = RuntimeBridgeHelpers.BindgenSystemIoPathChangeExtensionStringString(pathHandle, extensionHandle, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.ChangeExtension string-handle binding to report no exception.");
+                    Assert(changedPathHandle > 0, "Expected generated Path.ChangeExtension string-handle binding to return a managed string handle.");
+                    Assert(ManagedInteropRuntime.GetObject<string>(changedPathHandle) == Path.ChangeExtension(tempPath, ".log"), "Expected generated Path.ChangeExtension binding to match System.IO.Path.ChangeExtension.");
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(changedPathHandle) == 0, "Expected generated changed path string handle release to succeed.");
+                }
+                finally
+                {
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(extensionHandle) == 0, "Expected generated extension string handle release to succeed.");
+                }
+
                 Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(fileNameHandle) == 0, "Expected generated file-name string handle release to succeed.");
 
                 var stemHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetFileNameWithoutExtensionString(pathHandle, exceptionOutPointer);
