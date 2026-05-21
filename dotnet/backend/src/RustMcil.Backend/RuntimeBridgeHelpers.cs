@@ -53,17 +53,17 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8ReadAllLinesCount(IntPtr pathPointer, long pathLength)
     {
-        return File.ReadAllLines(ReadUtf8String(pathPointer, pathLength)).Length;
+        return RustMcil.Os.HostFileSystem.Utf8ReadAllLinesCount(pathPointer, pathLength);
     }
 
     public static int Utf8ReadAllLinesLineLength(IntPtr pathPointer, long pathLength, int index)
     {
-        return Encoding.UTF8.GetByteCount(GetUtf8FileLine(pathPointer, pathLength, index));
+        return RustMcil.Os.HostFileSystem.Utf8ReadAllLinesLineLength(pathPointer, pathLength, index);
     }
 
     public static int CopyUtf8ReadAllLinesLine(IntPtr pathPointer, long pathLength, int index, IntPtr destinationPointer, long destinationCapacity)
     {
-        return WriteUtf8String(GetUtf8FileLine(pathPointer, pathLength, index), destinationPointer, destinationCapacity);
+        return RustMcil.Os.HostFileSystem.CopyUtf8ReadAllLinesLine(pathPointer, pathLength, index, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetRootLengthUtf8(IntPtr pathPointer, long pathLength)
@@ -346,17 +346,6 @@ public static partial class RuntimeBridgeHelpers
         var bytes = new byte[checked((int)length)];
         Marshal.Copy(pointer, bytes, 0, bytes.Length);
         return Encoding.UTF8.GetString(bytes);
-    }
-
-    private static string GetUtf8FileLine(IntPtr pathPointer, long pathLength, int index)
-    {
-        var lines = File.ReadAllLines(ReadUtf8String(pathPointer, pathLength));
-        if ((uint)index >= (uint)lines.Length)
-        {
-            throw new IndexOutOfRangeException($"File line index {index} was outside the available range 0..{lines.Length - 1}.");
-        }
-
-        return lines[index];
     }
 
     private static int WriteUtf8String(string value, IntPtr destinationPointer, long destinationCapacity)

@@ -26,6 +26,7 @@ RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindi
 RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNumericHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsConsoleHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileHelpers, failures);
 RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolchain, failures);
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
@@ -17738,6 +17739,38 @@ static void RuntimeSplitFacadeForwardsConsoleHelpers()
         "42",
         "sample.txt:3") + Environment.NewLine;
     Assert(string.Equals(writer.ToString(), expected, StringComparison.Ordinal), "Expected Backend console facade to forward UTF-8 and numeric writes through the OS console helper.");
+}
+
+static void RuntimeSplitFacadeForwardsFileHelpers()
+{
+    using var tempFile = TemporaryFile.Create(Encoding.UTF8.GetBytes("alpha\nbeta-runtime\ngamma\n"));
+    var pathPointer = CopyUtf8TestString(tempFile.Path, out var pathLength);
+    try
+    {
+        Assert(RustMcil.Os.HostFileSystem.Utf8ReadAllLinesCount(pathPointer, pathLength) == 3, "Expected OS file helper to count UTF-8 file lines.");
+        Assert(RuntimeBridgeHelpers.Utf8ReadAllLinesCount(pathPointer, pathLength) == RustMcil.Os.HostFileSystem.Utf8ReadAllLinesCount(pathPointer, pathLength), "Expected Backend runtime facade to forward file line count.");
+
+        var expectedBytes = Encoding.UTF8.GetBytes("beta-runtime");
+        Assert(RuntimeBridgeHelpers.Utf8ReadAllLinesLineLength(pathPointer, pathLength, 1) == expectedBytes.Length, "Expected Backend runtime facade to forward file line UTF-8 byte length.");
+
+        var destination = Marshal.AllocHGlobal(expectedBytes.Length);
+        try
+        {
+            var copiedLength = RuntimeBridgeHelpers.CopyUtf8ReadAllLinesLine(pathPointer, pathLength, 1, destination, expectedBytes.Length);
+            var actualBytes = new byte[expectedBytes.Length];
+            Marshal.Copy(destination, actualBytes, 0, actualBytes.Length);
+            Assert(copiedLength == expectedBytes.Length, "Expected Backend runtime facade to return copied file line UTF-8 byte length.");
+            Assert(actualBytes.SequenceEqual(expectedBytes), "Expected Backend runtime facade to copy file line UTF-8 bytes through the OS file helper.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(pathPointer);
+    }
 }
 
 static IntPtr CopyUtf8TestString(string value, out int length)
