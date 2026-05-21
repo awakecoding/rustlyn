@@ -1032,6 +1032,13 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                 Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetFullPath string-handle binding to report no exception.");
                 Assert(fullPathHandle > 0, "Expected generated Path.GetFullPath string-handle binding to return a managed string handle.");
                 Assert(ManagedInteropRuntime.GetObject<string>(fullPathHandle) == Path.GetFullPath(tempPath), "Expected generated Path.GetFullPath binding to match System.IO.Path.GetFullPath.");
+
+                var pathRootHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetPathRootString(fullPathHandle, exceptionOutPointer);
+                Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetPathRoot string-handle binding to report no exception.");
+                Assert(pathRootHandle > 0, "Expected generated Path.GetPathRoot string-handle binding to return a managed string handle.");
+                Assert(ManagedInteropRuntime.GetObject<string>(pathRootHandle) == Path.GetPathRoot(Path.GetFullPath(tempPath)), "Expected generated Path.GetPathRoot binding to match System.IO.Path.GetPathRoot.");
+                Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(pathRootHandle) == 0, "Expected generated path-root string handle release to succeed.");
+
                 Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(fullPathHandle) == 0, "Expected generated full-path string handle release to succeed.");
 
                 var arrayHandle = RuntimeBridgeHelpers.BindgenSystemIoFileReadAllLinesString(pathHandle, exceptionOutPointer);

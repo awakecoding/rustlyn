@@ -329,15 +329,51 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -46;
     }
 
+    let temp_root = match system::io::path::get_path_root(&full_temp_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -47;
+        }
+    };
+
+    let temp_root_len = match temp_root.len() {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = temp_root.release();
+            let _ = full_temp_path.release();
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -48;
+        }
+    };
+
+    if temp_root_len <= 0 || temp_root_len > full_temp_len {
+        let _ = temp_root.release();
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -49;
+    }
+
+    if temp_root.release().is_err() {
+        let _ = full_temp_path.release();
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -50;
+    }
+
     if full_temp_path.release().is_err() {
         let _ = temp_path.release();
         let _ = current_directory.release();
-        return -47;
+        return -51;
     }
 
     if temp_path.release().is_err() {
         let _ = current_directory.release();
-        return -48;
+        return -52;
     }
 
     if current_directory.release().is_err() {
