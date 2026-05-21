@@ -14,6 +14,7 @@ unsafe extern "C" {
     fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_change_extension_string_string(path_handle: i32, extension_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_combine_string_string(path1_handle: i32, path2_handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_get_directory_name_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_get_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_get_file_name_string(path_handle: i32, exception_out: *mut i32) -> i32;
@@ -192,6 +193,18 @@ pub mod io {
             };
             Exception::from_handle(exception_handle)?;
             Ok(ManagedString::from_handle(object_handle))
+        }
+
+        pub fn ends_in_directory_separator(path: &ManagedString) -> Result<i32, Exception> {
+            let mut exception_handle = 0;
+            let value = unsafe {
+                super::super::rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string(
+                    path.handle(),
+                    &mut exception_handle,
+                )
+            };
+            Exception::from_handle(exception_handle)?;
+            Ok(value)
         }
 
         pub fn get_directory_name(path: &ManagedString) -> Result<ManagedString, Exception> {

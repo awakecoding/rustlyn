@@ -17,6 +17,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.ChangeExtension(string, string)", typeof(Path), nameof(Path.ChangeExtension), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.Combine(string, string)", typeof(Path), nameof(Path.Combine), [typeof(string), typeof(string)]),
+                ManagedApiRequirement.Method("System.IO.Path.EndsInDirectorySeparator(string)", typeof(Path), nameof(Path.EndsInDirectorySeparator), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetDirectoryName(string)", typeof(Path), nameof(Path.GetDirectoryName), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetExtension(string)", typeof(Path), nameof(Path.GetExtension), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetFileName(string)", typeof(Path), nameof(Path.GetFileName), [typeof(string)]),
@@ -67,6 +68,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_combine_string_string",
                     ["fn rust_mcil_bindgen_system_io_path_combine_string_string(path1_handle: i32, path2_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string",
+                    ["fn rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_get_directory_name_string",
                     ["fn rust_mcil_bindgen_system_io_path_get_directory_name_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
@@ -209,6 +213,12 @@ public sealed record BindingSurface(
                     [I32("path1Handle"), I32("path2Handle"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(Path), nameof(Path.Combine), [typeof(string), typeof(string)], [ManagedObject(typeof(string), "path1Handle"), ManagedObject(typeof(string), "path2Handle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string",
+                    "BindgenSystemIoPathEndsInDirectorySeparatorString",
+                    [I32("pathHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
+                        StaticMethod(typeof(Path), nameof(Path.EndsInDirectorySeparator), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
                     "rust_mcil_bindgen_system_io_path_get_directory_name_string",
                     "BindgenSystemIoPathGetDirectoryNameString",
@@ -354,6 +364,13 @@ public sealed record BindingSurface(
                     ["path1.handle()", "path2.handle()"],
                     "object_handle",
                     RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn ends_in_directory_separator(path: &ManagedString) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string",
+                    ["path.handle()"],
+                    "value",
+                    RustWrapperResult.BooleanAsInt()),
                 new RustWrapperMethod(
                     RustWrapperContainer.IoPath,
                     "pub fn get_directory_name(path: &ManagedString) -> Result<ManagedString, Exception>",

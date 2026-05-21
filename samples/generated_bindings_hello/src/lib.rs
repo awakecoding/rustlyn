@@ -322,6 +322,21 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -43;
     }
 
+    let temp_ends_in_separator = match system::io::path::ends_in_directory_separator(&temp_path) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = temp_path.release();
+            let _ = current_directory.release();
+            return -63;
+        }
+    };
+
+    if temp_ends_in_separator == 0 {
+        let _ = temp_path.release();
+        let _ = current_directory.release();
+        return -64;
+    }
+
     let full_temp_path = match system::io::path::get_full_path(&temp_path) {
         Ok(value) => value,
         Err(_) => {
