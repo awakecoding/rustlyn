@@ -1,6 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <RustMcilOutputPath Condition="'$(RustMcilOutputPath)' == ''">$(OutputPath)$(AssemblyName).dll</RustMcilOutputPath>
+    <RustMcilBitcodeOutputPath Condition="'$(RustMcilBitcodeOutputPath)' == ''">$(IntermediateOutputPath)$(AssemblyName).bc</RustMcilBitcodeOutputPath>
+    <RustMcilRuntimeConfigOutputPath Condition="'$(RustMcilRuntimeConfigOutputPath)' == ''">$(OutputPath)$(AssemblyName).runtimeconfig.json</RustMcilRuntimeConfigOutputPath>
+    <RustMcilBinaryTarget Condition="'$(RustMcilBinaryTarget)' == '' and '$(OutputType)' == 'Exe'">$(AssemblyName)</RustMcilBinaryTarget>
   </PropertyGroup>
 
   <Target Name="Build" DependsOnTargets="RustMcilTranslate" />

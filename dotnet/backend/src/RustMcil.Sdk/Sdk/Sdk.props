@@ -11,9 +11,6 @@
     <IntermediateOutputPath Condition="'$(IntermediateOutputPath)' == ''">$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
 
     <RustMcilCratePath Condition="'$(RustMcilCratePath)' == ''">$(MSBuildProjectDirectory)</RustMcilCratePath>
-    <RustMcilOutputPath Condition="'$(RustMcilOutputPath)' == ''">$(OutputPath)$(AssemblyName).dll</RustMcilOutputPath>
-    <RustMcilBitcodeOutputPath Condition="'$(RustMcilBitcodeOutputPath)' == ''">$(IntermediateOutputPath)$(AssemblyName).bc</RustMcilBitcodeOutputPath>
-    <RustMcilRuntimeConfigOutputPath Condition="'$(RustMcilRuntimeConfigOutputPath)' == ''">$(OutputPath)$(AssemblyName).runtimeconfig.json</RustMcilRuntimeConfigOutputPath>
     <RustMcilToolProject Condition="'$(RustMcilToolProject)' == ''">$(MSBuildThisFileDirectory)..\..\RustMcil.Tool\RustMcil.Tool.csproj</RustMcilToolProject>
     <RustMcilToolConfiguration Condition="'$(RustMcilToolConfiguration)' == ''">$(Configuration)</RustMcilToolConfiguration>
     <RustMcilToolDll Condition="'$(RustMcilToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll')">$(MSBuildThisFileDirectory)..\tools\net10.0\RustMcil.Tool.dll</RustMcilToolDll>

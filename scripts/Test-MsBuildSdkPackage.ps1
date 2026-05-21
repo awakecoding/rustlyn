@@ -19,9 +19,9 @@ $binaryProjectPath = Join-Path $scratchProjectRoot "msbuild_bin_trivial_packaged
 $nugetConfigPath = Join-Path $scratchProjectRoot "NuGet.config"
 $outputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_add_packaged.dll"
 $bitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\msbuild_add_packaged.bc"
-$binaryOutputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_bin_trivial_packaged.dll"
-$binaryRuntimeConfigPath = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\msbuild_bin_trivial_packaged.runtimeconfig.json"
-$binaryBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\msbuild_bin_trivial_packaged.bc"
+$binaryOutputAssembly = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\bin_trivial.dll"
+$binaryRuntimeConfigPath = Join-Path $scratchProjectRoot "bin\$Configuration\net10.0\bin_trivial.runtimeconfig.json"
+$binaryBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0\bin_trivial.bc"
 $addCratePath = Join-Path $workspaceRoot "samples\add"
 $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 
@@ -70,10 +70,9 @@ Set-Content -Path $projectPath -Value $projectXml -Encoding UTF8
 $binaryProjectXml = @"
 <Project Sdk="RustMcil.Sdk/0.1.0-local">
     <PropertyGroup>
-        <AssemblyName>msbuild_bin_trivial_packaged</AssemblyName>
         <OutputType>Exe</OutputType>
+        <AssemblyName>bin_trivial</AssemblyName>
         <RustMcilCratePath>$binTrivialCratePath</RustMcilCratePath>
-        <RustMcilBinaryTarget>bin_trivial</RustMcilBinaryTarget>
     </PropertyGroup>
 </Project>
 "@
@@ -151,4 +150,4 @@ if ($actualBinaryOutput -ne "") {
 }
 
 Write-Host "PASS msbuild_add_packaged (nuget sdk) => 42"
-Write-Host "PASS msbuild_bin_trivial_packaged (nuget sdk bin) => exit 0"
+Write-Host "PASS bin_trivial (nuget sdk inferred bin) => exit 0"

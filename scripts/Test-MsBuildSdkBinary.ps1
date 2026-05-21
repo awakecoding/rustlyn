@@ -12,6 +12,10 @@ $projectPath = Join-Path $workspaceRoot "samples\msbuild_bin_trivial\msbuild_bin
 $outputAssembly = Join-Path $workspaceRoot "samples\msbuild_bin_trivial\bin\$Configuration\net10.0\msbuild_bin_trivial.dll"
 $runtimeConfigPath = Join-Path $workspaceRoot "samples\msbuild_bin_trivial\bin\$Configuration\net10.0\msbuild_bin_trivial.runtimeconfig.json"
 $bitcodePath = Join-Path $workspaceRoot "samples\msbuild_bin_trivial\obj\$Configuration\net10.0\msbuild_bin_trivial.bc"
+$inferredProjectPath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\msbuild_bin_inferred.rsproj"
+$inferredOutputAssembly = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\bin\$Configuration\net10.0\bin_trivial.dll"
+$inferredRuntimeConfigPath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\bin\$Configuration\net10.0\bin_trivial.runtimeconfig.json"
+$inferredBitcodePath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\obj\$Configuration\net10.0\bin_trivial.bc"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
 $toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
 
@@ -26,6 +30,11 @@ try {
     dotnet build $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK binary sample build failed with exit code $LASTEXITCODE."
+    }
+
+    dotnet build $inferredProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "MSBuild SDK inferred binary sample build failed with exit code $LASTEXITCODE."
     }
 }
 finally {
@@ -72,4 +81,45 @@ foreach ($outputPath in @($outputAssembly, $runtimeConfigPath, $bitcodePath)) {
     }
 }
 
+if (-not (Test-Path $inferredOutputAssembly)) {
+    throw "Expected inferred translated binary assembly was not created: $inferredOutputAssembly"
+}
+
+if (-not (Test-Path $inferredRuntimeConfigPath)) {
+    throw "Expected inferred translated binary runtimeconfig was not created: $inferredRuntimeConfigPath"
+}
+
+if (-not (Test-Path $inferredBitcodePath)) {
+    throw "Expected inferred translated binary bitcode was not created: $inferredBitcodePath"
+}
+
+$inferredConsoleOutput = & dotnet $inferredOutputAssembly 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Translated inferred MSBuild SDK binary sample failed with exit code $LASTEXITCODE.`n$($inferredConsoleOutput | Out-String)"
+}
+
+$actualInferredOutput = (($inferredConsoleOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 }) -join [Environment]::NewLine
+if ($actualInferredOutput -ne "") {
+    throw "Expected translated inferred MSBuild SDK binary sample to produce no stdout/stderr, got '$actualInferredOutput'."
+}
+
+$previousMsBuildSdksPath = $env:MSBuildSDKsPath
+try {
+    $env:MSBuildSDKsPath = $sdkRoot
+    dotnet clean $inferredProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "MSBuild SDK inferred binary sample clean failed with exit code $LASTEXITCODE."
+    }
+}
+finally {
+    $env:MSBuildSDKsPath = $previousMsBuildSdksPath
+}
+
+foreach ($outputPath in @($inferredOutputAssembly, $inferredRuntimeConfigPath, $inferredBitcodePath)) {
+    if (Test-Path $outputPath) {
+        throw "Expected clean to remove inferred translated binary output: $outputPath"
+    }
+}
+
 Write-Host "PASS msbuild_bin_trivial (msbuild sdk bin) => exit 0"
+Write-Host "PASS msbuild_bin_inferred (msbuild sdk inferred bin) => exit 0"

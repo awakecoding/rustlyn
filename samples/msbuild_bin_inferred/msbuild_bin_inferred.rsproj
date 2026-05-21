@@ -1,0 +1,7 @@
+<Project Sdk="RustMcil.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>bin_trivial</AssemblyName>
+    <RustMcilCratePath>..\bin_trivial</RustMcilCratePath>
+  </PropertyGroup>
+</Project>
