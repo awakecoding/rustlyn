@@ -20,6 +20,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Path.GetExtension(string)", typeof(Path), nameof(Path.GetExtension), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetFileName(string)", typeof(Path), nameof(Path.GetFileName), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.GetFileNameWithoutExtension(string)", typeof(Path), nameof(Path.GetFileNameWithoutExtension), [typeof(string)]),
+                ManagedApiRequirement.Method("System.IO.Path.GetTempPath()", typeof(Path), nameof(Path.GetTempPath), []),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
@@ -68,6 +69,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string",
                     ["fn rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_io_path_get_temp_path",
+                    ["fn rust_mcil_bindgen_system_io_path_get_temp_path(exception_out: *mut i32) -> i32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
@@ -196,6 +200,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(Path), nameof(Path.GetFileNameWithoutExtension), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
+                    "rust_mcil_bindgen_system_io_path_get_temp_path",
+                    "BindgenSystemIoPathGetTempPath",
+                    [Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(Path), nameof(Path.GetTempPath), [], [])))),
+                Glue(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     "BindgenSystemStringFromUtf8",
                     [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
@@ -293,6 +303,13 @@ public sealed record BindingSurface(
                     "pub fn get_file_name_without_extension(path: &ManagedString) -> Result<ManagedString, Exception>",
                     "rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string",
                     ["path.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoPath,
+                    "pub fn get_temp_path() -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_io_path_get_temp_path",
+                    [],
                     "object_handle",
                     RustWrapperResult.ObjectHandle("ManagedString"))
             ]);

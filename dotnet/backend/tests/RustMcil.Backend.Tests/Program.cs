@@ -941,6 +941,12 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
 
         Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(stringHandle) == 0, "Expected generated object release binding to succeed.");
 
+        var tempPathHandle = RuntimeBridgeHelpers.BindgenSystemIoPathGetTempPath(exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Path.GetTempPath binding to report no exception.");
+        Assert(tempPathHandle > 0, "Expected generated Path.GetTempPath binding to return a managed string handle.");
+        Assert(ManagedInteropRuntime.GetObject<string>(tempPathHandle) == Path.GetTempPath(), "Expected generated Path.GetTempPath binding to match System.IO.Path.GetTempPath.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(tempPathHandle) == 0, "Expected generated temp-path string handle release to succeed.");
+
         var environmentDirectoryHandle = RuntimeBridgeHelpers.BindgenSystemEnvironmentCurrentDirectory(exceptionOutPointer);
         Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Environment.CurrentDirectory property binding to report no exception.");
         Assert(environmentDirectoryHandle > 0, "Expected generated Environment.CurrentDirectory property binding to return a managed string handle.");
