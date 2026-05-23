@@ -355,6 +355,22 @@ public static class LoweredAssemblyEmitter
             {
                 pending.Push(callee);
             }
+
+            // Also discover function pointer references in select instructions
+            foreach (var select in function.Blocks
+                         .SelectMany(static block => block.Instructions)
+                         .OfType<LoweredSelectInstruction>()
+                         .Where(static s => string.Equals(s.ValueType, "ptr", StringComparison.Ordinal)))
+            {
+                if (functionMap.ContainsKey(select.TrueValue))
+                {
+                    pending.Push(select.TrueValue);
+                }
+                if (functionMap.ContainsKey(select.FalseValue))
+                {
+                    pending.Push(select.FalseValue);
+                }
+            }
         }
 
         return functions.Where(function => reachable.Contains(function.Name) && !IsExcludedRuntimeStub(function.Name)).ToArray();
@@ -570,6 +586,25 @@ public static class LoweredAssemblyEmitter
                         {
                             il.Append(il.Create(OpCodes.Call, libmMethod));
                         }
+                        else if (TryResolveIndirectCallTarget(call.Callee, locals, parameters, out var indirectLocal, out var indirectParam))
+                        {
+                            // Indirect call through function pointer stored in a local or parameter
+                            if (indirectLocal is not null)
+                            {
+                                il.Append(il.Create(OpCodes.Ldloc, indirectLocal));
+                            }
+                            else
+                            {
+                                il.Append(il.Create(OpCodes.Ldarg, indirectParam!));
+                            }
+
+                            var callSite = new Mono.Cecil.CallSite(ResolveTypeReference(module, call.ReturnType));
+                            foreach (var argument in call.Arguments)
+                            {
+                                callSite.Parameters.Add(new ParameterDefinition(ResolveTypeReference(module, argument.Type)));
+                            }
+                            il.Append(il.Create(OpCodes.Calli, callSite));
+                        }
                         else
                         {
                             throw new NotSupportedException($"Call target '{call.Callee}' was not found in the emitted module.");
@@ -653,7 +688,7 @@ public static class LoweredAssemblyEmitter
                         break;
 
                     case LoweredSelectInstruction select:
-                        EmitSelect(method, il, parameters, locals, select);
+                        EmitSelect(method, il, parameters, locals, select, methodMap);
                         break;
 
                     case LoweredPhiInstruction:
@@ -1002,7 +1037,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void LoadValue(ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, string typeName, string value, IReadOnlyDictionary<string, FieldDefinition>? fieldMap = null)
+    private static void LoadValue(ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, string typeName, string value, IReadOnlyDictionary<string, FieldDefinition>? fieldMap = null, IReadOnlyDictionary<string, MethodDefinition>? methodMap = null)
     {
         if (TryGetAggregatePairTypes(typeName, out var firstType, out var secondType))
         {
@@ -1108,6 +1143,13 @@ public static class LoweredAssemblyEmitter
         if (emittedGlobalField is not null)
         {
             il.Append(il.Create(OpCodes.Ldsfld, emittedGlobalField));
+            return;
+        }
+
+        if (string.Equals(typeName, "ptr", StringComparison.Ordinal)
+            && methodMap is not null && methodMap.TryGetValue(value, out var fnPtrTarget))
+        {
+            il.Append(il.Create(OpCodes.Ldftn, il.Body.Method.Module.ImportReference(fnPtrTarget)));
             return;
         }
 
@@ -2503,6 +2545,37 @@ public static class LoweredAssemblyEmitter
 
         methodReference = module.ImportReference(methodInfo);
         return true;
+    }
+
+    private static bool TryResolveIndirectCallTarget(string callee, IDictionary<string, VariableDefinition> locals, IReadOnlyDictionary<string, ParameterDefinition> parameters, out VariableDefinition? localVar, out ParameterDefinition? paramVar)
+    {
+        localVar = null;
+        paramVar = null;
+
+        // Strip leading '%' used by LLVM for local SSA values
+        var normalizedCallee = callee.StartsWith('%') ? callee[1..] : callee;
+
+        if (locals.TryGetValue(normalizedCallee, out localVar))
+        {
+            return true;
+        }
+
+        if (locals.TryGetValue(callee, out localVar))
+        {
+            return true;
+        }
+
+        if (parameters.TryGetValue(normalizedCallee, out paramVar))
+        {
+            return true;
+        }
+
+        if (parameters.TryGetValue(callee, out paramVar))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private static bool TryResolveLibmCall(ModuleDefinition module, LoweredCallInstruction call, out MethodReference methodReference)
@@ -4536,17 +4609,17 @@ public static class LoweredAssemblyEmitter
         throw new NotSupportedException($"Sign extension from '{fromType}' to '{toType}' is not supported by the current emitter slice in function '{functionName}'.");
     }
 
-    private static void EmitSelect(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredSelectInstruction select)
+    private static void EmitSelect(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredSelectInstruction select, IReadOnlyDictionary<string, MethodDefinition>? methodMap = null)
     {
         var trueLabel = il.Create(OpCodes.Nop);
         var endLabel = il.Create(OpCodes.Nop);
 
         LoadValue(il, parameters, locals, "i32", select.Condition);
         il.Append(il.Create(OpCodes.Brtrue, trueLabel));
-        LoadValue(il, parameters, locals, select.ValueType, select.FalseValue);
+        LoadValue(il, parameters, locals, select.ValueType, select.FalseValue, methodMap: methodMap);
         il.Append(il.Create(OpCodes.Br, endLabel));
         il.Append(trueLabel);
-        LoadValue(il, parameters, locals, select.ValueType, select.TrueValue);
+        LoadValue(il, parameters, locals, select.ValueType, select.TrueValue, methodMap: methodMap);
         il.Append(endLabel);
         StoreLocal(method, il, locals, select.Result, select.ValueType);
     }

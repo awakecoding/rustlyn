@@ -568,7 +568,8 @@ public static partial class LoweredIrLowerer
             }
 
             remainder = remainder[token.Length..].TrimStart();
-            if (string.Equals(token, "call", StringComparison.Ordinal))
+            if (string.Equals(token, "call", StringComparison.Ordinal)
+                || string.Equals(token, "invoke", StringComparison.Ordinal))
             {
                 return true;
             }

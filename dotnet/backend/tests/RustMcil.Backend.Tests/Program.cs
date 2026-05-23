@@ -788,6 +788,9 @@ RunOptionalTest("TripleReturnProbeReturnsExpectedResult", TripleReturnProbeRetur
 RunOptionalTest("I128ProbeReturnsExpectedResult", I128ProbeReturnsExpectedResult, failures);
 RunOptionalTest("FloatMathProbeReturnsExpectedResult", FloatMathProbeReturnsExpectedResult, failures);
 RunOptionalTest("AtomicFenceProbeReturnsExpectedResult", AtomicFenceProbeReturnsExpectedResult, failures);
+RunOptionalTest("FnPointerProbeReturnsExpectedResult", FnPointerProbeReturnsExpectedResult, failures);
+RunOptionalTest("InvokeProbeReturnsExpectedResult", InvokeProbeReturnsExpectedResult, failures);
+RunOptionalTest("HeapAllocProbeReturnsExpectedResult", HeapAllocProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -7206,6 +7209,27 @@ static void AtomicFenceProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("atomic_fence");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "atomic_fence_probe", [5], llvmRoot);
     Assert(Equals(actualResult, 5), $"Expected atomic_fence_probe(5) to return 5, but got '{actualResult}'.");
+}
+
+static void FnPointerProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("fn_pointer");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "fn_pointer_probe", [3], llvmRoot);
+    Assert(Equals(actualResult, 13), $"Expected fn_pointer_probe(3) to return 13, but got '{actualResult}'.");
+}
+
+static void InvokeProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("invoke_basic");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "invoke_probe", [5], llvmRoot);
+    Assert(Equals(actualResult, 27), $"Expected invoke_probe(5) to return 27, but got '{actualResult}'.");
+}
+
+static void HeapAllocProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("heap_alloc");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "heap_alloc_probe", [5], llvmRoot);
+    Assert(Equals(actualResult, 11), $"Expected heap_alloc_probe(5) to return 11, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
