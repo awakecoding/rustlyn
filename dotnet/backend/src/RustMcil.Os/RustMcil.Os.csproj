@@ -6,5 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RustMcil.Interop\RustMcil.Interop.csproj" />
+    <ProjectReference Include="..\RustMcil.Runtime\RustMcil.Runtime.csproj" />
   </ItemGroup>
 </Project>

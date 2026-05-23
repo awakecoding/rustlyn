@@ -1,4 +1,6 @@
 using RustMcil.Interop;
+using RustMcil.Runtime;
+using System.Runtime.InteropServices;
 
 namespace RustMcil.Os;
 
@@ -17,6 +19,21 @@ public static class HostFileSystem
     public static int CopyUtf8ReadAllLinesLine(IntPtr pathPointer, long pathLength, int index, IntPtr destinationPointer, long destinationCapacity)
     {
         return InteropUtf8.CopyString(GetUtf8FileLine(pathPointer, pathLength, index), destinationPointer, destinationCapacity);
+    }
+
+    public static void ReadFileToRustString(IntPtr destination, IntPtr pathPointer, long pathLength)
+    {
+        var bytes = File.ReadAllBytes(InteropUtf8.ReadString(pathPointer, pathLength));
+        var buffer = bytes.Length == 0
+            ? IntPtr.Zero
+            : MemoryRuntime.Alloc(new IntPtr(bytes.Length));
+
+        if (bytes.Length > 0)
+        {
+            Marshal.Copy(bytes, 0, buffer, bytes.Length);
+        }
+
+        RustBufferRuntime.WriteBuffer(destination, bytes.LongLength, buffer, bytes.LongLength);
     }
 
     private static string GetUtf8FileLine(IntPtr pathPointer, long pathLength, int index)

@@ -51,7 +51,7 @@ public static class LoweredAssemblyEmitter
         module.Types.Add(generatedType);
 
         var vectorHelpers = EmitVectorHelpers(module, generatedType);
-        var memoryHelpers = EmitMemoryHelpers(module, generatedType);
+        var memoryHelpers = ResolveMemoryHelpers(module);
         var pointerBackedGlobals = CollectPointerBackedGlobals(emittedFunctions);
 
         var methodMap = new Dictionary<string, MethodDefinition>(StringComparer.Ordinal);
@@ -322,6 +322,7 @@ public static class LoweredAssemblyEmitter
         {
             var functionName = pending.Pop();
             if (!reachable.Add(functionName)
+                || IsExcludedRuntimeStub(functionName)
                 || !functionMap.TryGetValue(functionName, out var function))
             {
                 continue;
@@ -337,13 +338,19 @@ public static class LoweredAssemblyEmitter
             }
         }
 
-        return functions.Where(function => reachable.Contains(function.Name)).ToArray();
+        return functions.Where(function => reachable.Contains(function.Name) && !IsExcludedRuntimeStub(function.Name)).ToArray();
     }
 
     private static bool IsExportedRoot(string functionName)
     {
         return !functionName.StartsWith("_ZN", StringComparison.Ordinal)
             && !functionName.StartsWith("_R", StringComparison.Ordinal);
+    }
+
+    private static bool IsExcludedRuntimeStub(string functionName)
+    {
+        return string.Equals(functionName, "rust_eh_personality", StringComparison.Ordinal)
+            || string.Equals(functionName, "__rust_eh_personality", StringComparison.Ordinal);
     }
 
     private static bool ShouldSkipCallResultWidthNormalization(LoweredCallInstruction call)
@@ -438,6 +445,11 @@ public static class LoweredAssemblyEmitter
                             "udiv" => il.Create(OpCodes.Div_Un),
                             "srem" => il.Create(OpCodes.Rem),
                             "urem" => il.Create(OpCodes.Rem_Un),
+                            "fadd" => il.Create(OpCodes.Add),
+                            "fsub" => il.Create(OpCodes.Sub),
+                            "fmul" => il.Create(OpCodes.Mul),
+                            "fdiv" => il.Create(OpCodes.Div),
+                            "frem" => il.Create(OpCodes.Rem),
                             "and" => il.Create(OpCodes.And),
                             "or" => il.Create(OpCodes.Or),
                             "xor" => il.Create(OpCodes.Xor),
@@ -485,12 +497,26 @@ public static class LoweredAssemblyEmitter
                             break;
                         }
 
+                        if (TryEmitOverflowIntrinsic(method, il, parameters, locals, call, fieldMap))
+                        {
+                            break;
+                        }
+
+                        if (TryEmitBitManipulationIntrinsic(method, il, parameters, locals, call, fieldMap))
+                        {
+                            break;
+                        }
+
                         foreach (var argument in call.Arguments)
                         {
                             LoadValue(il, parameters, locals, argument.Type, argument.Value, fieldMap);
                         }
 
-                        if (TryResolveIntrinsicCall(module, call, vectorHelpers, out var intrinsicMethod))
+                        if (TryEmitFloatConversionIntrinsic(il, call))
+                        {
+                            // Handled inline
+                        }
+                        else if (TryResolveIntrinsicCall(module, call, vectorHelpers, out var intrinsicMethod))
                         {
                             il.Append(il.Create(OpCodes.Call, intrinsicMethod));
                             if (string.Equals(call.Callee, "llvm.ctpop.i64", StringComparison.Ordinal))
@@ -582,10 +608,15 @@ public static class LoweredAssemblyEmitter
                         break;
 
                     case LoweredUnreachableInstruction:
-                        EmitThrow(il, module, typeof(InvalidOperationException));
+                        EmitUnreachableTerminator(module, method, il);
                         break;
 
                     case LoweredStoreInstruction store:
+                        if (TryEmitVectorConstantStore(method, il, parameters, locals, store, function.Name))
+                        {
+                            break;
+                        }
+
                         if (TryStoreDirectPointerLocal(method, il, parameters, locals, store, function.Name))
                         {
                             break;
@@ -702,6 +733,7 @@ public static class LoweredAssemblyEmitter
                         if (!string.Equals(ret.Type, "void", StringComparison.Ordinal))
                         {
                             LoadValue(il, parameters, locals, ret.Type, ret.Value);
+                            EmitIntegerAbiExtension(il, ret.Type, function.ReturnExtension, function.Name);
                         }
 
                         il.Append(il.Create(OpCodes.Ret));
@@ -968,6 +1000,18 @@ public static class LoweredAssemblyEmitter
                 return;
             }
 
+            if (string.Equals(typeName, "float", StringComparison.Ordinal))
+            {
+                il.Append(il.Create(OpCodes.Ldc_R4, 0.0f));
+                return;
+            }
+
+            if (string.Equals(typeName, "double", StringComparison.Ordinal))
+            {
+                il.Append(il.Create(OpCodes.Ldc_R8, 0.0));
+                return;
+            }
+
             if (TryGetIntegerBitWidth(typeName, out _)
                 || string.Equals(typeName, "i1", StringComparison.Ordinal))
             {
@@ -1030,6 +1074,19 @@ public static class LoweredAssemblyEmitter
             return;
         }
 
+        if (TryParseFloatConstant(typeName, value, out var floatConstant))
+        {
+            if (string.Equals(typeName, "float", StringComparison.Ordinal))
+            {
+                il.Append(il.Create(OpCodes.Ldc_R4, (float)floatConstant));
+            }
+            else
+            {
+                il.Append(il.Create(OpCodes.Ldc_R8, floatConstant));
+            }
+            return;
+        }
+
         throw new NotSupportedException($"Value '{value}' of type '{typeName}' could not be resolved to a parameter, local, or supported constant.");
     }
 
@@ -1075,12 +1132,166 @@ public static class LoweredAssemblyEmitter
             return true;
         }
 
+        if (TryEmitAtomicRmw(method, il, parameters, locals, raw.Text))
+        {
+            return true;
+        }
+
+        if (TryEmitCmpXchg(method, il, parameters, locals, raw.Text))
+        {
+            return true;
+        }
+
         if (TryEmitCleanupControlFlow(il, raw.Text))
         {
             return true;
         }
 
         return false;
+    }
+
+    private static bool TryEmitAtomicRmw(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, string text)
+    {
+        // Pattern: %result = atomicrmw <op> ptr %ptr, <type> <value> <ordering>, align <n>
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text,
+            @"^(?<result>[^ ]+) = atomicrmw (?<op>add|sub|xchg|and|or|xor|nand|max|min|umax|umin) ptr (?<ptr>[^,]+), (?<type>[^ ]+) (?<value>[^ ,]+)",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var result = NormalizeRawValue(match.Groups["result"].Value);
+        var op = match.Groups["op"].Value;
+        var ptr = NormalizeRawValue(match.Groups["ptr"].Value);
+        var type = match.Groups["type"].Value.Trim();
+        var value = NormalizeRawValue(match.Groups["value"].Value);
+
+        // Single-threaded emulation: load old, compute new, store new, return old
+        // Use indirect load/store if the pointer refers to a raw alloca address
+        if (TryGetRawAllocaAddressLocal(locals, ptr, out var rawAddrLocal))
+        {
+            // Indirect load from raw alloca
+            il.Append(il.Create(OpCodes.Ldloc, rawAddrLocal));
+            EmitIndirectLoad(method, il, type, $"Atomic RMW indirect load for type '{type}' is not supported.");
+        }
+        else
+        {
+            LoadValue(il, parameters, locals, type, ptr);
+        }
+
+        var oldLocal = EnsureLocal(method, locals, $"{result}__old", type);
+        il.Append(il.Create(OpCodes.Stloc, oldLocal));
+
+        // Compute new value based on operation
+        if (string.Equals(op, "xchg", StringComparison.Ordinal))
+        {
+            LoadValue(il, parameters, locals, type, value);
+        }
+        else
+        {
+            il.Append(il.Create(OpCodes.Ldloc, oldLocal));
+            LoadValue(il, parameters, locals, type, value);
+
+            switch (op)
+            {
+                case "add": il.Append(il.Create(OpCodes.Add)); break;
+                case "sub": il.Append(il.Create(OpCodes.Sub)); break;
+                case "and": il.Append(il.Create(OpCodes.And)); break;
+                case "or": il.Append(il.Create(OpCodes.Or)); break;
+                case "xor": il.Append(il.Create(OpCodes.Xor)); break;
+                default: return false;
+            }
+        }
+
+        // Store new value back through indirect store or local
+        if (rawAddrLocal is not null)
+        {
+            var newLocal = EnsureLocal(method, locals, $"{result}__new", type);
+            il.Append(il.Create(OpCodes.Stloc, newLocal));
+            il.Append(il.Create(OpCodes.Ldloc, rawAddrLocal));
+            il.Append(il.Create(OpCodes.Ldloc, newLocal));
+            EmitIndirectStore(method, il, type, $"Atomic RMW indirect store for type '{type}' is not supported.");
+        }
+        else
+        {
+            StoreLocal(method, il, locals, ptr, type);
+        }
+
+        // Result is the OLD value
+        il.Append(il.Create(OpCodes.Ldloc, oldLocal));
+        StoreLocal(method, il, locals, result, type);
+
+        return true;
+    }
+
+    private static bool TryEmitCmpXchg(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, string text)
+    {
+        // Pattern: %result = cmpxchg ptr %ptr, <type> <cmp>, <type> <new> <succ_order> <fail_order>, align <n>
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text,
+            @"^(?<result>[^ ]+) = cmpxchg ptr (?<ptr>[^,]+), (?<type>[^ ]+) (?<cmp>[^,]+), \k<type> (?<new>[^ ]+)",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var result = NormalizeRawValue(match.Groups["result"].Value);
+        var ptr = NormalizeRawValue(match.Groups["ptr"].Value);
+        var type = match.Groups["type"].Value.Trim();
+        var cmpValue = NormalizeRawValue(match.Groups["cmp"].Value);
+        var newValue = NormalizeRawValue(match.Groups["new"].Value);
+
+        // cmpxchg returns { <type>, i1 }: element 0 = old value, element 1 = success flag
+        var valLocalName = GetAggregateComponentLocalName(result, 0);
+        var successLocalName = GetAggregateComponentLocalName(result, 1);
+
+        // Load current value from ptr (indirect if raw alloca)
+        TryGetRawAllocaAddressLocal(locals, ptr, out var rawAddrLocal);
+        if (rawAddrLocal is not null)
+        {
+            il.Append(il.Create(OpCodes.Ldloc, rawAddrLocal));
+            EmitIndirectLoad(method, il, type, $"CmpXchg indirect load for type '{type}' is not supported.");
+        }
+        else
+        {
+            LoadValue(il, parameters, locals, type, ptr);
+        }
+
+        var currentLocal = EnsureLocal(method, locals, valLocalName, type);
+        il.Append(il.Create(OpCodes.Stloc, currentLocal));
+
+        // Compare current with expected
+        il.Append(il.Create(OpCodes.Ldloc, currentLocal));
+        LoadValue(il, parameters, locals, type, cmpValue);
+        il.Append(il.Create(OpCodes.Ceq));
+        var successLocal = EnsureLocal(method, locals, successLocalName, method.Module.TypeSystem.Int32);
+        il.Append(il.Create(OpCodes.Stloc, successLocal));
+
+        // If success, store new value
+        var skipStore = il.Create(OpCodes.Nop);
+        il.Append(il.Create(OpCodes.Ldloc, successLocal));
+        il.Append(il.Create(OpCodes.Brfalse, skipStore));
+
+        if (rawAddrLocal is not null)
+        {
+            il.Append(il.Create(OpCodes.Ldloc, rawAddrLocal));
+            LoadValue(il, parameters, locals, type, newValue);
+            EmitIndirectStore(method, il, type, $"CmpXchg indirect store for type '{type}' is not supported.");
+        }
+        else
+        {
+            LoadValue(il, parameters, locals, type, newValue);
+            StoreLocal(method, il, locals, ptr, type);
+        }
+
+        il.Append(skipStore);
+
+        return true;
     }
 
     private static bool TryEmitCleanupControlFlow(ILProcessor il, string text)
@@ -1432,7 +1643,14 @@ public static class LoweredAssemblyEmitter
 
     private static string NormalizeRawValue(string value)
     {
-        var normalized = value.Trim().TrimStart('%');
+        var trimmed = value.Trim();
+        if (!trimmed.StartsWith('%') && !trimmed.StartsWith('@'))
+        {
+            // No sigil prefix — this is a constant literal, not a register reference
+            return trimmed;
+        }
+
+        var normalized = trimmed.TrimStart('%').TrimStart('@');
         return normalized.Length > 0 && normalized.All(char.IsDigit)
             ? $"tmp.{normalized}"
             : normalized;
@@ -1534,6 +1752,42 @@ public static class LoweredAssemblyEmitter
             case "uge":
                 il.Append(il.Create(OpCodes.Clt_Un));
                 il.Append(il.Create(OpCodes.Ldc_I4_0));
+                il.Append(il.Create(OpCodes.Ceq));
+                return;
+
+            // fcmp ordered predicates (false if NaN)
+            case "oeq":
+                il.Append(il.Create(OpCodes.Ceq));
+                return;
+
+            case "ogt":
+                il.Append(il.Create(OpCodes.Cgt));
+                return;
+
+            case "olt":
+                il.Append(il.Create(OpCodes.Clt));
+                return;
+
+            case "ole":
+                il.Append(il.Create(OpCodes.Cgt));
+                il.Append(il.Create(OpCodes.Ldc_I4_0));
+                il.Append(il.Create(OpCodes.Ceq));
+                return;
+
+            case "oge":
+                il.Append(il.Create(OpCodes.Clt));
+                il.Append(il.Create(OpCodes.Ldc_I4_0));
+                il.Append(il.Create(OpCodes.Ceq));
+                return;
+
+            case "one":
+                il.Append(il.Create(OpCodes.Ceq));
+                il.Append(il.Create(OpCodes.Ldc_I4_0));
+                il.Append(il.Create(OpCodes.Ceq));
+                return;
+
+            // fcmp unordered predicates (true if NaN)
+            case "ueq":
                 il.Append(il.Create(OpCodes.Ceq));
                 return;
 
@@ -2109,6 +2363,7 @@ public static class LoweredAssemblyEmitter
             "llvm.umin.i32" => typeof(Math).GetMethod(nameof(Math.Min), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(uint), typeof(uint)]),
             "llvm.umin.i64" => typeof(Math).GetMethod(nameof(Math.Min), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(ulong), typeof(ulong)]),
             "llvm.ctpop.i64" => typeof(System.Numerics.BitOperations).GetMethod(nameof(System.Numerics.BitOperations.PopCount), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(ulong)]),
+            "llvm.ctpop.i32" => typeof(System.Numerics.BitOperations).GetMethod(nameof(System.Numerics.BitOperations.PopCount), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(uint)]),
             _ => null
         };
 
@@ -2130,25 +2385,401 @@ public static class LoweredAssemblyEmitter
 
         if (call.Callee.Contains("panic_const_div_by_zero", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(DivideByZeroException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowDivideByZero));
             return true;
         }
 
         if (call.Callee.Contains("panic_const_rem_by_zero", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(DivideByZeroException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowDivideByZero));
             return true;
         }
 
         if (call.Callee.Contains("panic_const_div_overflow", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(OverflowException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowOverflow));
             return true;
         }
 
         if (call.Callee.Contains("panic_const_rem_overflow", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(OverflowException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowOverflow));
+            return true;
+        }
+
+        if (string.Equals(call.Callee, "llvm.trap", StringComparison.Ordinal))
+        {
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowUnreachable));
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryEmitFloatConversionIntrinsic(ILProcessor il, LoweredCallInstruction call)
+    {
+        if (call.Callee.StartsWith("llvm.fptosi.sat.", StringComparison.Ordinal))
+        {
+            if (call.ReturnType.StartsWith("i", StringComparison.Ordinal))
+            {
+                if (TryGetIntegerBitWidth(call.ReturnType, out var width) && width <= 32)
+                {
+                    il.Append(il.Create(OpCodes.Conv_I4));
+                }
+                else
+                {
+                    il.Append(il.Create(OpCodes.Conv_I8));
+                }
+            }
+            return true;
+        }
+
+        if (call.Callee.StartsWith("llvm.fptoui.sat.", StringComparison.Ordinal))
+        {
+            if (call.ReturnType.StartsWith("i", StringComparison.Ordinal))
+            {
+                if (TryGetIntegerBitWidth(call.ReturnType, out var width) && width <= 32)
+                {
+                    il.Append(il.Create(OpCodes.Conv_U4));
+                }
+                else
+                {
+                    il.Append(il.Create(OpCodes.Conv_U8));
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryEmitOverflowIntrinsic(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredCallInstruction call, IReadOnlyDictionary<string, FieldDefinition> fieldMap)
+    {
+        // Handle llvm.sadd.with.overflow.i32, llvm.smul.with.overflow.i32, etc.
+        bool isSadd = call.Callee.StartsWith("llvm.sadd.with.overflow.", StringComparison.Ordinal);
+        bool isUadd = call.Callee.StartsWith("llvm.uadd.with.overflow.", StringComparison.Ordinal);
+        bool isSmul = call.Callee.StartsWith("llvm.smul.with.overflow.", StringComparison.Ordinal);
+        bool isUmul = call.Callee.StartsWith("llvm.umul.with.overflow.", StringComparison.Ordinal);
+        bool isSsub = call.Callee.StartsWith("llvm.ssub.with.overflow.", StringComparison.Ordinal);
+        bool isUsub = call.Callee.StartsWith("llvm.usub.with.overflow.", StringComparison.Ordinal);
+
+        if (!isSadd && !isUadd && !isSmul && !isUmul && !isSsub && !isUsub)
+        {
+            return false;
+        }
+
+        if (call.Result is null || call.Arguments.Count < 2)
+        {
+            return false;
+        }
+
+        // Use the existing aggregate component naming convention
+        var valLocalName = GetAggregateComponentLocalName(call.Result, 0);
+        var ovfLocalName = GetAggregateComponentLocalName(call.Result, 1);
+
+        // Load both arguments
+        LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+        LoadValue(il, parameters, locals, call.Arguments[1].Type, call.Arguments[1].Value, fieldMap);
+
+        // Store argument copies for overflow check
+        var aLocal = EnsureLocal(method, locals, $"{call.Result}__a", method.Module.TypeSystem.Int32);
+        var bLocal = EnsureLocal(method, locals, $"{call.Result}__b", method.Module.TypeSystem.Int32);
+        var valLocal = EnsureLocal(method, locals, valLocalName, method.Module.TypeSystem.Int32);
+        var ovfLocal = EnsureLocal(method, locals, ovfLocalName, method.Module.TypeSystem.Int32);
+
+        // Stack: [a, b]
+        il.Append(il.Create(OpCodes.Stloc, bLocal));
+        il.Append(il.Create(OpCodes.Stloc, aLocal));
+
+        // Compute result (wrapping)
+        il.Append(il.Create(OpCodes.Ldloc, aLocal));
+        il.Append(il.Create(OpCodes.Ldloc, bLocal));
+        if (isSadd || isUadd) il.Append(il.Create(OpCodes.Add));
+        else if (isSsub || isUsub) il.Append(il.Create(OpCodes.Sub));
+        else il.Append(il.Create(OpCodes.Mul));
+        il.Append(il.Create(OpCodes.Stloc, valLocal));
+
+        // Compute overflow flag
+        if (isSadd || isSsub)
+        {
+            // Signed add overflow: ((result ^ a) & (result ^ b)) < 0 for add
+            // Signed sub overflow: ((result ^ a) & (b ^ a)) < 0 for sub
+            il.Append(il.Create(OpCodes.Ldloc, valLocal));
+            il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            il.Append(il.Create(OpCodes.Xor));
+            il.Append(il.Create(OpCodes.Ldloc, valLocal));
+            if (isSadd)
+            {
+                il.Append(il.Create(OpCodes.Ldloc, bLocal));
+            }
+            else
+            {
+                il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            }
+            il.Append(il.Create(OpCodes.Xor));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldc_I4_0));
+            il.Append(il.Create(OpCodes.Clt));
+        }
+        else if (isUadd)
+        {
+            // Unsigned add overflow: result < a
+            il.Append(il.Create(OpCodes.Ldloc, valLocal));
+            il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            il.Append(il.Create(OpCodes.Clt_Un));
+        }
+        else if (isUsub)
+        {
+            // Unsigned sub overflow: a < b
+            il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            il.Append(il.Create(OpCodes.Ldloc, bLocal));
+            il.Append(il.Create(OpCodes.Clt_Un));
+        }
+        else if (isSmul)
+        {
+            // Signed mul overflow: widen to i64 and check
+            il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            il.Append(il.Create(OpCodes.Conv_I8));
+            il.Append(il.Create(OpCodes.Ldloc, bLocal));
+            il.Append(il.Create(OpCodes.Conv_I8));
+            il.Append(il.Create(OpCodes.Mul));
+            il.Append(il.Create(OpCodes.Ldloc, valLocal));
+            il.Append(il.Create(OpCodes.Conv_I8));
+            il.Append(il.Create(OpCodes.Ceq));
+            il.Append(il.Create(OpCodes.Ldc_I4_0));
+            il.Append(il.Create(OpCodes.Ceq));
+        }
+        else // isUmul
+        {
+            // Unsigned mul overflow: widen to u64 and check
+            il.Append(il.Create(OpCodes.Ldloc, aLocal));
+            il.Append(il.Create(OpCodes.Conv_U8));
+            il.Append(il.Create(OpCodes.Ldloc, bLocal));
+            il.Append(il.Create(OpCodes.Conv_U8));
+            il.Append(il.Create(OpCodes.Mul));
+            il.Append(il.Create(OpCodes.Ldloc, valLocal));
+            il.Append(il.Create(OpCodes.Conv_U8));
+            il.Append(il.Create(OpCodes.Ceq));
+            il.Append(il.Create(OpCodes.Ldc_I4_0));
+            il.Append(il.Create(OpCodes.Ceq));
+        }
+        il.Append(il.Create(OpCodes.Stloc, ovfLocal));
+
+        return true;
+    }
+
+    private static bool TryEmitBitManipulationIntrinsic(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredCallInstruction call, IReadOnlyDictionary<string, FieldDefinition> fieldMap)
+    {
+        bool isCtlz = call.Callee.StartsWith("llvm.ctlz.", StringComparison.Ordinal);
+        bool isCttz = call.Callee.StartsWith("llvm.cttz.", StringComparison.Ordinal);
+        bool isBswap = call.Callee.StartsWith("llvm.bswap.", StringComparison.Ordinal);
+        bool isBitreverse = call.Callee.StartsWith("llvm.bitreverse.", StringComparison.Ordinal);
+        bool isSaddSat = call.Callee.StartsWith("llvm.sadd.sat.", StringComparison.Ordinal);
+        bool isUaddSat = call.Callee.StartsWith("llvm.uadd.sat.", StringComparison.Ordinal);
+        bool isSsubSat = call.Callee.StartsWith("llvm.ssub.sat.", StringComparison.Ordinal);
+        bool isUsubSat = call.Callee.StartsWith("llvm.usub.sat.", StringComparison.Ordinal);
+
+        if (!isCtlz && !isCttz && !isBswap && !isBitreverse && !isSaddSat && !isUaddSat && !isSsubSat && !isUsubSat)
+        {
+            return false;
+        }
+
+        if (call.Result is null)
+        {
+            return false;
+        }
+
+        if (isCtlz)
+        {
+            // Count leading zeros: use System.Numerics.BitOperations.LeadingZeroCount
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            var bitOpsType = typeof(System.Numerics.BitOperations);
+            var leadingZeroMethod = bitOpsType.GetMethod(nameof(System.Numerics.BitOperations.LeadingZeroCount), [typeof(uint)])
+                ?? throw new InvalidOperationException("BitOperations.LeadingZeroCount(uint) not found.");
+            il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(leadingZeroMethod)));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isCttz)
+        {
+            // Count trailing zeros: use System.Numerics.BitOperations.TrailingZeroCount
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            var bitOpsType = typeof(System.Numerics.BitOperations);
+            var trailingZeroMethod = bitOpsType.GetMethod(nameof(System.Numerics.BitOperations.TrailingZeroCount), [typeof(uint)])
+                ?? throw new InvalidOperationException("BitOperations.TrailingZeroCount(uint) not found.");
+            il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(trailingZeroMethod)));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isBswap)
+        {
+            // Byte swap: use BinaryPrimitives.ReverseEndianness
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            var binaryPrimitivesType = typeof(System.Buffers.Binary.BinaryPrimitives);
+            var reverseMethod = binaryPrimitivesType.GetMethod(nameof(System.Buffers.Binary.BinaryPrimitives.ReverseEndianness), [typeof(int)])
+                ?? throw new InvalidOperationException("BinaryPrimitives.ReverseEndianness(int) not found.");
+            il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(reverseMethod)));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isBitreverse)
+        {
+            // Bit reversal: reverse all bits in the integer
+            // For i32: use a software bit-reverse sequence via shifts and masks
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+
+            // Swap adjacent bits: ((x >> 1) & 0x55555555) | ((x & 0x55555555) << 1)
+            var tempLocal = EnsureLocal(method, locals, $"$bitrev.{call.Result}", method.Module.TypeSystem.UInt32);
+            il.Append(il.Create(OpCodes.Stloc, tempLocal));
+
+            // Step 1: swap adjacent single bits
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4_1));
+            il.Append(il.Create(OpCodes.Shr_Un));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x55555555)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x55555555)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldc_I4_1));
+            il.Append(il.Create(OpCodes.Shl));
+            il.Append(il.Create(OpCodes.Or));
+            il.Append(il.Create(OpCodes.Stloc, tempLocal));
+
+            // Step 2: swap adjacent pairs
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4_2));
+            il.Append(il.Create(OpCodes.Shr_Un));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x33333333)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x33333333)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldc_I4_2));
+            il.Append(il.Create(OpCodes.Shl));
+            il.Append(il.Create(OpCodes.Or));
+            il.Append(il.Create(OpCodes.Stloc, tempLocal));
+
+            // Step 3: swap adjacent nibbles
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4_4));
+            il.Append(il.Create(OpCodes.Shr_Un));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x0F0F0F0F)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            il.Append(il.Create(OpCodes.Ldc_I4, unchecked((int)0x0F0F0F0F)));
+            il.Append(il.Create(OpCodes.And));
+            il.Append(il.Create(OpCodes.Ldc_I4_4));
+            il.Append(il.Create(OpCodes.Shl));
+            il.Append(il.Create(OpCodes.Or));
+            il.Append(il.Create(OpCodes.Stloc, tempLocal));
+
+            // Step 4: reverse bytes (same as bswap)
+            il.Append(il.Create(OpCodes.Ldloc, tempLocal));
+            var binaryPrimitivesType2 = typeof(System.Buffers.Binary.BinaryPrimitives);
+            var reverseEndianMethod = binaryPrimitivesType2.GetMethod(nameof(System.Buffers.Binary.BinaryPrimitives.ReverseEndianness), [typeof(int)])
+                ?? throw new InvalidOperationException("BinaryPrimitives.ReverseEndianness(int) not found.");
+            il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(reverseEndianMethod)));
+
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isSaddSat)
+        {
+            // Saturating signed add: clamp to [int.MinValue, int.MaxValue]
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_I8));
+            LoadValue(il, parameters, locals, call.Arguments[1].Type, call.Arguments[1].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_I8));
+            il.Append(il.Create(OpCodes.Add));
+            // Clamp to int range
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MinValue));
+            var notTooSmall = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Bge_S, notTooSmall));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MinValue));
+            il.Append(notTooSmall);
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MaxValue));
+            var notTooBig = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Ble_S, notTooBig));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MaxValue));
+            il.Append(notTooBig);
+            il.Append(il.Create(OpCodes.Conv_I4));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isUaddSat)
+        {
+            // Saturating unsigned add: clamp to uint.MaxValue
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_U8));
+            LoadValue(il, parameters, locals, call.Arguments[1].Type, call.Arguments[1].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_U8));
+            il.Append(il.Create(OpCodes.Add));
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)uint.MaxValue));
+            var notOverflow = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Ble_Un_S, notOverflow));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)uint.MaxValue));
+            il.Append(notOverflow);
+            il.Append(il.Create(OpCodes.Conv_U4));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isSsubSat)
+        {
+            // Saturating signed subtract: clamp to [int.MinValue, int.MaxValue]
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_I8));
+            LoadValue(il, parameters, locals, call.Arguments[1].Type, call.Arguments[1].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_I8));
+            il.Append(il.Create(OpCodes.Sub));
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MinValue));
+            var ssubNotTooSmall = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Bge_S, ssubNotTooSmall));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MinValue));
+            il.Append(ssubNotTooSmall);
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MaxValue));
+            var ssubNotTooBig = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Ble_S, ssubNotTooBig));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, (long)int.MaxValue));
+            il.Append(ssubNotTooBig);
+            il.Append(il.Create(OpCodes.Conv_I4));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
+            return true;
+        }
+
+        if (isUsubSat)
+        {
+            // Saturating unsigned subtract: clamp to 0
+            LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_U8));
+            LoadValue(il, parameters, locals, call.Arguments[1].Type, call.Arguments[1].Value, fieldMap);
+            il.Append(il.Create(OpCodes.Conv_U8));
+            il.Append(il.Create(OpCodes.Sub));
+            il.Append(il.Create(OpCodes.Dup));
+            il.Append(il.Create(OpCodes.Ldc_I8, 0L));
+            var usubNotNeg = il.Create(OpCodes.Nop);
+            il.Append(il.Create(OpCodes.Bge_S, usubNotNeg));
+            il.Append(il.Create(OpCodes.Pop));
+            il.Append(il.Create(OpCodes.Ldc_I8, 0L));
+            il.Append(usubNotNeg);
+            il.Append(il.Create(OpCodes.Conv_U4));
+            StoreLocal(method, il, locals, call.Result, call.ReturnType);
             return true;
         }
 
@@ -2160,6 +2791,7 @@ public static class LoweredAssemblyEmitter
         if (string.Equals(call.ReturnType, "void", StringComparison.Ordinal)
             && call.Callee.Contains("precondition_check", StringComparison.Ordinal))
         {
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.PreconditionCheck));
             return true;
         }
 
@@ -2188,7 +2820,7 @@ public static class LoweredAssemblyEmitter
 
         if (call.Callee.Contains("raw_vec12handle_error", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(OutOfMemoryException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowOutOfMemory));
             return true;
         }
 
@@ -2197,7 +2829,7 @@ public static class LoweredAssemblyEmitter
             || call.Callee.Contains("expect_failed", StringComparison.Ordinal)
             || call.Callee.Contains("unwrap_failed", StringComparison.Ordinal))
         {
-            EmitThrow(il, module, typeof(InvalidOperationException));
+            EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowPanic));
             return true;
         }
 
@@ -2213,7 +2845,8 @@ public static class LoweredAssemblyEmitter
             return true;
         }
 
-        if (call.Callee.Contains("PathBuf5_push", StringComparison.Ordinal))
+        if (call.Callee.Contains("PathBuf5_push", StringComparison.Ordinal)
+            || call.Callee.Contains("PathBuf5__push", StringComparison.Ordinal))
         {
             EmitRuntimeBridgeCall(module, il, parameters, locals, fieldMap, call, nameof(RuntimeBridgeHelpers.AppendPathSegment));
             return true;
@@ -2239,8 +2872,8 @@ public static class LoweredAssemblyEmitter
 
             LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value);
             il.Append(il.Create(OpCodes.Conv_I));
-            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.AllocHGlobal), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)])
-                ?? throw new InvalidOperationException("Marshal.AllocHGlobal(IntPtr) could not be resolved."))));
+            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(RustMcil.Runtime.MemoryRuntime).GetMethod(nameof(RustMcil.Runtime.MemoryRuntime.Alloc), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)])
+                ?? throw new InvalidOperationException("MemoryRuntime.Alloc(IntPtr) could not be resolved."))));
             return true;
         }
 
@@ -2254,8 +2887,8 @@ public static class LoweredAssemblyEmitter
             LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value);
             LoadValue(il, parameters, locals, call.Arguments[3].Type, call.Arguments[3].Value);
             il.Append(il.Create(OpCodes.Conv_I));
-            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReAllocHGlobal), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(IntPtr)])
-                ?? throw new InvalidOperationException("Marshal.ReAllocHGlobal(IntPtr, IntPtr) could not be resolved."))));
+            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(RustMcil.Runtime.MemoryRuntime).GetMethod(nameof(RustMcil.Runtime.MemoryRuntime.Realloc), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(IntPtr)])
+                ?? throw new InvalidOperationException("MemoryRuntime.Realloc(IntPtr, IntPtr) could not be resolved."))));
             return true;
         }
 
@@ -2267,8 +2900,8 @@ public static class LoweredAssemblyEmitter
             }
 
             LoadValue(il, parameters, locals, call.Arguments[0].Type, call.Arguments[0].Value);
-            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.FreeHGlobal), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)])
-                ?? throw new InvalidOperationException("Marshal.FreeHGlobal(IntPtr) could not be resolved."))));
+            il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(RustMcil.Runtime.MemoryRuntime).GetMethod(nameof(RustMcil.Runtime.MemoryRuntime.Dealloc), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)])
+                ?? throw new InvalidOperationException("MemoryRuntime.Dealloc(IntPtr) could not be resolved."))));
             return true;
         }
 
@@ -2744,99 +3377,13 @@ public static class LoweredAssemblyEmitter
         return true;
     }
 
-    private static MemoryHelperMethods EmitMemoryHelpers(ModuleDefinition module, TypeDefinition generatedType)
+    private static MemoryHelperMethods ResolveMemoryHelpers(ModuleDefinition module)
     {
-        var copyBytesI64 = new MethodDefinition(
-            "__memory_copy_i64",
-            MethodAttributes.Private | MethodAttributes.Static,
-            module.TypeSystem.Void);
-
-        copyBytesI64.Parameters.Add(new ParameterDefinition("destination", ParameterAttributes.None, module.TypeSystem.IntPtr));
-        copyBytesI64.Parameters.Add(new ParameterDefinition("source", ParameterAttributes.None, module.TypeSystem.IntPtr));
-        copyBytesI64.Parameters.Add(new ParameterDefinition("length", ParameterAttributes.None, module.TypeSystem.Int64));
-        copyBytesI64.Body.InitLocals = true;
-
-        var indexLocal = new VariableDefinition(module.TypeSystem.Int64);
-        copyBytesI64.Body.Variables.Add(indexLocal);
-
-        var il = copyBytesI64.Body.GetILProcessor();
-        var loopStart = il.Create(OpCodes.Nop);
-        var loopBody = il.Create(OpCodes.Nop);
-        var done = il.Create(OpCodes.Ret);
-
-        il.Append(il.Create(OpCodes.Ldc_I4_0));
-        il.Append(il.Create(OpCodes.Conv_I8));
-        il.Append(il.Create(OpCodes.Stloc, indexLocal));
-        il.Append(loopStart);
-        il.Append(il.Create(OpCodes.Ldloc, indexLocal));
-        il.Append(il.Create(OpCodes.Ldarg, copyBytesI64.Parameters[2]));
-        il.Append(il.Create(OpCodes.Clt));
-        il.Append(il.Create(OpCodes.Brtrue, loopBody));
-        il.Append(il.Create(OpCodes.Br, done));
-        il.Append(loopBody);
-        il.Append(il.Create(OpCodes.Ldarg, copyBytesI64.Parameters[0]));
-        il.Append(il.Create(OpCodes.Ldloc, indexLocal));
-        il.Append(il.Create(OpCodes.Conv_I4));
-        il.Append(il.Create(OpCodes.Ldarg, copyBytesI64.Parameters[1]));
-        il.Append(il.Create(OpCodes.Ldloc, indexLocal));
-        il.Append(il.Create(OpCodes.Conv_I4));
-        il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadByte), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(int)])
-            ?? throw new InvalidOperationException("Marshal.ReadByte(IntPtr, int) could not be resolved."))));
-        il.Append(il.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.WriteByte), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(int), typeof(byte)])
-            ?? throw new InvalidOperationException("Marshal.WriteByte(IntPtr, int, byte) could not be resolved."))));
-        il.Append(il.Create(OpCodes.Ldloc, indexLocal));
-        il.Append(il.Create(OpCodes.Ldc_I4_1));
-        il.Append(il.Create(OpCodes.Conv_I8));
-        il.Append(il.Create(OpCodes.Add));
-        il.Append(il.Create(OpCodes.Stloc, indexLocal));
-        il.Append(il.Create(OpCodes.Br, loopStart));
-        il.Append(done);
-
-        var setBytesI64 = new MethodDefinition(
-            "__memory_set_i64",
-            MethodAttributes.Private | MethodAttributes.Static,
-            module.TypeSystem.Void);
-
-        setBytesI64.Parameters.Add(new ParameterDefinition("destination", ParameterAttributes.None, module.TypeSystem.IntPtr));
-        setBytesI64.Parameters.Add(new ParameterDefinition("value", ParameterAttributes.None, module.TypeSystem.Byte));
-        setBytesI64.Parameters.Add(new ParameterDefinition("length", ParameterAttributes.None, module.TypeSystem.Int64));
-        setBytesI64.Body.InitLocals = true;
-
-        var setIndexLocal = new VariableDefinition(module.TypeSystem.Int64);
-        setBytesI64.Body.Variables.Add(setIndexLocal);
-
-        var setIl = setBytesI64.Body.GetILProcessor();
-        var setLoopStart = setIl.Create(OpCodes.Nop);
-        var setLoopBody = setIl.Create(OpCodes.Nop);
-        var setDone = setIl.Create(OpCodes.Ret);
-
-        setIl.Append(setIl.Create(OpCodes.Ldc_I4_0));
-        setIl.Append(setIl.Create(OpCodes.Conv_I8));
-        setIl.Append(setIl.Create(OpCodes.Stloc, setIndexLocal));
-        setIl.Append(setLoopStart);
-        setIl.Append(setIl.Create(OpCodes.Ldloc, setIndexLocal));
-        setIl.Append(setIl.Create(OpCodes.Ldarg, setBytesI64.Parameters[2]));
-        setIl.Append(setIl.Create(OpCodes.Clt));
-        setIl.Append(setIl.Create(OpCodes.Brtrue, setLoopBody));
-        setIl.Append(setIl.Create(OpCodes.Br, setDone));
-        setIl.Append(setLoopBody);
-        setIl.Append(setIl.Create(OpCodes.Ldarg, setBytesI64.Parameters[0]));
-        setIl.Append(setIl.Create(OpCodes.Ldloc, setIndexLocal));
-        setIl.Append(setIl.Create(OpCodes.Conv_I4));
-        setIl.Append(setIl.Create(OpCodes.Ldarg, setBytesI64.Parameters[1]));
-        setIl.Append(setIl.Create(OpCodes.Call, module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.WriteByte), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(int), typeof(byte)])
-            ?? throw new InvalidOperationException("Marshal.WriteByte(IntPtr, int, byte) could not be resolved."))));
-        setIl.Append(setIl.Create(OpCodes.Ldloc, setIndexLocal));
-        setIl.Append(setIl.Create(OpCodes.Ldc_I4_1));
-        setIl.Append(setIl.Create(OpCodes.Conv_I8));
-        setIl.Append(setIl.Create(OpCodes.Add));
-        setIl.Append(setIl.Create(OpCodes.Stloc, setIndexLocal));
-        setIl.Append(setIl.Create(OpCodes.Br, setLoopStart));
-        setIl.Append(setDone);
-
-        generatedType.Methods.Add(copyBytesI64);
-        generatedType.Methods.Add(setBytesI64);
-        return new MemoryHelperMethods(copyBytesI64, setBytesI64);
+        return new MemoryHelperMethods(
+            module.ImportReference(typeof(RustMcil.Runtime.MemoryRuntime).GetMethod(nameof(RustMcil.Runtime.MemoryRuntime.CopyBytesI64), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(IntPtr), typeof(long)])
+                ?? throw new InvalidOperationException("MemoryRuntime.CopyBytesI64(IntPtr, IntPtr, long) could not be resolved.")),
+            module.ImportReference(typeof(RustMcil.Runtime.MemoryRuntime).GetMethod(nameof(RustMcil.Runtime.MemoryRuntime.SetBytesI64), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(byte), typeof(long)])
+                ?? throw new InvalidOperationException("MemoryRuntime.SetBytesI64(IntPtr, byte, long) could not be resolved.")));
     }
 
     private static bool TryHandleIgnoredIntrinsic(LoweredCallInstruction call)
@@ -2969,6 +3516,148 @@ public static class LoweredAssemblyEmitter
         EmitIndirectStore(method, il, store.Type, $"Direct pointer-parameter store for lowered type '{store.Type}' is not supported in function '{functionName}'.");
 
         return true;
+    }
+
+    private static bool TryEmitVectorConstantStore(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredStoreInstruction store, string functionName)
+    {
+        // Match vector type pattern: <N x elementType>
+        if (!store.Type.StartsWith("<", StringComparison.Ordinal) || !store.Type.EndsWith(">", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Match vector constant value: <elementType val0, elementType val1, ...>
+        if (!store.Value.StartsWith("<", StringComparison.Ordinal) || !store.Value.EndsWith(">", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Parse vector type: <N x elementType>
+        var typeInner = store.Type[1..^1].Trim(); // "4 x i32"
+        var xIndex = typeInner.IndexOf(" x ", StringComparison.Ordinal);
+        if (xIndex < 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(typeInner[..xIndex].Trim(), out var elementCount))
+        {
+            return false;
+        }
+
+        var elementType = typeInner[(xIndex + 3)..].Trim(); // "i32"
+        var elementSize = GetScalarTypeSize(elementType);
+        if (elementSize <= 0)
+        {
+            return false;
+        }
+
+        // Parse vector constant elements: <i32 0, i32 0, i32 5, i32 7>
+        var valueInner = store.Value[1..^1].Trim();
+        var elements = SplitVectorConstantElements(valueInner);
+        if (elements.Count != elementCount)
+        {
+            return false;
+        }
+
+        // Resolve the destination pointer (parameter or local)
+        ParameterDefinition? destParam = null;
+        VariableDefinition? destLocal = null;
+        VariableDefinition? rawAllocaLocal = null;
+
+        bool isParameter = parameters.TryGetValue(store.Destination, out destParam) && IsPointerParameter(destParam);
+        bool isLocal = !isParameter && locals.TryGetValue(store.Destination, out destLocal) && IsPointerLocal(destLocal);
+        bool isRawAlloca = !isParameter && !isLocal && TryGetRawAllocaAddressLocal(locals, store.Destination, out rawAllocaLocal);
+
+        if (!isParameter && !isLocal && !isRawAlloca)
+        {
+            return false;
+        }
+
+        // Emit individual scalar stores at sequential offsets
+        for (int i = 0; i < elementCount; i++)
+        {
+            // Load destination pointer
+            if (isParameter)
+            {
+                il.Append(il.Create(OpCodes.Ldarg, destParam!));
+            }
+            else if (isLocal)
+            {
+                il.Append(il.Create(OpCodes.Ldloc, destLocal!));
+            }
+            else
+            {
+                il.Append(il.Create(OpCodes.Ldloc, rawAllocaLocal!));
+            }
+
+            // Add offset for non-zero elements
+            if (i > 0)
+            {
+                il.Append(il.Create(OpCodes.Ldc_I4, i * elementSize));
+                il.Append(il.Create(OpCodes.Conv_I));
+                il.Append(il.Create(OpCodes.Add));
+            }
+
+            // Load the constant element value
+            LoadValue(il, parameters, locals, elementType, elements[i]);
+
+            // Store via Marshal write
+            EmitIndirectStore(method, il, elementType, $"Vector constant store element type '{elementType}' not supported in function '{functionName}'.");
+        }
+
+        return true;
+    }
+
+    private static int GetScalarTypeSize(string elementType)
+    {
+        return elementType switch
+        {
+            "i8" => 1,
+            "i16" => 2,
+            "i32" => 4,
+            "i64" => 8,
+            "float" => 4,
+            "double" => 8,
+            "ptr" => IntPtr.Size,
+            _ => -1
+        };
+    }
+
+    private static List<string> SplitVectorConstantElements(string inner)
+    {
+        // Parse "i32 0, i32 0, i32 5, i32 7" into element values ["0", "0", "5", "7"]
+        var elements = new List<string>();
+        var remaining = inner;
+
+        while (!string.IsNullOrWhiteSpace(remaining))
+        {
+            remaining = remaining.TrimStart();
+
+            // Skip element type prefix (e.g., "i32 ")
+            var spaceIdx = remaining.IndexOf(' ');
+            if (spaceIdx < 0)
+            {
+                break;
+            }
+
+            remaining = remaining[(spaceIdx + 1)..].TrimStart();
+
+            // Find the end of the value (next comma or end of string)
+            var commaIdx = remaining.IndexOf(',');
+            if (commaIdx < 0)
+            {
+                elements.Add(remaining.Trim());
+                break;
+            }
+            else
+            {
+                elements.Add(remaining[..commaIdx].Trim());
+                remaining = remaining[(commaIdx + 1)..];
+            }
+        }
+
+        return elements;
     }
 
     private static bool TryStoreDirectPointerLocal(MethodDefinition method, ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, LoweredStoreInstruction store, string functionName)
@@ -3141,6 +3830,10 @@ public static class LoweredAssemblyEmitter
                 case LoweredStoreInstruction store when byteArrayAllocas.Contains(store.Destination):
                     rawAddressAllocas.Add(store.Destination);
                     break;
+
+                case LoweredGetElementPointerInstruction gep when byteArrayAllocas.Contains(gep.Base):
+                    rawAddressAllocas.Add(gep.Base);
+                    break;
             }
         }
 
@@ -3194,6 +3887,7 @@ public static class LoweredAssemblyEmitter
         il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(typeName switch
         {
             "i8" => typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadByte), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)]),
+            "i16" => typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadInt16), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)]),
             "i32" => typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadInt32), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)]),
             "i64" => typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadInt64), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)]),
             "ptr" => typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.ReadIntPtr), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr)]),
@@ -3209,6 +3903,12 @@ public static class LoweredAssemblyEmitter
                 il.Append(il.Create(OpCodes.Conv_U1));
                 il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.WriteByte), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(byte)])
                     ?? throw new InvalidOperationException("Marshal.WriteByte(IntPtr, byte) could not be resolved."))));
+                return;
+
+            case "i16":
+                il.Append(il.Create(OpCodes.Conv_I2));
+                il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(typeof(System.Runtime.InteropServices.Marshal).GetMethod(nameof(System.Runtime.InteropServices.Marshal.WriteInt16), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(IntPtr), typeof(short)])
+                    ?? throw new InvalidOperationException("Marshal.WriteInt16(IntPtr, short) could not be resolved."))));
                 return;
 
             case "i32":
@@ -3466,6 +4166,7 @@ public static class LoweredAssemblyEmitter
         return typeName switch
         {
             "i8" => 1,
+            "i16" => 2,
             "i32" => 4,
             "i64" => 8,
             _ => throw new NotSupportedException($"Primitive byte size is not defined for lowered type '{typeName}'.")
@@ -3505,13 +4206,30 @@ public static class LoweredAssemblyEmitter
         throw new NotSupportedException($"Zero initialization for lowered type '{typeName}' is not supported by the current emitter slice.");
     }
 
-    private static void EmitThrow(ILProcessor il, ModuleDefinition module, Type exceptionType)
+    private static void EmitPanicRuntimeCall(ModuleDefinition module, ILProcessor il, string methodName)
     {
-        var constructor = exceptionType.GetConstructor(Type.EmptyTypes)
-            ?? throw new InvalidOperationException($"Exception type '{exceptionType.FullName}' does not expose a public parameterless constructor.");
+        var method = typeof(RustMcil.Runtime.PanicRuntime).GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, Type.EmptyTypes)
+            ?? throw new InvalidOperationException($"PanicRuntime.{methodName}() could not be resolved.");
 
-        il.Append(il.Create(OpCodes.Newobj, module.ImportReference(constructor)));
-        il.Append(il.Create(OpCodes.Throw));
+        il.Append(il.Create(OpCodes.Call, module.ImportReference(method)));
+    }
+
+    private static void EmitUnreachableTerminator(ModuleDefinition module, MethodDefinition method, ILProcessor il)
+    {
+        EmitPanicRuntimeCall(module, il, nameof(RustMcil.Runtime.PanicRuntime.ThrowUnreachable));
+
+        if (string.Equals(method.ReturnType.FullName, module.TypeSystem.Void.FullName, StringComparison.Ordinal))
+        {
+            il.Append(il.Create(OpCodes.Ret));
+            return;
+        }
+
+        var defaultReturn = new VariableDefinition(method.ReturnType);
+        method.Body.Variables.Add(defaultReturn);
+        il.Append(il.Create(OpCodes.Ldloca, defaultReturn));
+        il.Append(il.Create(OpCodes.Initobj, method.ReturnType));
+        il.Append(il.Create(OpCodes.Ldloc, defaultReturn));
+        il.Append(il.Create(OpCodes.Ret));
     }
 
     private static void EmitZeroExtension(ILProcessor il, string fromType, string toType, string functionName)
@@ -3790,6 +4508,18 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitConversion(ILProcessor il, string typeName)
     {
+        if (string.Equals(typeName, "float", StringComparison.Ordinal))
+        {
+            il.Append(il.Create(OpCodes.Conv_R4));
+            return;
+        }
+
+        if (string.Equals(typeName, "double", StringComparison.Ordinal))
+        {
+            il.Append(il.Create(OpCodes.Conv_R8));
+            return;
+        }
+
         if (TryGetIntegerBitWidth(typeName, out var width))
         {
             il.Append(width <= 32
@@ -3821,6 +4551,8 @@ public static class LoweredAssemblyEmitter
         {
             "ptr" => module.TypeSystem.IntPtr,
             "void" => module.TypeSystem.Void,
+            "float" => module.TypeSystem.Single,
+            "double" => module.TypeSystem.Double,
             _ => throw new NotSupportedException($"Lowered type '{typeName}' is not supported by the first emitter slice.")
         };
     }
@@ -3840,6 +4572,8 @@ public static class LoweredAssemblyEmitter
         return typeName switch
         {
             "ptr" => typeof(IntPtr),
+            "float" => typeof(float),
+            "double" => typeof(double),
             _ => throw new NotSupportedException($"Lowered runtime type '{typeName}' is not supported for aggregate imports.")
         };
     }
@@ -3979,6 +4713,45 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
+    private static bool TryParseFloatConstant(string typeName, string value, out double constant)
+    {
+        if (string.Equals(typeName, "double", StringComparison.Ordinal))
+        {
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                && long.TryParse(value.AsSpan(2), System.Globalization.NumberStyles.HexNumber, null, out var doubleBits))
+            {
+                constant = BitConverter.Int64BitsToDouble(doubleBits);
+                return true;
+            }
+
+            if (double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out constant))
+            {
+                return true;
+            }
+        }
+
+        if (string.Equals(typeName, "float", StringComparison.Ordinal))
+        {
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                && long.TryParse(value.AsSpan(2), System.Globalization.NumberStyles.HexNumber, null, out var floatBitsAsDouble))
+            {
+                // LLVM stores float constants as double hex — convert via double then narrow
+                var doubleValue = BitConverter.Int64BitsToDouble(floatBitsAsDouble);
+                constant = doubleValue;
+                return true;
+            }
+
+            if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var floatValue))
+            {
+                constant = floatValue;
+                return true;
+            }
+        }
+
+        constant = 0;
+        return false;
+    }
+
     private static void EmitIntegerWidthNormalization(ILProcessor il, string typeName, string? operation, string functionName)
     {
         if (!TryGetIntegerBitWidth(typeName, out var width) || width == 1 || width == 32 || width == 64)
@@ -3998,6 +4771,38 @@ public static class LoweredAssemblyEmitter
 
         EmitIntegerMask(il, width);
         il.Append(il.Create(OpCodes.Conv_I8));
+    }
+
+    private static void EmitIntegerAbiExtension(ILProcessor il, string typeName, string? extension, string functionName)
+    {
+        if (extension is null)
+        {
+            return;
+        }
+
+        if (!TryGetIntegerBitWidth(typeName, out var width))
+        {
+            throw new NotSupportedException($"ABI extension '{extension}' is not supported for lowered type '{typeName}' in function '{functionName}'.");
+        }
+
+        if (width >= 32)
+        {
+            return;
+        }
+
+        switch (extension)
+        {
+            case "signext":
+                EmitSignedNarrowIntegerNormalization(il, width);
+                return;
+
+            case "zeroext":
+                EmitUnsignedNarrowIntegerNormalization(il, width);
+                return;
+
+            default:
+                throw new NotSupportedException($"Unsupported integer ABI extension '{extension}' in function '{functionName}'.");
+        }
     }
 
     private static void EmitIntegerMask(ILProcessor il, int width)
@@ -5165,8 +5970,34 @@ public static class LoweredAssemblyEmitter
         return new VectorHelperMethods(addMethod, xorMethod, andMethod, orMethod, maxMethod, minMethod, maxUnsignedMethod, minUnsignedMethod, reduceXorMethod, reduceAddMethod, reduceOrMethod, reduceAndMethod, reduceMaxMethod, reduceMinMethod, reduceMaxUnsignedMethod, reduceMinUnsignedMethod, addI64Method, xorI64Method, andI64Method, orI64Method, maxI64Method, minI64Method, maxUnsignedI64Method, minUnsignedI64Method, reduceAddI64Method, reduceXorI64Method, reduceOrI64Method, reduceAndI64Method, reduceMaxI64Method, reduceMinI64Method, reduceMaxUnsignedI64Method, reduceMinUnsignedI64Method, addI16x8Method, andI16x8Method, orI16x8Method, xorI16x8Method, maxI16x8Method, minI16x8Method, maxUnsignedI16x8Method, minUnsignedI16x8Method, reduceXorI16x8Method, reduceAddI16x8Method, reduceOrI16x8Method, reduceAndI16x8Method, reduceMaxI16x8Method, reduceMinI16x8Method, reduceMaxUnsignedI16x8Method, reduceMinUnsignedI16x8Method, addI16x4Method, andI16x4Method, orI16x4Method, xorI16x4Method, maxI16x4Method, minI16x4Method, maxUnsignedI16x4Method, minUnsignedI16x4Method, reduceXorI16x4Method, reduceAddI16x4Method, reduceOrI16x4Method, reduceAndI16x4Method, reduceMaxI16x4Method, reduceMinI16x4Method, reduceMaxUnsignedI16x4Method, reduceMinUnsignedI16x4Method, maxScalarI8Method, maxUnsignedScalarI8Method, minScalarI8Method, minUnsignedScalarI8Method, funnelShiftLeftI32Method, addI8x16Method, orI8x16Method, xorI8x16Method, maxI8x16Method, minI8x16Method, maxUnsignedI8x16Method, minUnsignedI8x16Method, reduceXorI8x16Method, reduceAddI8x16Method, reduceOrI8x16Method, reduceMaxI8x16Method, reduceMinI8x16Method, reduceMaxUnsignedI8x16Method, reduceMinUnsignedI8x16Method, addI8x8Method, orI8x8Method, xorI8x8Method, maxI8x8Method, minI8x8Method, reduceXorI8x8Method, reduceAddI8x8Method, reduceOrI8x8Method, reduceMaxI8x8Method, reduceMinI8x8Method, addI8x4Method, andI8x4Method, orI8x4Method, xorI8x4Method, maxUnsignedI8x4Method, minUnsignedI8x4Method, reduceXorI8x4Method, reduceAddI8x4Method, reduceOrI8x4Method, reduceAndI8x4Method, reduceMaxUnsignedI8x4Method, reduceMinUnsignedI8x4Method);
     }
 
+    private static void EmitVectorRuntimeWrapperBody(MethodDefinition method)
+    {
+        var runtimeMethod = typeof(RustMcil.Runtime.VectorRuntime)
+            .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .SingleOrDefault(candidate => string.Equals(candidate.Name, method.Name, StringComparison.Ordinal)
+                && candidate.GetParameters().Length == method.Parameters.Count)
+            ?? throw new InvalidOperationException($"VectorRuntime.{method.Name} helper could not be resolved.");
+        var il = method.Body.GetILProcessor();
+
+        for (var index = 0; index < method.Parameters.Count; index++)
+        {
+            il.Append(il.Create(OpCodes.Ldarg, method.Parameters[index]));
+        }
+
+        il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(runtimeMethod)));
+        il.Append(il.Create(OpCodes.Ret));
+    }
+
+    private static bool ShouldEmitRuntimeVectorWrapper() => true;
+
     private static void EmitScalarSignedMaxHelperBody(MethodDefinition method)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var useLeft = il.Create(OpCodes.Nop);
 
@@ -5183,6 +6014,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitScalarUnsignedMaxHelperBody(MethodDefinition method)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var useLeft = il.Create(OpCodes.Nop);
 
@@ -5202,6 +6039,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitScalarSignedMinHelperBody(MethodDefinition method)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var useLeft = il.Create(OpCodes.Nop);
 
@@ -5218,6 +6061,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitScalarUnsignedMinHelperBody(MethodDefinition method)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var useLeft = il.Create(OpCodes.Nop);
 
@@ -5237,6 +6086,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitFunnelShiftLeftI32HelperBody(MethodDefinition method)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var shiftLocal = new VariableDefinition(method.Module.TypeSystem.Int32);
@@ -5268,6 +6123,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorBinaryHelperBody(MethodDefinition method, OpCode opCode, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var vectorType = new SupportedVectorType($"i{elementWidth}", elementWidth, elementCount);
@@ -5302,6 +6163,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceXorHelperBody(MethodDefinition method, int elementWidth, int elementCount = 4)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5326,6 +6193,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceAddHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5350,6 +6223,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceOrHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5374,6 +6253,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceAndHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5398,6 +6283,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorSignedMaxHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var vectorType = new SupportedVectorType($"i{elementWidth}", elementWidth, elementCount);
@@ -5471,6 +6362,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceSignedMaxHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5532,6 +6429,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorSignedMinHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var vectorType = new SupportedVectorType($"i{elementWidth}", elementWidth, elementCount);
@@ -5605,6 +6508,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceSignedMinHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5666,6 +6575,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorUnsignedMaxHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var vectorType = new SupportedVectorType($"i{elementWidth}", elementWidth, elementCount);
@@ -5742,6 +6657,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceUnsignedMaxHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5807,6 +6728,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorUnsignedMinHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         method.Body.InitLocals = true;
         var il = method.Body.GetILProcessor();
         var vectorType = new SupportedVectorType($"i{elementWidth}", elementWidth, elementCount);
@@ -5883,6 +6810,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitVectorReduceUnsignedMinHelperBody(MethodDefinition method, int elementCount, int elementWidth)
     {
+        if (ShouldEmitRuntimeVectorWrapper())
+        {
+            EmitVectorRuntimeWrapperBody(method);
+            return;
+        }
+
         var il = method.Body.GetILProcessor();
         var loadElement = GetVectorElementLoadOpCode(elementWidth);
 
@@ -5974,8 +6907,8 @@ public static class LoweredAssemblyEmitter
         int ElementCount);
 
     private sealed record MemoryHelperMethods(
-        MethodDefinition CopyBytesI64,
-        MethodDefinition SetBytesI64);
+        MethodReference CopyBytesI64,
+        MethodReference SetBytesI64);
 
     private sealed record VectorHelperMethods(
         MethodDefinition Add,

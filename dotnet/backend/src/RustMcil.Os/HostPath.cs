@@ -1,4 +1,6 @@
 using RustMcil.Interop;
+using RustMcil.Runtime;
+using System.Runtime.InteropServices;
 
 namespace RustMcil.Os;
 
@@ -126,6 +128,38 @@ public static class HostPath
         return GetFileNameUtf8Path(pathPointer, pathLength).Length;
     }
 
+    public static void AppendPathSegment(IntPtr destination, IntPtr source, long length)
+    {
+        if (length < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), "Path segment length must be non-negative.");
+        }
+
+        if (length == 0)
+        {
+            return;
+        }
+
+        var currentCapacity = Marshal.ReadInt64(destination, 0);
+        var currentPointer = Marshal.ReadIntPtr(destination, 8);
+        var currentLength = Marshal.ReadInt64(destination, 16);
+        var needsSeparator = currentLength > 0
+            && !IsPathSeparator(Marshal.ReadByte(source, 0));
+        var separatorLength = needsSeparator ? 1L : 0L;
+        var newLength = checked(currentLength + separatorLength + length);
+        var newPointer = currentCapacity == 0 || currentPointer == IntPtr.Zero
+            ? MemoryRuntime.Alloc(new IntPtr(checked((int)newLength)))
+            : MemoryRuntime.Realloc(currentPointer, new IntPtr(checked((int)newLength)));
+
+        if (needsSeparator)
+        {
+            Marshal.WriteByte(newPointer, checked((int)currentLength), (byte)'\\');
+        }
+
+        RustBufferRuntime.CopyToUnmanaged(source, length, IntPtr.Add(newPointer, checked((int)(currentLength + separatorLength))));
+        RustBufferRuntime.WriteBuffer(destination, newLength, newPointer, newLength);
+    }
+
     private static string CombineUtf8Paths(IntPtr leftPointer, long leftLength, IntPtr rightPointer, long rightLength)
     {
         return Path.Combine(
@@ -181,5 +215,10 @@ public static class HostPath
     private static string GetFileNameWithoutExtensionUtf8Path(IntPtr pathPointer, long pathLength)
     {
         return Path.GetFileNameWithoutExtension(InteropUtf8.ReadString(pathPointer, pathLength)) ?? string.Empty;
+    }
+
+    private static bool IsPathSeparator(byte value)
+    {
+        return value == (byte)'\\' || value == (byte)'/';
     }
 }

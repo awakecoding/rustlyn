@@ -83,6 +83,18 @@ public static class ManagedInteropRuntime
     public static int CopyExceptionMessageUtf8(int handle, IntPtr destinationPointer, long destinationCapacity)
         => CopyExceptionMessageUtf8(new ManagedExceptionHandle(handle), destinationPointer, destinationCapacity);
 
+    public static int GetObjectUtf16CharCount(int handle)
+    {
+        var value = Store.GetObject<string>(handle);
+        return InteropUtf16.GetCharCount(value);
+    }
+
+    public static int CopyObjectUtf16(int handle, IntPtr destinationPointer, long destinationCapacityInChars)
+    {
+        var value = Store.GetObject<string>(handle);
+        return InteropUtf16.CopyChars(value, destinationPointer, destinationCapacityInChars);
+    }
+
     public static void Clear()
         => Store.Clear();
 }

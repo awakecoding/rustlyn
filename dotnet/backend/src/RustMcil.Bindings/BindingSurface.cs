@@ -1,3 +1,5 @@
+using RustMcil.Interop;
+
 namespace RustMcil.Bindings;
 
 public sealed record BindingSurface(
@@ -156,7 +158,36 @@ public sealed record BindingSurface(
                     ]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_object_release",
-                    ["fn rust_mcil_bindgen_system_object_release(handle: i32) -> i32;"])
+                    ["fn rust_mcil_bindgen_system_object_release(handle: i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_exception_release",
+                    ["fn rust_mcil_bindgen_system_exception_release(handle: i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8_len",
+                    ["fn rust_mcil_bindgen_system_exception_get_type_name_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8",
+                    [
+                        "fn rust_mcil_bindgen_system_exception_get_type_name_utf8(",
+                        "    handle: i32,",
+                        "    destination_ptr: *mut u8,",
+                        "    destination_capacity: i64,",
+                        "    exception_out: *mut i32,",
+                        ") -> i32;"
+                    ]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_exception_get_message_utf8_len",
+                    ["fn rust_mcil_bindgen_system_exception_get_message_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_exception_get_message_utf8",
+                    [
+                        "fn rust_mcil_bindgen_system_exception_get_message_utf8(",
+                        "    handle: i32,",
+                        "    destination_ptr: *mut u8,",
+                        "    destination_capacity: i64,",
+                        "    exception_out: *mut i32,",
+                        ") -> i32;"
+                    ])
             ],
             [
                 Glue(
@@ -347,7 +378,36 @@ public sealed record BindingSurface(
                     "rust_mcil_bindgen_system_object_release",
                     "BindgenSystemObjectRelease",
                     [I32("objectHandle")],
-                    ManagedGlueOperation.ReturnExceptionHandle(ManagedGlueResult.ReleaseObject("objectHandle")))
+                    ManagedGlueOperation.ReturnExceptionHandle(ManagedGlueResult.ReleaseObject("objectHandle"))),
+                Glue(
+                    "rust_mcil_bindgen_system_exception_release",
+                    "BindgenSystemExceptionRelease",
+                    [I32("exceptionHandle")],
+                    ManagedGlueOperation.ReturnExceptionHandle(ManagedGlueResult.ReleaseException("exceptionHandle"))),
+                Glue(
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8_len",
+                    "BindgenSystemExceptionGetTypeNameUtf8Length",
+                    [I32("exceptionHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.GetExceptionTypeNameUtf8Length), [typeof(int)], [ManagedGlueExpression.Parameter("exceptionHandle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8",
+                    "BindgenSystemExceptionGetTypeNameUtf8",
+                    [I32("exceptionHandle"), Pointer("destinationPointer"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyExceptionTypeNameUtf8), [typeof(int), typeof(IntPtr), typeof(long)], [ManagedGlueExpression.Parameter("exceptionHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_exception_get_message_utf8_len",
+                    "BindgenSystemExceptionGetMessageUtf8Length",
+                    [I32("exceptionHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.GetExceptionMessageUtf8Length), [typeof(int)], [ManagedGlueExpression.Parameter("exceptionHandle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_exception_get_message_utf8",
+                    "BindgenSystemExceptionGetMessageUtf8",
+                    [I32("exceptionHandle"), Pointer("destinationPointer"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyExceptionMessageUtf8), [typeof(int), typeof(IntPtr), typeof(long)], [ManagedGlueExpression.Parameter("exceptionHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")]))))
             ],
             [
                 new RustWrapperMethod(
@@ -630,6 +690,9 @@ public abstract record ManagedGlueResult
 
     public static ManagedGlueResult ReleaseObject(string handleExpression)
         => new ManagedGlueReleaseObjectResult(handleExpression);
+
+    public static ManagedGlueResult ReleaseException(string handleExpression)
+        => new ManagedGlueReleaseExceptionResult(handleExpression);
 }
 
 public sealed record ManagedGlueVoidCallResult(ManagedGlueExpression CallExpression) : ManagedGlueResult
@@ -657,6 +720,13 @@ public sealed record ManagedGlueBooleanAsIntResult(ManagedGlueExpression ValueEx
 }
 
 public sealed record ManagedGlueReleaseObjectResult(string HandleExpression) : ManagedGlueResult
+{
+    public override void Validate()
+    {
+    }
+}
+
+public sealed record ManagedGlueReleaseExceptionResult(string HandleExpression) : ManagedGlueResult
 {
     public override void Validate()
     {

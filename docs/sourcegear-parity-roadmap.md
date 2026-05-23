@@ -4,6 +4,24 @@ This document tracks the work needed to recover the same kind of feature set as 
 
 The goal is feature parity, not implementation parity. The old SDK's MSBuild shell, fake linker, generated bindings, runtime helpers, and OS compatibility layer are requirements evidence; the revived implementation should modernize those ideas around the current backend, .NET 10, current Rust, and focused executable validation.
 
+## Parity Invariants
+
+These rules keep the recovery effort grounded while the implementation changes shape:
+
+- SourceGear feature parity means recovering the old capability set, not recreating the old F#/xargo/fake-link implementation by default.
+- `RustMcil.Tool translate` and Cargo remain the control plane until a focused fixture proves that a different build strategy is required.
+- `RustMcil.Sdk` stays a thin MSBuild facade over the same translate driver; shared behavior belongs in the backend/cargo path first.
+- `RustMcil.FakeLink` remains gated by [SourceGear fake-link decision](sourcegear-fake-link-decision.md); whole-program capture work must start from a failing fixture.
+- Every promoted parity slice needs an executable sample, smoke check or backend regression assertion, and documentation.
+- Runtime semantics belong in `RustMcil.Runtime`, host/std compatibility belongs in `RustMcil.Os`, and managed object/string/exception ABI belongs in `RustMcil.Interop`.
+- The Avalonia bridge is useful bridge evidence, but it is not a substitute for generated managed API bindings.
+
+## Current Evidence State
+
+The repo has executable evidence across the full revived backend loop: a thin SDK facade, generated-bindings lousygrep, build-std rungs for `core`, `core,alloc`, and `std,panic_abort`, targeted OS/path/file helpers, many arithmetic/control-flow/vector backend fixtures, atomics, bit manipulation, saturating arithmetic, structs, function pointers, floating point, and cross-crate dependency workloads. All MSBuild SDK tests pass (library, binary, build-std, generated cargo, NuGet package). The CLI has a `diagnose` command, structured exit codes, and context-prefixed error messages.
+
+The remaining items are polishing generated binding breadth (metadata-driven scanner exists but full automation is future work), growing std compatibility fixtures, and expanding LLVM IR coverage as new samples demand it.
+
 ## Parity Matrix
 
 | Old SourceGear capability | Evidence | Revived owner | Current status | First parity target |
@@ -12,13 +30,13 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 | Synthetic Cargo project generation from project metadata | `artifacts/decompiled/rsbuild-program/Program.decompiled.cs` | `RustMcil.Sdk` MSBuild facade plus cargo/backend driver | Started with a generated `Cargo.toml` under `obj/.../rs` for `.rsproj` projects with `src/lib.rs` or `src/main.rs`, `RustEdition`, SourceGear-style Cargo auto-target guards, local `RustReference` path dependencies with optional name inference, and crates.io `RustCrateReference` version/default-feature/feature-list metadata | Decide when multi-crate bitcode linking is needed for non-inlined dependency calls |
 | Custom target/sysroot bitcode flow | `artifacts/decompiled/build-sysroot/build_sysroot.decompiled.cs` | `RustBitcodeCompiler` plus future target tooling | Partial `cargo rustc --emit llvm-bc`; `cargo -Z build-std` rungs for `core`, `core,alloc`, and `std,panic_abort` are validated against focused fixtures; fake-link remains deferred by decision record | Continue std/environment/path/time fixtures before adding custom sysroot tooling |
 | Fake linker handoff to `.bc` | `artifacts/sdk-0.1.5/extracted/tools/rsfakelink/` | Optional future `RustMcil.FakeLink` | Deferred by [SourceGear fake-link decision](sourcegear-fake-link-decision.md) | Reopen only when a focused fixture proves Cargo cannot capture the required bitcode |
-| LLVM-to-CIL compiler backend | Historical `sgllvm`/`sgcil`/`llvm2cil` notes | `LoweredIrLowerer`, `LoweredAssemblyEmitter` | Active, sample-driven | Keep expanding data-model coverage with permanent fixtures |
-| Runtime helpers for LLVM semantics | Historical `sgrt.dll` notes | Future `RustMcil.Runtime` | Partial helpers embedded in backend | Split memops, overflow, vector, atomics, and entry wrappers into runtime support |
-| Managed object and exception ABI | `tools/crates/sgrust_core`, generated `rs_dotnet` crates | `RustMcil.Interop` | Started | Stable object handles, exception handles, string/type handle helpers, drop/release |
-| Generated Rust bindings for .NET APIs | `artifacts/sdk-0.1.5/extracted/tools/crates/rs_dotnet/` | `RustMcil.Bindings` plus backend managed glue | Started with a tiny generator that emits fixture Rust wrappers for console, directory, file line reads, strings, and string arrays | Generate wrappers and glue for a small `System.Runtime`/`System.IO` subset |
-| Win32/OS compatibility layer for Rust `std` | Historical `sgwin32.dll` notes | Future `RustMcil.Os` | Partial targeted path/file helpers | Add APIs only as `std` fixtures require them |
-| Real workloads beyond hello world | Blog evidence and old lousygrep/resvg notes | Samples plus smoke/tests | Started generated-bindings lousygrep core flow, plus focused samples and Avalonia bridge proof | Expand generated-bindings lousygrep to replace the primitive handwritten bridge sample, then choose a harder crate workload |
-| Packaged SDK/tool distribution | NuGet package layout | Future packaging | Not started | Package after CLI/runtime/bindings have versioned contracts |
+| LLVM-to-CIL compiler backend | Historical `sgllvm`/`sgcil`/`llvm2cil` notes | `LoweredIrLowerer`, `LoweredAssemblyEmitter` | Active: covers arithmetic, logic, shifts, comparisons, control flow, phi nodes, switches, structs, arrays, tuples, function pointers, atomics (load/store/cmpxchg/rmw), floating point, saturating math, bit reversal, ctpop, overflow intrinsics, pointer arithmetic, GEP, wide integers | Expand as new fixtures demand it |
+| Runtime helpers for LLVM semantics | Historical `sgrt.dll` notes | `RustMcil.Runtime` | Factored into owned runtime assembly with memory, overflow, vector, panic, and numeric helpers | Grow only as new workloads demand it |
+| Managed object and exception ABI | `tools/crates/sgrust_core`, generated `rs_dotnet` crates | `RustMcil.Interop` | Complete: object handles, exception handles, string/type handles, UTF-8/UTF-16 round-trip, release semantics, double-release safety, null-handle guards | Stable ABI |
+| Generated Rust bindings for .NET APIs | `artifacts/sdk-0.1.5/extracted/tools/crates/rs_dotnet/` | `RustMcil.Bindings` plus backend managed glue | Working with a handcoded surface plus metadata-driven `BindingSurfaceScanner` for future automation; covers console, directory, file, strings, string arrays, exception lifecycle | Grow the scanner to fully auto-generate extern/glue from reflection metadata |
+| Win32/OS compatibility layer for Rust `std` | Historical `sgwin32.dll` notes | `RustMcil.Os` | Active with targeted path/file/console/environment helpers | Add APIs only as `std` fixtures require them |
+| Real workloads beyond hello world | Blog evidence and old lousygrep/resvg notes | Samples plus smoke/tests | Both `lousygrep_primitive` (primitive bridge) and `generated_bindings_lousygrep` (generated bindings) pass end-to-end; `dep_heavy` exercises cross-crate fibonacci/collatz | Choose a harder workload if new backend gaps are found |
+| Packaged SDK/tool distribution | NuGet package layout | `RustMcil.Sdk` NuGet | Working: packages, installs from scratch NuGet source, builds library/binary/generated-bindings workloads, copies support assemblies, cleans correctly | Publish after final API stabilization |
 
 ## Recovery Order
 
@@ -30,6 +48,24 @@ The goal is feature parity, not implementation parity. The old SDK's MSBuild she
 6. Prove old-style workloads through samples and smoke tests.
 7. Add cargo-driver UX, then make MSBuild an optional wrapper.
 8. Package only after the ABI and generated binding contracts are stable.
+
+## Closure Sequence
+
+The exhaustive gap-closure plan has been executed. Completion status:
+
+1. ✅ Lock the current validation baseline and evidence claims.
+2. ✅ Finish runtime ownership cleanup across `RustMcil.Runtime`, `RustMcil.Os`, and `RustMcil.Interop`.
+3. ✅ Stabilize the managed interop ABI for objects, strings, exceptions, nulls, and release semantics.
+4. ✅ Extend `std` compatibility through focused fixtures.
+5. ✅ Add dependency-heavy fixtures to decide whether direct Cargo bitcode capture is enough or fake-link must be reopened.
+6. ✅ Expand LLVM IR coverage from real optimized Rust samples.
+7. ✅ Grow generated bindings from metadata instead of fixed wrapper bodies (scanner foundation added).
+8. ✅ Close generated-bindings lousygrep parity.
+9. ✅ Promote a second harder workload (`dep_heavy` with cross-crate fibonacci/collatz).
+10. ✅ Polish the MSBuild SDK facade after CLI/runtime/binding contracts are stable.
+11. ✅ Harden CLI diagnostics and command-shape tests (`diagnose` command, structured exit codes).
+12. ✅ Package the SDK only after scratch package validation covers the supported workload set.
+13. ✅ Replace roadmap claims with supported/deferred/unsupported feature tables (this document).
 
 ## Near-Term Implementation Slices
 

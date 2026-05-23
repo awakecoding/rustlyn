@@ -74,6 +74,7 @@ public static class RustBitcodeCompiler
         var outputFullPath = Path.GetFullPath(options.OutputBitcodePath);
         Directory.CreateDirectory(Path.GetDirectoryName(outputFullPath) ?? throw new InvalidOperationException("The bitcode output directory could not be determined."));
         File.Copy(artifactPath, outputFullPath, overwrite: true);
+        CopySiblingLlvmIrArtifact(artifactPath, outputFullPath);
         return outputFullPath;
     }
 
@@ -223,7 +224,7 @@ public static class RustBitcodeCompiler
         [
             "--",
             "--emit",
-            "llvm-bc",
+            "llvm-bc,llvm-ir",
             "-C",
             "overflow-checks=off"
         ]);
@@ -315,7 +316,13 @@ public static class RustBitcodeCompiler
             var libraryTarget = targets.FirstOrDefault(targetElement =>
                 targetElement.GetProperty("kind")
                     .EnumerateArray()
-                    .Any(kindElement => string.Equals(kindElement.GetString(), "lib", StringComparison.Ordinal)));
+                    .Any(static kindElement =>
+                    {
+                        var kind = kindElement.GetString();
+                        return string.Equals(kind, "lib", StringComparison.Ordinal)
+                            || string.Equals(kind, "staticlib", StringComparison.Ordinal)
+                            || string.Equals(kind, "cdylib", StringComparison.Ordinal);
+                    }));
 
             if (libraryTarget.ValueKind != JsonValueKind.Undefined)
             {
@@ -366,6 +373,17 @@ public static class RustBitcodeCompiler
             .OrderByDescending(fileInfo => fileInfo.LastWriteTimeUtc)
             .Select(fileInfo => fileInfo.FullName)
             .First();
+    }
+
+    private static void CopySiblingLlvmIrArtifact(string artifactPath, string outputBitcodePath)
+    {
+        var sourceLlvmIrPath = Path.ChangeExtension(artifactPath, ".ll");
+        if (!File.Exists(sourceLlvmIrPath))
+        {
+            return;
+        }
+
+        File.Copy(sourceLlvmIrPath, Path.ChangeExtension(outputBitcodePath, ".ll"), overwrite: true);
     }
 
     private static string ResolveTargetDirectoryName(string target)

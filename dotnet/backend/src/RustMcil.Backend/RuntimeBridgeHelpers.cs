@@ -1,6 +1,4 @@
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace RustMcil.Backend;
 
@@ -194,7 +192,7 @@ public static partial class RuntimeBridgeHelpers
         IntPtr newPointer,
         long newLength)
     {
-        return Encoding.UTF8.GetByteCount(ReplaceUtf8String(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength));
+        return RustMcil.Interop.InteropUtf8.ReplaceByteCount(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength);
     }
 
     public static int CopyUtf8StringReplace(
@@ -207,10 +205,7 @@ public static partial class RuntimeBridgeHelpers
         IntPtr destinationPointer,
         long destinationCapacity)
     {
-        return WriteUtf8String(
-            ReplaceUtf8String(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength),
-            destinationPointer,
-            destinationCapacity);
+        return RustMcil.Interop.InteropUtf8.CopyReplace(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength, destinationPointer, destinationCapacity);
     }
 
     public static int Utf8PathGetFileNameLengthUtf8(IntPtr pathPointer, long pathLength)
@@ -225,18 +220,12 @@ public static partial class RuntimeBridgeHelpers
 
     public static int Utf8StringContains(IntPtr haystackPointer, long haystackLength, IntPtr needlePointer, long needleLength)
     {
-        return ReadUtf8String(haystackPointer, haystackLength).Contains(
-            ReadUtf8String(needlePointer, needleLength),
-            StringComparison.Ordinal)
-            ? 1
-            : 0;
+        return RustMcil.Interop.InteropUtf8.ContainsOrdinal(haystackPointer, haystackLength, needlePointer, needleLength);
     }
 
     public static int Utf8StringIndexOf(IntPtr haystackPointer, long haystackLength, IntPtr needlePointer, long needleLength)
     {
-        return ReadUtf8String(haystackPointer, haystackLength).IndexOf(
-            ReadUtf8String(needlePointer, needleLength),
-            StringComparison.Ordinal);
+        return RustMcil.Interop.InteropUtf8.IndexOfOrdinal(haystackPointer, haystackLength, needlePointer, needleLength);
     }
 
     public static int RemEuclidI32(int left, int right)
@@ -256,76 +245,17 @@ public static partial class RuntimeBridgeHelpers
 
     public static void InitializeWtf8PathBuffer(IntPtr destination, IntPtr source, long length)
     {
-        var buffer = CopyToUnmanaged(source, length);
-        WriteRustBuffer(destination, length, buffer, length);
+        RustMcil.Runtime.RustBufferRuntime.InitializeBufferFromBytes(destination, source, length);
     }
 
     public static void AppendPathSegment(IntPtr destination, IntPtr source, long length)
     {
-        if (length == 0)
-        {
-            return;
-        }
-
-        var currentCapacity = Marshal.ReadInt64(destination, 0);
-        var currentPointer = Marshal.ReadIntPtr(destination, 8);
-        var currentLength = Marshal.ReadInt64(destination, 16);
-        var needsSeparator = currentLength > 0
-            && !IsPathSeparator(Marshal.ReadByte(source, 0));
-        var separatorLength = needsSeparator ? 1L : 0L;
-        var newLength = checked(currentLength + separatorLength + length);
-        var newPointer = currentCapacity == 0 || currentPointer == IntPtr.Zero
-            ? Marshal.AllocHGlobal(ToNativeInt(newLength))
-            : Marshal.ReAllocHGlobal(currentPointer, ToNativeInt(newLength));
-
-        if (needsSeparator)
-        {
-            Marshal.WriteByte(newPointer, checked((int)currentLength), (byte)'\\');
-        }
-
-        CopyToUnmanaged(source, length, IntPtr.Add(newPointer, checked((int)(currentLength + separatorLength))));
-        WriteRustBuffer(destination, newLength, newPointer, newLength);
+        RustMcil.Os.HostPath.AppendPathSegment(destination, source, length);
     }
 
     public static void ReadFileToRustString(IntPtr destination, IntPtr pathPointer, long pathLength)
     {
-        var managedPath = ReadUtf8String(pathPointer, pathLength);
-        var bytes = File.ReadAllBytes(managedPath);
-        var buffer = bytes.Length == 0
-            ? IntPtr.Zero
-            : Marshal.AllocHGlobal(bytes.Length);
-
-        if (bytes.Length > 0)
-        {
-            Marshal.Copy(bytes, 0, buffer, bytes.Length);
-        }
-
-        WriteRustBuffer(destination, bytes.LongLength, buffer, bytes.LongLength);
-    }
-
-    private static string ReadUtf8String(IntPtr pointer, long length)
-    {
-        if (length == 0)
-        {
-            return string.Empty;
-        }
-
-        var bytes = new byte[checked((int)length)];
-        Marshal.Copy(pointer, bytes, 0, bytes.Length);
-        return Encoding.UTF8.GetString(bytes);
-    }
-
-    private static int WriteUtf8String(string value, IntPtr destinationPointer, long destinationCapacity)
-    {
-        var bytes = Encoding.UTF8.GetBytes(value);
-
-        if (destinationPointer != IntPtr.Zero && destinationCapacity > 0 && bytes.Length > 0)
-        {
-            var bytesToCopy = Math.Min(bytes.Length, checked((int)destinationCapacity));
-            Marshal.Copy(bytes, 0, destinationPointer, bytesToCopy);
-        }
-
-        return bytes.Length;
+        RustMcil.Os.HostFileSystem.ReadFileToRustString(destination, pathPointer, pathLength);
     }
 
     private static void WriteExceptionOut(IntPtr exceptionOutPointer, int exceptionHandle)
@@ -336,60 +266,5 @@ public static partial class RuntimeBridgeHelpers
         }
 
         Marshal.WriteInt32(exceptionOutPointer, exceptionHandle);
-    }
-
-    private static string ReplaceUtf8String(
-        IntPtr sourcePointer,
-        long sourceLength,
-        IntPtr oldPointer,
-        long oldLength,
-        IntPtr newPointer,
-        long newLength)
-    {
-        return ReadUtf8String(sourcePointer, sourceLength).Replace(
-            ReadUtf8String(oldPointer, oldLength),
-            ReadUtf8String(newPointer, newLength),
-            StringComparison.Ordinal);
-    }
-
-    private static IntPtr CopyToUnmanaged(IntPtr source, long length)
-    {
-        if (length == 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        var destination = Marshal.AllocHGlobal(ToNativeInt(length));
-        CopyToUnmanaged(source, length, destination);
-        return destination;
-    }
-
-    private static void CopyToUnmanaged(IntPtr source, long length, IntPtr destination)
-    {
-        if (length == 0)
-        {
-            return;
-        }
-
-        var bytes = new byte[checked((int)length)];
-        Marshal.Copy(source, bytes, 0, bytes.Length);
-        Marshal.Copy(bytes, 0, destination, bytes.Length);
-    }
-
-    private static void WriteRustBuffer(IntPtr destination, long capacity, IntPtr pointer, long length)
-    {
-        Marshal.WriteInt64(destination, 0, capacity);
-        Marshal.WriteIntPtr(destination, 8, pointer);
-        Marshal.WriteInt64(destination, 16, length);
-    }
-
-    private static bool IsPathSeparator(byte value)
-    {
-        return value == (byte)'\\' || value == (byte)'/';
-    }
-
-    private static IntPtr ToNativeInt(long value)
-    {
-        return new IntPtr(value);
     }
 }

@@ -1,36 +1,78 @@
 # SourceGear Fake-Link Decision
 
-Status: deferred, with explicit reopen criteria.
+Status: **permanently deferred** — LTO staticlib is sufficient.
 
-Date: 2026-05-21
+Date: 2026-05-21 (initial), 2026-05-22 (updated with LTO evidence)
 
 ## Decision
 
-Do not implement a revived `RustMcil.FakeLink` or reintroduce SourceGear-style target `pre-link-args` yet.
-
-The current revived path stays cargo-first: `RustMcil.Tool translate` uses `cargo rustc --emit llvm-bc`, and SourceGear recovery uses nightly `cargo -Z build-std` only when a fixture explicitly asks for `core`, `core,alloc`, or `std,panic_abort` coverage.
-
-This is not a claim that modern Cargo has already replaced every old whole-program/sysroot trick. It is a scoped decision: the current executable parity fixtures no longer justify building fake-linker machinery before the runtime split, generated bindings, and broader workload validation advance further.
+Do not implement a revived `RustMcil.FakeLink` or reintroduce SourceGear-style target `pre-link-args`. The LTO staticlib approach provides whole-program bitcode through standard Cargo without linker interception.
 
 ## Evidence
 
-The build-std ladder now has three focused, executable rungs:
+### Direct emission is insufficient for dependencies
 
-- `build_std_core_probe` builds `samples/add` with nightly `--build-std core`, inspects and lowers the bitcode, and invokes `add_i32(19, 23) == 42`.
-- `build_std_alloc_probe` builds `samples/alloc_only_probe` with nightly `--build-std core,alloc`, captures the Rust allocator shim, and invokes `alloc_vec_capacity_score() == 4`.
-- `build_std_std_probe` builds `samples/std_fs` with nightly `--build-std std,panic_abort`, preserves the `std::fs::read_to_string` path in lowered IR, and invokes `std_fs_line_count() == 3`.
+Direct `cargo rustc --emit llvm-bc` without LTO captures only the top crate. Dependency functions appear as `declare` (extern references) with no body — insufficient for translation.
 
-The permanent backend test `RustBitcodeBuildStdArgumentsAvoidFakeLinker` pins the intended command shape: build-std uses direct LLVM bitcode emission and does not add `rsfakelink`, `linker`, or replacement-linker arguments.
+### LTO staticlib merges all dependencies
+
+When using `crate-type = ["staticlib"]` with `lto = "fat"` in the release profile, Cargo produces a single bitcode file containing all dependency code as `define internal` functions. File size: 3 KB (top-crate only) → 728 KB (with all deps + std merged).
+
+### End-to-end proof: `dep_heavy` sample
+
+The `dep_heavy` fixture validates cross-crate function calls through LTO:
+
+- `dep_heavy_probe()` calls `dep_lib::fibonacci(10)` + `dep_lib::collatz_steps(27)`
+- Both dependency functions are merged into the single bitcode file
+- The `DepHeavyCrosscrateCallsResolveThroughLto` test passes end-to-end: compile → lower → emit → invoke → result = 166
+
+### Build-std ladder
+
+Three executable rungs prove build-std compatibility without fake-link:
+
+- `build_std_core_probe`: nightly `--build-std core`, invokes `add_i32(19, 23) == 42`
+- `build_std_alloc_probe`: nightly `--build-std core,alloc`, invokes `alloc_vec_capacity_score() == 4`
+- `build_std_std_probe`: nightly `--build-std std,panic_abort`, invokes `std_fs_line_count() == 3`
+
+### Command-shape test
+
+The permanent backend test `RustBitcodeBuildStdArgumentsAvoidFakeLinker` pins the command shape: build-std uses direct LLVM bitcode emission and does not add `rsfakelink`, `linker`, or replacement-linker arguments.
+
+## Advantages over fake-link
+
+1. No custom target JSON or linker wrapper
+2. No fragile linker interception that breaks across toolchain versions
+3. Works with standard `cargo build` — no special invocation
+4. Handles dependencies, build-std, and cross-crate generics naturally
+5. Produces a single merged bitcode file (no artifact stitching)
+
+## Trade-offs
+
+1. Requires `crate-type = ["staticlib"]` — the crate must be a library, not a binary
+2. Requires `lto = "fat"` in the release profile — incremental builds are slower
+3. OS FFI calls (e.g., `GetProcessHeap`) remain as `declare` — resolved by `RustMcil.Os` at runtime
+
+## Fixture
+
+The permanent fixture proving this decision lives at `samples/dep_heavy/`:
+
+```
+samples/dep_heavy/
+├── Cargo.toml          # workspace with staticlib + LTO
+├── src/lib.rs          # exported probe calling dep_lib
+└── dep_lib/
+    ├── Cargo.toml      # local dependency crate
+    └── src/lib.rs      # fibonacci + collatz_steps
+```
 
 ## Reopen Criteria
 
-Reopen `RustMcil.FakeLink` design only when a focused fixture proves one of these failures:
+Reopen only if a promoted fixture proves:
 
-- `cargo rustc --emit llvm-bc` plus relevant `-Z build-std` components cannot produce a discoverable `.bc` artifact for a required library or binary shape.
-- A promoted fixture needs dependency or sysroot bitcode that Cargo does not expose through the current artifact discovery path.
-- A custom target JSON can only collect the needed bitcode by replacing the final linker step.
-- A real workload, not a hypothetical SDK concern, fails specifically because the revived path lacks a whole-program bitcode capture mechanism.
+- LTO staticlib cannot produce discoverable whole-program bitcode for a required shape
+- A real workload (not hypothetical) fails specifically because this approach is insufficient
+- A custom target JSON is the only way to collect needed bitcode
 
 ## If Reopened
 
-Start with the failing fixture and make it permanent first. Then design the narrowest fake-link path around that evidence, preserving the existing cargo-first API and keeping any custom target/sysroot behavior opt-in.
+Start with the failing fixture and make it permanent first. Design the narrowest fake-link path around that evidence, keeping any custom target/sysroot behavior opt-in.

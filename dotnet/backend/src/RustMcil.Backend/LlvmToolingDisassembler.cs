@@ -6,11 +6,24 @@ internal static class LlvmToolingDisassembler
 {
     public static string ReadLlvmIr(string artifactPath, string toolchainRoot)
     {
+        var siblingLlvmIrPath = Path.ChangeExtension(artifactPath, ".ll");
+        try
+        {
+            return ReadOptimizedLlvmIr(artifactPath, toolchainRoot);
+        }
+        catch (Exception exception) when (CanFallBackToSiblingLlvmIr(exception) && File.Exists(siblingLlvmIrPath))
+        {
+            return File.ReadAllText(siblingLlvmIrPath);
+        }
+    }
+
+    private static string ReadOptimizedLlvmIr(string artifactPath, string toolchainRoot)
+    {
         var llvmOptPath = LlvmNativeLibraryLocator.GetToolPath(toolchainRoot, "llvm-opt.exe");
         var processStartInfo = new ProcessStartInfo
         {
             FileName = llvmOptPath,
-            Arguments = $"-S \"{artifactPath}\" -o -",
+            Arguments = $"-disable-verify -S \"{artifactPath}\" -o -",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -34,5 +47,13 @@ internal static class LlvmToolingDisassembler
         }
 
         return standardOutput;
+    }
+
+    private static bool CanFallBackToSiblingLlvmIr(Exception exception)
+    {
+        return exception is InvalidDataException
+            or FileNotFoundException
+            or DirectoryNotFoundException
+            or InvalidOperationException;
     }
 }

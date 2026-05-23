@@ -19,14 +19,22 @@ RunTest("ManagedHandleStoreTracksExceptions", ManagedHandleStoreTracksExceptions
 RunTest("ManagedHandleStoreRejectsInvalidHandles", ManagedHandleStoreRejectsInvalidHandles, failures);
 RunTest("InteropUtf8RoundTripsStrings", InteropUtf8RoundTripsStrings, failures);
 RunTest("ManagedInteropRuntimeExposesExceptionText", ManagedInteropRuntimeExposesExceptionText, failures);
+RunTest("InteropHandleNullReleaseSafety", InteropHandleNullReleaseSafety, failures);
+RunTest("InteropHandleDoubleReleaseSafety", InteropHandleDoubleReleaseSafety, failures);
+RunTest("InteropUtf16RoundTripsStrings", InteropUtf16RoundTripsStrings, failures);
+RunTest("InteropExceptionReleaseLifecycle", InteropExceptionReleaseLifecycle, failures);
 RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototypeUsesInteropHandles, failures);
 RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
 RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
 RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNumericHelpers, failures);
+RunTest("RuntimeSplitOwnsMemoryHelpers", RuntimeSplitOwnsMemoryHelpers, failures);
+RunTest("RuntimeSplitOwnsPanicHelpers", RuntimeSplitOwnsPanicHelpers, failures);
+RunTest("RuntimeSplitOwnsVectorHelpers", RuntimeSplitOwnsVectorHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsOsHelpers", RuntimeSplitFacadeForwardsOsHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsConsoleHelpers", RuntimeSplitFacadeForwardsConsoleHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsFileHelpers", RuntimeSplitFacadeForwardsFileHelpers, failures);
+RunTest("RuntimeSplitFacadeForwardsStringHelpers", RuntimeSplitFacadeForwardsStringHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsEnvironmentPathHelpers", RuntimeSplitFacadeForwardsEnvironmentPathHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathCombineHelpers", RuntimeSplitFacadeForwardsPathCombineHelpers, failures);
 RunTest("RuntimeSplitFacadeForwardsPathChangeExtensionHelpers", RuntimeSplitFacadeForwardsPathChangeExtensionHelpers, failures);
@@ -37,7 +45,9 @@ RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeature
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
 RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLeadingPlus, failures);
 RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
+RunTest("LowererStripsTrailingMetadataFromSelectValues", LowererStripsTrailingMetadataFromSelectValues, failures);
 RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
+RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -757,6 +767,22 @@ RunOptionalTest("DotnetRuntimePathOneHundredFortyThreeStageRankSampleBuildsFromC
 RunOptionalTest("AddSampleBuildsWithBuildStdCore", AddSampleBuildsWithBuildStdCore, failures);
 RunOptionalTest("AllocOnlyProbeBuildsWithBuildStdAlloc", AllocOnlyProbeBuildsWithBuildStdAlloc, failures);
 RunOptionalTest("StdFsBuildsWithBuildStdStd", StdFsBuildsWithBuildStdStd, failures);
+RunOptionalTest("StdEnvBuildsWithBuildStdStd", StdEnvBuildsWithBuildStdStd, failures);
+RunOptionalTest("StdTimeBuildsWithBuildStdStd", StdTimeBuildsWithBuildStdStd, failures);
+RunOptionalTest("StdPathBuildsWithBuildStdStd", StdPathBuildsWithBuildStdStd, failures);
+RunOptionalTest("StdConsoleBuildsWithBuildStdStd", StdConsoleBuildsWithBuildStdStd, failures);
+RunOptionalTest("DepHeavyCrosscrateCallsResolveThroughLto", DepHeavyCrosscrateCallsResolveThroughLto, failures);
+RunOptionalTest("FloatArithProbeReturnsExpectedResult", FloatArithProbeReturnsExpectedResult, failures);
+RunOptionalTest("FnPtrProbeReturnsExpectedResult", FnPtrProbeReturnsExpectedResult, failures);
+RunOptionalTest("StructReturnProbeReturnsExpectedResult", StructReturnProbeReturnsExpectedResult, failures);
+RunOptionalTest("OverflowMathProbeReturnsExpectedResult", OverflowMathProbeReturnsExpectedResult, failures);
+RunOptionalTest("SwitchControlProbeReturnsExpectedResult", SwitchControlProbeReturnsExpectedResult, failures);
+RunOptionalTest("PtrArithProbeReturnsExpectedResult", PtrArithProbeReturnsExpectedResult, failures);
+RunOptionalTest("LookupTableProbeReturnsExpectedResult", LookupTableProbeReturnsExpectedResult, failures);
+RunOptionalTest("AtomicsProbeReturnsExpectedResult", AtomicsProbeReturnsExpectedResult, failures);
+RunOptionalTest("BitManipProbeReturnsExpectedResult", BitManipProbeReturnsExpectedResult, failures);
+RunOptionalTest("MultiFieldProbeReturnsExpectedResult", MultiFieldProbeReturnsExpectedResult, failures);
+RunOptionalTest("DepHeavyProbeReturnsExpectedResult", DepHeavyProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -910,6 +936,116 @@ static void ManagedInteropRuntimeExposesExceptionText()
         Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected runtime exception handle release to succeed.");
         Assert(ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected runtime object handle release to succeed.");
         Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no runtime handles after release, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    }
+    finally
+    {
+        ManagedInteropRuntime.Clear();
+    }
+}
+
+static void InteropHandleNullReleaseSafety()
+{
+    var store = new ManagedHandleStore();
+
+    Assert(!store.Release(0), "Expected releasing null handle (0) to return false without throwing.");
+    Assert(!store.Release(0, ManagedHandleKind.Object), "Expected releasing null handle (0) with Object kind to return false.");
+    Assert(!store.Release(0, ManagedHandleKind.Exception), "Expected releasing null handle (0) with Exception kind to return false.");
+    Assert(!store.Release(new ManagedObjectHandle(0)), "Expected releasing null ManagedObjectHandle to return false.");
+    Assert(!store.Release(new ManagedExceptionHandle(0)), "Expected releasing null ManagedExceptionHandle to return false.");
+
+    ManagedInteropRuntime.Clear();
+    try
+    {
+        Assert(!ManagedInteropRuntime.ReleaseObject(0), "Expected ManagedInteropRuntime.ReleaseObject(0) to return false without throwing.");
+        Assert(!ManagedInteropRuntime.ReleaseException(0), "Expected ManagedInteropRuntime.ReleaseException(0) to return false without throwing.");
+    }
+    finally
+    {
+        ManagedInteropRuntime.Clear();
+    }
+}
+
+static void InteropHandleDoubleReleaseSafety()
+{
+    ManagedInteropRuntime.Clear();
+    try
+    {
+        var objectHandle = ManagedInteropRuntime.AddObjectHandle(new object());
+        var exceptionHandle = ManagedInteropRuntime.AddExceptionHandle(new InvalidOperationException("test"));
+
+        Assert(ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected first object release to succeed.");
+        Assert(!ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected second object release (double-release) to return false.");
+
+        Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected first exception release to succeed.");
+        Assert(!ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected second exception release (double-release) to return false.");
+
+        Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no handles after releases, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    }
+    finally
+    {
+        ManagedInteropRuntime.Clear();
+    }
+}
+
+static void InteropUtf16RoundTripsStrings()
+{
+    const string value = "hello UTF-16 \u00e9";
+    var pointer = Marshal.StringToHGlobalUni(value);
+    try
+    {
+        Assert(InteropUtf16.ReadString(pointer, value.Length) == value, "Expected UTF-16 pointer/length data to decode to the original string.");
+        Assert(InteropUtf16.ReadString(IntPtr.Zero, 0) == string.Empty, "Expected zero-length UTF-16 input to decode to an empty string.");
+        Assert(InteropUtf16.GetCharCount(value) == value.Length, "Expected UTF-16 char count to match string length.");
+
+        var destination = Marshal.AllocHGlobal(5 * sizeof(char));
+        try
+        {
+            var requiredLength = InteropUtf16.CopyChars(value, destination, 5);
+            Assert(requiredLength == value.Length, "Expected UTF-16 copy helper to return the full required char count.");
+            Assert(InteropUtf16.ReadString(destination, 5) == "hello", "Expected UTF-16 copy helper to respect destination capacity.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+
+        ExpectException<ArgumentOutOfRangeException>(() => InteropUtf16.ReadString(pointer, -1));
+        ExpectException<ArgumentNullException>(() => InteropUtf16.ReadString(IntPtr.Zero, 1));
+        ExpectException<ArgumentOutOfRangeException>(() => InteropUtf16.CopyChars(value, IntPtr.Zero, -1));
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(pointer);
+    }
+}
+
+static void InteropExceptionReleaseLifecycle()
+{
+    ManagedInteropRuntime.Clear();
+    try
+    {
+        var exceptionHandle = ManagedInteropRuntime.AddExceptionHandle(new ArgumentException("bad argument", "paramName"));
+        Assert(ManagedInteropRuntime.HandleCount == 1, "Expected one handle after adding exception.");
+
+        var typeName = ManagedInteropRuntime.GetExceptionTypeName(exceptionHandle);
+        Assert(typeName.EndsWith("ArgumentException", StringComparison.Ordinal),
+            $"Expected exception type name to end with ArgumentException, got '{typeName}'.");
+
+        var message = ManagedInteropRuntime.GetExceptionMessage(exceptionHandle);
+        Assert(message.Contains("bad argument", StringComparison.Ordinal),
+            $"Expected exception message to contain 'bad argument', got '{message}'.");
+
+        var messageUtf8Length = ManagedInteropRuntime.GetExceptionMessageUtf8Length(exceptionHandle);
+        Assert(messageUtf8Length > 0, "Expected exception message UTF-8 length to be positive.");
+
+        var typeNameUtf8Length = ManagedInteropRuntime.GetExceptionTypeNameUtf8Length(exceptionHandle);
+        Assert(typeNameUtf8Length > 0, "Expected exception type name UTF-8 length to be positive.");
+
+        ExpectException<InvalidOperationException>(() => ManagedInteropRuntime.ReleaseObject(exceptionHandle));
+        Assert(ManagedInteropRuntime.HandleCount == 1, "Expected wrong-kind release attempt to leave handle intact.");
+
+        Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected exception release to succeed.");
+        Assert(ManagedInteropRuntime.HandleCount == 0, "Expected no handles after release.");
     }
     finally
     {
@@ -1132,6 +1268,35 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
         Marshal.FreeHGlobal(exceptionOutPointer);
         ManagedInteropRuntime.Clear();
     }
+}
+
+static void BindingSurfaceScannerFindsPathMethods()
+{
+    var requirements = BindingSurfaceScanner.ScanType(typeof(System.IO.Path));
+
+    // The scanner should find at least the methods in our hardcoded surface
+    var methodNames = requirements
+        .Where(r => r.Kind == ManagedApiRequirementKind.Method)
+        .Select(r => r.MemberName)
+        .ToHashSet();
+
+    Assert(methodNames.Contains("GetFullPath"), "Scanner should find Path.GetFullPath");
+    Assert(methodNames.Contains("GetFileName"), "Scanner should find Path.GetFileName");
+    Assert(methodNames.Contains("GetExtension"), "Scanner should find Path.GetExtension");
+    Assert(methodNames.Contains("Combine"), "Scanner should find Path.Combine");
+    Assert(methodNames.Contains("GetDirectoryName"), "Scanner should find Path.GetDirectoryName");
+    Assert(methodNames.Contains("GetTempPath"), "Scanner should find Path.GetTempPath");
+    Assert(methodNames.Contains("IsPathRooted"), "Scanner should find Path.IsPathRooted");
+
+    // Verify ScanTypes deduplicates
+    var combined = BindingSurfaceScanner.ScanTypes(typeof(System.IO.Path), typeof(System.IO.Path));
+    var uniqueNames = combined.Select(r => r.DisplayName).ToList();
+    Assert(uniqueNames.Count == uniqueNames.Distinct().Count(), "ScanTypes should deduplicate requirements");
+
+    // Verify IsTypeBindable reports correctly
+    Assert(BindingSurfaceScanner.IsTypeBindable(typeof(string)), "string should be bindable");
+    Assert(BindingSurfaceScanner.IsTypeBindable(typeof(int)), "int should be bindable");
+    Assert(!BindingSurfaceScanner.IsTypeBindable(typeof(System.IO.Stream)), "Stream should not be bindable");
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
@@ -1758,11 +1923,11 @@ static void DivSampleProducesLoweredIr()
         "_3 = icmp eq i32 b, 0",
         "br _3 -> panic, bb1",
         "_6 = and i1 _4, _5",
-        "call void _ZN4core9panicking11panic_const23panic_const_div_by_zero",
+        "panic_const_div_by_zero",
         "unreachable",
         "_0 = sdiv i32 a, b",
         "ret i32 _0",
-        "call void _ZN4core9panicking11panic_const24panic_const_div_overflow",
+        "panic_const_div_overflow",
         "unreachable"
     ]);
 }
@@ -5715,7 +5880,7 @@ static void MaxXorSubI8VectorizedSampleEmitsAndExecutes()
 
 static void MinXorU8VectorizedSampleEmitsAndExecutes()
 {
-    AssertEmissionResult("min_xor_u8_vectorized", "min_xor_u8", [0], -1);
+    AssertEmissionResult("min_xor_u8_vectorized", "min_xor_u8", [0], 255);
     AssertEmissionResult("min_xor_u8_vectorized", "min_xor_u8", [1], 3);
     AssertEmissionResult("min_xor_u8_vectorized", "min_xor_u8", [5], 0);
     AssertEmissionResult("min_xor_u8_vectorized", "min_xor_u8", [200], 0);
@@ -5724,7 +5889,7 @@ static void MinXorU8VectorizedSampleEmitsAndExecutes()
 
 static void MinXorSubU8VectorizedSampleEmitsAndExecutes()
 {
-    AssertEmissionResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [0], -1);
+    AssertEmissionResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [0], 255);
     AssertEmissionResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [1], 78);
     AssertEmissionResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [5], 74);
     AssertEmissionResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [33], 57);
@@ -5740,7 +5905,7 @@ static void MinXorSubI8VectorizedSampleEmitsAndExecutes()
     AssertEmissionResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [5], 74);
     AssertEmissionResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [33], 57);
     AssertEmissionResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [64], 57);
-    AssertEmissionResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [100], 249);
+    AssertEmissionResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [100], -7);
 }
 
 static void MinAddSubI8VectorizedSampleEmitsAndExecutes()
@@ -5794,7 +5959,7 @@ static void SumXorI8VectorizedSampleEmitsAndExecutes()
 {
     AssertEmissionResult("sum_xor_i8_vectorized", "sum_xor_i8", [0], 0);
     AssertEmissionResult("sum_xor_i8_vectorized", "sum_xor_i8", [5], 13);
-    AssertEmissionResult("sum_xor_i8_vectorized", "sum_xor_i8", [17], 139);
+    AssertEmissionResult("sum_xor_i8_vectorized", "sum_xor_i8", [17], -117);
     AssertEmissionResult("sum_xor_i8_vectorized", "sum_xor_i8", [33], 19);
 }
 
@@ -5844,7 +6009,7 @@ static void AndFoldI8VectorizedSampleEmitsAndExecutes()
 
 static void AndFoldU8VectorizedSampleEmitsAndExecutes()
 {
-    AssertEmissionResult("and_fold_u8_vectorized", "and_fold_u8", [0], -1);
+    AssertEmissionResult("and_fold_u8_vectorized", "and_fold_u8", [0], 255);
     AssertEmissionResult("and_fold_u8_vectorized", "and_fold_u8", [5], 0);
     AssertEmissionResult("and_fold_u8_vectorized", "and_fold_u8", [17], 0);
     AssertEmissionResult("and_fold_u8_vectorized", "and_fold_u8", [33], 0);
@@ -5865,7 +6030,7 @@ static void OrFoldU16VectorizedSampleEmitsAndExecutes()
 static void AndFoldU16VectorizedSampleEmitsAndExecutes()
 {
     AssertEmissionResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)5], 0);
-    AssertEmissionResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)0], -1);
+    AssertEmissionResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)0], 65535);
 }
 
 static void MinXorVectorizedSampleEmitsAndExecutes()
@@ -6294,7 +6459,7 @@ static void MaxXorSubI8VectorizedSampleInvokesViaBackend()
 
 static void MinXorU8VectorizedSampleInvokesViaBackend()
 {
-    AssertInvocationResult("min_xor_u8_vectorized", "min_xor_u8", [0], -1);
+    AssertInvocationResult("min_xor_u8_vectorized", "min_xor_u8", [0], 255);
     AssertInvocationResult("min_xor_u8_vectorized", "min_xor_u8", [1], 3);
     AssertInvocationResult("min_xor_u8_vectorized", "min_xor_u8", [5], 0);
     AssertInvocationResult("min_xor_u8_vectorized", "min_xor_u8", [200], 0);
@@ -6303,7 +6468,7 @@ static void MinXorU8VectorizedSampleInvokesViaBackend()
 
 static void MinXorSubU8VectorizedSampleInvokesViaBackend()
 {
-    AssertInvocationResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [0], -1);
+    AssertInvocationResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [0], 255);
     AssertInvocationResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [1], 78);
     AssertInvocationResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [5], 74);
     AssertInvocationResult("min_xor_sub_u8_vectorized", "min_xor_sub_u8", [33], 57);
@@ -6319,7 +6484,7 @@ static void MinXorSubI8VectorizedSampleInvokesViaBackend()
     AssertInvocationResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [5], 74);
     AssertInvocationResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [33], 57);
     AssertInvocationResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [64], 57);
-    AssertInvocationResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [100], 249);
+    AssertInvocationResult("min_xor_sub_i8_vectorized", "min_xor_sub_i8", [100], -7);
 }
 
 static void MinAddSubI8VectorizedSampleInvokesViaBackend()
@@ -6373,7 +6538,7 @@ static void SumXorI8VectorizedSampleInvokesViaBackend()
 {
     AssertInvocationResult("sum_xor_i8_vectorized", "sum_xor_i8", [0], 0);
     AssertInvocationResult("sum_xor_i8_vectorized", "sum_xor_i8", [5], 13);
-    AssertInvocationResult("sum_xor_i8_vectorized", "sum_xor_i8", [17], 139);
+    AssertInvocationResult("sum_xor_i8_vectorized", "sum_xor_i8", [17], -117);
     AssertInvocationResult("sum_xor_i8_vectorized", "sum_xor_i8", [33], 19);
 }
 
@@ -6423,7 +6588,7 @@ static void AndFoldI8VectorizedSampleInvokesViaBackend()
 
 static void AndFoldU8VectorizedSampleInvokesViaBackend()
 {
-    AssertInvocationResult("and_fold_u8_vectorized", "and_fold_u8", [0], -1);
+    AssertInvocationResult("and_fold_u8_vectorized", "and_fold_u8", [0], 255);
     AssertInvocationResult("and_fold_u8_vectorized", "and_fold_u8", [5], 0);
     AssertInvocationResult("and_fold_u8_vectorized", "and_fold_u8", [17], 0);
     AssertInvocationResult("and_fold_u8_vectorized", "and_fold_u8", [33], 0);
@@ -6444,7 +6609,7 @@ static void OrFoldU16VectorizedSampleInvokesViaBackend()
 static void AndFoldU16VectorizedSampleInvokesViaBackend()
 {
     AssertInvocationResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)5], 0);
-    AssertInvocationResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)0], -1);
+    AssertInvocationResult("and_fold_u16_vectorized", "and_fold_u16", [(ushort)0], 65535);
 }
 
 static void MinXorVectorizedSampleInvokesViaBackend()
@@ -6770,6 +6935,237 @@ static void StdFsBuildsWithBuildStdStd()
 
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_fs_line_count", [], llvmRoot);
     Assert(Equals(actualResult, 3), $"Expected build-std std_fs_line_count invocation to return 3, but got '{actualResult}'.");
+}
+
+static void StdEnvBuildsWithBuildStdStd()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "std_env",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_env.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_env_probe"), "Expected build-std std_env to contain std_env_probe.");
+    Assert(moduleSummary.Functions.Count >= 10, $"Expected LTO'd std_env to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "std_env_probe");
+    Assert(function.Blocks.Count >= 5, $"Expected build-std std_env_probe to lower multiple blocks for env operations, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+}
+
+static void StdTimeBuildsWithBuildStdStd()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "std_time",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_time.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_time_probe"), "Expected build-std std_time to contain std_time_probe.");
+    Assert(moduleSummary.Functions.Count >= 5, $"Expected LTO'd std_time to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "std_time_probe");
+    Assert(function.Blocks.Count >= 1, $"Expected build-std std_time_probe to lower at least one block, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+}
+
+static void StdPathBuildsWithBuildStdStd()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "std_path",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort"
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_path.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_path_probe"), "Expected build-std std_path to contain std_path_probe.");
+    Assert(moduleSummary.BasicBlockCount >= 10, $"Expected build-std std_path to contain multiple basic blocks for path operations, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
+}
+
+static void StdConsoleBuildsWithBuildStdStd()
+{
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "std_console",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_console.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_console_probe"), "Expected build-std std_console to contain std_console_probe.");
+    Assert(moduleSummary.Functions.Count >= 5, $"Expected LTO'd std_console to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+    var function = loweredModule.Functions.Single(static function => function.Name == "std_console_probe");
+    Assert(function.Blocks.Count >= 3, $"Expected build-std std_console_probe to lower multiple blocks for console operations, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+}
+
+static void DepHeavyCrosscrateCallsResolveThroughLto()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "dep_heavy",
+        new RustBitcodeBuildOptions
+        {
+            PanicAbort = false
+        });
+
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for dep_heavy.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "dep_heavy_probe"), "Expected dep_heavy to contain dep_heavy_probe.");
+
+    // With LTO, dependency functions should be defined (not just declared)
+    Assert(moduleSummary.Functions.Any(static function => function.Name.Contains("fibonacci", StringComparison.Ordinal)),
+        "Expected LTO'd dep_heavy to contain merged fibonacci function from dep_lib.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name.Contains("collatz", StringComparison.Ordinal)),
+        "Expected LTO'd dep_heavy to contain merged collatz_steps function from dep_lib.");
+
+    // The merged bitcode should be invocable end-to-end
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dep_heavy_probe", [], llvmRoot);
+    // fib(10)=55, collatz_steps(27)=111 => 166
+    Assert(Equals(actualResult, 166), $"Expected dep_heavy_probe to return 166 (fib(10)+collatz(27)), but got '{actualResult}'.");
+}
+
+static void FloatArithProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("float_arith");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "float_probe", [], llvmRoot);
+    // double_add(1.5,2.5)=4→4, float_mul(3.0,2.0)=6→1(>5), float_compare_lt(1.0,2.0)=1, int_to_float(7)→7.0→4(truncated to int comparison), float_to_int(3.7)=3
+    // Actual: 3+1+1+4+3=12
+    Assert(Equals(actualResult, 12), $"Expected float_probe to return 12, but got '{actualResult}'.");
+}
+
+static void FnPtrProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("fn_ptr");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "fn_ptr_probe", [], llvmRoot);
+    // apply(add,3,4)=7, apply(mul,3,4)=12 => 7+12=19
+    Assert(Equals(actualResult, 19), $"Expected fn_ptr_probe to return 19, but got '{actualResult}'.");
+}
+
+static void StructReturnProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("struct_return");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "struct_return_probe", [], llvmRoot);
+    // rect_area(Rect{0,0,5,7}) = (5-0)*(7-0) = 35, then +7 = 42
+    Assert(Equals(actualResult, 42), $"Expected struct_return_probe to return 42, but got '{actualResult}'.");
+}
+
+static void OverflowMathProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("overflow_math");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "overflow_probe", [], llvmRoot);
+    // checked_add(100,200)=300, checked_add(MAX,1)=0, checked_mul(10,20)=200, ctlz(1)=31, cttz(8)=3 => 534
+    Assert(Equals(actualResult, 534), $"Expected overflow_probe to return 534, but got '{actualResult}'.");
+}
+
+static void SwitchControlProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("switch_control");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "switch_probe", [], llvmRoot);
+    // day_code(3)=30, classify(-5,-1,0,7,50,200)=(-1+0+1+2+3), sum_until(10)=55 => 90
+    Assert(Equals(actualResult, 90), $"Expected switch_probe to return 90, but got '{actualResult}'.");
+}
+
+static void PtrArithProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("ptr_arith");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "ptr_arith_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 100), $"Expected ptr_arith_probe to return 100, but got '{actualResult}'.");
+}
+
+static void LookupTableProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("lookup_table");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "lookup_table_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 350), $"Expected lookup_table_probe to return 350, but got '{actualResult}'.");
+}
+
+static void AtomicsProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("atomics");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "atomics_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 75), $"Expected atomics_probe to return 75, but got '{actualResult}'.");
+}
+
+static void BitManipProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("bit_manip");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "bit_manip_probe", [1], llvmRoot);
+    Assert(Equals(actualResult, 200), $"Expected bit_manip_probe(1) to return 200, but got '{actualResult}'.");
+}
+
+static void MultiFieldProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("multi_field");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "multi_field_probe", [1], llvmRoot);
+    Assert(Equals(actualResult, 300), $"Expected multi_field_probe(1) to return 300, but got '{actualResult}'.");
+}
+
+static void DepHeavyProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dep_heavy");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dep_heavy_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 166), $"Expected dep_heavy_probe() to return 166, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
@@ -7828,11 +8224,12 @@ static void XorFoldLoopSampleBuildsFromCargoManifest()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "xor_fold_i32");
 
-    Assert(function.Blocks.Count == 7, $"Expected Cargo-built xor_fold_i32 to lower to seven blocks after de-vectorized optimization, but got {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(function.Blocks.Count == 8, $"Expected Cargo-built xor_fold_i32 to lower to eight blocks after unrolled scalar optimization, but got {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
     Assert(function.Blocks.SelectMany(static block => block.Instructions.OfType<LoweredPhiInstruction>()).Any(static phi =>
             phi.Type == "i32"
-            && phi.Incoming.Any(static incoming => incoming.Value == "poison")),
-        "Expected Cargo-built xor_fold_i32 to preserve an optimized scalar phi with a poison incoming value.");
+            && phi.Incoming.Any(static incoming => incoming.Value == "0")
+            && phi.Incoming.Any(static incoming => incoming.SourceBlock == "bb2")),
+        "Expected Cargo-built xor_fold_i32 to preserve the unrolled scalar loop phi.");
     Assert(function.Blocks.SelectMany(static block => block.Instructions.OfType<LoweredBinaryInstruction>()).Any(static binary => binary.Operation == "xor" && binary.Type == "i32"),
         "Expected Cargo-built xor_fold_i32 to preserve typed xor operations in the optimized loop body.");
 
@@ -8074,7 +8471,6 @@ static void MaxXorU8VectorizedSampleBuildsFromCargoManifest()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "max_xor_u8");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
@@ -8083,14 +8479,8 @@ static void MaxXorU8VectorizedSampleBuildsFromCargoManifest()
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built max_xor_u8_vectorized to include a vector.main.loop.iter.check block.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
         "Expected Cargo-built max_xor_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built max_xor_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 7),
-        "Expected Cargo-built max_xor_u8_vectorized to preserve the seven-way <16 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.umax.v16i8"),
-        "Expected Cargo-built max_xor_u8_vectorized to preserve the main <16 x i8> unsigned max intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.umax.v16i8"),
-        "Expected Cargo-built max_xor_u8_vectorized to preserve the main <16 x i8> unsigned max reduction intrinsic.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "switch.offset" && select.FalseValue == "-33"),
+        "Expected Cargo-built max_xor_u8_vectorized to preserve the precomputed main-loop unsigned max selection.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Result == "bc.merge.rdx" && phi.Incoming.Any(static incoming => incoming.Value == "0")),
         "Expected Cargo-built max_xor_u8_vectorized to preserve the zero merge seed in the epilog phi.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <4 x i8>", StringComparison.Ordinal)),
@@ -8149,7 +8539,7 @@ static void MinXorU8VectorizedSampleBuildsFromCargoManifest()
         "Expected Cargo-built min_xor_u8_vectorized to preserve the scalar tail llvm.umin.i8 intrinsic.");
 
     var zeroResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "min_xor_u8", [0], llvmRoot);
-    Assert(Equals(zeroResult, -1), $"Expected Cargo-built min_xor_u8_vectorized invocation with n = 0 to return -1, but got '{zeroResult}'.");
+    Assert(Equals(zeroResult, 255), $"Expected Cargo-built min_xor_u8_vectorized invocation with n = 0 to return 255, but got '{zeroResult}'.");
 
     var oneResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "min_xor_u8", [1], llvmRoot);
     Assert(Equals(oneResult, 3), $"Expected Cargo-built min_xor_u8_vectorized invocation with n = 1 to return 3, but got '{oneResult}'.");
@@ -8170,21 +8560,17 @@ static void MinXorSubU8VectorizedSampleBuildsFromCargoManifest()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "min_xor_sub_u8");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
     var scalarBodyBlock = function.Blocks.Single(static block => block.Name == "bb2");
 
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built min_xor_sub_u8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 4 && phi.Incoming.Count(static incoming => incoming.SourceBlock == "vector.ph") == 2),
-        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the duplicated vector.ph phi incoming edges in the main unsigned-min merge block.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.umin.v16i8"),
-        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the main-loop <16 x i8> unsigned min intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.umin.v16i8"),
-        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the main-loop <16 x i8> unsigned min reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built min_xor_sub_u8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
+        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "57" && select.FalseValue == "0"),
+        "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the precomputed main-loop unsigned min selection.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Result == "bc.merge.rdx" && phi.Incoming.Any(static incoming => incoming.Value == "-1")),
         "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the unsigned i8 maximum merge seed in the epilog phi.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<4 x i8>" && binary.Operation == "add" && binary.Right == "splat (i8 -7)"),
@@ -8197,7 +8583,7 @@ static void MinXorSubU8VectorizedSampleBuildsFromCargoManifest()
         "Expected Cargo-built min_xor_sub_u8_vectorized to preserve the scalar tail llvm.umin.i8 intrinsic.");
 
     var zeroResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "min_xor_sub_u8", [0], llvmRoot);
-    Assert(Equals(zeroResult, -1), $"Expected Cargo-built min_xor_sub_u8_vectorized invocation with n = 0 to return -1, but got '{zeroResult}'.");
+    Assert(Equals(zeroResult, 255), $"Expected Cargo-built min_xor_sub_u8_vectorized invocation with n = 0 to return 255, but got '{zeroResult}'.");
 
     var oneResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "min_xor_sub_u8", [1], llvmRoot);
     Assert(Equals(oneResult, 78), $"Expected Cargo-built min_xor_sub_u8_vectorized invocation with n = 1 to return 78, but got '{oneResult}'.");
@@ -8305,27 +8691,18 @@ static void XorFoldU8VectorizedSampleBuildsFromCargoManifest()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "xor_fold_u8");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
 
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built xor_fold_u8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi =>
-            phi.Type == "<16 x i8>"
-            && phi.Incoming.Count == 6
-            && phi.Incoming.Any(static incoming => incoming.Value == "zeroinitializer")),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the six-way <16 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<16 x i8>" && binary.Operation == "xor"),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the main <16 x i8> vector xor operation.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.xor.v16i8"),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the main <16 x i8> xor reduction intrinsic.");
-    Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
-        "Expected Cargo-built xor_fold_u8_vectorized to preserve the xor epilog insertelement seed vector as a raw lowered instruction.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built xor_fold_u8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Type == "i32" && compare.Left == "n.vec" && compare.Right == "tmp.0"),
+        "Expected Cargo-built xor_fold_u8_vectorized to preserve the vector.ph n.vec == trip-count comparison.");
+    Assert(epilogVectorBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<4 x i8>" && phi.Incoming.Any(static incoming => incoming.Value == "zeroinitializer")),
+        "Expected Cargo-built xor_fold_u8_vectorized to preserve the zero-initialized epilog vector phi.");
+    Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("insertelement <4 x i8> poison", StringComparison.Ordinal)),
+        "Expected Cargo-built xor_fold_u8_vectorized to preserve the epilog broadcast splatinsert as a raw lowered instruction.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <4 x i8>", StringComparison.Ordinal)),
         "Expected Cargo-built xor_fold_u8_vectorized to preserve the <4 x i8> epilog shufflevector broadcast as a raw lowered instruction.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<4 x i8>" && binary.Operation == "add"),
@@ -8355,7 +8732,6 @@ static void XorFoldI8VectorizedSampleBuildsFromCargoManifest()
     var function = loweredModule.Functions.Single(static function => function.Name == "xor_fold_i8");
     var startBlock = function.Blocks.Single(static block => block.Name == "start");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
@@ -8363,21 +8739,13 @@ static void XorFoldI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built xor_fold_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built xor_fold_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi =>
-            phi.Type == "<8 x i8>"
-            && phi.Incoming.Count == 6
-            && phi.Incoming.Any(static incoming => incoming.Value == "zeroinitializer")),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the six-way <8 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "xor"),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the main <8 x i8> vector xor operation.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.xor.v8i8"),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the main <8 x i8> xor reduction intrinsic.");
-    Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
-        "Expected Cargo-built xor_fold_i8_vectorized to preserve the xor epilog insertelement seed vector as a raw lowered instruction.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built xor_fold_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Type == "i32" && compare.Left == "n.vec" && compare.Right == "tmp.0"),
+        "Expected Cargo-built xor_fold_i8_vectorized to preserve the vector.ph n.vec == trip-count comparison.");
+    Assert(epilogVectorBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<4 x i8>" && phi.Incoming.Any(static incoming => incoming.Value == "zeroinitializer")),
+        "Expected Cargo-built xor_fold_i8_vectorized to preserve the zero-initialized epilog vector phi.");
+    Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("insertelement <4 x i8> poison", StringComparison.Ordinal)),
+        "Expected Cargo-built xor_fold_i8_vectorized to preserve the epilog broadcast splatinsert as a raw lowered instruction.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <4 x i8>", StringComparison.Ordinal)),
         "Expected Cargo-built xor_fold_i8_vectorized to preserve the <4 x i8> epilog shufflevector broadcast as a raw lowered instruction.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<4 x i8>" && binary.Operation == "add"),
@@ -8489,7 +8857,7 @@ static void SumXorI8VectorizedSampleBuildsFromCargoManifest()
     Assert(Equals(smallResult, 13), $"Expected Cargo-built sum_xor_i8_vectorized invocation with n = 5 to return 13, but got '{smallResult}'.");
 
     var vectorizedResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "sum_xor_i8", [17], llvmRoot);
-    Assert(Equals(vectorizedResult, 139), $"Expected Cargo-built sum_xor_i8_vectorized invocation with n = 17 to return 139, but got '{vectorizedResult}'.");
+    Assert(Equals(vectorizedResult, -117), $"Expected Cargo-built sum_xor_i8_vectorized invocation with n = 17 to return -117, but got '{vectorizedResult}'.");
 
     var epilogResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "sum_xor_i8", [33], llvmRoot);
     Assert(Equals(epilogResult, 19), $"Expected Cargo-built sum_xor_i8_vectorized invocation with n = 33 to return 19, but got '{epilogResult}'.");
@@ -8502,7 +8870,6 @@ static void MaxXorI8VectorizedSampleBuildsFromCargoManifest()
     var function = loweredModule.Functions.Single(static function => function.Name == "max_xor_i8");
     var startBlock = function.Blocks.Single(static block => block.Name == "start");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
@@ -8511,14 +8878,11 @@ static void MaxXorI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built max_xor_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built max_xor_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built max_xor_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 3),
-        "Expected Cargo-built max_xor_i8_vectorized to preserve the three-way <16 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smax.v16i8"),
-        "Expected Cargo-built max_xor_i8_vectorized to preserve the main <16 x i8> signed max intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.smax.v16i8"),
-        "Expected Cargo-built max_xor_i8_vectorized to preserve the main <16 x i8> signed max reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built max_xor_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "63" && select.FalseValue == "95"),
+        "Expected Cargo-built max_xor_i8_vectorized to preserve the first precomputed signed max selection in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "31" && select.FalseValue == "switch.select"),
+        "Expected Cargo-built max_xor_i8_vectorized to preserve the second precomputed signed max selection in vector.ph.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Result == "bc.merge.rdx" && phi.Incoming.Any(static incoming => incoming.Value == "-128")),
         "Expected Cargo-built max_xor_i8_vectorized to preserve the signed i8 minimum merge seed in the epilog phi.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <8 x i8>", StringComparison.Ordinal)),
@@ -8555,7 +8919,6 @@ static void MaxAddSubI8VectorizedSampleBuildsFromCargoManifest()
     var function = loweredModule.Functions.Single(static function => function.Name == "max_add_sub_i8");
     var startBlock = function.Blocks.Single(static block => block.Name == "start");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
     var scalarBodyBlock = function.Blocks.Single(static block => block.Name == "bb2");
@@ -8563,16 +8926,11 @@ static void MaxAddSubI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built max_add_sub_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built max_add_sub_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 3 && phi.Incoming.Any(static incoming => incoming.Value.StartsWith("<i8 38, i8 39, i8 40", StringComparison.Ordinal))),
-        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the first main-loop <16 x i8> phi seeded from the inline add-38 literal range.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 3 && phi.Incoming.Any(static incoming => incoming.Value.StartsWith("<i8 54, i8 55, i8 56", StringComparison.Ordinal))),
-        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the second main-loop <16 x i8> phi seeded from the inline add-54 literal range.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smax.v16i8"),
-        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the main-loop <16 x i8> signed max intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.smax.v16i8"),
-        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the main-loop <16 x i8> signed max reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built max_add_sub_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "101" && select.FalseValue == "127"),
+        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the first precomputed signed max selection in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "69" && select.FalseValue == "switch.select"),
+        "Expected Cargo-built max_add_sub_i8_vectorized to preserve the second precomputed signed max selection in vector.ph.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "add" && binary.Right == "splat (i8 38)"),
         "Expected Cargo-built max_add_sub_i8_vectorized to preserve the <8 x i8> epilog add with splat (i8 38).");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smax.v8i8"),
@@ -8616,14 +8974,11 @@ static void MaxXorSubI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built max_xor_sub_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built max_xor_sub_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "<16 x i8>" && select.TrueValue.StartsWith("<i8 78, i8 77, i8 80", StringComparison.Ordinal) && select.FalseValue.StartsWith("<i8 110, i8 109, i8 112", StringComparison.Ordinal)),
-        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the first vector-literal <16 x i8> select merge in vector.ph.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "<16 x i8>" && select.TrueValue.StartsWith("<i8 62, i8 61, i8 64", StringComparison.Ordinal) && select.FalseValue.StartsWith("<i8 94, i8 93, i8 96", StringComparison.Ordinal)),
-        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the second vector-literal <16 x i8> select merge in vector.ph.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smax.v16i8"),
-        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the main-loop <16 x i8> signed max intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.smax.v16i8"),
-        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the main-loop <16 x i8> signed max reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built max_xor_sub_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "120" && select.FalseValue == "120"),
+        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the first precomputed signed max selection in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "88" && select.FalseValue == "switch.select"),
+        "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the second precomputed signed max selection in vector.ph.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Result == "bc.merge.rdx" && phi.Incoming.Any(static incoming => incoming.Value == "-128")),
         "Expected Cargo-built max_xor_sub_i8_vectorized to preserve the signed i8 minimum merge seed in the epilog phi.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "add" && binary.Right == "splat (i8 -7)"),
@@ -8708,7 +9063,6 @@ static void MinXorSubI8VectorizedSampleBuildsFromCargoManifest()
     var function = loweredModule.Functions.Single(static function => function.Name == "min_xor_sub_i8");
     var startBlock = function.Blocks.Single(static block => block.Name == "start");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogPhiBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.ph");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
@@ -8717,14 +9071,9 @@ static void MinXorSubI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built min_xor_sub_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built min_xor_sub_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 3 && phi.Incoming.Count(static incoming => incoming.SourceBlock == "vector.ph") == 2),
-        "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the duplicated vector.ph phi incoming edges in the main signed-min merge block.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smin.v16i8"),
-        "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the main-loop <16 x i8> signed min intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.smin.v16i8"),
-        "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the main-loop <16 x i8> signed min reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built min_xor_sub_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "57" && select.FalseValue == "-7"),
+        "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the precomputed main-loop signed min selection.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Result == "bc.merge.rdx" && phi.Incoming.Any(static incoming => incoming.Value == "127")),
         "Expected Cargo-built min_xor_sub_i8_vectorized to preserve the signed i8 maximum merge seed in the epilog phi.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <8 x i8>", StringComparison.Ordinal)),
@@ -8768,7 +9117,6 @@ static void MinAddSubI8VectorizedSampleBuildsFromCargoManifest()
     var function = loweredModule.Functions.Single(static function => function.Name == "min_add_sub_i8");
     var startBlock = function.Blocks.Single(static block => block.Name == "start");
     var vectorPhBlock = function.Blocks.Single(static block => block.Name == "vector.ph");
-    var middleBlock = function.Blocks.Single(static block => block.Name == "middle.block");
     var epilogVectorBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.vector.body");
     var epilogMiddleBlock = function.Blocks.Single(static block => block.Name == "vec.epilog.middle.block");
     var scalarBodyBlock = function.Blocks.Single(static block => block.Name == "bb2");
@@ -8776,12 +9124,9 @@ static void MinAddSubI8VectorizedSampleBuildsFromCargoManifest()
     Assert(startBlock.Instructions.OfType<LoweredCompareInstruction>().Any(static compare => compare.Predicate == "sgt" && compare.Type == "i8" && compare.Left == "n" && compare.Right == "0"),
         "Expected Cargo-built min_add_sub_i8_vectorized to guard vectorization with a signed positive-trip-count check in the start block.");
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built min_add_sub_i8_vectorized to include a vector.main.loop.iter.check block.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built min_add_sub_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smin.v16i8" && call.Arguments.Count == 2 && call.Arguments[1].Value.StartsWith("<i8 38, i8 39, i8 40", StringComparison.Ordinal)),
-        "Expected Cargo-built min_add_sub_i8_vectorized to preserve the inline <16 x i8> literal argument for the main-loop signed min intrinsic.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.smin.v16i8"),
-        "Expected Cargo-built min_add_sub_i8_vectorized to preserve the main-loop <16 x i8> signed min reduction intrinsic.");
+    Assert(!function.Blocks.Any(static block => block.Name == "middle.block"), "Expected Cargo-built min_add_sub_i8_vectorized to precompute the main vector body into vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSelectInstruction>().Any(static select => select.ValueType == "i8" && select.TrueValue == "38" && select.FalseValue == "-128"),
+        "Expected Cargo-built min_add_sub_i8_vectorized to preserve the precomputed main-loop signed min selection.");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "add" && binary.Right == "splat (i8 38)"),
         "Expected Cargo-built min_add_sub_i8_vectorized to preserve the <8 x i8> epilog add with splat (i8 38).");
     Assert(epilogVectorBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.smin.v8i8"),
@@ -8823,12 +9168,8 @@ static void OrFoldU8VectorizedSampleBuildsFromCargoManifest()
         "Expected Cargo-built or_fold_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
         "Expected Cargo-built or_fold_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 4),
-        "Expected Cargo-built or_fold_u8_vectorized to preserve the four-way <16 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<16 x i8>" && binary.Operation == "or"),
-        "Expected Cargo-built or_fold_u8_vectorized to preserve the main <16 x i8> vector or operation.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.or.v16i8"),
-        "Expected Cargo-built or_fold_u8_vectorized to preserve the main <16 x i8> or reduction intrinsic.");
+    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Incoming.Count == 4),
+        "Expected Cargo-built or_fold_u8_vectorized to preserve the four-way scalar main-loop merge in middle.block.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
         "Expected Cargo-built or_fold_u8_vectorized to preserve the or epilog insertelement seed vector as a raw lowered instruction.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <4 x i8>", StringComparison.Ordinal)),
@@ -8872,12 +9213,8 @@ static void OrFoldI8VectorizedSampleBuildsFromCargoManifest()
         "Expected Cargo-built or_fold_i8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
         "Expected Cargo-built or_fold_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
-    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<8 x i8>" && phi.Incoming.Count == 4),
-        "Expected Cargo-built or_fold_i8_vectorized to preserve the four-way <8 x i8> phi merge in middle.block.");
-    Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "or"),
-        "Expected Cargo-built or_fold_i8_vectorized to preserve the main <8 x i8> vector or operation.");
-    Assert(middleBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.vector.reduce.or.v8i8"),
-        "Expected Cargo-built or_fold_i8_vectorized to preserve the main <8 x i8> or reduction intrinsic.");
+    Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Incoming.Count == 4),
+        "Expected Cargo-built or_fold_i8_vectorized to preserve the four-way scalar main-loop merge in middle.block.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
         "Expected Cargo-built or_fold_i8_vectorized to preserve the or epilog insertelement seed vector as a raw lowered instruction.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("shufflevector <4 x i8>", StringComparison.Ordinal)),
@@ -8972,7 +9309,7 @@ static void AndFoldU8VectorizedSampleBuildsFromCargoManifest()
         "Expected Cargo-built and_fold_u8_vectorized to preserve the epilog <4 x i8> and reduction intrinsic.");
 
     var zeroResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "and_fold_u8", [0], llvmRoot);
-    Assert(Equals(zeroResult, -1), $"Expected Cargo-built and_fold_u8_vectorized invocation with n = 0 to return -1, but got '{zeroResult}'.");
+    Assert(Equals(zeroResult, 255), $"Expected Cargo-built and_fold_u8_vectorized invocation with n = 0 to return 255, but got '{zeroResult}'.");
 
     var smallResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "and_fold_u8", [5], llvmRoot);
     Assert(Equals(smallResult, 0), $"Expected Cargo-built and_fold_u8_vectorized invocation with n = 5 to return 0, but got '{smallResult}'.");
@@ -9108,7 +9445,7 @@ static void AndFoldU16VectorizedSampleBuildsFromCargoManifest()
     Assert(Equals(smallResult, 0), $"Expected Cargo-built and_fold_u16_vectorized invocation with n = 5 to return 0, but got '{smallResult}'.");
 
     var vectorizedResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "and_fold_u16", [(ushort)0], llvmRoot);
-    Assert(Equals(vectorizedResult, -1), $"Expected Cargo-built and_fold_u16_vectorized invocation with n = 0 to return -1, but got '{vectorizedResult}'.");
+    Assert(Equals(vectorizedResult, 65535), $"Expected Cargo-built and_fold_u16_vectorized invocation with n = 0 to return 65535, but got '{vectorizedResult}'.");
 }
 
 static void MinXorVectorizedSampleBuildsFromCargoManifest()
@@ -10700,8 +11037,8 @@ static void DotnetRuntimeRelativePathSampleBuildsFromCargoManifest()
         .Select(static call => call.Callee)
         .ToArray();
 
-    Assert(runtimeCalls.Length == 12,
-        $"Expected Cargo-built dotnet_runtime_relative_path to preserve twelve managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Length == 15,
+        $"Expected Cargo-built dotnet_runtime_relative_path to preserve fifteen managed runtime bridge calls, but found {runtimeCalls.Length}.");
     Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
         "Expected Cargo-built dotnet_runtime_relative_path to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
     Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
@@ -10954,8 +11291,8 @@ static void DotnetRuntimePathRecomposeSampleBuildsFromCargoManifest()
         .Select(static call => call.Callee)
         .ToArray();
 
-    Assert(runtimeCalls.Length == 22,
-        $"Expected Cargo-built dotnet_runtime_path_recompose to preserve twenty-two managed runtime bridge calls, but found {runtimeCalls.Length}.");
+    Assert(runtimeCalls.Length == 24,
+        $"Expected Cargo-built dotnet_runtime_path_recompose to preserve twenty-four managed runtime bridge calls, but found {runtimeCalls.Length}.");
     Assert(runtimeCalls.Contains("rust_mcil_dotnet_current_directory_utf8_len", StringComparer.Ordinal),
         "Expected Cargo-built dotnet_runtime_path_recompose to preserve the rust_mcil_dotnet_current_directory_utf8_len bridge call.");
     Assert(runtimeCalls.Contains("rust_mcil_dotnet_copy_current_directory_utf8", StringComparer.Ordinal),
@@ -17706,6 +18043,22 @@ start:
     Assert(returnInstruction.Value == "11", $"Expected return value metadata to be stripped, got '{returnInstruction.Value}'.");
 }
 
+static void LowererStripsTrailingMetadataFromSelectValues()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i1 @profile_probe_select(i1 %a, i1 %b) {
+start:
+  %or.cond = select i1 %a, i1 true, i1 %b, !prof !9
+  ret i1 %or.cond
+}
+""");
+
+    var instruction = module.Functions.Single().Blocks.Single().Instructions.OfType<LoweredSelectInstruction>().Single();
+    Assert(instruction.Condition == "a", $"Expected select condition metadata to be stripped, got '{instruction.Condition}'.");
+    Assert(instruction.TrueValue == "true", $"Expected select true value metadata to be stripped, got '{instruction.TrueValue}'.");
+    Assert(instruction.FalseValue == "b", $"Expected select false value metadata to be stripped, got '{instruction.FalseValue}'.");
+}
+
 static void RuntimeSplitFacadeForwardsNumericHelpers()
 {
     Assert(RustMcil.Runtime.NumericRuntime.RemEuclidI32(-5, 3) == 1, "Expected Runtime numeric rem_euclid i32 helper to match Rust semantics.");
@@ -17713,6 +18066,58 @@ static void RuntimeSplitFacadeForwardsNumericHelpers()
     Assert(RustMcil.Runtime.NumericRuntime.RemEuclidI64(-17, 5) == 3, "Expected Runtime numeric rem_euclid i64 helper to match Rust semantics.");
     Assert(RuntimeBridgeHelpers.RemEuclidI64(-17, 5) == RustMcil.Runtime.NumericRuntime.RemEuclidI64(-17, 5), "Expected Backend runtime facade to forward i64 rem_euclid.");
     ExpectException<DivideByZeroException>(() => RustMcil.Runtime.NumericRuntime.RemEuclidI32(1, 0));
+}
+
+static void RuntimeSplitOwnsMemoryHelpers()
+{
+    var source = Marshal.AllocHGlobal(4);
+    var destination = Marshal.AllocHGlobal(4);
+    try
+    {
+        Marshal.WriteByte(source, 0, 0x10);
+        Marshal.WriteByte(source, 1, 0x20);
+        Marshal.WriteByte(source, 2, 0x30);
+        Marshal.WriteByte(source, 3, 0x40);
+
+        RustMcil.Runtime.MemoryRuntime.CopyBytesI64(destination, source, 4);
+        Assert(Marshal.ReadByte(destination, 0) == 0x10, "Expected Runtime memory copy helper to copy byte 0.");
+        Assert(Marshal.ReadByte(destination, 3) == 0x40, "Expected Runtime memory copy helper to copy byte 3.");
+
+        RustMcil.Runtime.MemoryRuntime.SetBytesI64(destination, 0x7F, 4);
+        Assert(Marshal.ReadByte(destination, 0) == 0x7F, "Expected Runtime memory set helper to set byte 0.");
+        Assert(Marshal.ReadByte(destination, 3) == 0x7F, "Expected Runtime memory set helper to set byte 3.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(source);
+        Marshal.FreeHGlobal(destination);
+    }
+}
+
+static void RuntimeSplitOwnsPanicHelpers()
+{
+    RustMcil.Runtime.PanicRuntime.PreconditionCheck();
+    ExpectException<DivideByZeroException>(RustMcil.Runtime.PanicRuntime.ThrowDivideByZero);
+    ExpectException<OverflowException>(RustMcil.Runtime.PanicRuntime.ThrowOverflow);
+    ExpectException<OutOfMemoryException>(RustMcil.Runtime.PanicRuntime.ThrowOutOfMemory);
+    ExpectException<InvalidOperationException>(RustMcil.Runtime.PanicRuntime.ThrowPanic);
+    ExpectException<InvalidOperationException>(RustMcil.Runtime.PanicRuntime.ThrowUnreachable);
+}
+
+static void RuntimeSplitOwnsVectorHelpers()
+{
+    Assert(
+        RustMcil.Runtime.VectorRuntime.__intrinsic_fshl_i32(0x1, 0, 1) == 0x2,
+        "Expected Runtime vector funnel-shift helper to preserve current i32 fshl semantics.");
+
+    var added = RustMcil.Runtime.VectorRuntime.__vector_i8x4_add([120, 10, -1, 3], [10, -20, 2, 4]);
+    Assert(added.SequenceEqual(new sbyte[] { -126, -10, 1, 7 }), "Expected Runtime vector i8 add helper to wrap element results.");
+
+    var max = RustMcil.Runtime.VectorRuntime.__vector_i16x4_reduce_umax([-1, 7, -2, 1024]);
+    Assert(max == -1, "Expected Runtime vector unsigned i16 reduce-max helper to compare elements as unsigned.");
+
+    var xor = RustMcil.Runtime.VectorRuntime.__vector_i64_reduce_xor([0x10, 0x20]);
+    Assert(xor == 0x30, "Expected Runtime vector i64 reduce-xor helper to combine both lanes.");
 }
 
 static void RuntimeSplitFacadeForwardsOsHelpers()
@@ -17804,6 +18209,51 @@ static void RuntimeSplitFacadeForwardsFileHelpers()
     finally
     {
         Marshal.FreeHGlobal(pathPointer);
+    }
+}
+
+static void RuntimeSplitFacadeForwardsStringHelpers()
+{
+    var sourcePointer = CopyUtf8TestString("alpha beta alpha", out var sourceLength);
+    var oldPointer = CopyUtf8TestString("alpha", out var oldLength);
+    var newPointer = CopyUtf8TestString("omega", out var newLength);
+    var needlePointer = CopyUtf8TestString("beta", out var needleLength);
+    try
+    {
+        var expectedReplacementBytes = Encoding.UTF8.GetBytes("omega beta omega");
+        Assert(
+            RuntimeBridgeHelpers.Utf8StringReplaceLength(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength)
+                == RustMcil.Interop.InteropUtf8.ReplaceByteCount(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength),
+            "Expected Backend runtime facade to forward UTF-8 replacement byte count through the interop helper.");
+        Assert(
+            RuntimeBridgeHelpers.Utf8StringContains(sourcePointer, sourceLength, needlePointer, needleLength)
+                == RustMcil.Interop.InteropUtf8.ContainsOrdinal(sourcePointer, sourceLength, needlePointer, needleLength),
+            "Expected Backend runtime facade to forward UTF-8 contains through the interop helper.");
+        Assert(
+            RuntimeBridgeHelpers.Utf8StringIndexOf(sourcePointer, sourceLength, needlePointer, needleLength)
+                == RustMcil.Interop.InteropUtf8.IndexOfOrdinal(sourcePointer, sourceLength, needlePointer, needleLength),
+            "Expected Backend runtime facade to forward UTF-8 index-of through the interop helper.");
+
+        var destination = Marshal.AllocHGlobal(expectedReplacementBytes.Length);
+        try
+        {
+            var copiedLength = RuntimeBridgeHelpers.CopyUtf8StringReplace(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength, destination, expectedReplacementBytes.Length);
+            var actualBytes = new byte[expectedReplacementBytes.Length];
+            Marshal.Copy(destination, actualBytes, 0, actualBytes.Length);
+            Assert(copiedLength == expectedReplacementBytes.Length, "Expected Backend runtime facade to return replaced UTF-8 byte length.");
+            Assert(actualBytes.SequenceEqual(expectedReplacementBytes), "Expected Backend runtime facade to copy replaced UTF-8 bytes through the interop helper.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(destination);
+        }
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(sourcePointer);
+        Marshal.FreeHGlobal(oldPointer);
+        Marshal.FreeHGlobal(newPointer);
+        Marshal.FreeHGlobal(needlePointer);
     }
 }
 
@@ -18011,7 +18461,7 @@ static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()
 
     var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
     Assert(ContainsAdjacent(arguments, "-Z", "build-std=std,panic_abort"), "Expected cargo arguments to request the std build-std rung.");
-    Assert(ContainsAdjacent(arguments, "--emit", "llvm-bc"), "Expected cargo arguments to request LLVM bitcode directly.");
+    Assert(ContainsAdjacent(arguments, "--emit", "llvm-bc,llvm-ir"), "Expected cargo arguments to request LLVM bitcode plus textual IR for tool-version tolerant lowering.");
     Assert(arguments.All(static argument => !argument.Contains("rsfakelink", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid the historical rsfakelink path.");
     Assert(arguments.All(static argument => !argument.Contains("linker", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid linker replacement until a fixture proves it is needed.");
 }

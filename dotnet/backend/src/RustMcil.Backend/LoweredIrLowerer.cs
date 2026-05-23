@@ -22,6 +22,7 @@ public static partial class LoweredIrLowerer
         var globals = new List<LoweredGlobal>();
         string? currentFunctionName = null;
         string? currentReturnType = null;
+        string? currentReturnExtension = null;
         List<LoweredParameter>? currentParameters = null;
         List<LoweredBlock>? currentBlocks = null;
         LoweredBlockBuilder? currentBlock = null;
@@ -52,13 +53,14 @@ public static partial class LoweredIrLowerer
                     continue;
                 }
 
-                if (!TryParseFunctionHeader(line, out var functionName, out var returnType, out var parameters))
+                if (!TryParseFunctionHeader(line, out var functionName, out var returnType, out var returnExtension, out var parameters))
                 {
                     continue;
                 }
 
                 currentFunctionName = functionName;
                 currentReturnType = returnType;
+                currentReturnExtension = returnExtension;
                 currentParameters = parameters;
                 currentBlocks = [];
                 currentBlock = null;
@@ -72,9 +74,10 @@ public static partial class LoweredIrLowerer
                     currentBlocks!.Add(currentBlock.ToBlock());
                 }
 
-                functions.Add(new LoweredFunction(currentFunctionName, currentReturnType!, currentParameters!, currentBlocks!));
+                functions.Add(new LoweredFunction(currentFunctionName, currentReturnType!, currentParameters!, currentBlocks!, currentReturnExtension));
                 currentFunctionName = null;
                 currentReturnType = null;
+                currentReturnExtension = null;
                 currentParameters = null;
                 currentBlocks = null;
                 currentBlock = null;
@@ -93,7 +96,7 @@ public static partial class LoweredIrLowerer
                 continue;
             }
 
-            currentBlock ??= new LoweredBlockBuilder("entry");
+            currentBlock ??= new LoweredBlockBuilder(currentParameters!.Count.ToString());
             currentBlock.Add(ParseInstruction(line));
         }
 
@@ -212,6 +215,16 @@ public static partial class LoweredIrLowerer
                 NormalizeType(signExtendMatch.Groups["fromType"].Value),
                 NormalizeType(signExtendMatch.Groups["toType"].Value),
                 NormalizeValue(signExtendMatch.Groups["value"].Value));
+        }
+
+        var floatConvertMatch = FloatConvertInstructionRegex().Match(line);
+        if (floatConvertMatch.Success)
+        {
+            return new LoweredTruncateInstruction(
+                NormalizeResultName(floatConvertMatch.Groups["result"].Value),
+                NormalizeType(floatConvertMatch.Groups["fromType"].Value),
+                NormalizeType(floatConvertMatch.Groups["toType"].Value),
+                NormalizeValue(floatConvertMatch.Groups["value"].Value));
         }
 
         if (TryParseSelectInstruction(line, out var selectInstruction))
@@ -482,16 +495,16 @@ public static partial class LoweredIrLowerer
 
         instruction = new LoweredSelectInstruction(
             NormalizeResultName(resultText),
-            NormalizeValue(condition),
+            NormalizeValue(StripTrailingInstructionMetadata(condition)),
             NormalizeType(valueType),
-            NormalizeValue(trueValue),
-            NormalizeValue(falseValue));
+            NormalizeValue(StripTrailingInstructionMetadata(trueValue)),
+            NormalizeValue(StripTrailingInstructionMetadata(falseValue)));
         return true;
     }
 
     private static bool IsSupportedBinaryOperation(string operation)
     {
-        return operation is "add" or "sub" or "mul" or "sdiv" or "udiv" or "srem" or "urem" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr";
+        return operation is "add" or "sub" or "mul" or "sdiv" or "udiv" or "srem" or "urem" or "fadd" or "fsub" or "fmul" or "fdiv" or "frem" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr";
     }
 
     private static bool TryParseCallInstruction(string line, out LoweredCallInstruction instruction)
@@ -581,10 +594,11 @@ public static partial class LoweredIrLowerer
         return !string.IsNullOrWhiteSpace(callee);
     }
 
-    private static bool TryParseFunctionHeader(string line, out string functionName, out string returnType, out List<LoweredParameter> parameters)
+    private static bool TryParseFunctionHeader(string line, out string functionName, out string returnType, out string? returnExtension, out List<LoweredParameter> parameters)
     {
         functionName = string.Empty;
         returnType = string.Empty;
+        returnExtension = null;
         parameters = [];
 
         const string marker = "define ";
@@ -614,6 +628,7 @@ public static partial class LoweredIrLowerer
 
         functionName = NormalizeFunctionName(rawName);
         returnType = NormalizeType(signaturePrefix);
+        returnExtension = FindIntegerExtensionAttribute(signaturePrefix);
         parameters = ParseParameters(line[(openParenIndex + 1)..closeParenIndex]);
         return true;
     }
@@ -626,6 +641,8 @@ public static partial class LoweredIrLowerer
             || TryReadDelimitedType(trimmed, '{', '}', out type, out remainder)
             || TryReadDelimitedType(trimmed, '[', ']', out type, out remainder)
             || TryReadKeywordType(trimmed, "ptr", out type, out remainder)
+            || TryReadKeywordType(trimmed, "float", out type, out remainder)
+            || TryReadKeywordType(trimmed, "double", out type, out remainder)
             || TryReadIntegerType(trimmed, out type, out remainder)
             || TryReadKeywordType(trimmed, "void", out type, out remainder))
         {
@@ -987,6 +1004,7 @@ public static partial class LoweredIrLowerer
             return null;
         }
 
+        var extension = FindIntegerExtensionAttribute(remainder);
         remainder = StripLeadingArgumentAttributes(remainder);
         if (string.IsNullOrWhiteSpace(remainder))
         {
@@ -1001,7 +1019,8 @@ public static partial class LoweredIrLowerer
 
         return new LoweredParameter(
             NormalizeValue(parameterName),
-            NormalizeType(type));
+            NormalizeType(type),
+            extension);
     }
 
     private static LoweredArgument? ParseArgument(string argument)
@@ -1022,6 +1041,30 @@ public static partial class LoweredIrLowerer
         return new LoweredArgument(
             NormalizeType(type),
             NormalizeValue(remainder));
+    }
+
+    private static string? FindIntegerExtensionAttribute(string text)
+    {
+        var remaining = text.TrimStart();
+
+        while (!string.IsNullOrEmpty(remaining))
+        {
+            var token = ReadTopLevelToken(remaining);
+            if (string.IsNullOrEmpty(token))
+            {
+                return null;
+            }
+
+            if (string.Equals(token, "signext", StringComparison.Ordinal)
+                || string.Equals(token, "zeroext", StringComparison.Ordinal))
+            {
+                return token;
+            }
+
+            remaining = remaining[token.Length..].TrimStart();
+        }
+
+        return null;
     }
 
     private static string StripLeadingArgumentAttributes(string text)
@@ -1252,16 +1295,16 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex FunctionAliasRegex();
 
-    [GeneratedRegex("<[^>]+>|\\{[^}]+\\}|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|void", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("<[^>]+>|\\{[^}]+\\}|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|float|double|void", RegexOptions.CultureInvariant)]
     private static partial Regex CoreTypeRegex();
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantByteArrayGlobalRegex();
 
-    [GeneratedRegex("^(?<name>\"[^\"]+\"|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^(?<name>\"[^\"]+\"|[0-9]+|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
     private static partial Regex BasicBlockRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?<op>add|sub|mul|sdiv|udiv|srem|urem|and|or|xor|shl|lshr|ashr)(?:\\s+[^\\s]+)*\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?<op>add|sub|mul|sdiv|udiv|srem|urem|fadd|fsub|fmul|fdiv|frem|and|or|xor|shl|lshr|ashr)(?:\\s+[^\\s]+)*\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex BinaryInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*trunc(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
@@ -1272,6 +1315,9 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SignExtendInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex FloatConvertInstructionRegex();
 
     [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*select\\s+i1\\s+(?<condition>[^,]+),\\s+(?<valueType><[^>]+>|[^\\s]+)\\s+(?<trueValue>[^,]+),\\s+(?:<[^>]+>|[^\\s]+)\\s+(?<falseValue>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SelectInstructionRegex();
@@ -1285,7 +1331,7 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^ret\\s+(?<type>\\{[^}]+\\}|<[^>]+>|[^\\s]+)\\s+(?<value>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ReturnInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*icmp(?:\\s+samesign)?\\s+(?<predicate>[^\\s]+)\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:icmp(?:\\s+samesign)?|fcmp)\\s+(?<predicate>[^\\s]+)\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex CompareInstructionRegex();
 
     [GeneratedRegex("^br\\s+i1\\s+(?<condition>[^,]+),\\s+label\\s+%(?<trueLabel>[^,\\s]+),\\s+label\\s+%(?<falseLabel>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
@@ -1300,13 +1346,13 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>[^,]+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GlobalElementLoadInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+(?<source>[^,]+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?:atomic\\s+)?(?<type>[^,]+),\\s+ptr\\s+(?<source>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex LoadInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*alloca\\s+(?<type>[^,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex AllocaInstructionRegex();
 
-    [GeneratedRegex("^store\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^,]+),\\s+ptr\\s+(?<destination>[^,]+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^store\\s+(?:atomic\\s+)?(?<type><[^>]+>|[^\\s]+)\\s+(?<value><[^>]+>|[^,]+),\\s+ptr\\s+(?<destination>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex StoreInstructionRegex();
 
     private sealed class LoweredBlockBuilder(string name)

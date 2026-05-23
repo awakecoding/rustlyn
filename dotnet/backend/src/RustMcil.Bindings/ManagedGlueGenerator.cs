@@ -104,6 +104,13 @@ public static class ManagedGlueGenerator
                 builder.AppendLine("            return 0;");
                 break;
 
+            case ManagedGlueReleaseExceptionResult releaseException:
+                builder.Append("            ManagedInteropRuntime.ReleaseException(");
+                builder.Append(releaseException.HandleExpression);
+                builder.AppendLine(");");
+                builder.AppendLine("            return 0;");
+                break;
+
             default:
                 throw new NotSupportedException($"Managed glue result '{result.GetType().Name}' is not supported.");
         }

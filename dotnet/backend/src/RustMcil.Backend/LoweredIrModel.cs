@@ -12,11 +12,13 @@ public sealed record LoweredFunction(
     string Name,
     string ReturnType,
     IReadOnlyList<LoweredParameter> Parameters,
-    IReadOnlyList<LoweredBlock> Blocks);
+    IReadOnlyList<LoweredBlock> Blocks,
+    string? ReturnExtension = null);
 
 public sealed record LoweredParameter(
     string Name,
-    string Type);
+    string Type,
+    string? Extension = null);
 
 public sealed record LoweredBlock(
     string Name,

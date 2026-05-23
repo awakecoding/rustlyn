@@ -265,7 +265,7 @@ internal static class ManagedGlueCode
             return $"{TypeName(elementType)}[]";
         }
 
-        if (type.Namespace is "System" or "System.IO")
+        if (type.Namespace is "System" or "System.IO" or "RustMcil.Interop")
         {
             return type.Name;
         }

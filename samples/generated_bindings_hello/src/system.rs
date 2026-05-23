@@ -53,6 +53,21 @@ unsafe extern "C" {
         exception_out: *mut i32,
     ) -> i32;
     fn rust_mcil_bindgen_system_object_release(handle: i32) -> i32;
+    fn rust_mcil_bindgen_system_exception_release(handle: i32) -> i32;
+    fn rust_mcil_bindgen_system_exception_get_type_name_utf8_len(handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_exception_get_type_name_utf8(
+        handle: i32,
+        destination_ptr: *mut u8,
+        destination_capacity: i64,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rust_mcil_bindgen_system_exception_get_message_utf8_len(handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_exception_get_message_utf8(
+        handle: i32,
+        destination_ptr: *mut u8,
+        destination_capacity: i64,
+        exception_out: *mut i32,
+    ) -> i32;
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

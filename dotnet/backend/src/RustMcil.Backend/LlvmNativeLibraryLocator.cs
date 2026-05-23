@@ -1,6 +1,6 @@
 namespace RustMcil.Backend;
 
-internal static class LlvmNativeLibraryLocator
+public static class LlvmNativeLibraryLocator
 {
     private const string LlvmRootEnvironmentVariable = "RUSTMCIL_LLVM_ROOT";
     private static readonly Lock Sync = new();

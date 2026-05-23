@@ -55,4 +55,61 @@ public static class InteropUtf8
 
         return bytes.Length;
     }
+
+    public static int ReplaceByteCount(
+        IntPtr sourcePointer,
+        long sourceLength,
+        IntPtr oldPointer,
+        long oldLength,
+        IntPtr newPointer,
+        long newLength)
+    {
+        return GetByteCount(ReplaceOrdinal(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength));
+    }
+
+    public static int CopyReplace(
+        IntPtr sourcePointer,
+        long sourceLength,
+        IntPtr oldPointer,
+        long oldLength,
+        IntPtr newPointer,
+        long newLength,
+        IntPtr destinationPointer,
+        long destinationCapacity)
+    {
+        return CopyString(
+            ReplaceOrdinal(sourcePointer, sourceLength, oldPointer, oldLength, newPointer, newLength),
+            destinationPointer,
+            destinationCapacity);
+    }
+
+    public static int ContainsOrdinal(IntPtr haystackPointer, long haystackLength, IntPtr needlePointer, long needleLength)
+    {
+        return ReadString(haystackPointer, haystackLength).Contains(
+            ReadString(needlePointer, needleLength),
+            StringComparison.Ordinal)
+            ? 1
+            : 0;
+    }
+
+    public static int IndexOfOrdinal(IntPtr haystackPointer, long haystackLength, IntPtr needlePointer, long needleLength)
+    {
+        return ReadString(haystackPointer, haystackLength).IndexOf(
+            ReadString(needlePointer, needleLength),
+            StringComparison.Ordinal);
+    }
+
+    private static string ReplaceOrdinal(
+        IntPtr sourcePointer,
+        long sourceLength,
+        IntPtr oldPointer,
+        long oldLength,
+        IntPtr newPointer,
+        long newLength)
+    {
+        return ReadString(sourcePointer, sourceLength).Replace(
+            ReadString(oldPointer, oldLength),
+            ReadString(newPointer, newLength),
+            StringComparison.Ordinal);
+    }
 }
