@@ -480,13 +480,25 @@ public static class LoweredAssemblyEmitter
         // gepElementLocal maps a GEP result name -> the local index of the element slot
         var gepElementLocal = new Dictionary<string, int>(StringComparer.Ordinal);
         var allocaElementLocals = new Dictionary<(string alloca, int index), int>();
+        // gepBaseOffset tracks each GEP result -> (root alloca, combined byte offset)
+        var gepBaseOffset = new Dictionary<string, (string root, int offset)>(StringComparer.Ordinal);
         foreach (var block in function.Blocks)
         {
             foreach (var instr in block.Instructions)
             {
                 if (instr is LoweredGetElementPointerInstruction gep && gep.IndexVariable is null)
                 {
-                    var key = (gep.Base, gep.Index);
+                    // Resolve GEP-on-GEP chains: if base is itself a GEP result, combine offsets
+                    string rootBase = gep.Base;
+                    int combinedOffset = gep.Index;
+                    if (gepBaseOffset.TryGetValue(gep.Base, out var parentGep))
+                    {
+                        rootBase = parentGep.root;
+                        combinedOffset = parentGep.offset + gep.Index;
+                    }
+                    gepBaseOffset[gep.Result] = (rootBase, combinedOffset);
+
+                    var key = (rootBase, combinedOffset);
                     if (!allocaElementLocals.TryGetValue(key, out var elemLocalIdx))
                     {
                         elemLocalIdx = localCount++;
