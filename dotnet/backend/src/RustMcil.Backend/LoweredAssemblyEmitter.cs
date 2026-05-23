@@ -250,7 +250,7 @@ public static class LoweredAssemblyEmitter
         {
             var fieldSigBlob = EncodeFieldSignature(metadataBuilder, global);
             var fieldHandle = metadataBuilder.AddFieldDefinition(
-                attributes: FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly,
+                attributes: FieldAttributes.Public | FieldAttributes.Static,
                 name: metadataBuilder.GetOrAddString(global.Name),
                 signature: fieldSigBlob);
             fieldHandles[global.Name] = fieldHandle;
@@ -293,6 +293,24 @@ public static class LoweredAssemblyEmitter
                 sretFunctions.Add(fn.Name);
         }
 
+        // Pre-scan for globals mutated by store/atomicrmw/cmpxchg (skip constant folding for these)
+        var mutatedGlobals = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var fn in functions)
+        {
+            foreach (var block in fn.Blocks)
+            {
+                foreach (var instr in block.Instructions)
+                {
+                    if (instr is LoweredStoreInstruction st && fieldHandles.ContainsKey(st.Destination))
+                        mutatedGlobals.Add(st.Destination);
+                    else if (instr is LoweredAtomicRmwInstruction rmw && fieldHandles.ContainsKey(rmw.Pointer))
+                        mutatedGlobals.Add(rmw.Pointer);
+                    else if (instr is LoweredCmpxchgInstruction cx && fieldHandles.ContainsKey(cx.Pointer))
+                        mutatedGlobals.Add(cx.Pointer);
+                }
+            }
+        }
+
         // Emit method bodies first (need all handle mappings available for intra-module calls)
         var bodyOffsets = new int[totalMethods];
         var skippedFunctions = new List<(string Name, string Reason)>();
@@ -300,7 +318,7 @@ public static class LoweredAssemblyEmitter
         {
             try
             {
-                bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions);
+                bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions, mutatedGlobals);
             }
             catch (NotSupportedException ex)
             {
@@ -468,7 +486,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlySet<string> sretFunctions)
+    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlySet<string> sretFunctions, IReadOnlySet<string> mutatedGlobals)
     {
         var isSret = sretFunctions.Contains(function.Name);
         var codeBuilder = new BlobBuilder();
@@ -666,7 +684,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, sretFunctions, isSret);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, sretFunctions, isSret, mutatedGlobals);
             }
         }
 
@@ -698,7 +716,8 @@ public static class LoweredAssemblyEmitter
         IReadOnlySet<string> ptrParams,
         IReadOnlySet<string> allocaNames,
         IReadOnlySet<string> sretFunctions,
-        bool isSret)
+        bool isSret,
+        IReadOnlySet<string> mutatedGlobals)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -1039,6 +1058,13 @@ public static class LoweredAssemblyEmitter
                     EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                     EmitIndirectStore(encoder, store.Type);
                 }
+                else if (fieldHandles.TryGetValue(store.Destination, out var storeFieldHandle))
+                {
+                    // Store to a global static field: value; stsfld
+                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    encoder.OpCode(ILOpCode.Stsfld);
+                    encoder.Token(storeFieldHandle);
+                }
                 break;
 
             case LoweredLoadInstruction load:
@@ -1071,7 +1097,7 @@ public static class LoweredAssemblyEmitter
                     }
                     else if (fieldHandles.TryGetValue(load.Source, out var fieldHandle))
                     {
-                        if (TryResolveConstantGlobalElement(load.Source, load.Type, globalMap, out var constantValue))
+                        if (!mutatedGlobals.Contains(load.Source) && TryResolveConstantGlobalElement(load.Source, load.Type, globalMap, out var constantValue))
                         {
                             EmitConstantValue(encoder, load.Type, constantValue);
                         }
@@ -1236,7 +1262,7 @@ public static class LoweredAssemblyEmitter
                 {
                     // atomicrmw op ptr %ptr, i32 %val → old value
                     // Single-threaded semantics: old = *ptr; *ptr = op(old, val); result = old
-                    EmitLoadValue(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
                     EmitIndirectLoad(encoder, rmw.ValueType); // old = *ptr
                     encoder.OpCode(ILOpCode.Dup); // keep old for result
                     EmitLoadValue(encoder, rmw.Value, paramIndices, localIndices, fieldHandles, methodHandles);
@@ -1264,7 +1290,7 @@ public static class LoweredAssemblyEmitter
                         encoder.StoreLocal(rmwTempLocal); // save new_value temporarily (reuse result local)
                         // Stack: [old]
                         // Now store new_value back to *ptr
-                        EmitLoadValue(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.LoadLocal(rmwTempLocal); // load new_value
                         EmitIndirectStore(encoder, rmw.ValueType);
                         // Stack: [old] — result is old value
@@ -1286,7 +1312,7 @@ public static class LoweredAssemblyEmitter
                     if (multiValueLocals.TryGetValue(cx.Result, out var cxLocals) && cxLocals.Length >= 2)
                     {
                         // Load old value
-                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectLoad(encoder, cx.ValueType);
                         encoder.StoreLocal(cxLocals[0]); // store old value
 
@@ -1300,7 +1326,7 @@ public static class LoweredAssemblyEmitter
                         encoder.LoadLocal(cxLocals[1]);
                         var cxSkipLabel = encoder.DefineLabel();
                         encoder.Branch(ILOpCode.Brfalse, cxSkipLabel);
-                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitLoadValue(encoder, cx.NewValue, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectStore(encoder, cx.ValueType);
                         encoder.MarkLabel(cxSkipLabel);
@@ -1309,7 +1335,7 @@ public static class LoweredAssemblyEmitter
                     else if (localIndices.TryGetValue(cx.Result, out var cxResIdx))
                     {
                         // Pack into i64: low 32 = old value, high 32 = success flag
-                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectLoad(encoder, cx.ValueType);
                         encoder.OpCode(ILOpCode.Dup);
                         // Compare old == cmp
@@ -1357,16 +1383,50 @@ public static class LoweredAssemblyEmitter
             return;
         }
 
+        // Collect all phi copies for this edge
+        var copies = new List<(string Value, string Result)>();
         foreach (var phi in phiInstructions)
         {
             var incoming = phi.Incoming.FirstOrDefault(i => string.Equals(i.SourceBlock, sourceBlock, StringComparison.Ordinal));
-            if (incoming is null)
-            {
-                continue;
-            }
+            if (incoming is null) continue;
+            copies.Add((incoming.Value, phi.Result));
+        }
 
-            EmitLoadValue(encoder, incoming.Value, paramIndices, localIndices, fieldHandles);
-            encoder.StoreLocal(localIndices[phi.Result]);
+        if (copies.Count <= 1)
+        {
+            // No conflict possible with a single copy
+            foreach (var (value, result) in copies)
+            {
+                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+                encoder.StoreLocal(localIndices[result]);
+            }
+            return;
+        }
+
+        // Check for conflicts: a phi source that is also a phi destination
+        var destinations = new HashSet<string>(copies.Select(c => c.Result), StringComparer.Ordinal);
+        var hasConflict = copies.Any(c => destinations.Contains(c.Value));
+
+        if (!hasConflict)
+        {
+            // Safe to emit in order
+            foreach (var (value, result) in copies)
+            {
+                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+                encoder.StoreLocal(localIndices[result]);
+            }
+        }
+        else
+        {
+            // Load all values first (push onto stack), then store in reverse
+            foreach (var (value, _) in copies)
+            {
+                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+            }
+            for (var i = copies.Count - 1; i >= 0; i--)
+            {
+                encoder.StoreLocal(localIndices[copies[i].Result]);
+            }
         }
     }
 
@@ -1452,6 +1512,22 @@ public static class LoweredAssemblyEmitter
         else
         {
             EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+        }
+    }
+
+    /// <summary>
+    /// Load the address of a value (for atomic pointer operands). Globals get ldsflda; locals/params emit their value directly (already pointers).
+    /// </summary>
+    private static void EmitLoadAddress(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    {
+        if (fieldHandles.TryGetValue(value, out var fh))
+        {
+            encoder.OpCode(ILOpCode.Ldsflda);
+            encoder.Token(fh);
+        }
+        else
+        {
+            EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles, methodHandles);
         }
     }
 
@@ -2282,7 +2358,11 @@ public static class LoweredAssemblyEmitter
         var percentIdx = value.IndexOf('%');
         if (percentIdx >= 0)
         {
-            return value[(percentIdx + 1)..];
+            var name = value[(percentIdx + 1)..];
+            // LLVM unnamed registers %0, %1, etc. correspond to lowered "tmp.N" names
+            if (int.TryParse(name, out _))
+                return "tmp." + name;
+            return name;
         }
         return value;
     }
