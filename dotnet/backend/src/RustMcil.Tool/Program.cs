@@ -71,21 +71,6 @@ if (TryParseLowerArguments(args, out var lowerArtifactPath, out var lowerLlvmRoo
     }
 }
 
-if (TryParseEmitSrmArguments(args, out var emitSrmArtifactPath, out var emitSrmOutputPath, out var emitSrmLlvmRoot))
-{
-    try
-    {
-        LoweredAssemblyEmitterSrm.EmitBitcodeSrm(emitSrmArtifactPath, emitSrmOutputPath, emitSrmLlvmRoot);
-        Console.WriteLine(Path.GetFullPath(emitSrmOutputPath));
-        return 0;
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(ex.Message);
-        return 1;
-    }
-}
-
 if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot))
 {
     try
@@ -336,41 +321,6 @@ static bool TryParseEmitArguments(string[] args, out string artifactPath, out st
     llvmRoot = null;
 
     if (args.Length < 4 || !string.Equals(args[0], "emit", StringComparison.OrdinalIgnoreCase))
-    {
-        return false;
-    }
-
-    artifactPath = args[1];
-
-    for (var index = 2; index < args.Length; index++)
-    {
-        if (string.Equals(args[index], "--llvm-root", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
-        {
-            llvmRoot = args[index + 1];
-            index++;
-            continue;
-        }
-
-        if (string.Equals(args[index], "--out", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
-        {
-            outputPath = args[index + 1];
-            index++;
-            continue;
-        }
-
-        return false;
-    }
-
-    return !string.IsNullOrWhiteSpace(outputPath);
-}
-
-static bool TryParseEmitSrmArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot)
-{
-    artifactPath = string.Empty;
-    outputPath = string.Empty;
-    llvmRoot = null;
-
-    if (args.Length < 4 || !string.Equals(args[0], "emit-srm", StringComparison.OrdinalIgnoreCase))
     {
         return false;
     }
