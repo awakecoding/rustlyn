@@ -68,6 +68,27 @@ public static partial class LoweredIrLowerer
                     }
                 }
 
+                var zeroInitArrayMatch = ZeroInitByteArrayGlobalRegex().Match(line);
+                if (zeroInitArrayMatch.Success)
+                {
+                    var size = int.Parse(zeroInitArrayMatch.Groups["size"].Value);
+                    globals.Add(new LoweredGlobal(
+                        zeroInitArrayMatch.Groups["name"].Value,
+                        new byte[size]));
+                    continue;
+                }
+
+                var zeroInitScalarMatch = ZeroInitScalarGlobalRegex().Match(line);
+                if (zeroInitScalarMatch.Success)
+                {
+                    var bits = int.Parse(zeroInitScalarMatch.Groups["bits"].Value);
+                    var byteSize = (bits + 7) / 8;
+                    globals.Add(new LoweredGlobal(
+                        zeroInitScalarMatch.Groups["name"].Value,
+                        new byte[byteSize]));
+                    continue;
+                }
+
                 if (!TryParseFunctionHeader(line, out var functionName, out var returnType, out var returnExtension, out var parameters))
                 {
                     continue;
@@ -230,6 +251,23 @@ public static partial class LoweredIrLowerer
                 NormalizeType(signExtendMatch.Groups["fromType"].Value),
                 NormalizeType(signExtendMatch.Groups["toType"].Value),
                 NormalizeValue(signExtendMatch.Groups["value"].Value));
+        }
+
+        var ptrToIntMatch = PtrToIntInstructionRegex().Match(line);
+        if (ptrToIntMatch.Success)
+        {
+            return new LoweredPtrToIntInstruction(
+                NormalizeResultName(ptrToIntMatch.Groups["result"].Value),
+                NormalizeType(ptrToIntMatch.Groups["toType"].Value),
+                NormalizeValue(ptrToIntMatch.Groups["value"].Value));
+        }
+
+        var intToPtrMatch = IntToPtrInstructionRegex().Match(line);
+        if (intToPtrMatch.Success)
+        {
+            return new LoweredIntToPtrInstruction(
+                NormalizeResultName(intToPtrMatch.Groups["result"].Value),
+                NormalizeValue(intToPtrMatch.Groups["value"].Value));
         }
 
         var floatConvertMatch = FloatConvertInstructionRegex().Match(line);
@@ -941,6 +979,8 @@ public static partial class LoweredIrLowerer
             LoweredTruncateInstruction trunc => $"{trunc.Result} = trunc {trunc.FromType} {trunc.Value} to {trunc.ToType}",
             LoweredZeroExtendInstruction zext => $"{zext.Result} = zext {zext.FromType} {zext.Value} to {zext.ToType}",
             LoweredSignExtendInstruction sext => $"{sext.Result} = sext {sext.FromType} {sext.Value} to {sext.ToType}",
+            LoweredPtrToIntInstruction p2i => $"{p2i.Result} = ptrtoint ptr {p2i.Value} to {p2i.ToType}",
+            LoweredIntToPtrInstruction i2p => $"{i2p.Result} = inttoptr to ptr {i2p.Value}",
             LoweredSelectInstruction select => $"{select.Result} = select i1 {select.Condition}, {select.ValueType} {select.TrueValue}, {select.ValueType} {select.FalseValue}",
             LoweredPhiInstruction phi => $"{phi.Result} = phi {phi.Type} {FormatPhiIncoming(phi.Incoming)}",
             LoweredUnreachableInstruction => "unreachable",
@@ -1402,6 +1442,12 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[\\d+\\s+x\\s+(?<elementType>i\\d+)\\]\\s+\\[(?<values>[^\\]]+)\\](?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantIntegerArrayGlobalRegex();
 
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+zeroinitializer(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ZeroInitByteArrayGlobalRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+(?<type>i(?<bits>\\d+))\\s+(?:0|zeroinitializer)(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ZeroInitScalarGlobalRegex();
+
     [GeneratedRegex("^(?<name>\"[^\"]+\"|[0-9]+|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
     private static partial Regex BasicBlockRegex();
 
@@ -1416,6 +1462,12 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SignExtendInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*ptrtoint\\s+ptr\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType>[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex PtrToIntInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*inttoptr\\s+(?:[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+ptr$", RegexOptions.CultureInvariant)]
+    private static partial Regex IntToPtrInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
     private static partial Regex FloatConvertInstructionRegex();

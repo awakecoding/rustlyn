@@ -752,6 +752,22 @@ public static class LoweredAssemblyEmitter
                 encoder.StoreLocal(localIndices[sext.Result]);
                 break;
 
+            case LoweredPtrToIntInstruction p2i:
+                EmitLoadValue(encoder, p2i.Value, paramIndices, localIndices, fieldHandles);
+                encoder.OpCode(p2i.ToType switch
+                {
+                    "i64" => ILOpCode.Conv_u8,
+                    _ => ILOpCode.Conv_u
+                });
+                encoder.StoreLocal(localIndices[p2i.Result]);
+                break;
+
+            case LoweredIntToPtrInstruction i2p:
+                EmitLoadValue(encoder, i2p.Value, paramIndices, localIndices, fieldHandles);
+                encoder.OpCode(ILOpCode.Conv_u);
+                encoder.StoreLocal(localIndices[i2p.Result]);
+                break;
+
             case LoweredCallInstruction call:
                 {
                     var callArgs = call.Arguments;
@@ -782,8 +798,8 @@ public static class LoweredAssemblyEmitter
                         || call.Callee.StartsWith("llvm.memmove.", StringComparison.Ordinal))
                     {
                         // cpblk: dest, src, size (drop isvolatile arg)
-                        EmitLoadValue(encoder, call.Arguments[0].Value, paramIndices, localIndices, fieldHandles, methodHandles);
-                        EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[1], paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.OpCode(ILOpCode.Conv_u);
                         encoder.OpCode(ILOpCode.Cpblk);
@@ -792,7 +808,7 @@ public static class LoweredAssemblyEmitter
                     if (call.Callee.StartsWith("llvm.memset.", StringComparison.Ordinal))
                     {
                         // initblk: dest, val, size (drop isvolatile arg)
-                        EmitLoadValue(encoder, call.Arguments[0].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.OpCode(ILOpCode.Conv_u);
@@ -806,7 +822,19 @@ public static class LoweredAssemblyEmitter
 
                     for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
                     {
-                        EmitLoadValue(encoder, callArgs[argIdx].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        var arg = callArgs[argIdx];
+                        // When a global field is passed as ptr, we need its address (ldsflda), not its value
+                        if (string.Equals(arg.Type, "ptr", StringComparison.Ordinal)
+                            && fieldHandles.TryGetValue(arg.Value, out var argFieldHandle))
+                        {
+                            encoder.OpCode(ILOpCode.Ldsflda);
+                            encoder.Token(argFieldHandle);
+                            encoder.OpCode(ILOpCode.Conv_u); // managed ptr → native int (IntPtr)
+                        }
+                        else
+                        {
+                            EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        }
                     }
 
                     if (isIndirectCall)
@@ -1267,6 +1295,24 @@ public static class LoweredAssemblyEmitter
 
         // Fallback: push 0
         encoder.LoadConstantI4(0);
+    }
+
+    /// <summary>
+    /// Load a pointer-typed argument value. For fields, emits ldsflda; for others, delegates to EmitLoadValue.
+    /// </summary>
+    private static void EmitLoadPtrValue(InstructionEncoder encoder, LoweredArgument arg, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    {
+        if (string.Equals(arg.Type, "ptr", StringComparison.Ordinal)
+            && fieldHandles.TryGetValue(arg.Value, out var fh))
+        {
+            encoder.OpCode(ILOpCode.Ldsflda);
+            encoder.Token(fh);
+            encoder.OpCode(ILOpCode.Conv_u); // managed ptr → native int (IntPtr)
+        }
+        else
+        {
+            EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+        }
     }
 
     private static void EmitCompare(InstructionEncoder encoder, string predicate)
@@ -1773,11 +1819,15 @@ public static class LoweredAssemblyEmitter
         LoweredTruncateInstruction t => t.Result,
         LoweredZeroExtendInstruction z => z.Result,
         LoweredSignExtendInstruction s => s.Result,
+        LoweredPtrToIntInstruction p => p.Result,
+        LoweredIntToPtrInstruction i => i.Result,
         LoweredLoadInstruction l => l.Result,
         LoweredAllocaInstruction a => a.Result,
         LoweredGetElementPointerInstruction g => g.Result,
         LoweredExtractValueInstruction e => e.Result,
         LoweredInsertValueInstruction iv => iv.Result,
+        LoweredAtomicRmwInstruction rmw => rmw.Result,
+        LoweredCmpxchgInstruction cx => cx.Result,
         _ => null
     };
 
@@ -1786,6 +1836,8 @@ public static class LoweredAssemblyEmitter
         LoweredGetElementPointerInstruction => "ptr",
         LoweredZeroExtendInstruction z => z.ToType,
         LoweredSignExtendInstruction s => s.ToType,
+        LoweredPtrToIntInstruction p => p.ToType,
+        LoweredIntToPtrInstruction => "ptr",
         LoweredLoadInstruction l => l.Type,
         LoweredAllocaInstruction => "ptr",
         LoweredPhiInstruction p => InferPhiType(p.Type),

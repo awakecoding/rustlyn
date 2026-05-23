@@ -92,6 +92,15 @@ public sealed record LoweredSignExtendInstruction(
     string ToType,
     string Value) : LoweredInstruction;
 
+public sealed record LoweredPtrToIntInstruction(
+    string Result,
+    string ToType,
+    string Value) : LoweredInstruction;
+
+public sealed record LoweredIntToPtrInstruction(
+    string Result,
+    string Value) : LoweredInstruction;
+
 public sealed record LoweredSelectInstruction(
     string Result,
     string Condition,
