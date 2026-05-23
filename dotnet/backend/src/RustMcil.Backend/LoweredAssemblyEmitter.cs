@@ -540,6 +540,10 @@ public static class LoweredAssemblyEmitter
                     if (locallocAllocas.Contains(rootBase))
                         continue;
 
+                    // Only apply SROA to GEPs whose root is an alloca (not params or other locals)
+                    if (!allocaNames.Contains(rootBase))
+                        continue;
+
                     var key = (rootBase, combinedOffset);
                     if (!allocaElementLocals.TryGetValue(key, out var elemLocalIdx))
                     {
@@ -622,7 +626,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames);
             }
         }
 
@@ -651,7 +655,8 @@ public static class LoweredAssemblyEmitter
         IReadOnlyDictionary<string, int> gepElementLocal,
         IReadOnlyDictionary<string, int[]> multiValueLocals,
         IReadOnlySet<string> locallocAllocas,
-        IReadOnlySet<string> ptrParams)
+        IReadOnlySet<string> ptrParams,
+        IReadOnlySet<string> allocaNames)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -916,9 +921,10 @@ public static class LoweredAssemblyEmitter
                 }
                 else if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
                 {
-                    if (locallocAllocas.Contains(store.Destination) || IsGepResult(store.Destination, instructions, instrIdx))
+                    // Indirect store needed unless destination is a simple scalar-replaced alloca
+                    if (!allocaNames.Contains(store.Destination) || locallocAllocas.Contains(store.Destination) || IsGepResult(store.Destination, instructions, instrIdx))
                     {
-                        // Store through a pointer (localloc'd alloca or non-SROA GEP result): ldloc ptr; value; stind
+                        // Store through a pointer (localloc'd alloca, non-SROA GEP, or computed ptr): ldloc ptr; value; stind
                         encoder.LoadLocal(storeLocalIdx);
                         EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectStore(encoder, store.Type);
@@ -949,7 +955,8 @@ public static class LoweredAssemblyEmitter
                     else if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
                     {
                         encoder.LoadLocal(loadLocalIdx);
-                        if (locallocAllocas.Contains(load.Source) || IsGepResult(load.Source, instructions, instrIdx))
+                        // Indirect load needed unless source is a simple scalar-replaced alloca
+                        if (!allocaNames.Contains(load.Source) || locallocAllocas.Contains(load.Source) || IsGepResult(load.Source, instructions, instrIdx))
                         {
                             EmitIndirectLoad(encoder, load.Type);
                         }
@@ -2027,6 +2034,10 @@ public static class LoweredAssemblyEmitter
             else
                 encoder.OpCode(ILOpCode.Ldind_i8);
         }
+        else if (string.Equals(type, "ptr", StringComparison.Ordinal))
+        {
+            encoder.OpCode(ILOpCode.Ldind_i);
+        }
         else if (string.Equals(type, "float", StringComparison.Ordinal))
         {
             encoder.OpCode(ILOpCode.Ldind_r4);
@@ -2053,6 +2064,10 @@ public static class LoweredAssemblyEmitter
                 encoder.OpCode(ILOpCode.Stind_i4);
             else
                 encoder.OpCode(ILOpCode.Stind_i8);
+        }
+        else if (string.Equals(type, "ptr", StringComparison.Ordinal))
+        {
+            encoder.OpCode(ILOpCode.Stind_i);
         }
         else if (string.Equals(type, "float", StringComparison.Ordinal))
         {
