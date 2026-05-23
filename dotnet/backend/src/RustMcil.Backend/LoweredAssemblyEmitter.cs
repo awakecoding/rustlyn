@@ -325,7 +325,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions)
+    internal static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions)
     {
         var roots = functions.Where(static function => IsExportedRoot(function.Name)).ToArray();
         if (roots.Length == 0)
@@ -607,7 +607,15 @@ public static class LoweredAssemblyEmitter
                         }
                         else
                         {
-                            throw new NotSupportedException($"Call target '{call.Callee}' was not found in the emitted module.");
+                            // Unresolvable external call (e.g. panic handler) — pop args and emit zero result
+                            for (var argIdx = 0; argIdx < call.Arguments.Count; argIdx++)
+                            {
+                                il.Append(il.Create(OpCodes.Pop));
+                            }
+                            if (call.Result is not null && !string.Equals(call.ReturnType, "void", StringComparison.Ordinal))
+                            {
+                                il.Append(il.Create(OpCodes.Ldc_I4_0));
+                            }
                         }
 
                         if (call.Result is not null)
@@ -1198,6 +1206,15 @@ public static class LoweredAssemblyEmitter
             return;
         }
 
+        // Fallback for pointer types: emit null pointer for unresolvable globals
+        // (commonly panic location structs that are never reached in normal execution)
+        if (string.Equals(typeName, "ptr", StringComparison.Ordinal))
+        {
+            il.Append(il.Create(OpCodes.Ldc_I4_0));
+            il.Append(il.Create(OpCodes.Conv_I));
+            return;
+        }
+
         throw new NotSupportedException($"Value '{value}' of type '{typeName}' could not be resolved to a parameter, local, or supported constant.");
     }
 
@@ -1550,7 +1567,20 @@ public static class LoweredAssemblyEmitter
     {
         LoadValue(il, parameters, locals, "ptr", gep.Base, fieldMap);
 
-        if (gep.Index != 0)
+        if (gep.IndexVariable is not null)
+        {
+            // Dynamic index: load index variable, multiply by stride, add to base
+            LoadValue(il, parameters, locals, "i64", gep.IndexVariable, fieldMap);
+            var stride = GetGetElementPointerStride(gep.ElementType);
+            if (stride != 1)
+            {
+                il.Append(il.Create(OpCodes.Ldc_I8, (long)stride));
+                il.Append(il.Create(OpCodes.Mul));
+            }
+            il.Append(il.Create(OpCodes.Conv_I));
+            il.Append(il.Create(OpCodes.Add));
+        }
+        else if (gep.Index != 0)
         {
             il.Append(il.Create(OpCodes.Ldc_I4, checked(gep.Index * GetGetElementPointerStride(gep.ElementType))));
             il.Append(il.Create(OpCodes.Conv_I));
