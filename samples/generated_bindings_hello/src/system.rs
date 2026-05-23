@@ -26,6 +26,7 @@ unsafe extern "C" {
     fn rust_mcil_bindgen_system_io_path_has_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string(path_handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_io_path_is_path_rooted_string(path_handle: i32, exception_out: *mut i32) -> i32;
+    fn rust_mcil_bindgen_system_mathf_sqrt_f32(value: f32, exception_out: *mut i32) -> f32;
     fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_len(handle: i32, exception_out: *mut i32) -> i32;
     fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;
@@ -130,6 +131,22 @@ pub mod environment {
 
         Exception::from_handle(exception_handle)?;
         Ok(ManagedStringArray::from_handle(object_handle))
+    }
+}
+
+pub mod mathf {
+    use crate::system::Exception;
+
+    pub fn sqrt(value: f32) -> Result<f32, Exception> {
+        let mut exception_handle = 0;
+        let value = unsafe {
+            super::rust_mcil_bindgen_system_mathf_sqrt_f32(
+                value,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(value)
     }
 }
 

@@ -89,6 +89,18 @@ public static class ManagedGlueGenerator
                 builder.AppendLine(";");
                 break;
 
+            case ManagedGlueFloatResult single:
+                builder.Append("            return ");
+                builder.Append(single.ValueExpression.ToCode());
+                builder.AppendLine(";");
+                break;
+
+            case ManagedGlueDoubleResult doublePrecision:
+                builder.Append("            return ");
+                builder.Append(doublePrecision.ValueExpression.ToCode());
+                builder.AppendLine(";");
+                break;
+
             case ManagedGlueBooleanAsIntResult boolean:
                 builder.Append("            return ");
                 builder.Append(boolean.ValueExpression.ToCode());

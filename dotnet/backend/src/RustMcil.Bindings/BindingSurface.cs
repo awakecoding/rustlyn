@@ -31,6 +31,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Path.HasExtension(string)", typeof(Path), nameof(Path.HasExtension), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.IsPathFullyQualified(string)", typeof(Path), nameof(Path.IsPathFullyQualified), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.IsPathRooted(string)", typeof(Path), nameof(Path.IsPathRooted), [typeof(string)]),
+                ManagedApiRequirement.Method("System.MathF.Sqrt(float)", typeof(MathF), nameof(MathF.Sqrt), [typeof(float)]),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
@@ -106,6 +107,9 @@ public sealed record BindingSurface(
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_io_path_is_path_rooted_string",
                     ["fn rust_mcil_bindgen_system_io_path_is_path_rooted_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
+                new RustExternBinding(
+                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
+                    ["fn rust_mcil_bindgen_system_mathf_sqrt_f32(value: f32, exception_out: *mut i32) -> f32;"]),
                 new RustExternBinding(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
@@ -317,6 +321,12 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         StaticMethod(typeof(Path), nameof(Path.IsPathRooted), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 Glue(
+                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
+                    "BindgenSystemMathfSqrtF32",
+                    [F32("value"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Float(
+                        StaticMethod(typeof(MathF), nameof(MathF.Sqrt), [typeof(float)], [ManagedGlueExpression.Parameter("value")])))),
+                Glue(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     "BindgenSystemStringFromUtf8",
                     [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
@@ -410,6 +420,13 @@ public sealed record BindingSurface(
                         StaticMethod(typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyExceptionMessageUtf8), [typeof(int), typeof(IntPtr), typeof(long)], [ManagedGlueExpression.Parameter("exceptionHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")]))))
             ],
             [
+                new RustWrapperMethod(
+                    RustWrapperContainer.MathF,
+                    "pub fn sqrt(value: f32) -> Result<f32, Exception>",
+                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
+                    ["value"],
+                    "value",
+                    RustWrapperResult.Scalar("f32")),
                 new RustWrapperMethod(
                     RustWrapperContainer.IoPath,
                     "pub fn change_extension(path: &ManagedString, extension: &ManagedString) -> Result<ManagedString, Exception>",
@@ -520,6 +537,9 @@ public sealed record BindingSurface(
     private static ManagedGlueParameter I64(string name)
         => new("long", name);
 
+    private static ManagedGlueParameter F32(string name)
+        => new("float", name);
+
     private static ManagedGlueParameter Pointer(string name)
         => new("IntPtr", name);
 
@@ -607,6 +627,7 @@ public sealed record RustWrapperMethod(
 
 public enum RustWrapperContainer
 {
+    MathF,
     IoPath
 }
 
@@ -617,12 +638,16 @@ public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustT
 
     public static RustWrapperResult ObjectHandle(string rustType)
         => new(RustWrapperResultKind.ObjectHandle, rustType);
+
+    public static RustWrapperResult Scalar(string rustType)
+        => new(RustWrapperResultKind.Scalar, rustType);
 }
 
 public enum RustWrapperResultKind
 {
     BooleanAsInt,
-    ObjectHandle
+    ObjectHandle,
+    Scalar
 }
 
 public sealed record ManagedGlueBinding(
@@ -631,7 +656,12 @@ public sealed record ManagedGlueBinding(
     IReadOnlyList<ManagedGlueParameter> Parameters,
     ManagedGlueOperation Operation)
 {
-    public string ReturnType => "int";
+    public string ReturnType => Operation.Result switch
+    {
+        ManagedGlueFloatResult => "float",
+        ManagedGlueDoubleResult => "double",
+        _ => "int"
+    };
 
     public void Validate()
     {
@@ -685,6 +715,12 @@ public abstract record ManagedGlueResult
     public static ManagedGlueResult Int(ManagedGlueExpression valueExpression)
         => new ManagedGlueIntResult(valueExpression);
 
+    public static ManagedGlueResult Float(ManagedGlueExpression valueExpression)
+        => new ManagedGlueFloatResult(valueExpression);
+
+    public static ManagedGlueResult Double(ManagedGlueExpression valueExpression)
+        => new ManagedGlueDoubleResult(valueExpression);
+
     public static ManagedGlueResult BooleanAsInt(ManagedGlueExpression valueExpression)
         => new ManagedGlueBooleanAsIntResult(valueExpression);
 
@@ -708,6 +744,18 @@ public sealed record ManagedGlueObjectHandleResult(ManagedGlueExpression ValueEx
 }
 
 public sealed record ManagedGlueIntResult(ManagedGlueExpression ValueExpression) : ManagedGlueResult
+{
+    public override void Validate()
+        => ValueExpression.Validate();
+}
+
+public sealed record ManagedGlueFloatResult(ManagedGlueExpression ValueExpression) : ManagedGlueResult
+{
+    public override void Validate()
+        => ValueExpression.Validate();
+}
+
+public sealed record ManagedGlueDoubleResult(ManagedGlueExpression ValueExpression) : ManagedGlueResult
 {
     public override void Validate()
         => ValueExpression.Validate();

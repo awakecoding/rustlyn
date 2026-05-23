@@ -243,6 +243,16 @@ internal static class ManagedGlueCode
             return "long";
         }
 
+        if (type == typeof(float))
+        {
+            return "float";
+        }
+
+        if (type == typeof(double))
+        {
+            return "double";
+        }
+
         if (type == typeof(bool))
         {
             return "bool";

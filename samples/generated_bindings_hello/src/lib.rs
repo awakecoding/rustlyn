@@ -484,6 +484,19 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -56;
     }
 
+    let sqrt_score = match system::mathf::sqrt(81.0) {
+        Ok(value) => value,
+        Err(_) => {
+            let _ = current_directory.release();
+            return -65;
+        }
+    };
+
+    if sqrt_score < 8.99 || sqrt_score > 9.01 {
+        let _ = current_directory.release();
+        return -66;
+    }
+
     if current_directory.release().is_err() {
         return -4;
     }

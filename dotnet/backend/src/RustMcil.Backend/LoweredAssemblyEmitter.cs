@@ -28,7 +28,7 @@ public static class LoweredAssemblyEmitter
         Directory.CreateDirectory(Path.GetDirectoryName(outputFullPath) ?? throw new InvalidOperationException("Output directory could not be determined."));
 
         var assemblyName = Path.GetFileNameWithoutExtension(outputFullPath);
-        var emittedFunctions = GetReachableFunctions(loweredModule.Functions);
+        var emittedFunctions = GetReachableFunctions(loweredModule.Functions, loweredModule.Globals);
         var consoleEntrypoint = TrySelectConsoleEntrypoint(emittedFunctions);
         var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions);
 
@@ -41,7 +41,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    internal static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions)
+    internal static IReadOnlyList<LoweredFunction> GetReachableFunctions(IReadOnlyList<LoweredFunction> functions, IReadOnlyList<LoweredGlobal>? globals = null)
     {
         var roots = functions.Where(static function => IsExportedRoot(function.Name)).ToArray();
         if (roots.Length == 0)
@@ -51,7 +51,15 @@ public static class LoweredAssemblyEmitter
 
         var functionMap = functions.ToDictionary(function => function.Name, StringComparer.Ordinal);
         var reachable = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<string>(roots.Select(static function => function.Name).Reverse());
+        var relocationRoots = globals is null
+            ? Enumerable.Empty<string>()
+            : globals.SelectMany(static global => global.PointerRelocations)
+                .Select(static relocation => relocation.Target)
+                .Where(functionMap.ContainsKey);
+        var pendingRoots = roots.Select(static function => function.Name)
+            .Concat(relocationRoots)
+            .Distinct(StringComparer.Ordinal);
+        var pending = new Stack<string>(pendingRoots.Reverse());
 
         while (pending.Count > 0)
         {
@@ -172,6 +180,10 @@ public static class LoweredAssemblyEmitter
         CopySupportAssembly(typeof(RustMcil.Runtime.NumericRuntime).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(RustMcil.Os.HostEnvironment).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(RustMcil.Interop.ManagedInteropRuntime).Assembly.Location, outputAssemblyPath);
+        if (requiresAvaloniaSupport)
+        {
+            CopyAvaloniaSupportAssemblies(typeof(RustMcil.AvaloniaSupport.AvaloniaBridge).Assembly.Location, outputAssemblyPath);
+        }
     }
 
     private static void CopySupportAssembly(string supportAssemblyPath, string outputAssemblyPath)
@@ -187,6 +199,84 @@ public static class LoweredAssemblyEmitter
             return;
 
         File.Copy(supportAssemblyPath, destinationPath, overwrite: true);
+    }
+
+    private static void CopyAvaloniaSupportAssemblies(string supportAssemblyPath, string outputAssemblyPath)
+    {
+        CopySupportAssembly(supportAssemblyPath, outputAssemblyPath);
+
+        var sourceDirectory = Path.GetDirectoryName(supportAssemblyPath);
+        var destinationDirectory = Path.GetDirectoryName(outputAssemblyPath)
+            ?? throw new InvalidOperationException("Output directory could not be determined.");
+        if (string.IsNullOrWhiteSpace(sourceDirectory) || !Directory.Exists(sourceDirectory))
+            return;
+
+        foreach (var filePath in Directory.GetFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly))
+        {
+            var extension = Path.GetExtension(filePath);
+            if (extension is ".dll" or ".json")
+            {
+                CopySupportAssembly(filePath, outputAssemblyPath);
+            }
+        }
+
+        var runtimeAssetsDirectory = Path.Combine(sourceDirectory, "runtimes");
+        if (Directory.Exists(runtimeAssetsDirectory))
+        {
+            CopyDirectory(runtimeAssetsDirectory, Path.Combine(destinationDirectory, "runtimes"));
+            CopyCurrentRuntimeNativeAssets(runtimeAssetsDirectory, destinationDirectory);
+        }
+    }
+
+    private static void CopyCurrentRuntimeNativeAssets(string runtimeAssetsDirectory, string destinationDirectory)
+    {
+        var rid = GetCurrentRuntimeIdentifier();
+        if (rid is null)
+            return;
+
+        var nativeDirectory = Path.Combine(runtimeAssetsDirectory, rid, "native");
+        if (!Directory.Exists(nativeDirectory))
+            return;
+
+        foreach (var filePath in Directory.GetFiles(nativeDirectory, "*", SearchOption.TopDirectoryOnly))
+        {
+            File.Copy(filePath, Path.Combine(destinationDirectory, Path.GetFileName(filePath)), overwrite: true);
+        }
+    }
+
+    private static string? GetCurrentRuntimeIdentifier()
+    {
+        var architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture switch
+        {
+            System.Runtime.InteropServices.Architecture.X64 => "x64",
+            System.Runtime.InteropServices.Architecture.X86 => "x86",
+            System.Runtime.InteropServices.Architecture.Arm64 => "arm64",
+            _ => null
+        };
+        if (architecture is null)
+            return null;
+
+        if (OperatingSystem.IsWindows())
+            return $"win-{architecture}";
+        if (OperatingSystem.IsLinux())
+            return $"linux-{architecture}";
+        if (OperatingSystem.IsMacOS())
+            return "osx";
+        return null;
+    }
+
+    private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+        foreach (var filePath in Directory.GetFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly))
+        {
+            File.Copy(filePath, Path.Combine(destinationDirectory, Path.GetFileName(filePath)), overwrite: true);
+        }
+
+        foreach (var childDirectory in Directory.GetDirectories(sourceDirectory, "*", SearchOption.TopDirectoryOnly))
+        {
+            CopyDirectory(childDirectory, Path.Combine(destinationDirectory, Path.GetFileName(childDirectory)));
+        }
     }
 
     private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread)
@@ -344,7 +434,7 @@ public static class LoweredAssemblyEmitter
         // Emit .cctor body if we have globals
         if (hasCctor)
         {
-            bodyOffsets[functions.Count] = EmitCctorBody(metadataBuilder, methodBodyStream, loweredModule.Globals, fieldHandles, typeContext);
+            bodyOffsets[functions.Count] = EmitCctorBody(metadataBuilder, methodBodyStream, loweredModule.Globals, fieldHandles, methodHandles, globalMap, typeContext);
         }
 
         // Add method definition rows + parameters in matching order
@@ -459,6 +549,12 @@ public static class LoweredAssemblyEmitter
 
     private static void EncodeSignatureType(SignatureTypeEncoder encoder, string typeName)
     {
+        if (TryParseVectorType(typeName, out _, out var elementType))
+        {
+            EncodeVectorArrayType(encoder, elementType);
+            return;
+        }
+
         switch (typeName)
         {
             case "ptr":
@@ -486,6 +582,34 @@ public static class LoweredAssemblyEmitter
         }
     }
 
+    private static void EncodeVectorArrayType(SignatureTypeEncoder encoder, string elementType)
+    {
+        var elementEncoder = encoder.SZArray();
+        switch (elementType)
+        {
+            case "i8":
+                elementEncoder.SByte();
+                break;
+            case "i16":
+                elementEncoder.Int16();
+                break;
+            case "i64":
+                elementEncoder.Int64();
+                break;
+            default:
+                elementEncoder.Int32();
+                break;
+        }
+    }
+
+    private static bool IsScalarLocalType(string typeName)
+    {
+        return string.Equals(typeName, "ptr", StringComparison.Ordinal)
+            || string.Equals(typeName, "float", StringComparison.Ordinal)
+            || string.Equals(typeName, "double", StringComparison.Ordinal)
+            || TryGetIntegerBitWidth(typeName, out _);
+    }
+
     private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlySet<string> sretFunctions, IReadOnlySet<string> mutatedGlobals)
     {
         var isSret = sretFunctions.Contains(function.Name);
@@ -510,6 +634,7 @@ public static class LoweredAssemblyEmitter
         var localCount = 0;
         var localIndices = new Dictionary<string, int>(StringComparer.Ordinal);
         var localTypes = new List<string>(); // track type for each local
+        var aggregatePointerLocals = new HashSet<string>(StringComparer.Ordinal);
         foreach (var block in function.Blocks)
         {
             foreach (var instruction in block.Instructions)
@@ -522,10 +647,24 @@ public static class LoweredAssemblyEmitter
                     // Sret calls and their insertvalues produce buffer pointers, not packed i64
                     if (instruction is LoweredCallInstruction sc
                         && IsAggregateType(sc.ReturnType) && sretFunctions.Contains(sc.Callee))
+                    {
                         localType = "ptr";
+                        aggregatePointerLocals.Add(sc.Result!);
+                    }
+                    else if (instruction is LoweredCallInstruction rbc
+                        && IsAggregateType(rbc.ReturnType)
+                        && AggregateNeedsSret(rbc.ReturnType)
+                        && typeContext.RuntimeBridgeReturnsViaSret(rbc.Callee))
+                    {
+                        localType = "ptr";
+                        aggregatePointerLocals.Add(rbc.Result!);
+                    }
                     else if (instruction is LoweredInsertValueInstruction siv
                         && isSret && IsAggregateType(siv.AggregateType) && AggregateNeedsSret(siv.AggregateType))
+                    {
                         localType = "ptr";
+                        aggregatePointerLocals.Add(siv.Result);
+                    }
                     localTypes.Add(localType);
                 }
             }
@@ -561,6 +700,22 @@ public static class LoweredAssemblyEmitter
                 }
             }
         }
+
+        foreach (var block in function.Blocks)
+        {
+            foreach (var instr in block.Instructions)
+            {
+                if (instr is LoweredStoreInstruction store
+                    && allocaNames.Contains(store.Destination)
+                    && !locallocAllocas.Contains(store.Destination)
+                    && localIndices.TryGetValue(store.Destination, out var scalarAllocaLocal)
+                    && IsScalarLocalType(store.Type))
+                {
+                    localTypes[scalarAllocaLocal] = store.Type;
+                }
+            }
+        }
+
         // Track which parameters are ptr type (receive addresses, need ldind/stind)
         var ptrParams = new HashSet<string>(StringComparer.Ordinal);
         foreach (var p in function.Parameters)
@@ -647,24 +802,7 @@ public static class LoweredAssemblyEmitter
             var localEncoder = new BlobEncoder(localSigBlob).LocalVariableSignature(localCount);
             for (var i = 0; i < localCount; i++)
             {
-                switch (localTypes[i])
-                {
-                    case "ptr":
-                        localEncoder.AddVariable().Type().IntPtr();
-                        break;
-                    case "i64":
-                        localEncoder.AddVariable().Type().Int64();
-                        break;
-                    case "float":
-                        localEncoder.AddVariable().Type().Single();
-                        break;
-                    case "double":
-                        localEncoder.AddVariable().Type().Double();
-                        break;
-                    default:
-                        localEncoder.AddVariable().Type().Int32();
-                        break;
-                }
+                EncodeSignatureType(localEncoder.AddVariable().Type(), localTypes[i]);
             }
             localSigHandle = metadataBuilder.AddStandaloneSignature(metadataBuilder.GetOrAddBlob(localSigBlob));
         }
@@ -684,7 +822,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, sretFunctions, isSret, mutatedGlobals);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, aggregatePointerLocals, sretFunctions, isSret, function.ReturnExtension, mutatedGlobals);
             }
         }
 
@@ -715,14 +853,21 @@ public static class LoweredAssemblyEmitter
         IReadOnlySet<string> locallocAllocas,
         IReadOnlySet<string> ptrParams,
         IReadOnlySet<string> allocaNames,
+        IReadOnlySet<string> aggregatePointerLocals,
         IReadOnlySet<string> sretFunctions,
         bool isSret,
+        string? returnExtension,
         IReadOnlySet<string> mutatedGlobals)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
         {
             case LoweredBinaryInstruction binary:
+                if (TryEmitVectorBinaryInstruction(encoder, binary, typeContext, paramIndices, localIndices, fieldHandles))
+                {
+                    break;
+                }
+
                 EmitLoadValue(encoder, binary.Left, paramIndices, localIndices, fieldHandles);
                 EmitLoadValue(encoder, binary.Right, paramIndices, localIndices, fieldHandles);
                 encoder.OpCode(MapBinaryOp(binary.Operation));
@@ -738,6 +883,7 @@ public static class LoweredAssemblyEmitter
                 else if (!string.Equals(ret.Type, "void", StringComparison.Ordinal))
                 {
                     EmitLoadValue(encoder, ret.Value, paramIndices, localIndices, fieldHandles);
+                    EmitIntegerExtension(encoder, ret.Type, returnExtension);
                     encoder.OpCode(ILOpCode.Ret);
                 }
                 else
@@ -748,6 +894,13 @@ public static class LoweredAssemblyEmitter
 
             case LoweredConditionalBranchInstruction condBr:
                 {
+                    if (IsVectorLoopGuard(condBr))
+                    {
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.TrueTarget);
+                        encoder.Branch(ILOpCode.Br, labelMap[condBr.TrueTarget]);
+                        break;
+                    }
+
                     var trueHasPhis = phiByBlock.TryGetValue(condBr.TrueTarget, out var truePhis) && truePhis.Length > 0;
                     var falseHasPhis = phiByBlock.TryGetValue(condBr.FalseTarget, out var falsePhis) && falsePhis.Length > 0;
 
@@ -762,23 +915,25 @@ public static class LoweredAssemblyEmitter
                         var falsePathLabel = encoder.DefineLabel();
                         EmitLoadValue(encoder, condBr.Condition, paramIndices, localIndices, fieldHandles);
                         encoder.Branch(ILOpCode.Brfalse, falsePathLabel);
-                        EmitPhiCopies(encoder, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.TrueTarget);
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.TrueTarget);
                         encoder.Branch(ILOpCode.Br, labelMap[condBr.TrueTarget]);
                         encoder.MarkLabel(falsePathLabel);
-                        EmitPhiCopies(encoder, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.FalseTarget);
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.FalseTarget);
                         encoder.Branch(ILOpCode.Br, labelMap[condBr.FalseTarget]);
                     }
                 }
                 break;
 
             case LoweredJumpInstruction jump:
-                EmitPhiCopies(encoder, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, jump.Target);
+                EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, jump.Target);
                 encoder.Branch(ILOpCode.Br, labelMap[jump.Target]);
                 break;
 
             case LoweredCompareInstruction cmp:
                 EmitLoadValue(encoder, cmp.Left, paramIndices, localIndices, fieldHandles);
+                EmitSignedNarrowNormalization(encoder, cmp.Type, cmp.Predicate);
                 EmitLoadValue(encoder, cmp.Right, paramIndices, localIndices, fieldHandles);
+                EmitSignedNarrowNormalization(encoder, cmp.Type, cmp.Predicate);
                 EmitCompare(encoder, cmp.Predicate);
                 encoder.StoreLocal(localIndices[cmp.Result]);
                 break;
@@ -853,6 +1008,11 @@ public static class LoweredAssemblyEmitter
                 encoder.StoreLocal(localIndices[i2p.Result]);
                 break;
 
+            case LoweredFreezeInstruction freeze:
+                EmitLoadValue(encoder, freeze.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                encoder.StoreLocal(localIndices[freeze.Result]);
+                break;
+
             case LoweredCallInstruction call:
                 {
                     var callArgs = call.Arguments;
@@ -878,13 +1038,20 @@ public static class LoweredAssemblyEmitter
                         break;
                     }
 
+                    if (TryEmitNarrowMinMaxIntrinsic(encoder, typeContext, call, paramIndices, localIndices, fieldHandles))
+                    {
+                        if (call.Result is not null)
+                            encoder.StoreLocal(localIndices[call.Result]);
+                        break;
+                    }
+
                     // Memory intrinsics: memcpy/memset/memmove → cpblk/initblk
                     if (call.Callee.StartsWith("llvm.memcpy.", StringComparison.Ordinal)
                         || call.Callee.StartsWith("llvm.memmove.", StringComparison.Ordinal))
                     {
                         // cpblk: dest, src, size (drop isvolatile arg)
-                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, methodHandles);
-                        EmitLoadPtrValue(encoder, call.Arguments[1], paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[1], paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.OpCode(ILOpCode.Conv_u);
                         encoder.OpCode(ILOpCode.Cpblk);
@@ -893,7 +1060,7 @@ public static class LoweredAssemblyEmitter
                     if (call.Callee.StartsWith("llvm.memset.", StringComparison.Ordinal))
                     {
                         // initblk: dest, val, size (drop isvolatile arg)
-                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.OpCode(ILOpCode.Conv_u);
@@ -901,12 +1068,25 @@ public static class LoweredAssemblyEmitter
                         break;
                     }
 
+                    if (TryEmitVectorReduceCall(encoder, call, paramIndices, localIndices, fieldHandles))
+                    {
+                        if (call.Result is not null)
+                            encoder.StoreLocal(localIndices[call.Result]);
+                        break;
+                    }
+
                     // Indirect call: callee is a local variable or parameter (function pointer)
-                    var isIndirectCall = call.Callee.StartsWith('%')
-                        && (localIndices.ContainsKey(call.Callee[1..]) || paramIndices.ContainsKey(call.Callee[1..]));
+                    var indirectCalleeName = NormalizeIndirectCalleeName(call.Callee);
+                    var isIndirectCall = localIndices.ContainsKey(indirectCalleeName)
+                        || paramIndices.ContainsKey(indirectCalleeName);
+                    var hasRuntimeBridge = typeContext.TryResolveRuntimeBridge(call.Callee, out var runtimeBridgeHandle);
 
                     // Sret call: callee returns aggregate via hidden retbuf parameter
-                    var isSretCall = !isIndirectCall && sretFunctions.Contains(call.Callee);
+                    var isRuntimeBridgeSretCall = hasRuntimeBridge
+                        && IsAggregateType(call.ReturnType)
+                        && AggregateNeedsSret(call.ReturnType)
+                        && typeContext.RuntimeBridgeReturnsViaSret(call.Callee);
+                    var isSretCall = !isIndirectCall && (sretFunctions.Contains(call.Callee) || isRuntimeBridgeSretCall);
                     if (isSretCall && call.Result is not null)
                     {
                         // Allocate buffer for aggregate result and store pointer in result local
@@ -922,13 +1102,21 @@ public static class LoweredAssemblyEmitter
                     for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
                     {
                         var arg = callArgs[argIdx];
-                        // When a global field is passed as ptr, we need its address (ldsflda), not its value
+                        // Small scalar globals need field addresses; pointer-backed data globals already store native data pointers.
                         if (string.Equals(arg.Type, "ptr", StringComparison.Ordinal)
                             && fieldHandles.TryGetValue(arg.Value, out var argFieldHandle))
                         {
-                            encoder.OpCode(ILOpCode.Ldsflda);
-                            encoder.Token(argFieldHandle);
-                            encoder.OpCode(ILOpCode.Conv_u); // managed ptr → native int (IntPtr)
+                            if (IsPointerBackedGlobal(globalMap, arg.Value))
+                            {
+                                encoder.OpCode(ILOpCode.Ldsfld);
+                                encoder.Token(argFieldHandle);
+                            }
+                            else
+                            {
+                                encoder.OpCode(ILOpCode.Ldsflda);
+                                encoder.Token(argFieldHandle);
+                                encoder.OpCode(ILOpCode.Conv_u);
+                            }
                         }
                         else
                         {
@@ -939,12 +1127,23 @@ public static class LoweredAssemblyEmitter
                     if (isIndirectCall)
                     {
                         // Load function pointer from local or parameter, then calli
-                        var calleeName = call.Callee[1..];
-                        if (localIndices.TryGetValue(calleeName, out var calleeLocalIdx))
+                        if (localIndices.TryGetValue(indirectCalleeName, out var calleeLocalIdx))
                             encoder.LoadLocal(calleeLocalIdx);
                         else
-                            encoder.LoadArgument(paramIndices[calleeName]);
+                            encoder.LoadArgument(paramIndices[indirectCalleeName]);
                         encoder.CallIndirect(BuildStandaloneSignature(metadataBuilder, call.ReturnType, callArgs));
+                    }
+                    else if (hasRuntimeBridge)
+                    {
+                        encoder.Call(runtimeBridgeHandle);
+                    }
+                    else if (TryEmitAllocatorCall(encoder, typeContext, call.Callee, effectiveArgCount))
+                    {
+                        // Handled as runtime allocator stub
+                    }
+                    else if (TryEmitPanicCall(encoder, typeContext, call.Callee, effectiveArgCount))
+                    {
+                        // Handled as panic → throw mapping
                     }
                     else if (methodHandles.TryGetValue(call.Callee, out var calleeHandle))
                     {
@@ -971,13 +1170,13 @@ public static class LoweredAssemblyEmitter
                     {
                         encoder.Call(intrinsicHandle);
                     }
+                    else if (typeContext.TryResolveAvaloniaBridge(call.Callee, out var avaloniaBridgeHandle))
+                    {
+                        encoder.Call(avaloniaBridgeHandle);
+                    }
                     else if (TryEmitInlineIntrinsic(encoder, call.Callee, call.ReturnType))
                     {
                         // Handled inline (e.g., conv opcodes for fptosi/sitofp)
-                    }
-                    else if (TryEmitAllocatorCall(encoder, typeContext, call.Callee, effectiveArgCount))
-                    {
-                        // Handled as runtime allocator stub
                     }
                     else
                     {
@@ -1183,7 +1382,7 @@ public static class LoweredAssemblyEmitter
                     }
                     else if (localIndices.TryGetValue(ev.Source, out var srcLocal))
                     {
-                        if (IsAggregateType(ev.AggregateType) && AggregateNeedsSret(ev.AggregateType))
+                        if (aggregatePointerLocals.Contains(ev.Source))
                         {
                             // Source is a pointer to sret buffer — read field at offset
                             var fieldOffset = GetAggregateFieldOffset(ev.AggregateType, ev.Index);
@@ -1200,13 +1399,17 @@ public static class LoweredAssemblyEmitter
                         {
                             // Source is a packed i64 (from aggregate-returning function or insertvalue)
                             // Unpack: index 0 = low 32 bits, index 1 = high 32 bits
+                            var fieldTypes = ParseAggregateFieldTypes(ev.AggregateType);
                             encoder.LoadLocal(srcLocal);
                             if (ev.Index > 0)
                             {
                                 encoder.LoadConstantI4(ev.Index * 32);
                                 encoder.OpCode(ILOpCode.Shr_un);
                             }
-                            encoder.OpCode(ILOpCode.Conv_i4);
+                            if (ev.Index >= fieldTypes.Length || fieldTypes[ev.Index] != "i64")
+                            {
+                                encoder.OpCode(ILOpCode.Conv_i4);
+                            }
                         }
                     }
                     else
@@ -1373,7 +1576,7 @@ public static class LoweredAssemblyEmitter
                 }
                 break;
 
-            case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock):
+            case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock):
                 break;
 
             case LoweredRawInstruction:
@@ -1391,7 +1594,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitPhiCopies(InstructionEncoder encoder, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock, string sourceBlock, string targetBlock)
+    private static void EmitPhiCopies(InstructionEncoder encoder, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock, string sourceBlock, string targetBlock)
     {
         if (!phiByBlock.TryGetValue(targetBlock, out var phiInstructions) || phiInstructions.Length == 0)
         {
@@ -1399,20 +1602,20 @@ public static class LoweredAssemblyEmitter
         }
 
         // Collect all phi copies for this edge
-        var copies = new List<(string Value, string Result)>();
+        var copies = new List<(string Value, string Result, string Type)>();
         foreach (var phi in phiInstructions)
         {
             var incoming = phi.Incoming.FirstOrDefault(i => string.Equals(i.SourceBlock, sourceBlock, StringComparison.Ordinal));
             if (incoming is null) continue;
-            copies.Add((incoming.Value, phi.Result));
+            copies.Add((incoming.Value, phi.Result, phi.Type));
         }
 
         if (copies.Count <= 1)
         {
             // No conflict possible with a single copy
-            foreach (var (value, result) in copies)
+            foreach (var (value, result, type) in copies)
             {
-                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
                 encoder.StoreLocal(localIndices[result]);
             }
             return;
@@ -1425,24 +1628,48 @@ public static class LoweredAssemblyEmitter
         if (!hasConflict)
         {
             // Safe to emit in order
-            foreach (var (value, result) in copies)
+            foreach (var (value, result, type) in copies)
             {
-                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
                 encoder.StoreLocal(localIndices[result]);
             }
         }
         else
         {
             // Load all values first (push onto stack), then store in reverse
-            foreach (var (value, _) in copies)
+            foreach (var (value, _, type) in copies)
             {
-                EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
             }
             for (var i = copies.Count - 1; i >= 0; i--)
             {
                 encoder.StoreLocal(localIndices[copies[i].Result]);
             }
         }
+    }
+
+    private static bool IsVectorLoopGuard(LoweredConditionalBranchInstruction branch)
+    {
+        return branch.Condition.StartsWith("min.iters.check", StringComparison.Ordinal)
+            && !IsVectorBlockName(branch.TrueTarget)
+            && IsVectorBlockName(branch.FalseTarget);
+    }
+
+    private static bool IsVectorBlockName(string blockName)
+    {
+        return blockName.Contains("vector", StringComparison.Ordinal)
+            || blockName.StartsWith("vec.", StringComparison.Ordinal);
+    }
+
+    private static void EmitLoadPhiValue(InstructionEncoder encoder, SrmTypeContext typeContext, string value, string type, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (TryParseVectorType(type, out var count, out var elementType)
+            && TryEmitVectorLiteral(encoder, typeContext, value, count, elementType, paramIndices, localIndices, fieldHandles))
+        {
+            return;
+        }
+
+        EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
     }
 
     private static void EmitLoadValue(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
@@ -1512,23 +1739,279 @@ public static class LoweredAssemblyEmitter
         encoder.LoadConstantI4(0);
     }
 
+    private static bool TryEmitVectorLiteral(InstructionEncoder encoder, SrmTypeContext typeContext, string value, int count, string elementType, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (localIndices.ContainsKey(value) || paramIndices.ContainsKey(value) || fieldHandles.ContainsKey(value))
+        {
+            return false;
+        }
+
+        string[] elements;
+        if (string.Equals(value, "zeroinitializer", StringComparison.Ordinal)
+            || string.Equals(value, "poison", StringComparison.Ordinal)
+            || string.Equals(value, "undef", StringComparison.Ordinal))
+        {
+            elements = Enumerable.Repeat("0", count).ToArray();
+        }
+        else if (TryParseSplatValue(value, out var splatValue))
+        {
+            elements = Enumerable.Repeat(splatValue, count).ToArray();
+        }
+        else if (!TryParseVectorConstant(value, out elements))
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            EmitLoadValue(encoder, index < elements.Length ? elements[index] : "0", paramIndices, localIndices, fieldHandles);
+            EmitTruncateToVectorElement(encoder, elementType);
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        return true;
+    }
+
+    private static bool TryParseSplatValue(string value, out string splatValue)
+    {
+        splatValue = string.Empty;
+        var trimmed = value.Trim();
+        if (!trimmed.StartsWith("splat (", StringComparison.Ordinal) || !trimmed.EndsWith(')'))
+        {
+            return false;
+        }
+
+        var inner = trimmed["splat (".Length..^1].Trim();
+        var separator = inner.LastIndexOf(' ');
+        if (separator < 0 || separator == inner.Length - 1)
+        {
+            return false;
+        }
+
+        splatValue = inner[(separator + 1)..].Trim();
+        return true;
+    }
+
+    private static TypeReferenceHandle GetVectorElementTypeReference(SrmTypeContext typeContext, string elementType) => elementType switch
+    {
+        "i8" => typeContext.SByteTypeRef,
+        "i16" => typeContext.Int16TypeRef,
+        "i64" => typeContext.Int64TypeRef,
+        _ => typeContext.Int32TypeRef
+    };
+
+    private static void EmitLoadVectorElement(InstructionEncoder encoder, string value, string vectorType, int index, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(vectorType, out var count, out var elementType))
+        {
+            encoder.LoadConstantI4(0);
+            return;
+        }
+
+        if (string.Equals(value, "zeroinitializer", StringComparison.Ordinal)
+            || string.Equals(value, "poison", StringComparison.Ordinal)
+            || string.Equals(value, "undef", StringComparison.Ordinal))
+        {
+            encoder.LoadConstantI4(0);
+            return;
+        }
+
+        if (TryParseSplatValue(value, out var splatValue))
+        {
+            EmitLoadValue(encoder, splatValue, paramIndices, localIndices, fieldHandles);
+            EmitTruncateToVectorElement(encoder, elementType);
+            return;
+        }
+
+        if (TryParseVectorConstant(value, out var elements))
+        {
+            EmitLoadValue(encoder, index < elements.Length ? elements[index] : "0", paramIndices, localIndices, fieldHandles);
+            EmitTruncateToVectorElement(encoder, elementType);
+            return;
+        }
+
+        EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+        encoder.LoadConstantI4(Math.Min(index, count - 1));
+        EmitLoadVectorElementAtIndex(encoder, elementType);
+    }
+
+    private static void EmitLoadVectorElementAtIndex(InstructionEncoder encoder, string elementType)
+    {
+        encoder.OpCode(elementType switch
+        {
+            "i8" => ILOpCode.Ldelem_i1,
+            "i16" => ILOpCode.Ldelem_i2,
+            "i64" => ILOpCode.Ldelem_i8,
+            _ => ILOpCode.Ldelem_i4
+        });
+    }
+
+    private static void EmitStoreVectorElement(InstructionEncoder encoder, string elementType)
+    {
+        encoder.OpCode(elementType switch
+        {
+            "i8" => ILOpCode.Stelem_i1,
+            "i16" => ILOpCode.Stelem_i2,
+            "i64" => ILOpCode.Stelem_i8,
+            _ => ILOpCode.Stelem_i4
+        });
+    }
+
+    private static void EmitTruncateToVectorElement(InstructionEncoder encoder, string elementType)
+    {
+        switch (elementType)
+        {
+            case "i8":
+                encoder.OpCode(ILOpCode.Conv_u1);
+                break;
+            case "i16":
+                encoder.OpCode(ILOpCode.Conv_u2);
+                break;
+        }
+    }
+
+    private static bool TryEmitVectorBinaryInstruction(InstructionEncoder encoder, LoweredBinaryInstruction binary, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(binary.Type, out var count, out var elementType))
+        {
+            return false;
+        }
+
+        if (binary.Operation is not ("add" or "sub" or "mul" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr"))
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            EmitLoadVectorElement(encoder, binary.Left, binary.Type, index, paramIndices, localIndices, fieldHandles);
+            EmitLoadVectorElement(encoder, binary.Right, binary.Type, index, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(MapBinaryOp(binary.Operation));
+            EmitTruncateToVectorElement(encoder, elementType);
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        encoder.StoreLocal(localIndices[binary.Result]);
+        return true;
+    }
+
+    private static bool TryEmitVectorReduceCall(InstructionEncoder encoder, LoweredCallInstruction call, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        const string prefix = "llvm.vector.reduce.";
+        if (!call.Callee.StartsWith(prefix, StringComparison.Ordinal) || call.Arguments.Count == 0)
+        {
+            return false;
+        }
+
+        var remainder = call.Callee[prefix.Length..];
+        var vectorMarker = remainder.LastIndexOf(".v", StringComparison.Ordinal);
+        if (vectorMarker < 0)
+        {
+            return false;
+        }
+
+        var operation = remainder[..vectorMarker];
+        if (operation is not ("add" or "and" or "or" or "xor"))
+        {
+            return false;
+        }
+
+        var vectorType = call.Arguments[0].Type;
+        if (!TryParseVectorType(vectorType, out var count, out var elementType) || count <= 0)
+        {
+            return false;
+        }
+
+        var vectorValue = call.Arguments[0].Value;
+        EmitLoadVectorElement(encoder, vectorValue, vectorType, 0, paramIndices, localIndices, fieldHandles);
+        for (var index = 1; index < count; index++)
+        {
+            EmitLoadVectorElement(encoder, vectorValue, vectorType, index, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(operation switch
+            {
+                "add" => ILOpCode.Add,
+                "and" => ILOpCode.And,
+                "or" => ILOpCode.Or,
+                _ => ILOpCode.Xor
+            });
+            EmitTruncateToVectorElement(encoder, elementType);
+        }
+
+        EmitIntegerExtension(encoder, call.ReturnType, call.ReturnType is "i8" or "i16" ? "zeroext" : null);
+        return true;
+    }
+
+    private static bool TryEmitNarrowMinMaxIntrinsic(InstructionEncoder encoder, SrmTypeContext typeContext, LoweredCallInstruction call, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (call.Arguments.Count != 2)
+        {
+            return false;
+        }
+
+        var operation = call.Callee switch
+        {
+            var name when name.StartsWith("llvm.smax.", StringComparison.Ordinal) => "smax",
+            var name when name.StartsWith("llvm.smin.", StringComparison.Ordinal) => "smin",
+            var name when name.StartsWith("llvm.umax.", StringComparison.Ordinal) => "umax",
+            var name when name.StartsWith("llvm.umin.", StringComparison.Ordinal) => "umin",
+            _ => null
+        };
+        if (operation is null || call.ReturnType is not ("i8" or "i16"))
+        {
+            return false;
+        }
+
+        var extension = operation[0] == 's' ? "signext" : "zeroext";
+        EmitLoadValue(encoder, call.Arguments[0].Value, paramIndices, localIndices, fieldHandles);
+        EmitIntegerExtension(encoder, call.ReturnType, extension);
+        EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles);
+        EmitIntegerExtension(encoder, call.ReturnType, extension);
+        encoder.Call(operation.EndsWith("max", StringComparison.Ordinal)
+            ? typeContext.MathMaxI32
+            : typeContext.MathMinI32);
+        return true;
+    }
+
     /// <summary>
-    /// Load a pointer-typed argument value. For fields, emits ldsflda; for others, delegates to EmitLoadValue.
+    /// Load a pointer-typed argument value. Scalar fields use ldsflda; pointer-backed globals use ldsfld.
     /// </summary>
-    private static void EmitLoadPtrValue(InstructionEncoder encoder, LoweredArgument arg, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    private static void EmitLoadPtrValue(InstructionEncoder encoder, LoweredArgument arg, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
     {
         if (string.Equals(arg.Type, "ptr", StringComparison.Ordinal)
             && fieldHandles.TryGetValue(arg.Value, out var fh))
         {
-            encoder.OpCode(ILOpCode.Ldsflda);
-            encoder.Token(fh);
-            encoder.OpCode(ILOpCode.Conv_u); // managed ptr → native int (IntPtr)
+            if (IsPointerBackedGlobal(globalMap, arg.Value))
+            {
+                encoder.OpCode(ILOpCode.Ldsfld);
+                encoder.Token(fh);
+            }
+            else
+            {
+                encoder.OpCode(ILOpCode.Ldsflda);
+                encoder.Token(fh);
+                encoder.OpCode(ILOpCode.Conv_u);
+            }
         }
         else
         {
             EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
         }
     }
+
+    private static bool IsPointerBackedGlobal(IReadOnlyDictionary<string, LoweredGlobal> globalMap, string name)
+        => globalMap.TryGetValue(name, out var global) && global.InitializerBytes.Count > 8;
 
     /// <summary>
     /// Load the address of a value (for atomic pointer operands). Globals get ldsflda; locals/params emit their value directly (already pointers).
@@ -1607,6 +2090,55 @@ public static class LoweredAssemblyEmitter
         }
     }
 
+    private static void EmitSignedNarrowNormalization(InstructionEncoder encoder, string type, string predicate)
+    {
+        if (!IsSignedIntegerCompare(predicate))
+        {
+            return;
+        }
+
+        EmitIntegerExtension(encoder, type, "signext");
+    }
+
+    private static bool IsSignedIntegerCompare(string predicate)
+    {
+        return predicate is "slt" or "sgt" or "sle" or "sge";
+    }
+
+    private static void EmitIntegerExtension(InstructionEncoder encoder, string type, string? extension)
+    {
+        if (extension is null)
+        {
+            return;
+        }
+
+        if (string.Equals(type, "i1", StringComparison.Ordinal))
+        {
+            if (string.Equals(extension, "signext", StringComparison.Ordinal))
+            {
+                encoder.OpCode(ILOpCode.Neg);
+            }
+            return;
+        }
+
+        if (string.Equals(type, "i8", StringComparison.Ordinal))
+        {
+            encoder.OpCode(string.Equals(extension, "signext", StringComparison.Ordinal)
+                ? ILOpCode.Conv_i1
+                : ILOpCode.Conv_u1);
+        }
+        else if (string.Equals(type, "i16", StringComparison.Ordinal))
+        {
+            encoder.OpCode(string.Equals(extension, "signext", StringComparison.Ordinal)
+                ? ILOpCode.Conv_i2
+                : ILOpCode.Conv_u2);
+        }
+        else if (string.Equals(type, "i32", StringComparison.Ordinal) && string.Equals(extension, "zeroext", StringComparison.Ordinal))
+        {
+            encoder.OpCode(ILOpCode.Conv_u4);
+        }
+    }
+
     private static StandaloneSignatureHandle BuildStandaloneSignature(
         MetadataBuilder metadataBuilder, string returnType, IReadOnlyList<LoweredArgument> args)
     {
@@ -1614,18 +2146,12 @@ public static class LoweredAssemblyEmitter
         new BlobEncoder(sigBlob)
             .MethodSignature(SignatureCallingConvention.Default)
             .Parameters(args.Count,
-                returnEncoder =>
-                {
-                    if (returnType == "void")
-                        returnEncoder.Void();
-                    else
-                        returnEncoder.Type().Int32();
-                },
+                returnEncoder => EncodeReturnType(returnEncoder, returnType),
                 parametersEncoder =>
                 {
                     for (var i = 0; i < args.Count; i++)
                     {
-                        parametersEncoder.AddParameter().Type().Int32();
+                        EncodeParameterType(parametersEncoder, args[i].Type);
                     }
                 });
         return metadataBuilder.AddStandaloneSignature(metadataBuilder.GetOrAddBlob(sigBlob));
@@ -2072,6 +2598,36 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
+    private static bool TryEmitPanicCall(InstructionEncoder encoder, SrmTypeContext typeContext, string callee, int argCount)
+    {
+        // Map Rust panic_const functions to .NET exceptions.
+        // These appear with both legacy (_ZN) and v0 (_R) mangling but always contain the key substring.
+        MemberReferenceHandle ctorHandle;
+        if (callee.Contains("panic_const_div_by_zero", StringComparison.Ordinal)
+            || callee.Contains("panic_const_rem_by_zero", StringComparison.Ordinal))
+        {
+            ctorHandle = typeContext.DivideByZeroExceptionCtor;
+        }
+        else if (callee.Contains("panic_const_div_overflow", StringComparison.Ordinal)
+            || callee.Contains("panic_const_rem_overflow", StringComparison.Ordinal))
+        {
+            ctorHandle = typeContext.OverflowExceptionCtor;
+        }
+        else
+        {
+            return false;
+        }
+
+        // Pop any arguments (typically 1 ptr arg for the panic location)
+        for (var i = 0; i < argCount; i++)
+            encoder.OpCode(ILOpCode.Pop);
+
+        encoder.OpCode(ILOpCode.Newobj);
+        encoder.Token(ctorHandle);
+        encoder.OpCode(ILOpCode.Throw);
+        return true;
+    }
+
     private static ILOpCode MapBinaryOp(string operation) => operation switch
     {
         "add" or "fadd" => ILOpCode.Add,
@@ -2102,6 +2658,7 @@ public static class LoweredAssemblyEmitter
         LoweredSignExtendInstruction s => s.Result,
         LoweredPtrToIntInstruction p => p.Result,
         LoweredIntToPtrInstruction i => i.Result,
+        LoweredFreezeInstruction f => f.Result,
         LoweredLoadInstruction l => l.Result,
         LoweredAllocaInstruction a => a.Result,
         LoweredGetElementPointerInstruction g => g.Result,
@@ -2119,6 +2676,7 @@ public static class LoweredAssemblyEmitter
         LoweredSignExtendInstruction s => s.ToType,
         LoweredPtrToIntInstruction p => p.ToType,
         LoweredIntToPtrInstruction => "ptr",
+        LoweredFreezeInstruction f => f.Type,
         LoweredLoadInstruction l => l.Type,
         LoweredAllocaInstruction => "ptr",
         LoweredPhiInstruction p => InferPhiType(p.Type),
@@ -2144,6 +2702,8 @@ public static class LoweredAssemblyEmitter
             return "float";
         if (string.Equals(type, "double", StringComparison.Ordinal))
             return "double";
+        if (IsAggregateType(type))
+            return "i64";
         return "i32";
     }
 
@@ -2248,12 +2808,30 @@ public static class LoweredAssemblyEmitter
     /// </summary>
     private static string ParseVectorElementType(string vectorType)
     {
-        // Format: <N x type>
-        var inner = vectorType.TrimStart('<').TrimEnd('>').Trim();
+        return TryParseVectorType(vectorType, out _, out var elementType)
+            ? elementType
+            : "i32";
+    }
+
+    private static bool TryParseVectorType(string vectorType, out int count, out string elementType)
+    {
+        count = 0;
+        elementType = string.Empty;
+        var trimmed = vectorType.Trim();
+        if (trimmed.Length < 5 || trimmed[0] != '<' || trimmed[^1] != '>')
+        {
+            return false;
+        }
+
+        var inner = trimmed[1..^1].Trim();
         var xIdx = inner.IndexOf(" x ", StringComparison.Ordinal);
-        if (xIdx >= 0)
-            return inner[(xIdx + 3)..].Trim();
-        return "i32"; // fallback
+        if (xIdx < 0 || !int.TryParse(inner[..xIdx].Trim(), out count) || count <= 0)
+        {
+            return false;
+        }
+
+        elementType = inner[(xIdx + 3)..].Trim();
+        return !string.IsNullOrWhiteSpace(elementType);
     }
 
     private static LoweredCallInstruction? FindCallByResult(LoweredFunction function, string resultName)
@@ -2287,6 +2865,7 @@ public static class LoweredAssemblyEmitter
         LoweredRawInstruction raw,
         IReadOnlyList<LoweredInstruction> instructions,
         ref int instrIdx,
+        SrmTypeContext typeContext,
         IReadOnlyDictionary<string, int> paramIndices,
         IReadOnlyDictionary<string, int> localIndices,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
@@ -2296,7 +2875,7 @@ public static class LoweredAssemblyEmitter
     {
         var switchMatch = System.Text.RegularExpressions.Regex.Match(
             raw.Text,
-            "^switch (?<type>i\\d+) (?<value>[^,]+), label %(?<defaultTarget>[^ ]+) \\[$",
+            "^switch (?<type>i\\d+) (?<value>[^,]+), label %(?<defaultTarget>\"[^\"]+\"|[^\\s]+) \\[$",
             System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
         if (!switchMatch.Success)
@@ -2305,7 +2884,7 @@ public static class LoweredAssemblyEmitter
         }
 
         var switchValue = NormalizeRawValue(switchMatch.Groups["value"].Value);
-        var defaultTarget = switchMatch.Groups["defaultTarget"].Value;
+        var defaultTarget = NormalizeRawLabel(switchMatch.Groups["defaultTarget"].Value);
         var caseLabels = new List<(long Value, string Target)>();
 
         var closingIndex = -1;
@@ -2324,11 +2903,11 @@ public static class LoweredAssemblyEmitter
 
             var caseMatch = System.Text.RegularExpressions.Regex.Match(
                 caseRaw.Text,
-                "^(?<type>i\\d+) (?<value>-?\\d+), label %(?<target>[^ ]+)$",
+                "^(?<type>i\\d+) (?<value>-?\\d+), label %(?<target>\"[^\"]+\"|[^\\s]+)$",
                 System.Text.RegularExpressions.RegexOptions.CultureInvariant);
             if (caseMatch.Success)
             {
-                caseLabels.Add((long.Parse(caseMatch.Groups["value"].Value), caseMatch.Groups["target"].Value));
+                caseLabels.Add((long.Parse(caseMatch.Groups["value"].Value), NormalizeRawLabel(caseMatch.Groups["target"].Value)));
             }
         }
 
@@ -2354,16 +2933,24 @@ public static class LoweredAssemblyEmitter
             encoder.OpCode(ILOpCode.Ceq);
             var nextCase = encoder.DefineLabel();
             encoder.Branch(ILOpCode.Brfalse, nextCase);
-            EmitPhiCopies(encoder, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, caseLabel.Target);
+            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, caseLabel.Target);
             encoder.Branch(ILOpCode.Br, labelMap[caseLabel.Target]);
             encoder.MarkLabel(nextCase);
         }
 
         // Default case
-        EmitPhiCopies(encoder, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, defaultTarget);
+        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, defaultTarget);
         encoder.Branch(ILOpCode.Br, labelMap[defaultTarget]);
         instrIdx = closingIndex;
         return true;
+    }
+
+    private static string NormalizeRawLabel(string rawLabel)
+    {
+        var label = rawLabel.Trim().TrimStart('%');
+        return label.Length >= 2 && label[0] == '"' && label[^1] == '"'
+            ? label[1..^1]
+            : label;
     }
 
     private static string NormalizeRawValue(string rawValue)
@@ -2380,6 +2967,19 @@ public static class LoweredAssemblyEmitter
             return name;
         }
         return value;
+    }
+
+    private static string NormalizeIndirectCalleeName(string callee)
+    {
+        var normalized = callee.Trim();
+        if (normalized.StartsWith('%'))
+        {
+            normalized = normalized[1..];
+        }
+
+        return normalized.Length > 0 && normalized.All(char.IsDigit)
+            ? $"tmp.{normalized}"
+            : normalized;
     }
 
     private static bool IsGepResult(string localName, IReadOnlyList<LoweredInstruction> instructions, int currentIdx)
@@ -2586,7 +3186,7 @@ public static class LoweredAssemblyEmitter
         return metadataBuilder.GetOrAddBlob(blob);
     }
 
-    private static int EmitCctorBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, IReadOnlyList<LoweredGlobal> globals, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, SrmTypeContext typeContext)
+    private static int EmitCctorBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, IReadOnlyList<LoweredGlobal> globals, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, SrmTypeContext typeContext)
     {
         var codeBuilder = new BlobBuilder();
         var encoder = new InstructionEncoder(codeBuilder);
@@ -2634,6 +3234,44 @@ public static class LoweredAssemblyEmitter
                 encoder.LoadLocal(0);
                 encoder.LoadConstantI4(global.InitializerBytes.Count);
                 encoder.Call(typeContext.MarshalCopy);
+
+                foreach (var relocation in global.PointerRelocations)
+                {
+                    encoder.LoadLocal(0);
+                    if (relocation.Offset != 0)
+                    {
+                        encoder.LoadConstantI4(relocation.Offset);
+                        encoder.OpCode(ILOpCode.Conv_i);
+                        encoder.OpCode(ILOpCode.Add);
+                    }
+
+                    if (methodHandles.TryGetValue(relocation.Target, out var targetHandle))
+                    {
+                        encoder.OpCode(ILOpCode.Ldftn);
+                        encoder.Token(targetHandle);
+                        encoder.OpCode(ILOpCode.Conv_i);
+                    }
+                    else if (fieldHandles.TryGetValue(relocation.Target, out var targetFieldHandle))
+                    {
+                        if (IsPointerBackedGlobal(globalMap, relocation.Target))
+                        {
+                            encoder.OpCode(ILOpCode.Ldsfld);
+                            encoder.Token(targetFieldHandle);
+                        }
+                        else
+                        {
+                            encoder.OpCode(ILOpCode.Ldsflda);
+                            encoder.Token(targetFieldHandle);
+                            encoder.OpCode(ILOpCode.Conv_u);
+                        }
+                    }
+                    else
+                    {
+                        encoder.LoadConstantI4(0);
+                        encoder.OpCode(ILOpCode.Conv_i);
+                    }
+                    encoder.OpCode(ILOpCode.Stind_i);
+                }
 
                 encoder.LoadLocal(0);
             }
@@ -2807,6 +3445,10 @@ public static class LoweredAssemblyEmitter
         public AssemblyReferenceHandle SystemRuntime { get; }
         public TypeReferenceHandle BitOperations { get; }
         public TypeReferenceHandle ByteTypeRef { get; }
+        public TypeReferenceHandle SByteTypeRef { get; }
+        public TypeReferenceHandle Int16TypeRef { get; }
+        public TypeReferenceHandle Int32TypeRef { get; }
+        public TypeReferenceHandle Int64TypeRef { get; }
         public MemberReferenceHandle PopCountU32 { get; }
         public MemberReferenceHandle PopCountU64 { get; }
         public MemberReferenceHandle LeadingZeroCountU32 { get; }
@@ -2819,6 +3461,8 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle MarshalFreeHGlobal { get; }
         public MemberReferenceHandle MarshalCopy { get; }
         public MemberReferenceHandle NotSupportedExceptionCtor { get; }
+        public MemberReferenceHandle DivideByZeroExceptionCtor { get; }
+        public MemberReferenceHandle OverflowExceptionCtor { get; }
         public MemberReferenceHandle MathSqrt { get; }
         public MemberReferenceHandle MathFloor { get; }
         public MemberReferenceHandle MathCeiling { get; }
@@ -2840,6 +3484,9 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle MathFAbs { get; }
 
         private readonly Dictionary<string, MemberReferenceHandle> _intrinsicMap;
+        private readonly Dictionary<string, MemberReferenceHandle> _avaloniaBridgeMap;
+        private readonly Dictionary<string, MemberReferenceHandle> _runtimeBridgeMap;
+        private readonly HashSet<MemberReferenceHandle> _runtimeBridgeSretHandles;
 
         public SrmTypeContext(MetadataBuilder mb, AssemblyReferenceHandle systemRuntime, AssemblyReferenceHandle systemInterop)
         {
@@ -2855,6 +3502,24 @@ public static class LoweredAssemblyEmitter
                 flags: default,
                 hashValue: default);
 
+            var avaloniaSupportAssemblyName = typeof(RustMcil.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
+            var avaloniaSupport = mb.AddAssemblyReference(
+                name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "RustMcil.AvaloniaSupport"),
+                version: avaloniaSupportAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                culture: default,
+                publicKeyOrToken: default,
+                flags: default,
+                hashValue: default);
+
+            var backendAssemblyName = typeof(RuntimeBridgeHelpers).Assembly.GetName();
+            var backendAssembly = mb.AddAssemblyReference(
+                name: mb.GetOrAddString(backendAssemblyName.Name ?? "RustMcil.Backend"),
+                version: backendAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                culture: default,
+                publicKeyOrToken: default,
+                flags: default,
+                hashValue: default);
+
             // System.Numerics.BitOperations (in System.Runtime)
             BitOperations = mb.AddTypeReference(
                 systemRuntime,
@@ -2866,6 +3531,16 @@ public static class LoweredAssemblyEmitter
                 systemMemory,
                 mb.GetOrAddString("System.Buffers.Binary"),
                 mb.GetOrAddString("BinaryPrimitives"));
+
+            var avaloniaBridge = mb.AddTypeReference(
+                avaloniaSupport,
+                mb.GetOrAddString("RustMcil.AvaloniaSupport"),
+                mb.GetOrAddString("AvaloniaBridge"));
+
+            var runtimeBridgeHelpers = mb.AddTypeReference(
+                backendAssembly,
+                mb.GetOrAddString("RustMcil.Backend"),
+                mb.GetOrAddString("RuntimeBridgeHelpers"));
 
             // Method signatures
             PopCountU32 = AddStaticMethod(mb, BitOperations, "PopCount", EncodeU32ToI32Sig(mb));
@@ -2925,6 +3600,22 @@ public static class LoweredAssemblyEmitter
                 systemRuntime,
                 mb.GetOrAddString("System"),
                 mb.GetOrAddString("Byte"));
+            SByteTypeRef = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("SByte"));
+            Int16TypeRef = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("Int16"));
+            Int32TypeRef = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("Int32"));
+            Int64TypeRef = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("Int64"));
 
             // System.Runtime.InteropServices.Marshal references (for pointer-backed globals)
             var marshalType = mb.AddTypeReference(
@@ -2971,6 +3662,56 @@ public static class LoweredAssemblyEmitter
                 notSupportedExceptionType,
                 mb.GetOrAddString(".ctor"),
                 mb.GetOrAddBlob(nseCtorSig));
+
+            // System.DivideByZeroException..ctor()
+            var divideByZeroExceptionType = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("DivideByZeroException"));
+
+            var dbzCtorSig = new BlobBuilder();
+            new BlobEncoder(dbzCtorSig).MethodSignature(SignatureCallingConvention.Default, 0, true)
+                .Parameters(0, out var dbzCtorRet, out _);
+            dbzCtorRet.Void();
+            DivideByZeroExceptionCtor = mb.AddMemberReference(
+                divideByZeroExceptionType,
+                mb.GetOrAddString(".ctor"),
+                mb.GetOrAddBlob(dbzCtorSig));
+
+            // System.OverflowException..ctor()
+            var overflowExceptionType = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("OverflowException"));
+
+            var ofeCtorSig = new BlobBuilder();
+            new BlobEncoder(ofeCtorSig).MethodSignature(SignatureCallingConvention.Default, 0, true)
+                .Parameters(0, out var ofeCtorRet, out _);
+            ofeCtorRet.Void();
+            OverflowExceptionCtor = mb.AddMemberReference(
+                overflowExceptionType,
+                mb.GetOrAddString(".ctor"),
+                mb.GetOrAddBlob(ofeCtorSig));
+
+            _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
+            {
+                ["rust_mcil_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32")),
+                ["rust_mcil_avalonia_window_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateWindow", EncodeBridgeMethodSig(mb, "i32")),
+                ["rust_mcil_avalonia_stack_panel_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateStackPanel", EncodeBridgeMethodSig(mb, "i32")),
+                ["rust_mcil_avalonia_text_block_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateTextBlock", EncodeBridgeMethodSig(mb, "i32")),
+                ["rust_mcil_avalonia_button_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateButton", EncodeBridgeMethodSig(mb, "i32")),
+                ["rust_mcil_avalonia_window_set_title_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowTitleUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
+                ["rust_mcil_avalonia_window_set_size"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowSize", EncodeBridgeMethodSig(mb, "void", "i32", "i32", "i32")),
+                ["rust_mcil_avalonia_window_set_content"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowContent", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
+                ["rust_mcil_avalonia_stack_panel_set_spacing"] = AddStaticMethod(mb, avaloniaBridge, "SetStackPanelSpacing", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
+                ["rust_mcil_avalonia_stack_panel_set_margin"] = AddStaticMethod(mb, avaloniaBridge, "SetStackPanelMargin", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
+                ["rust_mcil_avalonia_stack_panel_add_child"] = AddStaticMethod(mb, avaloniaBridge, "AddStackPanelChild", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
+                ["rust_mcil_avalonia_text_block_set_text_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetTextBlockTextUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
+                ["rust_mcil_avalonia_button_set_content_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetButtonContentUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
+                ["rust_mcil_avalonia_button_set_on_click"] = AddStaticMethod(mb, avaloniaBridge, "SetButtonOnClick", EncodeBridgeMethodSig(mb, "void", "i32", "i32", "i32"))
+            };
+
+            _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, out _runtimeBridgeSretHandles);
 
             // Build intrinsic lookup
             _intrinsicMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
@@ -3024,9 +3765,445 @@ public static class LoweredAssemblyEmitter
             return _intrinsicMap.TryGetValue(callee, out handle);
         }
 
+        public bool TryResolveAvaloniaBridge(string callee, out MemberReferenceHandle handle)
+        {
+            return _avaloniaBridgeMap.TryGetValue(callee, out handle);
+        }
+
+        public bool TryResolveRuntimeBridge(string callee, out MemberReferenceHandle handle)
+        {
+            if (callee.Contains("core4wtf84Wtf88to_owned", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_pathbuf_to_owned", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("core..wtf8..Wtf8", StringComparison.Ordinal)
+                && callee.Contains("8to_owned", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_pathbuf_to_owned", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path9file_name", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_file_name", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path9file_stem", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_file_stem", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path9extension", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_extension", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path6parent", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_parent", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path10components", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_components", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path11is_absolute", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_is_absolute", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std..path..Components", StringComparison.Ordinal)
+                && callee.Contains("core..cmp..PartialEq", StringComparison.Ordinal)
+                && callee.Contains("2eq", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_components_eq", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std..path..PathBuf", StringComparison.Ordinal)
+                && callee.Contains("core..cmp..PartialEq", StringComparison.Ordinal)
+                && callee.Contains("2eq", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_eq", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path12_starts_with", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_starts_with", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path10_ends_with", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_ends_with", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path5_join", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_join", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path4join", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_join", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path15_with_extension", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_with_extension", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path4Path15_with_file_name", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_path_with_file_name", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4path", StringComparison.Ordinal)
+                && (callee.Contains("PathBuf5__push", StringComparison.Ordinal)
+                    || callee.Contains("PathBuf5_push", StringComparison.Ordinal))
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_pathbuf_push", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std2fs14read_to_string5inner", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_fs_read_to_string_inner", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("core5slice6memchr14memchr_aligned", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_core_slice_memchr_aligned", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std2io5stdio6_print", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_print", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std2io5stdio7_eprint", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_eprint", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std2io5stdio6stdout", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_stdout", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("Stdout", StringComparison.Ordinal)
+                && callee.Contains("write_all", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_stdout_write_all", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("Stderr", StringComparison.Ordinal)
+                && callee.Contains("write_all", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_stderr_write_all", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("Stdout", StringComparison.Ordinal)
+                && callee.Contains("5flush", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_io_stdout_flush", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4time7Instant3now", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_time_instant_now", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std4time7Instant7elapsed", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_time_instant_elapsed", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std3env11current_dir", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_env_current_dir", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std3env8temp_dir", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_env_temp_dir", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("std3env3var", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rust_mcil_std_env_var", out handle))
+            {
+                return true;
+            }
+
+            return _runtimeBridgeMap.TryGetValue(callee, out handle);
+        }
+
+        public bool RuntimeBridgeReturnsViaSret(string callee)
+        {
+            return TryResolveRuntimeBridge(callee, out var handle)
+                && _runtimeBridgeSretHandles.Contains(handle);
+        }
+
         private static MemberReferenceHandle AddStaticMethod(MetadataBuilder mb, TypeReferenceHandle parent, string name, BlobHandle signature)
         {
             return mb.AddMemberReference(parent, mb.GetOrAddString(name), signature);
+        }
+
+        private static Dictionary<string, MemberReferenceHandle> BuildRuntimeBridgeMap(
+            MetadataBuilder mb,
+            TypeReferenceHandle runtimeBridgeHelpers,
+            out HashSet<MemberReferenceHandle> sretHandles)
+        {
+            var methods = typeof(RuntimeBridgeHelpers)
+                .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .ToDictionary(static method => method.Name, StringComparer.Ordinal);
+            var handles = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal);
+            foreach (var method in methods.Values)
+            {
+                handles[method.Name] = AddStaticMethod(
+                    mb,
+                    runtimeBridgeHelpers,
+                    method.Name,
+                    EncodeReflectedMethodSig(mb, method));
+            }
+
+            var bridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal);
+            sretHandles = [];
+            foreach (var (symbol, methodName) in RuntimeBridgeAliases)
+            {
+                if (handles.TryGetValue(methodName, out var handle))
+                {
+                    bridgeMap[symbol] = handle;
+                    if (RuntimeBridgeUsesSret(methods[methodName]))
+                    {
+                        sretHandles.Add(handle);
+                    }
+                }
+            }
+
+            foreach (var method in methods.Values.Where(static method => method.Name.StartsWith("Bindgen", StringComparison.Ordinal)))
+            {
+                var handle = handles[method.Name];
+                bridgeMap["rust_mcil_" + ToSnakeCase(method.Name)] = handle;
+                if (RuntimeBridgeUsesSret(method))
+                {
+                    sretHandles.Add(handle);
+                }
+            }
+
+            return bridgeMap;
+        }
+
+        private static bool RuntimeBridgeUsesSret(MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+            return method.ReturnType == typeof(void)
+                && parameters.Length > 0
+                && parameters[0].ParameterType == typeof(IntPtr);
+        }
+
+        private static readonly (string Symbol, string MethodName)[] RuntimeBridgeAliases =
+        [
+            ("rust_mcil_dotnet_is_windows", nameof(RuntimeBridgeHelpers.IsWindows)),
+            ("rust_mcil_dotnet_directory_separator_char", nameof(RuntimeBridgeHelpers.DirectorySeparatorChar)),
+            ("rust_mcil_dotnet_path_separator_char", nameof(RuntimeBridgeHelpers.PathSeparatorChar)),
+            ("rust_mcil_dotnet_newline_len", nameof(RuntimeBridgeHelpers.NewlineLength)),
+            ("rust_mcil_dotnet_bitops_popcount_u32", nameof(RuntimeBridgeHelpers.PopCountU32)),
+            ("rust_mcil_dotnet_math_max_i32", nameof(RuntimeBridgeHelpers.MathMaxI32)),
+            ("rust_mcil_dotnet_math_min_i32", nameof(RuntimeBridgeHelpers.MathMinI32)),
+            ("rust_mcil_dotnet_command_line_arg_count", nameof(RuntimeBridgeHelpers.CommandLineArgCount)),
+            ("rust_mcil_dotnet_command_line_arg_utf8_len", nameof(RuntimeBridgeHelpers.Utf8CommandLineArgLength)),
+            ("rust_mcil_dotnet_copy_command_line_arg_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8CommandLineArg)),
+            ("rust_mcil_dotnet_console_write_line_utf8", nameof(RuntimeBridgeHelpers.ConsoleWriteLineUtf8)),
+            ("rust_mcil_dotnet_console_write_prefixed_line_utf8", nameof(RuntimeBridgeHelpers.ConsoleWritePrefixedLineUtf8)),
+            ("rust_mcil_dotnet_console_write_path_line_utf8", nameof(RuntimeBridgeHelpers.ConsoleWritePathLineUtf8)),
+            ("rust_mcil_dotnet_console_write_numbered_line_utf8", nameof(RuntimeBridgeHelpers.ConsoleWriteNumberedLineUtf8)),
+            ("rust_mcil_dotnet_console_write_i32", nameof(RuntimeBridgeHelpers.ConsoleWriteI32)),
+            ("rust_mcil_dotnet_console_write_path_count_utf8", nameof(RuntimeBridgeHelpers.ConsoleWritePathCountUtf8)),
+            ("rust_mcil_dotnet_file_read_all_lines_count", nameof(RuntimeBridgeHelpers.Utf8ReadAllLinesCount)),
+            ("rust_mcil_dotnet_file_read_all_lines_line_utf8_len", nameof(RuntimeBridgeHelpers.Utf8ReadAllLinesLineLength)),
+            ("rust_mcil_dotnet_file_copy_read_all_lines_line_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8ReadAllLinesLine)),
+            ("rust_mcil_dotnet_path_get_root_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetRootLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_root_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetRoot)),
+            ("rust_mcil_dotnet_path_get_full_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetFullPathLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_full_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetFullPath)),
+            ("rust_mcil_dotnet_path_get_directory_name_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetDirectoryNameLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_directory_name_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetDirectoryName)),
+            ("rust_mcil_dotnet_path_get_relative_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetRelativeLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_relative_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetRelative)),
+            ("rust_mcil_dotnet_documents_utf8_len", nameof(RuntimeBridgeHelpers.Utf8DocumentsLength)),
+            ("rust_mcil_dotnet_copy_documents_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8Documents)),
+            ("rust_mcil_dotnet_temp_path_utf8_len", nameof(RuntimeBridgeHelpers.Utf8TempPathLength)),
+            ("rust_mcil_dotnet_copy_temp_path_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8TempPath)),
+            ("rust_mcil_dotnet_user_profile_utf8_len", nameof(RuntimeBridgeHelpers.Utf8UserProfileLength)),
+            ("rust_mcil_dotnet_copy_user_profile_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8UserProfile)),
+            ("rust_mcil_dotnet_current_directory_utf8_len", nameof(RuntimeBridgeHelpers.Utf8CurrentDirectoryLength)),
+            ("rust_mcil_dotnet_copy_current_directory_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8CurrentDirectory)),
+            ("rust_mcil_dotnet_path_combine3_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathCombine3LengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_combine3_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathCombine3)),
+            ("rust_mcil_dotnet_path_combine_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathCombineLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_combine_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathCombine)),
+            ("rust_mcil_dotnet_path_change_extension_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathChangeExtensionLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_change_extension_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathChangeExtension)),
+            ("rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetFileNameWithoutExtensionLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_file_name_without_extension_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetFileNameWithoutExtension)),
+            ("rust_mcil_dotnet_path_get_file_name_utf8_len", nameof(RuntimeBridgeHelpers.Utf8PathGetFileNameLengthUtf8)),
+            ("rust_mcil_dotnet_path_copy_file_name_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8PathGetFileName)),
+            ("rust_mcil_dotnet_path_get_file_name_len", nameof(RuntimeBridgeHelpers.Utf8PathGetFileNameLength)),
+            ("rust_mcil_dotnet_string_replace_utf8_len", nameof(RuntimeBridgeHelpers.Utf8StringReplaceLength)),
+            ("rust_mcil_dotnet_string_copy_replace_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8StringReplace)),
+            ("rust_mcil_dotnet_string_contains", nameof(RuntimeBridgeHelpers.Utf8StringContains)),
+            ("rust_mcil_dotnet_string_index_of", nameof(RuntimeBridgeHelpers.Utf8StringIndexOf)),
+            ("rust_mcil_std_pathbuf_to_owned", nameof(RuntimeBridgeHelpers.InitializeWtf8PathBuffer)),
+            ("rust_mcil_std_path_file_name", nameof(RuntimeBridgeHelpers.StdPathFileName)),
+            ("rust_mcil_std_path_file_stem", nameof(RuntimeBridgeHelpers.StdPathFileStem)),
+            ("rust_mcil_std_path_extension", nameof(RuntimeBridgeHelpers.StdPathExtension)),
+            ("rust_mcil_std_path_parent", nameof(RuntimeBridgeHelpers.StdPathParent)),
+            ("rust_mcil_std_path_components", nameof(RuntimeBridgeHelpers.StdPathComponents)),
+            ("rust_mcil_std_path_is_absolute", nameof(RuntimeBridgeHelpers.StdPathIsAbsolute)),
+            ("rust_mcil_std_path_components_eq", nameof(RuntimeBridgeHelpers.StdPathComponentsEq)),
+            ("rust_mcil_std_path_eq", nameof(RuntimeBridgeHelpers.StdPathEq)),
+            ("rust_mcil_std_path_starts_with", nameof(RuntimeBridgeHelpers.StdPathStartsWith)),
+            ("rust_mcil_std_path_ends_with", nameof(RuntimeBridgeHelpers.StdPathEndsWith)),
+            ("rust_mcil_std_path_join", nameof(RuntimeBridgeHelpers.StdPathJoin)),
+            ("rust_mcil_std_path_with_extension", nameof(RuntimeBridgeHelpers.StdPathWithExtension)),
+            ("rust_mcil_std_path_with_file_name", nameof(RuntimeBridgeHelpers.StdPathWithFileName)),
+            ("_ZN4core4iter6traits8iterator8Iterator4fold17hbc92b954ca3f68c4E", nameof(RuntimeBridgeHelpers.StdPathComponentCount)),
+            ("rust_mcil_std_pathbuf_push", nameof(RuntimeBridgeHelpers.AppendPathSegment)),
+            ("rust_mcil_std_fs_read_to_string_inner", nameof(RuntimeBridgeHelpers.ReadFileToRustString)),
+            ("rust_mcil_core_slice_memchr_aligned", nameof(RuntimeBridgeHelpers.MemchrAligned)),
+            ("rust_mcil_std_io_print", nameof(RuntimeBridgeHelpers.StdIoPrint)),
+            ("rust_mcil_std_io_eprint", nameof(RuntimeBridgeHelpers.StdIoEPrint)),
+            ("rust_mcil_std_io_stdout", nameof(RuntimeBridgeHelpers.StdIoStdout)),
+            ("rust_mcil_std_io_stdout_write_all", nameof(RuntimeBridgeHelpers.StdIoStdoutWriteAll)),
+            ("rust_mcil_std_io_stderr_write_all", nameof(RuntimeBridgeHelpers.StdIoStderrWriteAll)),
+            ("rust_mcil_std_io_stdout_flush", nameof(RuntimeBridgeHelpers.StdIoStdoutFlush)),
+            ("rust_mcil_std_time_instant_now", nameof(RuntimeBridgeHelpers.StdTimeInstantNow)),
+            ("rust_mcil_std_time_instant_elapsed", nameof(RuntimeBridgeHelpers.StdTimeInstantElapsed)),
+            ("rust_mcil_std_env_current_dir", nameof(RuntimeBridgeHelpers.StdEnvCurrentDir)),
+            ("rust_mcil_std_env_temp_dir", nameof(RuntimeBridgeHelpers.StdEnvTempDir)),
+            ("rust_mcil_std_env_var", nameof(RuntimeBridgeHelpers.StdEnvVar)),
+            ("rust_mcil_bindgen_system_string_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringLength)),
+            ("rust_mcil_bindgen_system_string_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringUtf8Length)),
+            ("rust_mcil_bindgen_system_string_array_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringArrayLength)),
+            ("rust_mcil_bindgen_system_exception_get_type_name_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemExceptionGetTypeNameUtf8Length)),
+            ("rust_mcil_bindgen_system_exception_get_message_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemExceptionGetMessageUtf8Length))
+        ];
+
+        private static BlobHandle EncodeReflectedMethodSig(MetadataBuilder mb, MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(parameters.Length, out var ret, out var parms);
+            EncodeReflectedSignatureType(ret, method.ReturnType);
+            foreach (var parameter in parameters)
+            {
+                EncodeReflectedSignatureType(parms.AddParameter().Type(), parameter.ParameterType);
+            }
+
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static void EncodeReflectedSignatureType(ReturnTypeEncoder encoder, Type type)
+        {
+            if (type == typeof(void))
+            {
+                encoder.Void();
+                return;
+            }
+
+            EncodeReflectedSignatureType(encoder.Type(), type);
+        }
+
+        private static void EncodeReflectedSignatureType(SignatureTypeEncoder encoder, Type type)
+        {
+            if (type == typeof(int))
+                encoder.Int32();
+            else if (type == typeof(uint))
+                encoder.UInt32();
+            else if (type == typeof(byte))
+                encoder.Byte();
+            else if (type == typeof(sbyte))
+                encoder.SByte();
+            else if (type == typeof(long))
+                encoder.Int64();
+            else if (type == typeof(ulong))
+                encoder.UInt64();
+            else if (type == typeof(float))
+                encoder.Single();
+            else if (type == typeof(double))
+                encoder.Double();
+            else if (type == typeof(nint) || type == typeof(IntPtr))
+                encoder.IntPtr();
+            else if (type == typeof(string))
+                encoder.String();
+            else
+                throw new NotSupportedException($"Unsupported runtime bridge signature type '{type.FullName}'.");
+        }
+
+        private static string ToSnakeCase(string value)
+        {
+            var builder = new System.Text.StringBuilder(value.Length + 16);
+            for (var i = 0; i < value.Length; i++)
+            {
+                var ch = value[i];
+                if (char.IsUpper(ch))
+                {
+                    if (i > 0 && (char.IsLower(value[i - 1]) || char.IsDigit(value[i - 1]) || (i + 1 < value.Length && char.IsLower(value[i + 1]))))
+                        builder.Append('_');
+                    builder.Append(char.ToLowerInvariant(ch));
+                }
+                else
+                {
+                    builder.Append(ch);
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        private static BlobHandle EncodeBridgeMethodSig(MetadataBuilder mb, string returnType, params string[] parameterTypes)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(parameterTypes.Length, out var ret, out var parms);
+            if (string.Equals(returnType, "void", StringComparison.Ordinal))
+                ret.Void();
+            else
+                EncodeSignatureType(ret.Type(), returnType);
+
+            foreach (var parameterType in parameterTypes)
+            {
+                EncodeSignatureType(parms.AddParameter().Type(), parameterType);
+            }
+
+            return mb.GetOrAddBlob(blob);
         }
 
         private static BlobHandle EncodeU32ToI32Sig(MetadataBuilder mb)

@@ -35,6 +35,9 @@ public static class RustBindingGenerator
     private static string GenerateRustWrapperBody(BindingSurface surface)
     {
         return RustWrapperBodyTemplate.Replace(
+            "{{MATHF_METHODS}}",
+            GenerateRustWrapperMethods(surface.RustWrapperMethods, RustWrapperContainer.MathF, "    "),
+            StringComparison.Ordinal).Replace(
             "{{IO_PATH_METHODS}}",
             GenerateRustWrapperMethods(surface.RustWrapperMethods, RustWrapperContainer.IoPath, "        "),
             StringComparison.Ordinal);
@@ -99,6 +102,7 @@ public static class RustBindingGenerator
     {
         return method.Container switch
         {
+            RustWrapperContainer.MathF => $"super::{method.ExternSymbol}",
             RustWrapperContainer.IoPath => $"super::super::{method.ExternSymbol}",
             _ => throw new NotSupportedException($"Rust wrapper container '{method.Container}' is not supported.")
         };
@@ -110,6 +114,7 @@ public static class RustBindingGenerator
         {
             RustWrapperResultKind.BooleanAsInt => $"Ok({method.ResultVariableName})",
             RustWrapperResultKind.ObjectHandle => $"Ok({method.Result.RustType}::from_handle({method.ResultVariableName}))",
+            RustWrapperResultKind.Scalar => $"Ok({method.ResultVariableName})",
             _ => throw new NotSupportedException($"Rust wrapper result kind '{method.Result.Kind}' is not supported.")
         };
     }
@@ -176,6 +181,12 @@ pub mod environment {
         Exception::from_handle(exception_handle)?;
         Ok(ManagedStringArray::from_handle(object_handle))
     }
+}
+
+pub mod mathf {
+    use crate::system::Exception;
+
+{{MATHF_METHODS}}
 }
 
 pub mod io {

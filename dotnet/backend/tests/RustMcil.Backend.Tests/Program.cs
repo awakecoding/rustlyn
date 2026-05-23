@@ -47,7 +47,9 @@ RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLea
 RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
 RunTest("LowererStripsTrailingMetadataFromSelectValues", LowererStripsTrailingMetadataFromSelectValues, failures);
 RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
+RunTest("LowererPreservesVtablePointerRelocations", LowererPreservesVtablePointerRelocations, failures);
 RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
+RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScannerFindsInstanceAndNativeTypes, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -802,6 +804,7 @@ RunOptionalTest("ByteSwapProbeReturnsExpectedResult", ByteSwapProbeReturnsExpect
 RunOptionalTest("MutualRecursionProbeReturnsExpectedResult", MutualRecursionProbeReturnsExpectedResult, failures);
 RunOptionalTest("ArrayOpsProbeReturnsExpectedResult", ArrayOpsProbeReturnsExpectedResult, failures);
 RunOptionalTest("NestedMatchProbeReturnsExpectedResult", NestedMatchProbeReturnsExpectedResult, failures);
+RunOptionalTest("TraitObjectProbeReturnsExpectedResult", TraitObjectProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -1315,7 +1318,39 @@ static void BindingSurfaceScannerFindsPathMethods()
     // Verify IsTypeBindable reports correctly
     Assert(BindingSurfaceScanner.IsTypeBindable(typeof(string)), "string should be bindable");
     Assert(BindingSurfaceScanner.IsTypeBindable(typeof(int)), "int should be bindable");
+    Assert(BindingSurfaceScanner.IsTypeBindable(typeof(IntPtr)), "IntPtr should be bindable");
+    Assert(BindingSurfaceScanner.IsTypeBindable(typeof(float)), "float should be bindable");
+    Assert(BindingSurfaceScanner.IsTypeBindable(typeof(double)), "double should be bindable");
     Assert(!BindingSurfaceScanner.IsTypeBindable(typeof(System.IO.Stream)), "Stream should not be bindable");
+}
+
+static void BindingSurfaceScannerFindsInstanceAndNativeTypes()
+{
+    var requirements = BindingSurfaceScanner.ScanType(typeof(ScannerBindableProbe));
+
+    Assert(
+        requirements.Any(static requirement =>
+            requirement.Kind == ManagedApiRequirementKind.Method &&
+            requirement.MemberName == nameof(ScannerBindableProbe.Scale) &&
+            requirement.ParameterTypes.SequenceEqual([typeof(float), typeof(double), typeof(IntPtr)])),
+        "Scanner should find instance methods that use float, double, and IntPtr.");
+
+    Assert(
+        requirements.Any(static requirement =>
+            requirement.Kind == ManagedApiRequirementKind.Property &&
+            requirement.MemberName == nameof(ScannerBindableProbe.Value)),
+        "Scanner should find instance properties with bindable return types.");
+
+    Assert(
+        requirements.Any(static requirement =>
+            requirement.Kind == ManagedApiRequirementKind.Method &&
+            requirement.MemberName == nameof(ScannerBindableProbe.SumArray) &&
+            requirement.ParameterTypes.SequenceEqual([typeof(int[])])),
+        "Scanner should find methods with arrays of bindable primitive types.");
+
+    Assert(
+        !requirements.Any(static requirement => requirement.MemberName == nameof(ScannerBindableProbe.OpenStream)),
+        "Scanner should reject methods with unbindable return types.");
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
@@ -1349,7 +1384,7 @@ static void GeneratedBindingGlueMapTargetsRuntimeHelpers()
             BindingFlags.Public | BindingFlags.Static);
         Assert(helperMethod is not null, $"Expected generated managed glue binding '{binding.Symbol}' to target an existing RuntimeBridgeHelpers method.");
         var runtimeHelperMethod = helperMethod ?? throw new InvalidOperationException($"Generated managed glue binding '{binding.Symbol}' targets a missing RuntimeBridgeHelpers method.");
-        Assert(runtimeHelperMethod.ReturnType == typeof(int), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to return int.");
+        Assert(runtimeHelperMethod.ReturnType == ResolveManagedGlueParameterType(binding.ReturnType), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to return {binding.ReturnType}.");
 
         var actualParameters = runtimeHelperMethod.GetParameters();
         Assert(actualParameters.Length == binding.Parameters.Count, $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to match the binding parameter count.");
@@ -1375,6 +1410,8 @@ static Type ResolveManagedGlueParameterType(string typeName)
     {
         "int" => typeof(int),
         "long" => typeof(long),
+        "float" => typeof(float),
+        "double" => typeof(double),
         "IntPtr" => typeof(IntPtr),
         _ => throw new NotSupportedException($"Managed glue parameter type '{typeName}' is not supported by the regression harness.")
     };
@@ -1959,7 +1996,7 @@ static void DivU32SampleProducesLoweredIr()
         "br _3 -> panic, bb1",
         "_0 = udiv i32 a, b",
         "ret i32 _0",
-        "call void _ZN4core9panicking11panic_const23panic_const_div_by_zero",
+        "panic_const_div_by_zero",
         "unreachable"
     ]);
 }
@@ -1971,11 +2008,11 @@ static void DivI64SampleProducesLoweredIr()
         "_3 = icmp eq i64 b, 0",
         "br _3 -> panic, bb1",
         "_6 = and i1 _4, _5",
-        "call void _ZN4core9panicking11panic_const23panic_const_div_by_zero",
+        "panic_const_div_by_zero",
         "unreachable",
         "_0 = sdiv i64 a, b",
         "ret i64 _0",
-        "call void _ZN4core9panicking11panic_const24panic_const_div_overflow",
+        "panic_const_div_overflow",
         "unreachable"
     ]);
 }
@@ -1987,11 +2024,11 @@ static void RemSampleProducesLoweredIr()
         "_3 = icmp eq i32 b, 0",
         "br _3 -> panic, bb1",
         "_6 = and i1 _4, _5",
-        "call void _ZN4core9panicking11panic_const23panic_const_rem_by_zero",
+        "panic_const_rem_by_zero",
         "unreachable",
         "_0 = srem i32 a, b",
         "ret i32 _0",
-        "call void _ZN4core9panicking11panic_const24panic_const_rem_overflow",
+        "panic_const_rem_overflow",
         "unreachable"
     ]);
 }
@@ -2004,7 +2041,7 @@ static void RemU32SampleProducesLoweredIr()
         "br _3 -> panic, bb1",
         "_0 = urem i32 a, b",
         "ret i32 _0",
-        "call void _ZN4core9panicking11panic_const23panic_const_rem_by_zero",
+        "panic_const_rem_by_zero",
         "unreachable"
     ]);
 }
@@ -2016,11 +2053,11 @@ static void RemI64SampleProducesLoweredIr()
         "_3 = icmp eq i64 b, 0",
         "br _3 -> panic, bb1",
         "_6 = and i1 _4, _5",
-        "call void _ZN4core9panicking11panic_const23panic_const_rem_by_zero",
+        "panic_const_rem_by_zero",
         "unreachable",
         "_0 = srem i64 a, b",
         "ret i64 _0",
-        "call void _ZN4core9panicking11panic_const24panic_const_rem_overflow",
+        "panic_const_rem_overflow",
         "unreachable"
     ]);
 }
@@ -2033,7 +2070,7 @@ static void RemU64SampleProducesLoweredIr()
         "br _3 -> panic, bb1",
         "_0 = urem i64 a, b",
         "ret i64 _0",
-        "call void _ZN4core9panicking11panic_const23panic_const_rem_by_zero",
+        "panic_const_rem_by_zero",
         "unreachable"
     ]);
 }
@@ -6986,6 +7023,9 @@ static void StdEnvBuildsWithBuildStdStd()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "std_env_probe");
     Assert(function.Blocks.Count >= 5, $"Expected build-std std_env_probe to lower multiple blocks for env operations, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_env_probe", [], llvmRoot);
+    Assert(Convert.ToInt32(actualResult, CultureInfo.InvariantCulture) > 0, $"Expected build-std std_env_probe invocation to return a positive path length, but got '{actualResult}'.");
 }
 
 static void StdTimeBuildsWithBuildStdStd()
@@ -7018,6 +7058,9 @@ static void StdTimeBuildsWithBuildStdStd()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "std_time_probe");
     Assert(function.Blocks.Count >= 1, $"Expected build-std std_time_probe to lower at least one block, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_time_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 1), $"Expected build-std std_time_probe invocation to return 1, but got '{actualResult}'.");
 }
 
 static void StdPathBuildsWithBuildStdStd()
@@ -7045,6 +7088,9 @@ static void StdPathBuildsWithBuildStdStd()
     var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_path.");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_path_probe"), "Expected build-std std_path to contain std_path_probe.");
     Assert(moduleSummary.BasicBlockCount >= 10, $"Expected build-std std_path to contain multiple basic blocks for path operations, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
+
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_path_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 4), $"Expected build-std std_path_probe invocation to return component count 4, but got '{actualResult}'.");
 }
 
 static void StdConsoleBuildsWithBuildStdStd()
@@ -7077,6 +7123,27 @@ static void StdConsoleBuildsWithBuildStdStd()
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
     var function = loweredModule.Functions.Single(static function => function.Name == "std_console_probe");
     Assert(function.Blocks.Count >= 3, $"Expected build-std std_console_probe to lower multiple blocks for console operations, but found {function.Blocks.Count.ToString(CultureInfo.InvariantCulture)}.");
+
+    var originalOut = Console.Out;
+    var originalError = Console.Error;
+    using var outputWriter = new StringWriter(CultureInfo.InvariantCulture);
+    using var errorWriter = new StringWriter(CultureInfo.InvariantCulture);
+    object? actualResult;
+    try
+    {
+        Console.SetOut(outputWriter);
+        Console.SetError(errorWriter);
+        actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_console_probe", [], llvmRoot);
+    }
+    finally
+    {
+        Console.SetOut(originalOut);
+        Console.SetError(originalError);
+    }
+
+    Assert(Equals(actualResult, 0), $"Expected build-std std_console_probe invocation to return 0, but got '{actualResult}'.");
+    Assert(outputWriter.ToString().Contains("std_console: hello stdout", StringComparison.Ordinal), "Expected println! output to be rendered by the std::io print bridge.");
+    Assert(errorWriter.ToString().Contains("std_console: hello stderr", StringComparison.Ordinal), "Expected eprintln! output to be rendered by the std::io eprint bridge.");
 }
 
 static void DepHeavyCrosscrateCallsResolveThroughLto()
@@ -7318,6 +7385,16 @@ static void NestedMatchProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("nested_match");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "nested_match_probe", [1, 1], llvmRoot);
     Assert(Equals(actualResult, 110), $"Expected nested_match_probe(1, 1) to return 110, but got '{actualResult}'.");
+}
+
+static void TraitObjectProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("trait_object_probe");
+    var addResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "trait_object_score", [0], llvmRoot);
+    Assert(Equals(addResult, 12), $"Expected trait_object_score(0) to return 12, but got '{addResult}'.");
+
+    var mulResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "trait_object_score", [1], llvmRoot);
+    Assert(Equals(mulResult, 15), $"Expected trait_object_score(1) to return 15, but got '{mulResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
@@ -18238,6 +18315,36 @@ start:
     Assert(instruction.FalseValue == "b", $"Expected select false value metadata to be stripped, got '{instruction.FalseValue}'.");
 }
 
+static void LowererPreservesVtablePointerRelocations()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@vtable.0 = private unnamed_addr constant <{ [24 x i8], ptr }> <{ [24 x i8] c"\00\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00", ptr @"_ZN5probe5score17h123E" }>, align 8
+
+define i32 @"_ZN5probe5score17h123E"(ptr %self, i32 %value) {
+start:
+  ret i32 %value
+}
+""");
+
+    var global = module.Globals.Single();
+    Assert(global.Name == "vtable.0", $"Expected vtable global name, got '{global.Name}'.");
+    Assert(global.InitializerBytes.Count == 32, $"Expected vtable bytes to include the pointer slot, got {global.InitializerBytes.Count.ToString(CultureInfo.InvariantCulture)} bytes.");
+    var relocation = global.PointerRelocations.Single();
+    Assert(relocation.Offset == 24, $"Expected vtable function pointer relocation at offset 24, got {relocation.Offset.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(relocation.Target == "_ZN5probe5score17h123E", $"Expected relocation target to be normalized, got '{relocation.Target}'.");
+
+    var descriptorModule = LoweredIrLowerer.LowerLlvmIr("""
+@message = private unnamed_addr constant [5 x i8] c"hello", align 1
+@fmt_piece = private unnamed_addr constant <{ ptr, [8 x i8] }> <{ ptr @message, [8 x i8] c"\05\00\00\00\00\00\00\00" }>, align 8
+""");
+
+    var descriptor = descriptorModule.Globals.Single(static global => global.Name == "fmt_piece");
+    Assert(descriptor.InitializerBytes.Count == 16, $"Expected fmt descriptor to contain pointer and length bytes, got {descriptor.InitializerBytes.Count.ToString(CultureInfo.InvariantCulture)} bytes.");
+    var descriptorRelocation = descriptor.PointerRelocations.Single();
+    Assert(descriptorRelocation.Offset == 0, $"Expected fmt descriptor relocation at offset 0, got {descriptorRelocation.Offset.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(descriptorRelocation.Target == "message", $"Expected fmt descriptor relocation to target message, got '{descriptorRelocation.Target}'.");
+}
+
 static void RuntimeSplitFacadeForwardsNumericHelpers()
 {
     Assert(RustMcil.Runtime.NumericRuntime.RemEuclidI32(-5, 3) == 1, "Expected Runtime numeric rem_euclid i32 helper to match Rust semantics.");
@@ -18643,6 +18750,20 @@ static void RustBitcodeBuildStdArgumentsAvoidFakeLinker()
     Assert(ContainsAdjacent(arguments, "--emit", "llvm-bc,llvm-ir"), "Expected cargo arguments to request LLVM bitcode plus textual IR for tool-version tolerant lowering.");
     Assert(arguments.All(static argument => !argument.Contains("rsfakelink", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid the historical rsfakelink path.");
     Assert(arguments.All(static argument => !argument.Contains("linker", StringComparison.OrdinalIgnoreCase)), "Expected build-std cargo arguments to avoid linker replacement until a fixture proves it is needed.");
+}
+
+file sealed class ScannerBindableProbe
+{
+    public int Value => 7;
+
+    public double Scale(float left, double right, IntPtr handle)
+        => left + right + handle.ToInt64();
+
+    public static int SumArray(int[] values)
+        => values.Sum();
+
+    public Stream OpenStream()
+        => Stream.Null;
 }
 
 file sealed class SkipTestException(string message) : Exception(message);

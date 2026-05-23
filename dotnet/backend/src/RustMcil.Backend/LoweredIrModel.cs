@@ -6,7 +6,18 @@ public sealed record LoweredModule(
 
 public sealed record LoweredGlobal(
     string Name,
-    IReadOnlyList<byte> InitializerBytes);
+    IReadOnlyList<byte> InitializerBytes,
+    IReadOnlyList<LoweredGlobalPointerRelocation> PointerRelocations)
+{
+    public LoweredGlobal(string name, IReadOnlyList<byte> initializerBytes)
+        : this(name, initializerBytes, [])
+    {
+    }
+}
+
+public sealed record LoweredGlobalPointerRelocation(
+    int Offset,
+    string Target);
 
 public sealed record LoweredFunction(
     string Name,
@@ -99,6 +110,11 @@ public sealed record LoweredPtrToIntInstruction(
 
 public sealed record LoweredIntToPtrInstruction(
     string Result,
+    string Value) : LoweredInstruction;
+
+public sealed record LoweredFreezeInstruction(
+    string Result,
+    string Type,
     string Value) : LoweredInstruction;
 
 public sealed record LoweredSelectInstruction(

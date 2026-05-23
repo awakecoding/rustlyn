@@ -494,6 +494,44 @@ $sampleChecks = @{
         Expected = 3
         SupportedModes = @("Cargo")
     }
+    std_console = @{
+        Method = "std_console_probe"
+        Arguments = @()
+        Expected = 0
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    std_time = @{
+        Method = "std_time_probe"
+        Arguments = @()
+        Expected = 1
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    std_env = @{
+        Method = "std_env_probe"
+        Arguments = @()
+        ExpectedMinimum = 1
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    std_path = @{
+        Method = "std_path_probe"
+        Arguments = @()
+        Expected = 4
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    trait_object_probe = @{
+        Method = "trait_object_score"
+        Arguments = @(0)
+        Expected = 12
+        SupportedModes = @("Cargo")
+    }
     dotnet_runtime_api = @{
         Method = "dotnet_runtime_score"
         Arguments = @()
@@ -1657,7 +1695,12 @@ function Invoke-SmokeCheck {
             }
 
             $actual = $method.Invoke($null, $arguments)
-            if ($actual -ne $Check.Expected) {
+            if ($Check.ContainsKey("ExpectedMinimum")) {
+                if ([Int64]$actual -lt [Int64]$Check.ExpectedMinimum) {
+                    throw "Generated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected at least '$($Check.ExpectedMinimum)'."
+                }
+            }
+            elseif ($actual -ne $Check.Expected) {
                 throw "Generated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
             }
 
@@ -1817,7 +1860,12 @@ function Invoke-TranslateSmokeCheck {
             }
 
             $actual = (($invokeOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1)
-            if ($actual -ne [string]$Check.Expected) {
+            if ($Check.ContainsKey("ExpectedMinimum")) {
+                if ([Int64]$actual -lt [Int64]$Check.ExpectedMinimum) {
+                    throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected at least '$($Check.ExpectedMinimum)'."
+                }
+            }
+            elseif ($actual -ne [string]$Check.Expected) {
                 throw "Translated method '$($Check.Method)' returned '$actual' for '$CurrentSample', expected '$($Check.Expected)'."
             }
 

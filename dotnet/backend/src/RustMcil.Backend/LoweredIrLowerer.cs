@@ -44,6 +44,12 @@ public static partial class LoweredIrLowerer
                     continue;
                 }
 
+                if (TryParsePointerRelocationGlobal(line, out var relocationGlobal))
+                {
+                    globals.Add(relocationGlobal);
+                    continue;
+                }
+
                 var globalMatch = ConstantByteArrayGlobalRegex().Match(line);
                 if (globalMatch.Success)
                 {
@@ -176,6 +182,13 @@ public static partial class LoweredIrLowerer
             builder.Append(global.Name);
             builder.Append(" = ");
             builder.Append(string.Join(" ", global.InitializerBytes.Select(static value => value.ToString("X2"))));
+            foreach (var relocation in global.PointerRelocations)
+            {
+                builder.Append(" ; reloc +");
+                builder.Append(relocation.Offset.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                builder.Append(" -> ");
+                builder.Append(relocation.Target);
+            }
         }
 
         return builder.ToString().TrimEnd();
@@ -268,6 +281,15 @@ public static partial class LoweredIrLowerer
             return new LoweredIntToPtrInstruction(
                 NormalizeResultName(intToPtrMatch.Groups["result"].Value),
                 NormalizeValue(intToPtrMatch.Groups["value"].Value));
+        }
+
+        var freezeMatch = FreezeInstructionRegex().Match(line);
+        if (freezeMatch.Success)
+        {
+            return new LoweredFreezeInstruction(
+                NormalizeResultName(freezeMatch.Groups["result"].Value),
+                NormalizeType(freezeMatch.Groups["type"].Value),
+                NormalizeValue(freezeMatch.Groups["value"].Value));
         }
 
         var floatConvertMatch = FloatConvertInstructionRegex().Match(line);
@@ -981,6 +1003,7 @@ public static partial class LoweredIrLowerer
             LoweredSignExtendInstruction sext => $"{sext.Result} = sext {sext.FromType} {sext.Value} to {sext.ToType}",
             LoweredPtrToIntInstruction p2i => $"{p2i.Result} = ptrtoint ptr {p2i.Value} to {p2i.ToType}",
             LoweredIntToPtrInstruction i2p => $"{i2p.Result} = inttoptr to ptr {i2p.Value}",
+            LoweredFreezeInstruction freeze => $"{freeze.Result} = freeze {freeze.Type} {freeze.Value}",
             LoweredSelectInstruction select => $"{select.Result} = select i1 {select.Condition}, {select.ValueType} {select.TrueValue}, {select.ValueType} {select.FalseValue}",
             LoweredPhiInstruction phi => $"{phi.Result} = phi {phi.Type} {FormatPhiIncoming(phi.Incoming)}",
             LoweredUnreachableInstruction => "unreachable",
@@ -1430,11 +1453,59 @@ public static partial class LoweredIrLowerer
         return bytes.Count > 0 ? bytes : null;
     }
 
+    private static bool TryParsePointerRelocationGlobal(string line, out LoweredGlobal global)
+    {
+        global = null!;
+
+        var match = PointerRelocationGlobalRegex().Match(line);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var bytes = ParseConstantByteArray(match.Groups["bytes"].Value).ToList();
+        var relocations = new List<LoweredGlobalPointerRelocation>();
+        var initializer = match.Groups["initializer"].Value;
+        foreach (Match fieldMatch in PointerRelocationFieldRegex().Matches(initializer))
+        {
+            if (fieldMatch.Groups["bytes"].Success)
+            {
+                bytes.AddRange(ParseConstantByteArray(fieldMatch.Groups["bytes"].Value));
+                continue;
+            }
+
+            if (fieldMatch.Groups["target"].Success)
+            {
+                relocations.Add(new LoweredGlobalPointerRelocation(
+                    bytes.Count,
+                    NormalizeFunctionName(fieldMatch.Groups["target"].Value)));
+                bytes.AddRange(new byte[IntPtr.Size]);
+            }
+        }
+
+        if (relocations.Count == 0)
+        {
+            return false;
+        }
+
+        global = new LoweredGlobal(
+            match.Groups["name"].Value,
+            bytes,
+            relocations);
+        return true;
+    }
+
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex FunctionAliasRegex();
 
     [GeneratedRegex("<[^>]+>|\\{[^}]+\\}|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|float|double|void", RegexOptions.CultureInvariant)]
     private static partial Regex CoreTypeRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+<\\{.*\\}>\\s+<\\{\\s*(?<initializer>.*)\\s*\\}>(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex PointerRelocationGlobalRegex();
+
+    [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[\\d+\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"", RegexOptions.CultureInvariant)]
+    private static partial Regex PointerRelocationFieldRegex();
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantByteArrayGlobalRegex();
@@ -1468,6 +1539,9 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*inttoptr\\s+(?:[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+ptr$", RegexOptions.CultureInvariant)]
     private static partial Regex IntToPtrInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*freeze\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex FreezeInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
     private static partial Regex FloatConvertInstructionRegex();
