@@ -1293,13 +1293,81 @@ public static class LoweredAssemblyEmitter
         }
 
         // llvm.bitreverse.i32(x): reverse all 32 bits
-        // Requires multi-step computation with temp locals — not available in inline handler.
-        // Stub: returns 0. TODO: emit as a generated helper method in the assembly.
-        if (call.Callee.Contains("llvm.bitreverse.i32", StringComparison.Ordinal) && call.Arguments.Count >= 1)
+        // Uses the call result local as scratch for the 5-step reversal algorithm.
+        if (call.Callee.Contains("llvm.bitreverse.i32", StringComparison.Ordinal)
+            && call.Arguments.Count >= 1 && call.Result is not null
+            && localIndices.TryGetValue(call.Result, out var scratchLocal))
         {
-            // Pop the arg that would have been pushed, return 0
-            // Actually, args haven't been pushed yet (we intercept before arg push)
-            encoder.LoadConstantI4(0);
+            var x = call.Arguments[0].Value;
+            // Store input to scratch local
+            EmitLoadValue(encoder, x, paramIndices, localIndices, fieldHandles);
+            encoder.StoreLocal(scratchLocal);
+            // Step 1: swap odd/even bits
+            // x = ((x >> 1) & 0x55555555) | ((x & 0x55555555) << 1)
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(1);
+            encoder.OpCode(ILOpCode.Shr_un);
+            encoder.LoadConstantI4(0x55555555);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(0x55555555);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadConstantI4(1);
+            encoder.OpCode(ILOpCode.Shl);
+            encoder.OpCode(ILOpCode.Or);
+            encoder.StoreLocal(scratchLocal);
+            // Step 2: swap pairs
+            // x = ((x >> 2) & 0x33333333) | ((x & 0x33333333) << 2)
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(2);
+            encoder.OpCode(ILOpCode.Shr_un);
+            encoder.LoadConstantI4(0x33333333);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(0x33333333);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadConstantI4(2);
+            encoder.OpCode(ILOpCode.Shl);
+            encoder.OpCode(ILOpCode.Or);
+            encoder.StoreLocal(scratchLocal);
+            // Step 3: swap nibbles
+            // x = ((x >> 4) & 0x0F0F0F0F) | ((x & 0x0F0F0F0F) << 4)
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(4);
+            encoder.OpCode(ILOpCode.Shr_un);
+            encoder.LoadConstantI4(0x0F0F0F0F);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(0x0F0F0F0F);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadConstantI4(4);
+            encoder.OpCode(ILOpCode.Shl);
+            encoder.OpCode(ILOpCode.Or);
+            encoder.StoreLocal(scratchLocal);
+            // Step 4: swap bytes
+            // x = ((x >> 8) & 0x00FF00FF) | ((x & 0x00FF00FF) << 8)
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(8);
+            encoder.OpCode(ILOpCode.Shr_un);
+            encoder.LoadConstantI4(0x00FF00FF);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(0x00FF00FF);
+            encoder.OpCode(ILOpCode.And);
+            encoder.LoadConstantI4(8);
+            encoder.OpCode(ILOpCode.Shl);
+            encoder.OpCode(ILOpCode.Or);
+            encoder.StoreLocal(scratchLocal);
+            // Step 5: swap halfwords
+            // x = (x >> 16) | (x << 16)
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(16);
+            encoder.OpCode(ILOpCode.Shr_un);
+            encoder.LoadLocal(scratchLocal);
+            encoder.LoadConstantI4(16);
+            encoder.OpCode(ILOpCode.Shl);
+            encoder.OpCode(ILOpCode.Or);
+            // Leave result on stack — caller will store to result local
             return true;
         }
 
