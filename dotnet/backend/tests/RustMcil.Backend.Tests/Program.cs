@@ -799,6 +799,9 @@ RunOptionalTest("StringLenProbeReturnsExpectedResult", StringLenProbeReturnsExpe
 RunOptionalTest("EnumMatchProbeReturnsExpectedResult", EnumMatchProbeReturnsExpectedResult, failures);
 RunOptionalTest("BitopsProbeReturnsExpectedResult", BitopsProbeReturnsExpectedResult, failures);
 RunOptionalTest("ByteSwapProbeReturnsExpectedResult", ByteSwapProbeReturnsExpectedResult, failures);
+RunOptionalTest("MutualRecursionProbeReturnsExpectedResult", MutualRecursionProbeReturnsExpectedResult, failures);
+RunOptionalTest("ArrayOpsProbeReturnsExpectedResult", ArrayOpsProbeReturnsExpectedResult, failures);
+RunOptionalTest("NestedMatchProbeReturnsExpectedResult", NestedMatchProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -7294,6 +7297,27 @@ static void ByteSwapProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("byte_swap");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "byte_swap_probe", [305419896], llvmRoot);
     Assert(Equals(actualResult, 2018915346), $"Expected byte_swap_probe(0x12345678) to return 2018915346, but got '{actualResult}'.");
+}
+
+static void MutualRecursionProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("mutual_recursion");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "mutual_recursion_probe", [6], llvmRoot);
+    Assert(Equals(actualResult, 1), $"Expected mutual_recursion_probe(6) to return 1, but got '{actualResult}'.");
+}
+
+static void ArrayOpsProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("array_ops");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "array_ops_probe", [3], llvmRoot);
+    Assert(Equals(actualResult, 60), $"Expected array_ops_probe(3) to return 60, but got '{actualResult}'.");
+}
+
+static void NestedMatchProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("nested_match");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "nested_match_probe", [1, 1], llvmRoot);
+    Assert(Equals(actualResult, 110), $"Expected nested_match_probe(1, 1) to return 110, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()

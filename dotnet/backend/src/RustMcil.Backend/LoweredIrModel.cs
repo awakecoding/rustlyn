@@ -71,7 +71,8 @@ public sealed record LoweredGetElementPointerInstruction(
     string Result,
     string ElementType,
     string Base,
-    int Index) : LoweredInstruction;
+    int Index,
+    string? IndexVariable = null) : LoweredInstruction;
 
 public sealed record LoweredTruncateInstruction(
     string Result,

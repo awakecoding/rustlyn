@@ -53,6 +53,21 @@ public static partial class LoweredIrLowerer
                     continue;
                 }
 
+                var intArrayGlobalMatch = ConstantIntegerArrayGlobalRegex().Match(line);
+                if (intArrayGlobalMatch.Success)
+                {
+                    var intArrayBytes = ParseConstantIntegerArray(
+                        intArrayGlobalMatch.Groups["elementType"].Value,
+                        intArrayGlobalMatch.Groups["values"].Value);
+                    if (intArrayBytes is not null)
+                    {
+                        globals.Add(new LoweredGlobal(
+                            intArrayGlobalMatch.Groups["name"].Value,
+                            intArrayBytes));
+                        continue;
+                    }
+                }
+
                 if (!TryParseFunctionHeader(line, out var functionName, out var returnType, out var returnExtension, out var parameters))
                 {
                     continue;
@@ -309,6 +324,17 @@ public static partial class LoweredIrLowerer
                 NormalizeType(getElementPointerMatch.Groups["elementType"].Value),
                 NormalizeValue(getElementPointerMatch.Groups["base"].Value),
                 int.Parse(getElementPointerMatch.Groups["index"].Value));
+        }
+
+        var dynamicGepMatch = DynamicGetElementPointerInstructionRegex().Match(line);
+        if (dynamicGepMatch.Success)
+        {
+            return new LoweredGetElementPointerInstruction(
+                NormalizeResultName(dynamicGepMatch.Groups["result"].Value),
+                NormalizeType(dynamicGepMatch.Groups["elementType"].Value),
+                NormalizeValue(dynamicGepMatch.Groups["base"].Value),
+                0,
+                NormalizeValue(dynamicGepMatch.Groups["indexVar"].Value));
         }
 
         var globalElementLoadMatch = GlobalElementLoadInstructionRegex().Match(line);
@@ -1293,6 +1319,30 @@ public static partial class LoweredIrLowerer
         return bytes;
     }
 
+    private static List<byte>? ParseConstantIntegerArray(string elementType, string valuesText)
+    {
+        var bitWidth = elementType.StartsWith('i') ? int.Parse(elementType[1..]) : 0;
+        if (bitWidth is not (8 or 16 or 32 or 64))
+        {
+            return null;
+        }
+
+        var byteWidth = bitWidth / 8;
+        var bytes = new List<byte>();
+        var valuePattern = new System.Text.RegularExpressions.Regex($@"i{bitWidth}\s+(-?\d+)");
+        foreach (System.Text.RegularExpressions.Match match in valuePattern.Matches(valuesText))
+        {
+            var value = long.Parse(match.Groups[1].Value);
+            for (var i = 0; i < byteWidth; i++)
+            {
+                bytes.Add((byte)(value & 0xFF));
+                value >>= 8;
+            }
+        }
+
+        return bytes.Count > 0 ? bytes : null;
+    }
+
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex FunctionAliasRegex();
 
@@ -1301,6 +1351,9 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantByteArrayGlobalRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[\\d+\\s+x\\s+(?<elementType>i\\d+)\\]\\s+\\[(?<values>[^\\]]+)\\](?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ConstantIntegerArrayGlobalRegex();
 
     [GeneratedRegex("^(?<name>\"[^\"]+\"|[0-9]+|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
     private static partial Regex BasicBlockRegex();
@@ -1343,6 +1396,9 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GetElementPointerInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex DynamicGetElementPointerInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>[^,]+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GlobalElementLoadInstructionRegex();
