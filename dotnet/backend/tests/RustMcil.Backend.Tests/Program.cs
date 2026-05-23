@@ -791,6 +791,9 @@ RunOptionalTest("AtomicFenceProbeReturnsExpectedResult", AtomicFenceProbeReturns
 RunOptionalTest("FnPointerProbeReturnsExpectedResult", FnPointerProbeReturnsExpectedResult, failures);
 RunOptionalTest("InvokeProbeReturnsExpectedResult", InvokeProbeReturnsExpectedResult, failures);
 RunOptionalTest("HeapAllocProbeReturnsExpectedResult", HeapAllocProbeReturnsExpectedResult, failures);
+RunOptionalTest("ClosureProbeReturnsExpectedResult", ClosureProbeReturnsExpectedResult, failures);
+RunOptionalTest("IteratorSumProbeReturnsExpectedResult", IteratorSumProbeReturnsExpectedResult, failures);
+RunOptionalTest("FilterCountProbeReturnsExpectedResult", FilterCountProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -7230,6 +7233,27 @@ static void HeapAllocProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("heap_alloc");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "heap_alloc_probe", [5], llvmRoot);
     Assert(Equals(actualResult, 11), $"Expected heap_alloc_probe(5) to return 11, but got '{actualResult}'.");
+}
+
+static void ClosureProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("closure_basic");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "closure_probe", [3], llvmRoot);
+    Assert(Equals(actualResult, 16), $"Expected closure_probe(3) to return 16, but got '{actualResult}'.");
+}
+
+static void IteratorSumProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("iterator_sum");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "iterator_sum_probe", [4], llvmRoot);
+    Assert(Equals(actualResult, 30), $"Expected iterator_sum_probe(4) to return 30, but got '{actualResult}'.");
+}
+
+static void FilterCountProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("filter_count");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "filter_count_probe", [10], llvmRoot);
+    Assert(Equals(actualResult, 5), $"Expected filter_count_probe(10) to return 5, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
