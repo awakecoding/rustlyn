@@ -111,6 +111,19 @@ public sealed record LoweredStoreInstruction(
     string Value,
     string Destination) : LoweredInstruction;
 
+public sealed record LoweredExtractValueInstruction(
+    string Result,
+    string AggregateType,
+    string Source,
+    int Index) : LoweredInstruction;
+
+public sealed record LoweredInsertValueInstruction(
+    string Result,
+    string AggregateType,
+    string Base,
+    string Value,
+    int Index) : LoweredInstruction;
+
 public sealed record LoweredRawInstruction(
     string Text) : LoweredInstruction;
 

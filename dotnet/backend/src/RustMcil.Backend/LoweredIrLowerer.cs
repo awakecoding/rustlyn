@@ -373,6 +373,27 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(storeMatch.Groups["destination"].Value));
         }
 
+        var extractValueMatch = ExtractValueInstructionRegex().Match(line);
+        if (extractValueMatch.Success)
+        {
+            return new LoweredExtractValueInstruction(
+                NormalizeResultName(extractValueMatch.Groups["result"].Value),
+                extractValueMatch.Groups["aggType"].Value.Trim(),
+                NormalizeValue(extractValueMatch.Groups["source"].Value),
+                int.Parse(extractValueMatch.Groups["index"].Value));
+        }
+
+        var insertValueMatch = InsertValueInstructionRegex().Match(line);
+        if (insertValueMatch.Success)
+        {
+            return new LoweredInsertValueInstruction(
+                NormalizeResultName(insertValueMatch.Groups["result"].Value),
+                insertValueMatch.Groups["aggType"].Value.Trim(),
+                NormalizeValue(insertValueMatch.Groups["base"].Value),
+                NormalizeValue(insertValueMatch.Groups["value"].Value),
+                int.Parse(insertValueMatch.Groups["index"].Value));
+        }
+
         return new LoweredRawInstruction(line);
     }
 
@@ -902,6 +923,8 @@ public static partial class LoweredIrLowerer
             LoweredPhiInstruction phi => $"{phi.Result} = phi {phi.Type} {FormatPhiIncoming(phi.Incoming)}",
             LoweredUnreachableInstruction => "unreachable",
             LoweredStoreInstruction store => $"store {store.Type} {store.Value} -> {store.Destination}",
+            LoweredExtractValueInstruction ev => $"{ev.Result} = extractvalue {ev.AggregateType} {ev.Source}, {ev.Index}",
+            LoweredInsertValueInstruction iv => $"{iv.Result} = insertvalue {iv.AggregateType} {iv.Base}, {iv.Value}, {iv.Index}",
             LoweredRawInstruction raw => raw.Text,
             _ => throw new InvalidOperationException($"Unsupported lowered instruction type: {instruction.GetType().Name}")
         };
@@ -1411,6 +1434,12 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^store\\s+(?:atomic\\s+)?(?<type><[^>]+>|[^\\s]+)\\s+(?<value><[^>]+>|[^,]+),\\s+ptr\\s+(?<destination>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex StoreInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*extractvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<source>[^,]+),\\s*(?<index>\\d+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ExtractValueInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*insertvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<base>[^,]+),\\s+(?:[^\\s]+)\\s+(?<value>[^,]+),\\s*(?<index>\\d+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex InsertValueInstructionRegex();
 
     private sealed class LoweredBlockBuilder(string name)
     {
