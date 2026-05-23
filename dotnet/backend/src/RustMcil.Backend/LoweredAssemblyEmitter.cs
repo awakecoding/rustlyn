@@ -593,8 +593,8 @@ public static class LoweredAssemblyEmitter
             }
         }
 
-        // Multi-value locals: for extractvalue on overflow-intrinsic calls
-        // multiValueLocals maps a call result name -> array of local indices per field
+        // Multi-value locals: for extractvalue on overflow-intrinsic calls and cmpxchg
+        // multiValueLocals maps a call/instruction result name -> array of local indices per field
         var multiValueLocals = new Dictionary<string, int[]>(StringComparer.Ordinal);
         foreach (var block in function.Blocks)
         {
@@ -602,9 +602,11 @@ public static class LoweredAssemblyEmitter
             {
                 if (instr is LoweredExtractValueInstruction ev && !multiValueLocals.ContainsKey(ev.Source))
                 {
-                    // Only allocate multi-value locals for overflow intrinsic results
+                    // Allocate multi-value locals for overflow intrinsic results and cmpxchg results
                     var sourceCall = FindCallByResult(function, ev.Source);
-                    if (sourceCall is not null && sourceCall.Callee.Contains(".with.overflow.", StringComparison.Ordinal))
+                    var sourceCmpxchg = sourceCall is null ? FindCmpxchgByResult(function, ev.Source) : null;
+                    if ((sourceCall is not null && sourceCall.Callee.Contains(".with.overflow.", StringComparison.Ordinal))
+                        || sourceCmpxchg is not null)
                     {
                         var fieldTypes = ParseAggregateFieldTypes(ev.AggregateType);
                         var fieldLocals = new int[fieldTypes.Length];
@@ -980,6 +982,34 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredStoreInstruction store:
+                // Handle vector constant stores (e.g., store <4 x i32> <i32 0, i32 0, i32 5, i32 7> -> ptr)
+                if (store.Type.StartsWith('<') && store.Value.StartsWith('<') && TryParseVectorConstant(store.Value, out var vecElements))
+                {
+                    var vecElemType = ParseVectorElementType(store.Type);
+                    var elemSize = GetFieldSize(vecElemType);
+                    // Get destination pointer
+                    void EmitDestPtr()
+                    {
+                        if (localIndices.TryGetValue(store.Destination, out var dIdx))
+                            encoder.LoadLocal(dIdx);
+                        else if (paramIndices.TryGetValue(store.Destination, out var pIdx))
+                            encoder.LoadArgument(pIdx);
+                        else
+                            encoder.LoadConstantI4(0); // fallback
+                    }
+                    for (var elemIdx = 0; elemIdx < vecElements.Length; elemIdx++)
+                    {
+                        EmitDestPtr();
+                        if (elemIdx > 0)
+                        {
+                            encoder.LoadConstantI4(elemIdx * elemSize);
+                            encoder.OpCode(ILOpCode.Add);
+                        }
+                        EmitLoadValue(encoder, vecElements[elemIdx], paramIndices, localIndices, fieldHandles);
+                        EmitIndirectStore(encoder, vecElemType);
+                    }
+                    break;
+                }
                 if (gepElementLocal.TryGetValue(store.Destination, out var gepStoreIdx))
                 {
                     // Store to a GEP element slot (SROA)
@@ -2098,6 +2128,43 @@ public static class LoweredAssemblyEmitter
         _ => 4 // i32, i16, i8, i1 all stored as 4 bytes for alignment
     };
 
+    /// <summary>
+    /// Parse a vector constant like "&lt;i32 0, i32 0, i32 5, i32 7&gt;" into element values ["0", "0", "5", "7"].
+    /// </summary>
+    private static bool TryParseVectorConstant(string value, out string[] elements)
+    {
+        // Format: <type val, type val, ...>
+        elements = Array.Empty<string>();
+        if (!value.StartsWith('<') || !value.EndsWith('>'))
+            return false;
+        var inner = value[1..^1].Trim();
+        var parts = inner.Split(',');
+        var result = new string[parts.Length];
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var part = parts[i].Trim();
+            var spaceIdx = part.LastIndexOf(' ');
+            if (spaceIdx < 0)
+                return false;
+            result[i] = part[(spaceIdx + 1)..];
+        }
+        elements = result;
+        return true;
+    }
+
+    /// <summary>
+    /// Parse a vector type like "&lt;4 x i32&gt;" and return the element type "i32".
+    /// </summary>
+    private static string ParseVectorElementType(string vectorType)
+    {
+        // Format: <N x type>
+        var inner = vectorType.TrimStart('<').TrimEnd('>').Trim();
+        var xIdx = inner.IndexOf(" x ", StringComparison.Ordinal);
+        if (xIdx >= 0)
+            return inner[(xIdx + 3)..].Trim();
+        return "i32"; // fallback
+    }
+
     private static LoweredCallInstruction? FindCallByResult(LoweredFunction function, string resultName)
     {
         foreach (var block in function.Blocks)
@@ -2106,6 +2173,19 @@ public static class LoweredAssemblyEmitter
             {
                 if (instr is LoweredCallInstruction call && string.Equals(call.Result, resultName, StringComparison.Ordinal))
                     return call;
+            }
+        }
+        return null;
+    }
+
+    private static LoweredCmpxchgInstruction? FindCmpxchgByResult(LoweredFunction function, string resultName)
+    {
+        foreach (var block in function.Blocks)
+        {
+            foreach (var instr in block.Instructions)
+            {
+                if (instr is LoweredCmpxchgInstruction cx && string.Equals(cx.Result, resultName, StringComparison.Ordinal))
+                    return cx;
             }
         }
         return null;
