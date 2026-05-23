@@ -771,10 +771,10 @@ public static class LoweredAssemblyEmitter
                     var endLabel = encoder.DefineLabel();
                     EmitLoadValue(encoder, sel.Condition, paramIndices, localIndices, fieldHandles);
                     encoder.Branch(ILOpCode.Brfalse, falseLabel);
-                    EmitLoadValue(encoder, sel.TrueValue, paramIndices, localIndices, fieldHandles);
+                    EmitLoadValue(encoder, sel.TrueValue, paramIndices, localIndices, fieldHandles, methodHandles);
                     encoder.Branch(ILOpCode.Br, endLabel);
                     encoder.MarkLabel(falseLabel);
-                    EmitLoadValue(encoder, sel.FalseValue, paramIndices, localIndices, fieldHandles);
+                    EmitLoadValue(encoder, sel.FalseValue, paramIndices, localIndices, fieldHandles, methodHandles);
                     encoder.MarkLabel(endLabel);
                     encoder.StoreLocal(localIndices[sel.Result]);
                 }
