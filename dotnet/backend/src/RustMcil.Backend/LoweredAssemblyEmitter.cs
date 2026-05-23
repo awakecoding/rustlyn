@@ -82,6 +82,16 @@ public static class LoweredAssemblyEmitter
                 if (functionMap.ContainsKey(select.FalseValue))
                     pending.Push(select.FalseValue);
             }
+
+            // Function pointers stored into locals (e.g., store ptr @func -> local)
+            foreach (var storeValue in function.Blocks
+                         .SelectMany(static block => block.Instructions)
+                         .OfType<LoweredStoreInstruction>()
+                         .Select(static store => store.Value)
+                         .Where(functionMap.ContainsKey))
+            {
+                pending.Push(storeValue);
+            }
         }
 
         return functions.Where(function => reachable.Contains(function.Name) && !IsExcludedRuntimeStub(function.Name)).ToArray();
@@ -493,7 +503,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder);
             }
         }
 
@@ -517,7 +527,8 @@ public static class LoweredAssemblyEmitter
         string sourceBlock,
         SrmTypeContext typeContext,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
-        IReadOnlyDictionary<string, LoweredGlobal> globalMap)
+        IReadOnlyDictionary<string, LoweredGlobal> globalMap,
+        MetadataBuilder metadataBuilder)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -594,7 +605,15 @@ public static class LoweredAssemblyEmitter
 
             case LoweredTruncateInstruction trunc:
                 EmitLoadValue(encoder, trunc.Value, paramIndices, localIndices, fieldHandles);
-                encoder.OpCode(ILOpCode.Conv_i4);
+                encoder.OpCode(trunc.ToType switch
+                {
+                    "float" => ILOpCode.Conv_r4,
+                    "double" => ILOpCode.Conv_r8,
+                    "i8" => ILOpCode.Conv_i1,
+                    "i16" => ILOpCode.Conv_i2,
+                    "i64" => ILOpCode.Conv_i8,
+                    _ => ILOpCode.Conv_i4
+                });
                 encoder.StoreLocal(localIndices[trunc.Result]);
                 break;
 
@@ -617,18 +636,32 @@ public static class LoweredAssemblyEmitter
                                   || call.Callee.StartsWith("llvm.cttz.", StringComparison.Ordinal);
                     var effectiveArgCount = isCtlzCttz ? Math.Min(callArgs.Count, 1) : callArgs.Count;
 
+                    // Indirect call: callee is a local variable (function pointer)
+                    var isIndirectCall = call.Callee.StartsWith('%')
+                        && localIndices.ContainsKey(call.Callee[1..]);
+
                     for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
                     {
                         EmitLoadValue(encoder, callArgs[argIdx].Value, paramIndices, localIndices, fieldHandles);
                     }
 
-                    if (methodHandles.TryGetValue(call.Callee, out var calleeHandle))
+                    if (isIndirectCall)
+                    {
+                        // Load function pointer from local, then calli
+                        encoder.LoadLocal(localIndices[call.Callee[1..]]);
+                        encoder.CallIndirect(BuildStandaloneSignature(metadataBuilder, call.ReturnType, callArgs));
+                    }
+                    else if (methodHandles.TryGetValue(call.Callee, out var calleeHandle))
                     {
                         encoder.Call(calleeHandle);
                     }
                     else if (typeContext.TryResolveIntrinsic(call.Callee, out var intrinsicHandle))
                     {
                         encoder.Call(intrinsicHandle);
+                    }
+                    else if (TryEmitInlineIntrinsic(encoder, call.Callee, call.ReturnType))
+                    {
+                        // Handled inline (e.g., conv opcodes for fptosi/sitofp)
                     }
                     else
                     {
@@ -655,7 +688,7 @@ public static class LoweredAssemblyEmitter
             case LoweredStoreInstruction store:
                 if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
                 {
-                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles);
+                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                     encoder.StoreLocal(storeLocalIdx);
                 }
                 break;
@@ -669,6 +702,13 @@ public static class LoweredAssemblyEmitter
                         {
                             EmitIndirectLoad(encoder, load.Type);
                         }
+                        encoder.StoreLocal(localIndices[load.Result]);
+                    }
+                    else if (paramIndices.TryGetValue(load.Source, out var loadParamIdx))
+                    {
+                        // Load from a pointer parameter: in our model, the parameter
+                        // holds the value directly (alloca model collapse)
+                        encoder.LoadArgument(loadParamIdx);
                         encoder.StoreLocal(localIndices[load.Result]);
                     }
                     else if (fieldHandles.TryGetValue(load.Source, out var fieldHandle))
@@ -755,7 +795,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitLoadValue(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    private static void EmitLoadValue(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
     {
         if (paramIndices.TryGetValue(value, out var paramIndex))
         {
@@ -790,11 +830,31 @@ public static class LoweredAssemblyEmitter
             return;
         }
 
+        // Float/double literals (e.g., "3.500000e+00", "0.5", "1.0")
+        if (double.TryParse(value, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var doubleConst))
+        {
+            // Use float if value is representable as float and looks like a float context
+            if (float.IsFinite((float)doubleConst) && (float)doubleConst == doubleConst)
+                encoder.LoadConstantR4((float)doubleConst);
+            else
+                encoder.LoadConstantR8(doubleConst);
+            return;
+        }
+
         // Global field reference
         if (fieldHandles.TryGetValue(value, out var fieldHandle))
         {
             encoder.OpCode(ILOpCode.Ldsfld);
             encoder.Token(fieldHandle);
+            return;
+        }
+
+        // Function reference → ldftn (for function pointers stored into locals)
+        if (methodHandles is not null && methodHandles.TryGetValue(value, out var fnHandle))
+        {
+            encoder.OpCode(ILOpCode.Ldftn);
+            encoder.Token(fnHandle);
             return;
         }
 
@@ -807,41 +867,52 @@ public static class LoweredAssemblyEmitter
         switch (predicate)
         {
             case "eq":
+            case "oeq": // ordered float equal
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
             case "ne":
+            case "une": // unordered float not-equal
+                encoder.OpCode(ILOpCode.Ceq);
+                encoder.LoadConstantI4(0);
+                encoder.OpCode(ILOpCode.Ceq);
+                break;
+            case "one": // ordered float not-equal
                 encoder.OpCode(ILOpCode.Ceq);
                 encoder.LoadConstantI4(0);
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
             case "slt":
+            case "olt": // ordered float less-than
                 encoder.OpCode(ILOpCode.Clt);
                 break;
-            case "ult":
+            case "ult": // unsigned or unordered float less-than
                 encoder.OpCode(ILOpCode.Clt_un);
                 break;
             case "sgt":
+            case "ogt": // ordered float greater-than
                 encoder.OpCode(ILOpCode.Cgt);
                 break;
-            case "ugt":
+            case "ugt": // unsigned or unordered float greater-than
                 encoder.OpCode(ILOpCode.Cgt_un);
                 break;
             case "sle":
+            case "ole": // ordered float less-or-equal
                 encoder.OpCode(ILOpCode.Cgt);
                 encoder.LoadConstantI4(0);
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
-            case "ule":
+            case "ule": // unsigned or unordered float less-or-equal
                 encoder.OpCode(ILOpCode.Cgt_un);
                 encoder.LoadConstantI4(0);
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
             case "sge":
+            case "oge": // ordered float greater-or-equal
                 encoder.OpCode(ILOpCode.Clt);
                 encoder.LoadConstantI4(0);
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
-            case "uge":
+            case "uge": // unsigned or unordered float greater-or-equal
                 encoder.OpCode(ILOpCode.Clt_un);
                 encoder.LoadConstantI4(0);
                 encoder.OpCode(ILOpCode.Ceq);
@@ -850,6 +921,66 @@ public static class LoweredAssemblyEmitter
                 encoder.OpCode(ILOpCode.Ceq);
                 break;
         }
+    }
+
+    private static StandaloneSignatureHandle BuildStandaloneSignature(
+        MetadataBuilder metadataBuilder, string returnType, IReadOnlyList<LoweredArgument> args)
+    {
+        var sigBlob = new BlobBuilder();
+        new BlobEncoder(sigBlob)
+            .MethodSignature(SignatureCallingConvention.Default)
+            .Parameters(args.Count,
+                returnEncoder =>
+                {
+                    if (returnType == "void")
+                        returnEncoder.Void();
+                    else
+                        returnEncoder.Type().Int32();
+                },
+                parametersEncoder =>
+                {
+                    for (var i = 0; i < args.Count; i++)
+                    {
+                        parametersEncoder.AddParameter().Type().Int32();
+                    }
+                });
+        return metadataBuilder.AddStandaloneSignature(metadataBuilder.GetOrAddBlob(sigBlob));
+    }
+
+    private static bool TryEmitInlineIntrinsic(InstructionEncoder encoder, string callee, string returnType)
+    {
+        // fptosi.sat: float/double → int with saturation (use conv.iN)
+        if (callee.StartsWith("llvm.fptosi.sat.", StringComparison.Ordinal))
+        {
+            if (returnType == "i64")
+                encoder.OpCode(ILOpCode.Conv_i8);
+            else
+                encoder.OpCode(ILOpCode.Conv_i4);
+            return true;
+        }
+
+        // fptoui.sat: float/double → uint with saturation
+        if (callee.StartsWith("llvm.fptoui.sat.", StringComparison.Ordinal))
+        {
+            if (returnType == "i64")
+                encoder.OpCode(ILOpCode.Conv_u8);
+            else
+                encoder.OpCode(ILOpCode.Conv_u4);
+            return true;
+        }
+
+        // sitofp/uitofp: int → float/double
+        if (callee.StartsWith("llvm.sitofp.", StringComparison.Ordinal)
+            || callee.StartsWith("llvm.uitofp.", StringComparison.Ordinal))
+        {
+            if (returnType == "double")
+                encoder.OpCode(ILOpCode.Conv_r8);
+            else
+                encoder.OpCode(ILOpCode.Conv_r4);
+            return true;
+        }
+
+        return false;
     }
 
     private static ILOpCode MapBinaryOp(string operation) => operation switch
@@ -1163,11 +1294,17 @@ public static class LoweredAssemblyEmitter
             }
             else if (global.InitializerBytes.Count > 4)
             {
-                encoder.LoadConstantI8(BitConverter.ToInt64([.. global.InitializerBytes], 0));
+                var padded = new byte[8];
+                for (var i = 0; i < global.InitializerBytes.Count; i++)
+                    padded[i] = global.InitializerBytes[i];
+                encoder.LoadConstantI8(BitConverter.ToInt64(padded, 0));
             }
             else
             {
-                encoder.LoadConstantI4(BitConverter.ToInt32([.. global.InitializerBytes], 0));
+                var padded = new byte[4];
+                for (var i = 0; i < global.InitializerBytes.Count; i++)
+                    padded[i] = global.InitializerBytes[i];
+                encoder.LoadConstantI4(BitConverter.ToInt32(padded, 0));
             }
 
             encoder.OpCode(ILOpCode.Stsfld);
