@@ -823,7 +823,17 @@ public static class LoweredAssemblyEmitter
 
             case LoweredSignExtendInstruction sext:
                 EmitLoadValue(encoder, sext.Value, paramIndices, localIndices, fieldHandles);
-                encoder.OpCode(ILOpCode.Conv_i8);
+                if (sext.FromType == "i1")
+                {
+                    // sext i1 1 → -1: negate the boolean (0→0, 1→-1)
+                    encoder.OpCode(ILOpCode.Neg);
+                }
+                if (sext.ToType is "i64" or "i128")
+                    encoder.OpCode(ILOpCode.Conv_i8);
+                else if (sext.ToType == "i32")
+                    encoder.OpCode(ILOpCode.Conv_i4);
+                else if (sext.ToType == "i16")
+                    encoder.OpCode(ILOpCode.Conv_i2);
                 encoder.StoreLocal(localIndices[sext.Result]);
                 break;
 
@@ -1048,6 +1058,11 @@ public static class LoweredAssemblyEmitter
                     else
                     {
                         EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        // Truncate to sub-int32 width for scalar-replaced i8/i16 allocas
+                        if (TryGetIntegerBitWidth(store.Type, out var storeWidth) && storeWidth <= 8)
+                            encoder.OpCode(ILOpCode.Conv_u1);
+                        else if (storeWidth > 8 && storeWidth <= 16)
+                            encoder.OpCode(ILOpCode.Conv_u2);
                         encoder.StoreLocal(storeLocalIdx);
                     }
                 }
@@ -2386,9 +2401,9 @@ public static class LoweredAssemblyEmitter
         if (TryGetIntegerBitWidth(type, out var width))
         {
             if (width <= 8)
-                encoder.OpCode(ILOpCode.Ldind_i1);
+                encoder.OpCode(ILOpCode.Ldind_u1);
             else if (width <= 16)
-                encoder.OpCode(ILOpCode.Ldind_i2);
+                encoder.OpCode(ILOpCode.Ldind_u2);
             else if (width <= 32)
                 encoder.OpCode(ILOpCode.Ldind_i4);
             else
@@ -2811,6 +2826,14 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle MathMin { get; }
         public MemberReferenceHandle MathMax { get; }
         public MemberReferenceHandle MathPow { get; }
+        public MemberReferenceHandle MathMaxI32 { get; }
+        public MemberReferenceHandle MathMinI32 { get; }
+        public MemberReferenceHandle MathMaxI64 { get; }
+        public MemberReferenceHandle MathMinI64 { get; }
+        public MemberReferenceHandle MathMaxU32 { get; }
+        public MemberReferenceHandle MathMinU32 { get; }
+        public MemberReferenceHandle MathMaxU64 { get; }
+        public MemberReferenceHandle MathMinU64 { get; }
         public MemberReferenceHandle MathFSqrt { get; }
         public MemberReferenceHandle MathFFloor { get; }
         public MemberReferenceHandle MathFCeiling { get; }
@@ -2870,6 +2893,20 @@ public static class LoweredAssemblyEmitter
             MathMin = AddStaticMethod(mb, mathType, "Min", f64f64ToF64Sig);
             MathMax = AddStaticMethod(mb, mathType, "Max", f64f64ToF64Sig);
             MathPow = AddStaticMethod(mb, mathType, "Pow", f64f64ToF64Sig);
+
+            // Integer Math.Max/Min overloads (for llvm.smax/smin/umax/umin)
+            var i32i32ToI32Sig = EncodeI32I32ToI32Sig(mb);
+            MathMaxI32 = AddStaticMethod(mb, mathType, "Max", i32i32ToI32Sig);
+            MathMinI32 = AddStaticMethod(mb, mathType, "Min", i32i32ToI32Sig);
+            var i64i64ToI64Sig = EncodeI64I64ToI64Sig(mb);
+            MathMaxI64 = AddStaticMethod(mb, mathType, "Max", i64i64ToI64Sig);
+            MathMinI64 = AddStaticMethod(mb, mathType, "Min", i64i64ToI64Sig);
+            var u32u32ToU32Sig = EncodeU32U32ToU32Sig(mb);
+            MathMaxU32 = AddStaticMethod(mb, mathType, "Max", u32u32ToU32Sig);
+            MathMinU32 = AddStaticMethod(mb, mathType, "Min", u32u32ToU32Sig);
+            var u64u64ToU64Sig = EncodeU64U64ToU64Sig(mb);
+            MathMaxU64 = AddStaticMethod(mb, mathType, "Max", u64u64ToU64Sig);
+            MathMinU64 = AddStaticMethod(mb, mathType, "Min", u64u64ToU64Sig);
 
             // System.MathF (for float-specific operations)
             var mathFType = mb.AddTypeReference(
@@ -2970,6 +3007,15 @@ public static class LoweredAssemblyEmitter
                 ["llvm.ceil.f32"] = MathFCeiling,
                 ["fabsf"] = MathFAbs,
                 ["llvm.fabs.f32"] = MathFAbs,
+                // Integer max/min intrinsics
+                ["llvm.smax.i32"] = MathMaxI32,
+                ["llvm.smax.i64"] = MathMaxI64,
+                ["llvm.smin.i32"] = MathMinI32,
+                ["llvm.smin.i64"] = MathMinI64,
+                ["llvm.umax.i32"] = MathMaxU32,
+                ["llvm.umax.i64"] = MathMaxU64,
+                ["llvm.umin.i32"] = MathMinU32,
+                ["llvm.umin.i64"] = MathMinU64,
             };
         }
 
@@ -3044,6 +3090,46 @@ public static class LoweredAssemblyEmitter
             new BlobEncoder(blob).MethodSignature().Parameters(1, out var ret, out var parms);
             ret.Type().Single();
             parms.AddParameter().Type().Single();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeI32I32ToI32Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(2, out var ret, out var parms);
+            ret.Type().Int32();
+            parms.AddParameter().Type().Int32();
+            parms.AddParameter().Type().Int32();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeI64I64ToI64Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(2, out var ret, out var parms);
+            ret.Type().Int64();
+            parms.AddParameter().Type().Int64();
+            parms.AddParameter().Type().Int64();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeU32U32ToU32Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(2, out var ret, out var parms);
+            ret.Type().UInt32();
+            parms.AddParameter().Type().UInt32();
+            parms.AddParameter().Type().UInt32();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeU64U64ToU64Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(2, out var ret, out var parms);
+            ret.Type().UInt64();
+            parms.AddParameter().Type().UInt64();
+            parms.AddParameter().Type().UInt64();
             return mb.GetOrAddBlob(blob);
         }
     }
