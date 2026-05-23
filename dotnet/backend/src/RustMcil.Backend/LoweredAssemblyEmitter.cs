@@ -470,6 +470,28 @@ public static class LoweredAssemblyEmitter
             }
         }
 
+        // SROA: for allocas accessed via constant-index GEPs, create element locals
+        // gepElementLocal maps a GEP result name -> the local index of the element slot
+        var gepElementLocal = new Dictionary<string, int>(StringComparer.Ordinal);
+        var allocaElementLocals = new Dictionary<(string alloca, int index), int>();
+        foreach (var block in function.Blocks)
+        {
+            foreach (var instr in block.Instructions)
+            {
+                if (instr is LoweredGetElementPointerInstruction gep && gep.IndexVariable is null)
+                {
+                    var key = (gep.Base, gep.Index);
+                    if (!allocaElementLocals.TryGetValue(key, out var elemLocalIdx))
+                    {
+                        elemLocalIdx = localCount++;
+                        allocaElementLocals[key] = elemLocalIdx;
+                        localTypes.Add(gep.ElementType);
+                    }
+                    gepElementLocal[gep.Result] = elemLocalIdx;
+                }
+            }
+        }
+
         // Build local variables signature
         StandaloneSignatureHandle localSigHandle = default;
         if (localCount > 0)
@@ -514,7 +536,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal);
             }
         }
 
@@ -539,7 +561,8 @@ public static class LoweredAssemblyEmitter
         SrmTypeContext typeContext,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
         IReadOnlyDictionary<string, LoweredGlobal> globalMap,
-        MetadataBuilder metadataBuilder)
+        MetadataBuilder metadataBuilder,
+        IReadOnlyDictionary<string, int> gepElementLocal)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -701,7 +724,13 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredStoreInstruction store:
-                if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
+                if (gepElementLocal.TryGetValue(store.Destination, out var gepStoreIdx))
+                {
+                    // Store to a GEP element slot (SROA)
+                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    encoder.StoreLocal(gepStoreIdx);
+                }
+                else if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
                 {
                     EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                     encoder.StoreLocal(storeLocalIdx);
@@ -710,7 +739,13 @@ public static class LoweredAssemblyEmitter
 
             case LoweredLoadInstruction load:
                 {
-                    if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
+                    if (gepElementLocal.TryGetValue(load.Source, out var gepLoadIdx))
+                    {
+                        // Load from a GEP element slot (SROA)
+                        encoder.LoadLocal(gepLoadIdx);
+                        encoder.StoreLocal(localIndices[load.Result]);
+                    }
+                    else if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
                     {
                         encoder.LoadLocal(loadLocalIdx);
                         if (IsGepResult(load.Source, instructions, instrIdx))
@@ -763,6 +798,11 @@ public static class LoweredAssemblyEmitter
 
             case LoweredGetElementPointerInstruction gep:
                 {
+                    if (gepElementLocal.ContainsKey(gep.Result))
+                    {
+                        // SROA: this GEP is resolved statically to an element local — no IL needed
+                        break;
+                    }
                     EmitLoadValue(encoder, gep.Base, paramIndices, localIndices, fieldHandles);
                     if (gep.IndexVariable is not null)
                     {
