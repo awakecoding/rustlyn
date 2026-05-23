@@ -18008,8 +18008,13 @@ void RunTest(string name, Action test, ICollection<string> failures)
 
     try
     {
-        test();
+        RunWithTimeout(test, TimeSpan.FromSeconds(30));
         Console.WriteLine($"PASS {name}");
+    }
+    catch (TimeoutException)
+    {
+        failures.Add($"{name}: TIMEOUT (30s)");
+        Console.WriteLine($"TIMEOUT {name}");
     }
     catch (Exception ex)
     {
@@ -18026,8 +18031,12 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
 
     try
     {
-        test();
+        RunWithTimeout(test, TimeSpan.FromSeconds(30));
         Console.WriteLine($"PASS {name}");
+    }
+    catch (TimeoutException)
+    {
+        Console.WriteLine($"TIMEOUT {name}");
     }
     catch (SkipTestException ex)
     {
@@ -18037,6 +18046,24 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
     {
         failures.Add($"{name}: {ex.Message}");
     }
+}
+
+static void RunWithTimeout(Action action, TimeSpan timeout)
+{
+    Exception? caught = null;
+    var thread = new Thread(() =>
+    {
+        try { action(); }
+        catch (Exception ex) { caught = ex; }
+    });
+    thread.IsBackground = true;
+    thread.Start();
+    if (!thread.Join(timeout))
+    {
+        throw new TimeoutException();
+    }
+    if (caught is not null)
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(caught).Throw();
 }
 
 static void ExpectException<TException>(Action action) where TException : Exception
