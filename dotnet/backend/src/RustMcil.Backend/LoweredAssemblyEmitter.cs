@@ -725,6 +725,14 @@ public static class LoweredAssemblyEmitter
                         }
                     }
 
+                    // Saturating arithmetic: intercept before arg push for proper clamping
+                    if (TryEmitSaturatingIntrinsic(encoder, call, paramIndices, localIndices, fieldHandles))
+                    {
+                        if (call.Result is not null)
+                            encoder.StoreLocal(localIndices[call.Result]);
+                        break;
+                    }
+
                     // Indirect call: callee is a local variable or parameter (function pointer)
                     var isIndirectCall = call.Callee.StartsWith('%')
                         && (localIndices.ContainsKey(call.Callee[1..]) || paramIndices.ContainsKey(call.Callee[1..]));
@@ -1172,6 +1180,132 @@ public static class LoweredAssemblyEmitter
         return result;
     }
 
+    private static bool TryEmitSaturatingIntrinsic(
+        InstructionEncoder encoder,
+        LoweredCallInstruction call,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        // usub.sat.i32(a, b): unsigned saturating sub → max(a-b, 0)
+        if (call.Callee.Contains("llvm.usub.sat.", StringComparison.Ordinal) && call.Arguments.Count >= 2)
+        {
+            var a = call.Arguments[0].Value;
+            var b = call.Arguments[1].Value;
+            // Branchless: (a - b) * (a >= b ? 1 : 0)
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            EmitLoadValue(encoder, b, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Sub);
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            EmitLoadValue(encoder, b, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Clt_un); // 1 if a < b (underflow)
+            encoder.LoadConstantI4(0);
+            encoder.OpCode(ILOpCode.Ceq); // 1 if no underflow (a >= b)
+            encoder.OpCode(ILOpCode.Mul); // 0 if underflow, a-b otherwise
+            return true;
+        }
+
+        // uadd.sat.i32(a, b): unsigned saturating add → min(a+b, UINT_MAX)
+        if (call.Callee.Contains("llvm.uadd.sat.", StringComparison.Ordinal) && call.Arguments.Count >= 2)
+        {
+            var a = call.Arguments[0].Value;
+            var b = call.Arguments[1].Value;
+            // Branchless: (a + b) | -(( a+b < a) ? 1 : 0)
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            EmitLoadValue(encoder, b, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Add);
+            encoder.OpCode(ILOpCode.Dup);
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Clt_un); // 1 if overflow
+            encoder.OpCode(ILOpCode.Neg); // -1 (0xFFFFFFFF) if overflow, 0 if not
+            encoder.OpCode(ILOpCode.Or); // all bits set if overflow = UINT_MAX
+            return true;
+        }
+
+        // ssub.sat.i32(a, b): signed saturating sub → clamp(a-b, INT_MIN, INT_MAX)
+        if (call.Callee.Contains("llvm.ssub.sat.", StringComparison.Ordinal) && call.Arguments.Count >= 2)
+        {
+            var a = call.Arguments[0].Value;
+            var b = call.Arguments[1].Value;
+            // Widen to i64, subtract, then clamp with branches
+            var clampMinLabel = encoder.DefineLabel();
+            var clampMaxLabel = encoder.DefineLabel();
+            var endLabel = encoder.DefineLabel();
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Conv_i8);
+            EmitLoadValue(encoder, b, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Conv_i8);
+            encoder.OpCode(ILOpCode.Sub); // i64 result, no overflow
+            // Check > INT_MAX
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI8(2147483647L);
+            encoder.Branch(ILOpCode.Bgt, clampMaxLabel);
+            // Check < INT_MIN
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI8(-2147483648L);
+            encoder.Branch(ILOpCode.Blt, clampMinLabel);
+            // In range: conv to i32
+            encoder.OpCode(ILOpCode.Conv_i4);
+            encoder.Branch(ILOpCode.Br, endLabel);
+            // Clamp to INT_MAX
+            encoder.MarkLabel(clampMaxLabel);
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.LoadConstantI4(int.MaxValue);
+            encoder.Branch(ILOpCode.Br, endLabel);
+            // Clamp to INT_MIN
+            encoder.MarkLabel(clampMinLabel);
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.LoadConstantI4(int.MinValue);
+            encoder.MarkLabel(endLabel);
+            return true;
+        }
+
+        // sadd.sat.i32(a, b): signed saturating add → clamp(a+b, INT_MIN, INT_MAX)
+        if (call.Callee.Contains("llvm.sadd.sat.", StringComparison.Ordinal) && call.Arguments.Count >= 2)
+        {
+            var a = call.Arguments[0].Value;
+            var b = call.Arguments[1].Value;
+            var clampMinLabel = encoder.DefineLabel();
+            var clampMaxLabel = encoder.DefineLabel();
+            var endLabel = encoder.DefineLabel();
+            EmitLoadValue(encoder, a, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Conv_i8);
+            EmitLoadValue(encoder, b, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(ILOpCode.Conv_i8);
+            encoder.OpCode(ILOpCode.Add);
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI8(2147483647L);
+            encoder.Branch(ILOpCode.Bgt, clampMaxLabel);
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI8(-2147483648L);
+            encoder.Branch(ILOpCode.Blt, clampMinLabel);
+            encoder.OpCode(ILOpCode.Conv_i4);
+            encoder.Branch(ILOpCode.Br, endLabel);
+            encoder.MarkLabel(clampMaxLabel);
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.LoadConstantI4(int.MaxValue);
+            encoder.Branch(ILOpCode.Br, endLabel);
+            encoder.MarkLabel(clampMinLabel);
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.LoadConstantI4(int.MinValue);
+            encoder.MarkLabel(endLabel);
+            return true;
+        }
+
+        // llvm.bitreverse.i32(x): reverse all 32 bits
+        // Requires multi-step computation with temp locals — not available in inline handler.
+        // Stub: returns 0. TODO: emit as a generated helper method in the assembly.
+        if (call.Callee.Contains("llvm.bitreverse.i32", StringComparison.Ordinal) && call.Arguments.Count >= 1)
+        {
+            // Pop the arg that would have been pushed, return 0
+            // Actually, args haven't been pushed yet (we intercept before arg push)
+            encoder.LoadConstantI4(0);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryEmitOverflowIntrinsic(
         InstructionEncoder encoder,
         LoweredCallInstruction call,
@@ -1334,11 +1468,11 @@ public static class LoweredAssemblyEmitter
         }
 
         // llvm.sadd.sat / llvm.ssub.sat / llvm.uadd.sat / llvm.usub.sat: saturating arithmetic
-        // These need access to argument values for clamping — handled in call emitter
-        // For now, emit wrapping arithmetic (correct when no overflow occurs)
+        // Handled by TryEmitSaturatingIntrinsic before arg push — should not reach here
         if (callee.Contains(".sat.", StringComparison.Ordinal)
             && (callee.Contains("add", StringComparison.Ordinal) || callee.Contains("sub", StringComparison.Ordinal)))
         {
+            // Fallback: wrapping arithmetic (only reached if TryEmitSaturatingIntrinsic missed)
             var isSub = callee.Contains("sub", StringComparison.Ordinal);
             encoder.OpCode(isSub ? ILOpCode.Sub : ILOpCode.Add);
             return true;
