@@ -1,0 +1,13 @@
+[package]
+name = "triple_return"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"

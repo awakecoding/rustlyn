@@ -783,6 +783,11 @@ RunOptionalTest("AtomicsProbeReturnsExpectedResult", AtomicsProbeReturnsExpected
 RunOptionalTest("BitManipProbeReturnsExpectedResult", BitManipProbeReturnsExpectedResult, failures);
 RunOptionalTest("MultiFieldProbeReturnsExpectedResult", MultiFieldProbeReturnsExpectedResult, failures);
 RunOptionalTest("DepHeavyProbeReturnsExpectedResult", DepHeavyProbeReturnsExpectedResult, failures);
+RunOptionalTest("OptionResultProbeReturnsExpectedResult", OptionResultProbeReturnsExpectedResult, failures);
+RunOptionalTest("TripleReturnProbeReturnsExpectedResult", TripleReturnProbeReturnsExpectedResult, failures);
+RunOptionalTest("I128ProbeReturnsExpectedResult", I128ProbeReturnsExpectedResult, failures);
+RunOptionalTest("FloatMathProbeReturnsExpectedResult", FloatMathProbeReturnsExpectedResult, failures);
+RunOptionalTest("AtomicFenceProbeReturnsExpectedResult", AtomicFenceProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -7166,6 +7171,41 @@ static void DepHeavyProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("dep_heavy");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dep_heavy_probe", [], llvmRoot);
     Assert(Equals(actualResult, 166), $"Expected dep_heavy_probe() to return 166, but got '{actualResult}'.");
+}
+
+static void OptionResultProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("option_result");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "option_result_probe", [5], llvmRoot);
+    Assert(Equals(actualResult, 65), $"Expected option_result_probe(5) to return 65, but got '{actualResult}'.");
+}
+
+static void TripleReturnProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("triple_return");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "triple_return_probe", [10], llvmRoot);
+    Assert(Equals(actualResult, 61), $"Expected triple_return_probe(10) to return 61, but got '{actualResult}'.");
+}
+
+static void I128ProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("i128_ops");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "i128_probe", [3], llvmRoot);
+    Assert(Equals(actualResult, 22), $"Expected i128_probe(3) to return 22, but got '{actualResult}'.");
+}
+
+static void FloatMathProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("float_math");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "float_probe", [3, 4], llvmRoot);
+    Assert(Equals(actualResult, 5), $"Expected float_probe(3, 4) to return 5, but got '{actualResult}'.");
+}
+
+static void AtomicFenceProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("atomic_fence");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "atomic_fence_probe", [5], llvmRoot);
+    Assert(Equals(actualResult, 5), $"Expected atomic_fence_probe(5) to return 5, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()

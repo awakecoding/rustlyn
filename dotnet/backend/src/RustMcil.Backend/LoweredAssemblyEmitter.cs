@@ -90,9 +90,28 @@ public static class LoweredAssemblyEmitter
             methodMap.Add(function.Name, method);
         }
 
+        var skippedFunctions = new List<(string Name, string Reason)>();
+
         foreach (var function in emittedFunctions)
         {
-            EmitFunctionBody(module, methodMap[function.Name], function, methodMap, fieldMap, globalMap, vectorHelpers, memoryHelpers);
+            try
+            {
+                EmitFunctionBody(module, methodMap[function.Name], function, methodMap, fieldMap, globalMap, vectorHelpers, memoryHelpers);
+            }
+            catch (NotSupportedException ex)
+            {
+                skippedFunctions.Add((function.Name, ex.Message));
+                StubUnsupportedFunction(module, methodMap[function.Name], function.Name, ex.Message);
+            }
+        }
+
+        if (skippedFunctions.Count > 0)
+        {
+            Console.Error.WriteLine($"Warning: {skippedFunctions.Count} function(s) stubbed due to unsupported IR:");
+            foreach (var (name, reason) in skippedFunctions)
+            {
+                Console.Error.WriteLine($"  {name}: {reason}");
+            }
         }
 
         if (consoleEntrypoint is not null)
@@ -384,6 +403,19 @@ public static class LoweredAssemblyEmitter
             && function.Name.Contains("precondition_check", StringComparison.Ordinal);
     }
 
+    private static void StubUnsupportedFunction(ModuleDefinition module, MethodDefinition method, string functionName, string reason)
+    {
+        method.Body = new Mono.Cecil.Cil.MethodBody(method);
+        method.Body.InitLocals = true;
+        var il = method.Body.GetILProcessor();
+
+        var notSupportedCtor = module.ImportReference(
+            typeof(NotSupportedException).GetConstructor([typeof(string)]));
+        il.Append(il.Create(OpCodes.Ldstr, $"Function '{functionName}' is not supported: {reason}"));
+        il.Append(il.Create(OpCodes.Newobj, notSupportedCtor));
+        il.Append(il.Create(OpCodes.Throw));
+    }
+
     private static void EmitFunctionBody(ModuleDefinition module, MethodDefinition method, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinition> methodMap, IReadOnlyDictionary<string, FieldDefinition> fieldMap, IReadOnlyDictionary<string, LoweredGlobal> globalMap, VectorHelperMethods vectorHelpers, MemoryHelperMethods memoryHelpers)
     {
         if (function.Blocks.Count == 0)
@@ -426,6 +458,12 @@ public static class LoweredAssemblyEmitter
                         if (IsSupportedVectorType(binary.Type))
                         {
                             EmitVectorBinaryOperation(il, parameters, locals, binary, function.Name, vectorHelpers);
+                            break;
+                        }
+
+                        if (TryGetIntegerBitWidth(binary.Type, out var binaryBitWidth) && binaryBitWidth > 64)
+                        {
+                            EmitInt128BinaryOperation(il, parameters, locals, method, binary);
                             break;
                         }
 
@@ -528,6 +566,10 @@ public static class LoweredAssemblyEmitter
                         {
                             il.Append(il.Create(OpCodes.Call, module.ImportReference(callee)));
                         }
+                        else if (TryResolveLibmCall(module, call, out var libmMethod))
+                        {
+                            il.Append(il.Create(OpCodes.Call, libmMethod));
+                        }
                         else
                         {
                             throw new NotSupportedException($"Call target '{call.Callee}' was not found in the emitted module.");
@@ -584,7 +626,17 @@ public static class LoweredAssemblyEmitter
 
                     case LoweredTruncateInstruction trunc:
                         LoadValue(il, parameters, locals, trunc.FromType, trunc.Value);
-                        EmitConversion(il, trunc.ToType);
+                        if (TryGetIntegerBitWidth(trunc.FromType, out var truncFromWidth) && truncFromWidth > 64)
+                        {
+                            // Truncate Int128 → long first, then narrow if needed
+                            EmitInt128ToInt64(il);
+                            if (TryGetIntegerBitWidth(trunc.ToType, out var truncToWidth) && truncToWidth <= 32)
+                                il.Append(il.Create(OpCodes.Conv_I4));
+                        }
+                        else
+                        {
+                            EmitConversion(il, trunc.ToType);
+                        }
                         StoreLocal(method, il, locals, trunc.Result, trunc.ToType);
                         break;
 
@@ -1012,8 +1064,19 @@ public static class LoweredAssemblyEmitter
                 return;
             }
 
-            if (TryGetIntegerBitWidth(typeName, out _)
-                || string.Equals(typeName, "i1", StringComparison.Ordinal))
+            if (TryGetIntegerBitWidth(typeName, out var poisonIntWidth))
+            {
+                if (poisonIntWidth > 64)
+                {
+                    EmitInt128Constant(il, Int128.Zero);
+                    return;
+                }
+                il.Append(il.Create(OpCodes.Ldc_I4_0));
+                EmitConversion(il, typeName);
+                return;
+            }
+
+            if (string.Equals(typeName, "i1", StringComparison.Ordinal))
             {
                 il.Append(il.Create(OpCodes.Ldc_I4_0));
                 EmitConversion(il, typeName);
@@ -1071,6 +1134,12 @@ public static class LoweredAssemblyEmitter
         if (TryParseIntegerConstant(typeName, value, out var constant))
         {
             EmitConstant(il, typeName, constant);
+            return;
+        }
+
+        if (TryGetIntegerBitWidth(typeName, out var i128Width) && i128Width > 64 && Int128.TryParse(value, out var int128Constant))
+        {
+            EmitInt128Constant(il, int128Constant);
             return;
         }
 
@@ -1138,6 +1207,11 @@ public static class LoweredAssemblyEmitter
         }
 
         if (TryEmitCmpXchg(method, il, parameters, locals, raw.Text))
+        {
+            return true;
+        }
+
+        if (TryEmitFence(il, raw.Text))
         {
             return true;
         }
@@ -1291,6 +1365,23 @@ public static class LoweredAssemblyEmitter
 
         il.Append(skipStore);
 
+        return true;
+    }
+
+    private static bool TryEmitFence(ILProcessor il, string text)
+    {
+        // Pattern: fence seq_cst | fence acquire | fence release | fence acq_rel
+        if (!text.StartsWith("fence ", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Emit Thread.MemoryBarrier() for all fence orderings
+        var barrierMethod = typeof(System.Threading.Thread).GetMethod(
+            nameof(System.Threading.Thread.MemoryBarrier),
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+            Type.EmptyTypes)!;
+        il.Append(il.Create(OpCodes.Call, il.Body.Method.Module.ImportReference(barrierMethod)));
         return true;
     }
 
@@ -2364,6 +2455,98 @@ public static class LoweredAssemblyEmitter
             "llvm.umin.i64" => typeof(Math).GetMethod(nameof(Math.Min), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(ulong), typeof(ulong)]),
             "llvm.ctpop.i64" => typeof(System.Numerics.BitOperations).GetMethod(nameof(System.Numerics.BitOperations.PopCount), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(ulong)]),
             "llvm.ctpop.i32" => typeof(System.Numerics.BitOperations).GetMethod(nameof(System.Numerics.BitOperations.PopCount), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(uint)]),
+            // Float intrinsics — f64
+            "llvm.sqrt.f64" => typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)]),
+            "llvm.fabs.f64" => typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)]),
+            "llvm.ceil.f64" => typeof(Math).GetMethod(nameof(Math.Ceiling), [typeof(double)]),
+            "llvm.floor.f64" => typeof(Math).GetMethod(nameof(Math.Floor), [typeof(double)]),
+            "llvm.round.f64" => typeof(Math).GetMethod(nameof(Math.Round), [typeof(double)]),
+            "llvm.trunc.f64" => typeof(Math).GetMethod(nameof(Math.Truncate), [typeof(double)]),
+            "llvm.copysign.f64" => typeof(Math).GetMethod(nameof(Math.CopySign), [typeof(double), typeof(double)]),
+            "llvm.pow.f64" => typeof(Math).GetMethod(nameof(Math.Pow), [typeof(double), typeof(double)]),
+            "llvm.log.f64" => typeof(Math).GetMethod(nameof(Math.Log), [typeof(double)]),
+            "llvm.log2.f64" => typeof(Math).GetMethod(nameof(Math.Log2), [typeof(double)]),
+            "llvm.log10.f64" => typeof(Math).GetMethod(nameof(Math.Log10), [typeof(double)]),
+            "llvm.exp.f64" => typeof(Math).GetMethod(nameof(Math.Exp), [typeof(double)]),
+            "llvm.exp2.f64" => typeof(double).GetMethod(nameof(double.Exp2), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(double)]),
+            "llvm.sin.f64" => typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)]),
+            "llvm.cos.f64" => typeof(Math).GetMethod(nameof(Math.Cos), [typeof(double)]),
+            "llvm.fma.f64" => typeof(Math).GetMethod(nameof(Math.FusedMultiplyAdd), [typeof(double), typeof(double), typeof(double)]),
+            "llvm.minnum.f64" => typeof(Math).GetMethod(nameof(Math.Min), [typeof(double), typeof(double)]),
+            "llvm.maxnum.f64" => typeof(Math).GetMethod(nameof(Math.Max), [typeof(double), typeof(double)]),
+            // Float intrinsics — f32
+            "llvm.sqrt.f32" => typeof(MathF).GetMethod(nameof(MathF.Sqrt), [typeof(float)]),
+            "llvm.fabs.f32" => typeof(MathF).GetMethod(nameof(MathF.Abs), [typeof(float)]),
+            "llvm.ceil.f32" => typeof(MathF).GetMethod(nameof(MathF.Ceiling), [typeof(float)]),
+            "llvm.floor.f32" => typeof(MathF).GetMethod(nameof(MathF.Floor), [typeof(float)]),
+            "llvm.round.f32" => typeof(MathF).GetMethod(nameof(MathF.Round), [typeof(float)]),
+            "llvm.trunc.f32" => typeof(MathF).GetMethod(nameof(MathF.Truncate), [typeof(float)]),
+            "llvm.copysign.f32" => typeof(MathF).GetMethod(nameof(MathF.CopySign), [typeof(float), typeof(float)]),
+            "llvm.pow.f32" => typeof(MathF).GetMethod(nameof(MathF.Pow), [typeof(float), typeof(float)]),
+            "llvm.log.f32" => typeof(MathF).GetMethod(nameof(MathF.Log), [typeof(float)]),
+            "llvm.log2.f32" => typeof(MathF).GetMethod(nameof(MathF.Log2), [typeof(float)]),
+            "llvm.log10.f32" => typeof(MathF).GetMethod(nameof(MathF.Log10), [typeof(float)]),
+            "llvm.exp.f32" => typeof(MathF).GetMethod(nameof(MathF.Exp), [typeof(float)]),
+            "llvm.exp2.f32" => typeof(float).GetMethod(nameof(float.Exp2), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(float)]),
+            "llvm.sin.f32" => typeof(MathF).GetMethod(nameof(MathF.Sin), [typeof(float)]),
+            "llvm.cos.f32" => typeof(MathF).GetMethod(nameof(MathF.Cos), [typeof(float)]),
+            "llvm.fma.f32" => typeof(MathF).GetMethod(nameof(MathF.FusedMultiplyAdd), [typeof(float), typeof(float), typeof(float)]),
+            "llvm.minnum.f32" => typeof(MathF).GetMethod(nameof(MathF.Min), [typeof(float), typeof(float)]),
+            "llvm.maxnum.f32" => typeof(MathF).GetMethod(nameof(MathF.Max), [typeof(float), typeof(float)]),
+            _ => null
+        };
+
+        if (methodInfo is null)
+        {
+            return false;
+        }
+
+        methodReference = module.ImportReference(methodInfo);
+        return true;
+    }
+
+    private static bool TryResolveLibmCall(ModuleDefinition module, LoweredCallInstruction call, out MethodReference methodReference)
+    {
+        methodReference = null!;
+
+        var methodInfo = call.Callee switch
+        {
+            // C libm double functions
+            "sqrt" => typeof(Math).GetMethod(nameof(Math.Sqrt), [typeof(double)]),
+            "floor" => typeof(Math).GetMethod(nameof(Math.Floor), [typeof(double)]),
+            "ceil" => typeof(Math).GetMethod(nameof(Math.Ceiling), [typeof(double)]),
+            "round" => typeof(Math).GetMethod(nameof(Math.Round), [typeof(double)]),
+            "trunc" => typeof(Math).GetMethod(nameof(Math.Truncate), [typeof(double)]),
+            "fabs" => typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)]),
+            "sin" => typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)]),
+            "cos" => typeof(Math).GetMethod(nameof(Math.Cos), [typeof(double)]),
+            "exp" => typeof(Math).GetMethod(nameof(Math.Exp), [typeof(double)]),
+            "log" => typeof(Math).GetMethod(nameof(Math.Log), [typeof(double)]),
+            "log2" => typeof(Math).GetMethod(nameof(Math.Log2), [typeof(double)]),
+            "log10" => typeof(Math).GetMethod(nameof(Math.Log10), [typeof(double)]),
+            "pow" => typeof(Math).GetMethod(nameof(Math.Pow), [typeof(double), typeof(double)]),
+            "fma" => typeof(Math).GetMethod(nameof(Math.FusedMultiplyAdd), [typeof(double), typeof(double), typeof(double)]),
+            "copysign" => typeof(Math).GetMethod(nameof(Math.CopySign), [typeof(double), typeof(double)]),
+            "fmin" => typeof(Math).GetMethod(nameof(Math.Min), [typeof(double), typeof(double)]),
+            "fmax" => typeof(Math).GetMethod(nameof(Math.Max), [typeof(double), typeof(double)]),
+            // C libm float functions
+            "sqrtf" => typeof(MathF).GetMethod(nameof(MathF.Sqrt), [typeof(float)]),
+            "floorf" => typeof(MathF).GetMethod(nameof(MathF.Floor), [typeof(float)]),
+            "ceilf" => typeof(MathF).GetMethod(nameof(MathF.Ceiling), [typeof(float)]),
+            "roundf" => typeof(MathF).GetMethod(nameof(MathF.Round), [typeof(float)]),
+            "truncf" => typeof(MathF).GetMethod(nameof(MathF.Truncate), [typeof(float)]),
+            "fabsf" => typeof(MathF).GetMethod(nameof(MathF.Abs), [typeof(float)]),
+            "sinf" => typeof(MathF).GetMethod(nameof(MathF.Sin), [typeof(float)]),
+            "cosf" => typeof(MathF).GetMethod(nameof(MathF.Cos), [typeof(float)]),
+            "expf" => typeof(MathF).GetMethod(nameof(MathF.Exp), [typeof(float)]),
+            "logf" => typeof(MathF).GetMethod(nameof(MathF.Log), [typeof(float)]),
+            "log2f" => typeof(MathF).GetMethod(nameof(MathF.Log2), [typeof(float)]),
+            "log10f" => typeof(MathF).GetMethod(nameof(MathF.Log10), [typeof(float)]),
+            "powf" => typeof(MathF).GetMethod(nameof(MathF.Pow), [typeof(float), typeof(float)]),
+            "fmaf" => typeof(MathF).GetMethod(nameof(MathF.FusedMultiplyAdd), [typeof(float), typeof(float), typeof(float)]),
+            "copysignf" => typeof(MathF).GetMethod(nameof(MathF.CopySign), [typeof(float), typeof(float)]),
+            "fminf" => typeof(MathF).GetMethod(nameof(MathF.Min), [typeof(float), typeof(float)]),
+            "fmaxf" => typeof(MathF).GetMethod(nameof(MathF.Max), [typeof(float), typeof(float)]),
             _ => null
         };
 
@@ -4190,8 +4373,13 @@ public static class LoweredAssemblyEmitter
 
     private static void EmitZeroValue(ILProcessor il, string typeName)
     {
-        if (TryGetIntegerBitWidth(typeName, out _))
+        if (TryGetIntegerBitWidth(typeName, out var zeroWidth))
         {
+            if (zeroWidth > 64)
+            {
+                EmitInt128Constant(il, Int128.Zero);
+                return;
+            }
             EmitConstant(il, typeName, 0);
             return;
         }
@@ -4241,25 +4429,37 @@ public static class LoweredAssemblyEmitter
 
         if (TryGetIntegerBitWidth(fromType, out var fromWidth)
             && TryGetIntegerBitWidth(toType, out var toWidth)
-            && fromWidth < toWidth
-            && toWidth <= 64)
+            && fromWidth < toWidth)
         {
-            if (fromWidth < 32)
+            if (toWidth > 64)
             {
-                EmitIntegerMask(il, fromWidth);
-            }
-
-            if (toWidth <= 32)
-            {
-                il.Append(il.Create(OpCodes.Conv_U4));
-            }
-            else
-            {
+                // Zero-extend to unsigned i64, then convert to Int128
+                if (fromWidth < 32)
+                    EmitIntegerMask(il, fromWidth);
                 il.Append(il.Create(OpCodes.Conv_U8));
+                EmitInt128FromUInt64(il);
+                return;
             }
 
-            EmitIntegerWidthNormalization(il, toType, null, functionName);
-            return;
+            if (toWidth <= 64)
+            {
+                if (fromWidth < 32)
+                {
+                    EmitIntegerMask(il, fromWidth);
+                }
+
+                if (toWidth <= 32)
+                {
+                    il.Append(il.Create(OpCodes.Conv_U4));
+                }
+                else
+                {
+                    il.Append(il.Create(OpCodes.Conv_U8));
+                }
+
+                EmitIntegerWidthNormalization(il, toType, null, functionName);
+                return;
+            }
         }
 
         if (string.Equals(fromType, "i1", StringComparison.Ordinal))
@@ -4301,9 +4501,17 @@ public static class LoweredAssemblyEmitter
 
         if (TryGetIntegerBitWidth(fromType, out var fromWidth)
             && TryGetIntegerBitWidth(toType, out var toWidth)
-            && fromWidth < toWidth
-            && toWidth <= 64)
+            && fromWidth < toWidth)
         {
+            if (toWidth > 64)
+            {
+                // Sign-extend to i64 first, then convert to Int128
+                if (fromWidth <= 32)
+                    il.Append(il.Create(OpCodes.Conv_I8));
+                EmitInt128FromInt64(il);
+                return;
+            }
+
             if (fromWidth <= 32 && toWidth <= 32)
             {
                 il.Append(il.Create(OpCodes.Conv_I4));
@@ -4537,6 +4745,8 @@ public static class LoweredAssemblyEmitter
 
         if (TryGetIntegerBitWidth(typeName, out var width))
         {
+            if (width > 64)
+                return module.ImportReference(typeof(Int128));
             return width <= 32
                 ? module.TypeSystem.Int32
                 : module.TypeSystem.Int64;
@@ -4566,6 +4776,8 @@ public static class LoweredAssemblyEmitter
     {
         if (TryGetIntegerBitWidth(typeName, out var width))
         {
+            if (width > 64)
+                return typeof(Int128);
             return width <= 32 ? typeof(int) : typeof(long);
         }
 
@@ -4761,7 +4973,8 @@ public static class LoweredAssemblyEmitter
 
         if (width > 64)
         {
-            throw new NotSupportedException($"Integer width '{typeName}' is not supported by the current emitter slice in function '{functionName}'.");
+            // Int128 arithmetic uses operator methods — no bit-masking normalization needed
+            return;
         }
 
         if (string.Equals(operation, "ashr", StringComparison.Ordinal))
@@ -4804,6 +5017,94 @@ public static class LoweredAssemblyEmitter
                 throw new NotSupportedException($"Unsupported integer ABI extension '{extension}' in function '{functionName}'.");
         }
     }
+
+    // --- Int128 helper methods ---
+
+    private static void EmitInt128Constant(ILProcessor il, Int128 value)
+    {
+        // Create Int128 from two i64 halves: new Int128(upper, lower)
+        var upper = (long)(ulong)(value >> 64);
+        var lower = (long)(ulong)value;
+        il.Append(il.Create(OpCodes.Ldc_I8, upper));
+        il.Append(il.Create(OpCodes.Ldc_I8, lower));
+        var ctor = il.Body.Method.Module.ImportReference(
+            typeof(Int128).GetConstructor([typeof(ulong), typeof(ulong)]));
+        il.Append(il.Create(OpCodes.Newobj, ctor));
+    }
+
+    private static void EmitInt128FromInt64(ILProcessor il)
+    {
+        // Stack: long → Int128 via implicit operator
+        var method = typeof(Int128).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .First(m => m.Name == "op_Implicit" && m.ReturnType == typeof(Int128)
+                && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(long));
+        il.Append(il.Create(OpCodes.Call, il.Body.Method.Module.ImportReference(method)));
+    }
+
+    private static void EmitInt128FromUInt64(ILProcessor il)
+    {
+        // Stack: ulong → Int128 via implicit operator
+        var method = typeof(Int128).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .First(m => m.Name == "op_Implicit" && m.ReturnType == typeof(Int128)
+                && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(ulong));
+        il.Append(il.Create(OpCodes.Call, il.Body.Method.Module.ImportReference(method)));
+    }
+
+    private static void EmitInt128ToInt64(ILProcessor il)
+    {
+        // Stack: Int128 → long via explicit operator
+        var method = typeof(Int128).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .First(m => m.Name == "op_Explicit" && m.ReturnType == typeof(long)
+                && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(Int128));
+        il.Append(il.Create(OpCodes.Call, il.Body.Method.Module.ImportReference(method)));
+    }
+
+    private static void EmitInt128ToInt32(ILProcessor il)
+    {
+        // Stack: Int128 → int via explicit operator
+        var method = typeof(Int128).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .First(m => m.Name == "op_Explicit" && m.ReturnType == typeof(int)
+                && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(Int128));
+        il.Append(il.Create(OpCodes.Call, il.Body.Method.Module.ImportReference(method)));
+    }
+
+    private static void EmitInt128BinaryOperation(ILProcessor il, IReadOnlyDictionary<string, ParameterDefinition> parameters, IDictionary<string, VariableDefinition> locals, MethodDefinition method, LoweredBinaryInstruction binary)
+    {
+        LoadValue(il, parameters, locals, binary.Type, binary.Left);
+        LoadValue(il, parameters, locals, binary.Type, binary.Right);
+
+        var operatorName = binary.Operation switch
+        {
+            "add" => "op_Addition",
+            "sub" => "op_Subtraction",
+            "mul" => "op_Multiply",
+            "sdiv" or "udiv" => "op_Division",
+            "srem" or "urem" => "op_Modulus",
+            "and" => "op_BitwiseAnd",
+            "or" => "op_BitwiseOr",
+            "xor" => "op_ExclusiveOr",
+            "shl" => "op_LeftShift",
+            "lshr" or "ashr" => "op_RightShift",
+            _ => throw new NotSupportedException($"Unsupported i128 binary operation '{binary.Operation}'.")
+        };
+
+        System.Reflection.MethodInfo opMethod;
+        if (binary.Operation is "shl" or "lshr" or "ashr")
+        {
+            // Shift operators take (Int128, int)
+            EmitInt128ToInt32(il);
+            opMethod = typeof(Int128).GetMethod(operatorName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(Int128), typeof(int)])!;
+        }
+        else
+        {
+            opMethod = typeof(Int128).GetMethod(operatorName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [typeof(Int128), typeof(Int128)])!;
+        }
+
+        il.Append(il.Create(OpCodes.Call, method.Module.ImportReference(opMethod)));
+        StoreLocal(method, il, locals, binary.Result, binary.Type);
+    }
+
+    // --- End Int128 helper methods ---
 
     private static void EmitIntegerMask(ILProcessor il, int width)
     {
