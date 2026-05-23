@@ -794,6 +794,11 @@ RunOptionalTest("HeapAllocProbeReturnsExpectedResult", HeapAllocProbeReturnsExpe
 RunOptionalTest("ClosureProbeReturnsExpectedResult", ClosureProbeReturnsExpectedResult, failures);
 RunOptionalTest("IteratorSumProbeReturnsExpectedResult", IteratorSumProbeReturnsExpectedResult, failures);
 RunOptionalTest("FilterCountProbeReturnsExpectedResult", FilterCountProbeReturnsExpectedResult, failures);
+RunOptionalTest("RecursionProbeReturnsExpectedResult", RecursionProbeReturnsExpectedResult, failures);
+RunOptionalTest("StringLenProbeReturnsExpectedResult", StringLenProbeReturnsExpectedResult, failures);
+RunOptionalTest("EnumMatchProbeReturnsExpectedResult", EnumMatchProbeReturnsExpectedResult, failures);
+RunOptionalTest("BitopsProbeReturnsExpectedResult", BitopsProbeReturnsExpectedResult, failures);
+RunOptionalTest("ByteSwapProbeReturnsExpectedResult", ByteSwapProbeReturnsExpectedResult, failures);
 
 if (failures.Count == 0)
 {
@@ -7254,6 +7259,41 @@ static void FilterCountProbeReturnsExpectedResult()
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("filter_count");
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "filter_count_probe", [10], llvmRoot);
     Assert(Equals(actualResult, 5), $"Expected filter_count_probe(10) to return 5, but got '{actualResult}'.");
+}
+
+static void RecursionProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("recursion");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "recursion_probe", [10], llvmRoot);
+    Assert(Equals(actualResult, 55), $"Expected recursion_probe(10) to return 55, but got '{actualResult}'.");
+}
+
+static void StringLenProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("string_len");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "string_len_probe", [], llvmRoot);
+    Assert(Equals(actualResult, 5), $"Expected string_len_probe() to return 5, but got '{actualResult}'.");
+}
+
+static void EnumMatchProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("enum_match");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "enum_match_probe", [5], llvmRoot);
+    Assert(Equals(actualResult, -45), $"Expected enum_match_probe(5) to return -45, but got '{actualResult}'.");
+}
+
+static void BitopsProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("bitops");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "bitops_probe", [12], llvmRoot);
+    Assert(Equals(actualResult, 32), $"Expected bitops_probe(12) to return 32, but got '{actualResult}'.");
+}
+
+static void ByteSwapProbeReturnsExpectedResult()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("byte_swap");
+    var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "byte_swap_probe", [305419896], llvmRoot);
+    Assert(Equals(actualResult, 2018915346), $"Expected byte_swap_probe(0x12345678) to return 2018915346, but got '{actualResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
