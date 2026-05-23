@@ -285,6 +285,14 @@ public static class LoweredAssemblyEmitter
             methodHandles[functions[i].Name] = MetadataTokens.MethodDefinitionHandle(i + 1);
         }
 
+        // Track functions that return aggregates too large for i64 packing (need sret buffer)
+        var sretFunctions = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var fn in functions)
+        {
+            if (IsAggregateType(fn.ReturnType) && AggregateNeedsSret(fn.ReturnType))
+                sretFunctions.Add(fn.Name);
+        }
+
         // Emit method bodies first (need all handle mappings available for intra-module calls)
         var bodyOffsets = new int[totalMethods];
         var skippedFunctions = new List<(string Name, string Reason)>();
@@ -292,7 +300,7 @@ public static class LoweredAssemblyEmitter
         {
             try
             {
-                bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap);
+                bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions);
             }
             catch (NotSupportedException ex)
             {
@@ -336,12 +344,22 @@ public static class LoweredAssemblyEmitter
                 bodyOffset: bodyOffsets[i],
                 parameterList: MetadataTokens.ParameterHandle(paramRowIndex));
 
+            var fnIsSret = sretFunctions.Contains(function.Name);
+            if (fnIsSret)
+            {
+                metadataBuilder.AddParameter(
+                    attributes: ParameterAttributes.None,
+                    name: metadataBuilder.GetOrAddString("__retbuf"),
+                    sequenceNumber: 1);
+                paramRowIndex++;
+            }
+            var seqOffset = fnIsSret ? 1 : 0;
             for (var j = 0; j < function.Parameters.Count; j++)
             {
                 metadataBuilder.AddParameter(
                     attributes: ParameterAttributes.None,
                     name: metadataBuilder.GetOrAddString(function.Parameters[j].Name),
-                    sequenceNumber: j + 1);
+                    sequenceNumber: j + 1 + seqOffset);
                 paramRowIndex++;
             }
         }
@@ -376,12 +394,22 @@ public static class LoweredAssemblyEmitter
 
     private static BlobHandle BuildMethodSignature(MetadataBuilder metadataBuilder, LoweredFunction function)
     {
+        var isSret = IsAggregateType(function.ReturnType) && AggregateNeedsSret(function.ReturnType);
         var blob = new BlobBuilder();
+        var paramCount = function.Parameters.Count + (isSret ? 1 : 0);
         new BlobEncoder(blob)
             .MethodSignature()
-            .Parameters(function.Parameters.Count, out var returnTypeEncoder, out var parametersEncoder);
+            .Parameters(paramCount, out var returnTypeEncoder, out var parametersEncoder);
 
-        EncodeReturnType(returnTypeEncoder, function.ReturnType);
+        if (isSret)
+        {
+            returnTypeEncoder.Void();
+            parametersEncoder.AddParameter().Type().IntPtr(); // hidden retbuf
+        }
+        else
+        {
+            EncodeReturnType(returnTypeEncoder, function.ReturnType);
+        }
         foreach (var param in function.Parameters)
         {
             EncodeParameterType(parametersEncoder, param.Type);
@@ -440,8 +468,9 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap)
+    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlySet<string> sretFunctions)
     {
+        var isSret = sretFunctions.Contains(function.Name);
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
         var encoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
@@ -471,7 +500,15 @@ public static class LoweredAssemblyEmitter
                 if (resultName is not null && !localIndices.ContainsKey(resultName))
                 {
                     localIndices[resultName] = localCount++;
-                    localTypes.Add(GetLocalType(instruction));
+                    var localType = GetLocalType(instruction);
+                    // Sret calls and their insertvalues produce buffer pointers, not packed i64
+                    if (instruction is LoweredCallInstruction sc
+                        && IsAggregateType(sc.ReturnType) && sretFunctions.Contains(sc.Callee))
+                        localType = "ptr";
+                    else if (instruction is LoweredInsertValueInstruction siv
+                        && isSret && IsAggregateType(siv.AggregateType) && AggregateNeedsSret(siv.AggregateType))
+                        localType = "ptr";
+                    localTypes.Add(localType);
                 }
             }
         }
@@ -614,9 +651,10 @@ public static class LoweredAssemblyEmitter
 
         // Parameter name -> argument index
         var paramIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+        var paramShift = isSret ? 1 : 0; // arg 0 is hidden retbuf for sret functions
         for (var i = 0; i < function.Parameters.Count; i++)
         {
-            paramIndices[function.Parameters[i].Name] = i;
+            paramIndices[function.Parameters[i].Name] = i + paramShift;
         }
 
         // Emit IL per basic block
@@ -626,7 +664,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, sretFunctions, isSret);
             }
         }
 
@@ -656,7 +694,9 @@ public static class LoweredAssemblyEmitter
         IReadOnlyDictionary<string, int[]> multiValueLocals,
         IReadOnlySet<string> locallocAllocas,
         IReadOnlySet<string> ptrParams,
-        IReadOnlySet<string> allocaNames)
+        IReadOnlySet<string> allocaNames,
+        IReadOnlySet<string> sretFunctions,
+        bool isSret)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -669,11 +709,20 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredReturnInstruction ret:
-                if (!string.Equals(ret.Type, "void", StringComparison.Ordinal))
+                if (isSret && IsAggregateType(ret.Type))
+                {
+                    // Sret: fields already written to retbuf via insertvalue. Just ret void.
+                    encoder.OpCode(ILOpCode.Ret);
+                }
+                else if (!string.Equals(ret.Type, "void", StringComparison.Ordinal))
                 {
                     EmitLoadValue(encoder, ret.Value, paramIndices, localIndices, fieldHandles);
+                    encoder.OpCode(ILOpCode.Ret);
                 }
-                encoder.OpCode(ILOpCode.Ret);
+                else
+                {
+                    encoder.OpCode(ILOpCode.Ret);
+                }
                 break;
 
             case LoweredConditionalBranchInstruction condBr:
@@ -825,6 +874,20 @@ public static class LoweredAssemblyEmitter
                     var isIndirectCall = call.Callee.StartsWith('%')
                         && (localIndices.ContainsKey(call.Callee[1..]) || paramIndices.ContainsKey(call.Callee[1..]));
 
+                    // Sret call: callee returns aggregate via hidden retbuf parameter
+                    var isSretCall = !isIndirectCall && sretFunctions.Contains(call.Callee);
+                    if (isSretCall && call.Result is not null)
+                    {
+                        // Allocate buffer for aggregate result and store pointer in result local
+                        var aggSize = GetAggregateSize(call.ReturnType);
+                        encoder.LoadConstantI4(aggSize);
+                        encoder.OpCode(ILOpCode.Conv_u);
+                        encoder.OpCode(ILOpCode.Localloc);
+                        encoder.StoreLocal(localIndices[call.Result]);
+                        // Push buffer as hidden first arg
+                        encoder.LoadLocal(localIndices[call.Result]);
+                    }
+
                     for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
                     {
                         var arg = callArgs[argIdx];
@@ -856,7 +919,7 @@ public static class LoweredAssemblyEmitter
                     {
                         encoder.Call(calleeHandle);
                         // If this call returns a multi-value (struct), store fields
-                        if (call.Result is not null && multiValueLocals.TryGetValue(call.Result, out var callMvLocals))
+                        if (!isSretCall && call.Result is not null && multiValueLocals.TryGetValue(call.Result, out var callMvLocals))
                         {
                             // Return struct: store first field, pop rest (simple 2-field case)
                             if (callMvLocals.Length >= 2)
@@ -881,6 +944,10 @@ public static class LoweredAssemblyEmitter
                     {
                         // Handled inline (e.g., conv opcodes for fptosi/sitofp)
                     }
+                    else if (TryEmitAllocatorCall(encoder, typeContext, call.Callee, effectiveArgCount))
+                    {
+                        // Handled as runtime allocator stub
+                    }
                     else
                     {
                         for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
@@ -892,7 +959,7 @@ public static class LoweredAssemblyEmitter
                             encoder.LoadConstantI4(0);
                         }
                     }
-                    if (call.Result is not null)
+                    if (call.Result is not null && !isSretCall)
                     {
                         encoder.StoreLocal(localIndices[call.Result]);
                     }
@@ -1045,15 +1112,31 @@ public static class LoweredAssemblyEmitter
                     }
                     else if (localIndices.TryGetValue(ev.Source, out var srcLocal))
                     {
-                        // Source is a packed i64 (from aggregate-returning function or insertvalue)
-                        // Unpack: index 0 = low 32 bits, index 1 = high 32 bits
-                        encoder.LoadLocal(srcLocal);
-                        if (ev.Index > 0)
+                        if (IsAggregateType(ev.AggregateType) && AggregateNeedsSret(ev.AggregateType))
                         {
-                            encoder.LoadConstantI4(ev.Index * 32);
-                            encoder.OpCode(ILOpCode.Shr_un);
+                            // Source is a pointer to sret buffer — read field at offset
+                            var fieldOffset = GetAggregateFieldOffset(ev.AggregateType, ev.Index);
+                            var fieldTypes = ParseAggregateFieldTypes(ev.AggregateType);
+                            encoder.LoadLocal(srcLocal);
+                            if (fieldOffset > 0)
+                            {
+                                encoder.LoadConstantI4(fieldOffset);
+                                encoder.OpCode(ILOpCode.Add);
+                            }
+                            EmitIndirectLoad(encoder, fieldTypes[ev.Index]);
                         }
-                        encoder.OpCode(ILOpCode.Conv_i4);
+                        else
+                        {
+                            // Source is a packed i64 (from aggregate-returning function or insertvalue)
+                            // Unpack: index 0 = low 32 bits, index 1 = high 32 bits
+                            encoder.LoadLocal(srcLocal);
+                            if (ev.Index > 0)
+                            {
+                                encoder.LoadConstantI4(ev.Index * 32);
+                                encoder.OpCode(ILOpCode.Shr_un);
+                            }
+                            encoder.OpCode(ILOpCode.Conv_i4);
+                        }
                     }
                     else
                     {
@@ -1065,37 +1148,57 @@ public static class LoweredAssemblyEmitter
 
             case LoweredInsertValueInstruction iv:
                 {
-                    // Pack a field into an i64 at the specified index
-                    // insertvalue { i32, i32 } base, i32 value, index
-                    // Result = base with field[index] replaced
-                    if (string.Equals(iv.Base, "poison", StringComparison.Ordinal)
-                        || string.Equals(iv.Base, "undef", StringComparison.Ordinal))
+                    if (isSret && IsAggregateType(iv.AggregateType) && AggregateNeedsSret(iv.AggregateType))
                     {
-                        // Fresh aggregate — start from 0
-                        EmitLoadValue(encoder, iv.Value, paramIndices, localIndices, fieldHandles);
-                        encoder.OpCode(ILOpCode.Conv_u4); // ensure unsigned for shift
-                        encoder.OpCode(ILOpCode.Conv_u8);
-                        if (iv.Index > 0)
+                        // Sret function: write field directly to retbuf (arg 0) at field offset
+                        var fieldOffset = GetAggregateFieldOffset(iv.AggregateType, iv.Index);
+                        var fieldTypes = ParseAggregateFieldTypes(iv.AggregateType);
+                        encoder.LoadArgument(0); // retbuf pointer
+                        if (fieldOffset > 0)
                         {
-                            encoder.LoadConstantI4(iv.Index * 32);
-                            encoder.OpCode(ILOpCode.Shl);
+                            encoder.LoadConstantI4(fieldOffset);
+                            encoder.OpCode(ILOpCode.Add);
                         }
+                        EmitLoadValue(encoder, iv.Value, paramIndices, localIndices, fieldHandles);
+                        EmitIndirectStore(encoder, fieldTypes[iv.Index]);
+                        // Store a dummy value to the result local (not used, but keeps local tracking consistent)
+                        encoder.LoadArgument(0);
+                        encoder.StoreLocal(localIndices[iv.Result]);
                     }
                     else
                     {
-                        // Merge into existing packed value
-                        EmitLoadValue(encoder, iv.Base, paramIndices, localIndices, fieldHandles);
-                        EmitLoadValue(encoder, iv.Value, paramIndices, localIndices, fieldHandles);
-                        encoder.OpCode(ILOpCode.Conv_u4);
-                        encoder.OpCode(ILOpCode.Conv_u8);
-                        if (iv.Index > 0)
+                        // Pack a field into an i64 at the specified index
+                        // insertvalue { i32, i32 } base, i32 value, index
+                        // Result = base with field[index] replaced
+                        if (string.Equals(iv.Base, "poison", StringComparison.Ordinal)
+                            || string.Equals(iv.Base, "undef", StringComparison.Ordinal))
                         {
-                            encoder.LoadConstantI4(iv.Index * 32);
-                            encoder.OpCode(ILOpCode.Shl);
+                            // Fresh aggregate — start from 0
+                            EmitLoadValue(encoder, iv.Value, paramIndices, localIndices, fieldHandles);
+                            encoder.OpCode(ILOpCode.Conv_u4); // ensure unsigned for shift
+                            encoder.OpCode(ILOpCode.Conv_u8);
+                            if (iv.Index > 0)
+                            {
+                                encoder.LoadConstantI4(iv.Index * 32);
+                                encoder.OpCode(ILOpCode.Shl);
+                            }
                         }
-                        encoder.OpCode(ILOpCode.Or);
+                        else
+                        {
+                            // Merge into existing packed value
+                            EmitLoadValue(encoder, iv.Base, paramIndices, localIndices, fieldHandles);
+                            EmitLoadValue(encoder, iv.Value, paramIndices, localIndices, fieldHandles);
+                            encoder.OpCode(ILOpCode.Conv_u4);
+                            encoder.OpCode(ILOpCode.Conv_u8);
+                            if (iv.Index > 0)
+                            {
+                                encoder.LoadConstantI4(iv.Index * 32);
+                                encoder.OpCode(ILOpCode.Shl);
+                            }
+                            encoder.OpCode(ILOpCode.Or);
+                        }
+                        encoder.StoreLocal(localIndices[iv.Result]);
                     }
-                    encoder.StoreLocal(localIndices[iv.Result]);
                 }
                 break;
 
@@ -1798,6 +1901,56 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
+    private static bool TryEmitAllocatorCall(InstructionEncoder encoder, SrmTypeContext typeContext, string callee, int argCount)
+    {
+        // __rust_alloc(size: i64, align: i64) -> ptr
+        if (callee.Contains("___rust_alloc_zeroed", StringComparison.Ordinal))
+        {
+            // Stack: [size, align]. Drop align, conv size to IntPtr, call AllocHGlobal.
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.OpCode(ILOpCode.Conv_i);
+            encoder.Call(typeContext.MarshalAllocHGlobal);
+            return true;
+        }
+        if (callee.Contains("___rust_alloc", StringComparison.Ordinal)
+            && !callee.Contains("___rust_no_alloc_shim", StringComparison.Ordinal))
+        {
+            // Stack: [size, align]. Drop align, conv size to IntPtr, call AllocHGlobal.
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.OpCode(ILOpCode.Conv_i);
+            encoder.Call(typeContext.MarshalAllocHGlobal);
+            return true;
+        }
+        // __rust_dealloc(ptr, size: i64, align: i64) -> void
+        if (callee.Contains("___rust_dealloc", StringComparison.Ordinal))
+        {
+            // Stack: [ptr, size, align]. Drop align, drop size, call FreeHGlobal(ptr).
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.OpCode(ILOpCode.Pop);
+            encoder.Call(typeContext.MarshalFreeHGlobal);
+            return true;
+        }
+        // __rust_no_alloc_shim_is_unstable_v2() -> void (no-op marker)
+        if (callee.Contains("___rust_no_alloc_shim", StringComparison.Ordinal))
+        {
+            // No args, no result. Nothing to emit.
+            return true;
+        }
+        // handle_alloc_error(size, align) -> ! (diverges)
+        if (callee.Contains("handle_alloc_error", StringComparison.Ordinal))
+        {
+            // Stack: [size, align]. Pop both and throw.
+            for (var i = 0; i < argCount; i++)
+                encoder.OpCode(ILOpCode.Pop);
+            encoder.LoadString(default(UserStringHandle));
+            encoder.OpCode(ILOpCode.Newobj);
+            encoder.Token(typeContext.NotSupportedExceptionCtor);
+            encoder.OpCode(ILOpCode.Throw);
+            return true;
+        }
+        return false;
+    }
+
     private static ILOpCode MapBinaryOp(string operation) => operation switch
     {
         "add" or "fadd" => ILOpCode.Add,
@@ -1897,6 +2050,53 @@ public static class LoweredAssemblyEmitter
 
     private static bool IsAggregateType(string typeName) =>
         typeName.StartsWith('{') && typeName.EndsWith('}');
+
+    private static bool AggregateNeedsSret(string aggregateType)
+    {
+        // Aggregates containing ptr or i64 fields need sret (can't pack into 64 bits)
+        var fields = ParseAggregateFieldTypes(aggregateType);
+        var totalBits = 0;
+        foreach (var f in fields)
+        {
+            totalBits += f switch
+            {
+                "ptr" => 64,
+                "i64" => 64,
+                "double" => 64,
+                _ => 32
+            };
+        }
+        return totalBits > 64;
+    }
+
+    private static int GetAggregateFieldOffset(string aggregateType, int index)
+    {
+        var fields = ParseAggregateFieldTypes(aggregateType);
+        var offset = 0;
+        for (var i = 0; i < index && i < fields.Length; i++)
+        {
+            offset += GetFieldSize(fields[i]);
+        }
+        return offset;
+    }
+
+    private static int GetAggregateSize(string aggregateType)
+    {
+        var fields = ParseAggregateFieldTypes(aggregateType);
+        var size = 0;
+        foreach (var f in fields)
+            size += GetFieldSize(f);
+        return size;
+    }
+
+    private static int GetFieldSize(string fieldType) => fieldType switch
+    {
+        "ptr" => 8,
+        "i64" => 8,
+        "double" => 8,
+        "float" => 4,
+        _ => 4 // i32, i16, i8, i1 all stored as 4 bytes for alignment
+    };
 
     private static LoweredCallInstruction? FindCallByResult(LoweredFunction function, string resultName)
     {
@@ -2441,6 +2641,7 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle ReverseEndianness32 { get; }
         public MemberReferenceHandle ReverseEndianness64 { get; }
         public MemberReferenceHandle MarshalAllocHGlobal { get; }
+        public MemberReferenceHandle MarshalFreeHGlobal { get; }
         public MemberReferenceHandle MarshalCopy { get; }
         public MemberReferenceHandle NotSupportedExceptionCtor { get; }
         public MemberReferenceHandle MathSqrt { get; }
@@ -2540,6 +2741,13 @@ public static class LoweredAssemblyEmitter
             allocRet.Type().IntPtr();
             allocParms.AddParameter().Type().IntPtr();
             MarshalAllocHGlobal = AddStaticMethod(mb, marshalType, "AllocHGlobal", mb.GetOrAddBlob(allocHGlobalSig));
+
+            // Marshal.FreeHGlobal(IntPtr) -> void
+            var freeHGlobalSig = new BlobBuilder();
+            new BlobEncoder(freeHGlobalSig).MethodSignature().Parameters(1, out var freeRet, out var freeParms);
+            freeRet.Void();
+            freeParms.AddParameter().Type().IntPtr();
+            MarshalFreeHGlobal = AddStaticMethod(mb, marshalType, "FreeHGlobal", mb.GetOrAddBlob(freeHGlobalSig));
 
             // Marshal.Copy(byte[], int, IntPtr, int) -> void
             var copySig = new BlobBuilder();
