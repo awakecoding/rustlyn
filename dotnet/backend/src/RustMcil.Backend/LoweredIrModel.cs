@@ -124,6 +124,20 @@ public sealed record LoweredInsertValueInstruction(
     string Value,
     int Index) : LoweredInstruction;
 
+public sealed record LoweredAtomicRmwInstruction(
+    string Result,
+    string Operation,
+    string Pointer,
+    string ValueType,
+    string Value) : LoweredInstruction;
+
+public sealed record LoweredCmpxchgInstruction(
+    string Result,
+    string Pointer,
+    string ValueType,
+    string CompareValue,
+    string NewValue) : LoweredInstruction;
+
 public sealed record LoweredRawInstruction(
     string Text) : LoweredInstruction;
 

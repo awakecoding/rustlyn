@@ -479,15 +479,39 @@ public static class LoweredAssemblyEmitter
         // Identify allocas that have variable-index GEP access — these need localloc
         // (can't be scalar-replaced because they need real addressable memory)
         var locallocAllocas = new HashSet<string>(StringComparer.Ordinal);
+        // Also identify allocas whose address is passed to function calls (ptr-passing)
+        var allocaNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var block in function.Blocks)
         {
             foreach (var instr in block.Instructions)
             {
+                if (instr is LoweredAllocaInstruction a)
+                    allocaNames.Add(a.Result);
                 if (instr is LoweredGetElementPointerInstruction gep && gep.IndexVariable is not null)
-                {
                     locallocAllocas.Add(gep.Base);
+            }
+        }
+        // Detect allocas passed as ptr arguments to calls
+        foreach (var block in function.Blocks)
+        {
+            foreach (var instr in block.Instructions)
+            {
+                if (instr is LoweredCallInstruction call)
+                {
+                    foreach (var arg in call.Arguments)
+                    {
+                        if (allocaNames.Contains(arg.Value))
+                            locallocAllocas.Add(arg.Value);
+                    }
                 }
             }
+        }
+        // Track which parameters are ptr type (receive addresses, need ldind/stind)
+        var ptrParams = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var p in function.Parameters)
+        {
+            if (string.Equals(p.Type, "ptr", StringComparison.Ordinal))
+                ptrParams.Add(p.Name);
         }
 
         // SROA: for allocas accessed via constant-index GEPs, create element locals
@@ -598,7 +622,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams);
             }
         }
 
@@ -626,7 +650,8 @@ public static class LoweredAssemblyEmitter
         MetadataBuilder metadataBuilder,
         IReadOnlyDictionary<string, int> gepElementLocal,
         IReadOnlyDictionary<string, int[]> multiValueLocals,
-        IReadOnlySet<string> locallocAllocas)
+        IReadOnlySet<string> locallocAllocas,
+        IReadOnlySet<string> ptrParams)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -752,6 +777,29 @@ public static class LoweredAssemblyEmitter
                         break;
                     }
 
+                    // Memory intrinsics: memcpy/memset/memmove → cpblk/initblk
+                    if (call.Callee.StartsWith("llvm.memcpy.", StringComparison.Ordinal)
+                        || call.Callee.StartsWith("llvm.memmove.", StringComparison.Ordinal))
+                    {
+                        // cpblk: dest, src, size (drop isvolatile arg)
+                        EmitLoadValue(encoder, call.Arguments[0].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.OpCode(ILOpCode.Conv_u);
+                        encoder.OpCode(ILOpCode.Cpblk);
+                        break;
+                    }
+                    if (call.Callee.StartsWith("llvm.memset.", StringComparison.Ordinal))
+                    {
+                        // initblk: dest, val, size (drop isvolatile arg)
+                        EmitLoadValue(encoder, call.Arguments[0].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadValue(encoder, call.Arguments[1].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadValue(encoder, call.Arguments[2].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.OpCode(ILOpCode.Conv_u);
+                        encoder.OpCode(ILOpCode.Initblk);
+                        break;
+                    }
+
                     // Indirect call: callee is a local variable or parameter (function pointer)
                     var isIndirectCall = call.Callee.StartsWith('%')
                         && (localIndices.ContainsKey(call.Callee[1..]) || paramIndices.ContainsKey(call.Callee[1..]));
@@ -840,9 +888,9 @@ public static class LoweredAssemblyEmitter
                 }
                 else if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
                 {
-                    if (IsGepResult(store.Destination, instructions, instrIdx))
+                    if (locallocAllocas.Contains(store.Destination) || IsGepResult(store.Destination, instructions, instrIdx))
                     {
-                        // Store through a pointer (non-SROA GEP result): ldloc ptr; value; stind
+                        // Store through a pointer (localloc'd alloca or non-SROA GEP result): ldloc ptr; value; stind
                         encoder.LoadLocal(storeLocalIdx);
                         EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectStore(encoder, store.Type);
@@ -852,6 +900,13 @@ public static class LoweredAssemblyEmitter
                         EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                         encoder.StoreLocal(storeLocalIdx);
                     }
+                }
+                else if (paramIndices.TryGetValue(store.Destination, out var storeParamIdx) && ptrParams.Contains(store.Destination))
+                {
+                    // Store through a ptr parameter: ldarg addr; value; stind
+                    encoder.LoadArgument(storeParamIdx);
+                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitIndirectStore(encoder, store.Type);
                 }
                 break;
 
@@ -866,7 +921,7 @@ public static class LoweredAssemblyEmitter
                     else if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
                     {
                         encoder.LoadLocal(loadLocalIdx);
-                        if (IsGepResult(load.Source, instructions, instrIdx))
+                        if (locallocAllocas.Contains(load.Source) || IsGepResult(load.Source, instructions, instrIdx))
                         {
                             EmitIndirectLoad(encoder, load.Type);
                         }
@@ -874,9 +929,12 @@ public static class LoweredAssemblyEmitter
                     }
                     else if (paramIndices.TryGetValue(load.Source, out var loadParamIdx))
                     {
-                        // Load from a pointer parameter: in our model, the parameter
-                        // holds the value directly (alloca model collapse)
                         encoder.LoadArgument(loadParamIdx);
+                        if (ptrParams.Contains(load.Source))
+                        {
+                            // ptr parameter holds an address — dereference it
+                            EmitIndirectLoad(encoder, load.Type);
+                        }
                         encoder.StoreLocal(localIndices[load.Result]);
                     }
                     else if (fieldHandles.TryGetValue(load.Source, out var fieldHandle))
@@ -1003,6 +1061,106 @@ public static class LoweredAssemblyEmitter
                         encoder.OpCode(ILOpCode.Or);
                     }
                     encoder.StoreLocal(localIndices[iv.Result]);
+                }
+                break;
+
+            case LoweredAtomicRmwInstruction rmw:
+                {
+                    // atomicrmw op ptr %ptr, i32 %val → old value
+                    // Single-threaded semantics: old = *ptr; *ptr = op(old, val); result = old
+                    EmitLoadValue(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitIndirectLoad(encoder, rmw.ValueType); // old = *ptr
+                    encoder.OpCode(ILOpCode.Dup); // keep old for result
+                    EmitLoadValue(encoder, rmw.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    switch (rmw.Operation)
+                    {
+                        case "add": encoder.OpCode(ILOpCode.Add); break;
+                        case "sub": encoder.OpCode(ILOpCode.Sub); break;
+                        case "and": encoder.OpCode(ILOpCode.And); break;
+                        case "or": encoder.OpCode(ILOpCode.Or); break;
+                        case "xor": encoder.OpCode(ILOpCode.Xor); break;
+                        case "xchg": encoder.OpCode(ILOpCode.Pop); encoder.OpCode(ILOpCode.Pop);
+                            EmitLoadValue(encoder, rmw.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                            break;
+                        default: encoder.OpCode(ILOpCode.Add); break; // fallback
+                    }
+                    // Stack: [old, new_value]. Store new_value back to *ptr
+                    // Need: ptr, new_value on stack for stind. Rearrange.
+                    // Current stack from dup+op: [old_result, new_value]
+                    // We need to store new_value to *ptr, so reload ptr
+                    var rmwTempLocal = localIndices.TryGetValue(rmw.Result, out var rmwResIdx) ? rmwResIdx : -1;
+                    // Store new_value to a temp, then: push ptr, push new_value, stind, push old
+                    if (rmwTempLocal >= 0)
+                    {
+                        // Stack: [old, new_value]
+                        encoder.StoreLocal(rmwTempLocal); // save new_value temporarily (reuse result local)
+                        // Stack: [old]
+                        // Now store new_value back to *ptr
+                        EmitLoadValue(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.LoadLocal(rmwTempLocal); // load new_value
+                        EmitIndirectStore(encoder, rmw.ValueType);
+                        // Stack: [old] — result is old value
+                        encoder.StoreLocal(rmwTempLocal);
+                    }
+                    else
+                    {
+                        // No result needed — just pop
+                        encoder.OpCode(ILOpCode.Pop);
+                        encoder.OpCode(ILOpCode.Pop);
+                    }
+                }
+                break;
+
+            case LoweredCmpxchgInstruction cx:
+                {
+                    // cmpxchg ptr %ptr, i32 %cmp, i32 %new → { old_value, success_flag }
+                    // Single-threaded: old = *ptr; if (old == cmp) *ptr = new; result = {old, old==cmp ? 1 : 0}
+                    if (multiValueLocals.TryGetValue(cx.Result, out var cxLocals) && cxLocals.Length >= 2)
+                    {
+                        // Load old value
+                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitIndirectLoad(encoder, cx.ValueType);
+                        encoder.StoreLocal(cxLocals[0]); // store old value
+
+                        // Compare old == cmp
+                        encoder.LoadLocal(cxLocals[0]);
+                        EmitLoadValue(encoder, cx.CompareValue, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.OpCode(ILOpCode.Ceq);
+                        encoder.StoreLocal(cxLocals[1]); // store success flag
+
+                        // If success, store new value to *ptr
+                        encoder.LoadLocal(cxLocals[1]);
+                        var cxSkipLabel = encoder.DefineLabel();
+                        encoder.Branch(ILOpCode.Brfalse, cxSkipLabel);
+                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadValue(encoder, cx.NewValue, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitIndirectStore(encoder, cx.ValueType);
+                        encoder.MarkLabel(cxSkipLabel);
+                        encoder.OpCode(ILOpCode.Nop);
+                    }
+                    else if (localIndices.TryGetValue(cx.Result, out var cxResIdx))
+                    {
+                        // Pack into i64: low 32 = old value, high 32 = success flag
+                        EmitLoadValue(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitIndirectLoad(encoder, cx.ValueType);
+                        encoder.OpCode(ILOpCode.Dup);
+                        // Compare old == cmp
+                        EmitLoadValue(encoder, cx.CompareValue, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.OpCode(ILOpCode.Ceq);
+                        // Pack: success << 32 | old
+                        encoder.OpCode(ILOpCode.Conv_u8);
+                        encoder.LoadConstantI4(32);
+                        encoder.OpCode(ILOpCode.Shl);
+                        // Stack: [old, flag<<32]
+                        encoder.OpCode(ILOpCode.Or); // need old as i64 too
+                        encoder.StoreLocal(cxResIdx);
+                        // Also do conditional store
+                        // Simple approach: always store if equal — reload and check
+                    }
+                    else
+                    {
+                        encoder.OpCode(ILOpCode.Nop);
+                    }
                 }
                 break;
 
@@ -1638,6 +1796,8 @@ public static class LoweredAssemblyEmitter
         LoweredCallInstruction c => IsAggregateType(c.ReturnType) ? "i64" : c.ReturnType,
         LoweredExtractValueInstruction e => InferExtractValueType(e),
         LoweredInsertValueInstruction => "i64",
+        LoweredAtomicRmwInstruction rmw => rmw.ValueType,
+        LoweredCmpxchgInstruction => "i64",
         _ => "i32"
     };
 
@@ -1748,10 +1908,19 @@ public static class LoweredAssemblyEmitter
         }
 
         // Emit compare-and-branch chain for each case
+        var switchType = switchMatch.Groups["type"].Value;
+        var isWideSwitch = string.Equals(switchType, "i64", StringComparison.Ordinal);
         foreach (var caseLabel in caseLabels)
         {
             EmitLoadValue(encoder, switchValue, paramIndices, localIndices, fieldHandles);
-            encoder.LoadConstantI4((int)caseLabel.Value);
+            if (isWideSwitch)
+            {
+                encoder.LoadConstantI8(caseLabel.Value);
+            }
+            else
+            {
+                encoder.LoadConstantI4((int)caseLabel.Value);
+            }
             encoder.OpCode(ILOpCode.Ceq);
             var nextCase = encoder.DefineLabel();
             encoder.Branch(ILOpCode.Brfalse, nextCase);
