@@ -92,6 +92,17 @@ public static class LoweredAssemblyEmitter
             {
                 pending.Push(storeValue);
             }
+
+            // Function pointers passed as call arguments (e.g., call apply(ptr @double, i32 5))
+            foreach (var argValue in function.Blocks
+                         .SelectMany(static block => block.Instructions)
+                         .OfType<LoweredCallInstruction>()
+                         .SelectMany(static call => call.Arguments)
+                         .Select(static arg => arg.Value)
+                         .Where(functionMap.ContainsKey))
+            {
+                pending.Push(argValue);
+            }
         }
 
         return functions.Where(function => reachable.Contains(function.Name) && !IsExcludedRuntimeStub(function.Name)).ToArray();
@@ -636,19 +647,23 @@ public static class LoweredAssemblyEmitter
                                   || call.Callee.StartsWith("llvm.cttz.", StringComparison.Ordinal);
                     var effectiveArgCount = isCtlzCttz ? Math.Min(callArgs.Count, 1) : callArgs.Count;
 
-                    // Indirect call: callee is a local variable (function pointer)
+                    // Indirect call: callee is a local variable or parameter (function pointer)
                     var isIndirectCall = call.Callee.StartsWith('%')
-                        && localIndices.ContainsKey(call.Callee[1..]);
+                        && (localIndices.ContainsKey(call.Callee[1..]) || paramIndices.ContainsKey(call.Callee[1..]));
 
                     for (var argIdx = 0; argIdx < effectiveArgCount; argIdx++)
                     {
-                        EmitLoadValue(encoder, callArgs[argIdx].Value, paramIndices, localIndices, fieldHandles);
+                        EmitLoadValue(encoder, callArgs[argIdx].Value, paramIndices, localIndices, fieldHandles, methodHandles);
                     }
 
                     if (isIndirectCall)
                     {
-                        // Load function pointer from local, then calli
-                        encoder.LoadLocal(localIndices[call.Callee[1..]]);
+                        // Load function pointer from local or parameter, then calli
+                        var calleeName = call.Callee[1..];
+                        if (localIndices.TryGetValue(calleeName, out var calleeLocalIdx))
+                            encoder.LoadLocal(calleeLocalIdx);
+                        else
+                            encoder.LoadArgument(paramIndices[calleeName]);
                         encoder.CallIndirect(BuildStandaloneSignature(metadataBuilder, call.ReturnType, callArgs));
                     }
                     else if (methodHandles.TryGetValue(call.Callee, out var calleeHandle))
@@ -721,6 +736,20 @@ public static class LoweredAssemblyEmitter
                         {
                             encoder.OpCode(ILOpCode.Ldsfld);
                             encoder.Token(fieldHandle);
+                        }
+                        encoder.StoreLocal(localIndices[load.Result]);
+                    }
+                    else if (TryParseGlobalElementAccess(load.Source, out var baseName, out var elementIndex)
+                             && fieldHandles.TryGetValue(baseName, out var arrayFieldHandle))
+                    {
+                        if (TryResolveConstantGlobalElementAtIndex(baseName, elementIndex, load.Type, globalMap, out var arrValue))
+                        {
+                            EmitConstantValue(encoder, load.Type, arrValue);
+                        }
+                        else
+                        {
+                            encoder.OpCode(ILOpCode.Ldsfld);
+                            encoder.Token(arrayFieldHandle);
                         }
                         encoder.StoreLocal(localIndices[load.Result]);
                     }
@@ -1207,6 +1236,55 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
+    private static bool TryParseGlobalElementAccess(string source, out string baseName, out int index)
+    {
+        baseName = "";
+        index = 0;
+        var bracketIdx = source.IndexOf('[');
+        if (bracketIdx < 0) return false;
+        var closeBracket = source.IndexOf(']', bracketIdx);
+        if (closeBracket < 0) return false;
+        baseName = source[..bracketIdx];
+        return int.TryParse(source[(bracketIdx + 1)..closeBracket], out index);
+    }
+
+    private static bool TryResolveConstantGlobalElementAtIndex(string baseName, int elementIndex, string type, IReadOnlyDictionary<string, LoweredGlobal> globalMap, out long value)
+    {
+        value = 0;
+        if (!globalMap.TryGetValue(baseName, out var global))
+        {
+            return false;
+        }
+        var stride = GetElementTypeStride(type);
+        var offset = elementIndex * stride;
+        if (offset + stride > global.InitializerBytes.Count)
+        {
+            return false;
+        }
+        var bytes = global.InitializerBytes.Skip(offset).Take(stride).ToArray();
+        if (stride == 4)
+        {
+            value = BitConverter.ToInt32(bytes, 0);
+            return true;
+        }
+        if (stride == 8)
+        {
+            value = BitConverter.ToInt64(bytes, 0);
+            return true;
+        }
+        if (stride == 1)
+        {
+            value = bytes[0];
+            return true;
+        }
+        if (stride == 2)
+        {
+            value = BitConverter.ToInt16(bytes, 0);
+            return true;
+        }
+        return false;
+    }
+
     private static int GetElementTypeStride(string elementType)
     {
         if (TryGetIntegerBitWidth(elementType, out var width))
@@ -1473,6 +1551,17 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle MarshalAllocHGlobal { get; }
         public MemberReferenceHandle MarshalCopy { get; }
         public MemberReferenceHandle NotSupportedExceptionCtor { get; }
+        public MemberReferenceHandle MathSqrt { get; }
+        public MemberReferenceHandle MathFloor { get; }
+        public MemberReferenceHandle MathCeiling { get; }
+        public MemberReferenceHandle MathAbs { get; }
+        public MemberReferenceHandle MathMin { get; }
+        public MemberReferenceHandle MathMax { get; }
+        public MemberReferenceHandle MathPow { get; }
+        public MemberReferenceHandle MathFSqrt { get; }
+        public MemberReferenceHandle MathFFloor { get; }
+        public MemberReferenceHandle MathFCeiling { get; }
+        public MemberReferenceHandle MathFAbs { get; }
 
         private readonly Dictionary<string, MemberReferenceHandle> _intrinsicMap;
 
@@ -1511,6 +1600,35 @@ public static class LoweredAssemblyEmitter
             TrailingZeroCountU64 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU64ToI32Sig(mb));
             ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
             ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+
+            // System.Math (for libm intrinsics: sqrt, floor, ceil, etc.)
+            var mathType = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("Math"));
+
+            var f64ToF64Sig = EncodeF64ToF64Sig(mb);
+            MathSqrt = AddStaticMethod(mb, mathType, "Sqrt", f64ToF64Sig);
+            MathFloor = AddStaticMethod(mb, mathType, "Floor", f64ToF64Sig);
+            MathCeiling = AddStaticMethod(mb, mathType, "Ceiling", f64ToF64Sig);
+            MathAbs = AddStaticMethod(mb, mathType, "Abs", f64ToF64Sig);
+
+            var f64f64ToF64Sig = EncodeF64F64ToF64Sig(mb);
+            MathMin = AddStaticMethod(mb, mathType, "Min", f64f64ToF64Sig);
+            MathMax = AddStaticMethod(mb, mathType, "Max", f64f64ToF64Sig);
+            MathPow = AddStaticMethod(mb, mathType, "Pow", f64f64ToF64Sig);
+
+            // System.MathF (for float-specific operations)
+            var mathFType = mb.AddTypeReference(
+                systemRuntime,
+                mb.GetOrAddString("System"),
+                mb.GetOrAddString("MathF"));
+
+            var f32ToF32Sig = EncodeF32ToF32Sig(mb);
+            MathFSqrt = AddStaticMethod(mb, mathFType, "Sqrt", f32ToF32Sig);
+            MathFFloor = AddStaticMethod(mb, mathFType, "Floor", f32ToF32Sig);
+            MathFCeiling = AddStaticMethod(mb, mathFType, "Ceiling", f32ToF32Sig);
+            MathFAbs = AddStaticMethod(mb, mathFType, "Abs", f32ToF32Sig);
 
             // System.Byte type reference (for newarr in .cctor)
             ByteTypeRef = mb.AddTypeReference(
@@ -1568,6 +1686,30 @@ public static class LoweredAssemblyEmitter
                 ["llvm.cttz.i64"] = TrailingZeroCountU64,
                 ["llvm.bswap.i32"] = ReverseEndianness32,
                 ["llvm.bswap.i64"] = ReverseEndianness64,
+                // libm double functions
+                ["sqrt"] = MathSqrt,
+                ["llvm.sqrt.f64"] = MathSqrt,
+                ["floor"] = MathFloor,
+                ["llvm.floor.f64"] = MathFloor,
+                ["ceil"] = MathCeiling,
+                ["llvm.ceil.f64"] = MathCeiling,
+                ["fabs"] = MathAbs,
+                ["llvm.fabs.f64"] = MathAbs,
+                ["fmin"] = MathMin,
+                ["llvm.minnum.f64"] = MathMin,
+                ["fmax"] = MathMax,
+                ["llvm.maxnum.f64"] = MathMax,
+                ["pow"] = MathPow,
+                ["llvm.pow.f64"] = MathPow,
+                // libm float functions
+                ["sqrtf"] = MathFSqrt,
+                ["llvm.sqrt.f32"] = MathFSqrt,
+                ["floorf"] = MathFFloor,
+                ["llvm.floor.f32"] = MathFFloor,
+                ["ceilf"] = MathFCeiling,
+                ["llvm.ceil.f32"] = MathFCeiling,
+                ["fabsf"] = MathFAbs,
+                ["llvm.fabs.f32"] = MathFAbs,
             };
         }
 
@@ -1614,6 +1756,34 @@ public static class LoweredAssemblyEmitter
             new BlobEncoder(blob).MethodSignature().Parameters(1, out var ret, out var parms);
             ret.Type().Int64();
             parms.AddParameter().Type().Int64();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeF64ToF64Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(1, out var ret, out var parms);
+            ret.Type().Double();
+            parms.AddParameter().Type().Double();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeF64F64ToF64Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(2, out var ret, out var parms);
+            ret.Type().Double();
+            parms.AddParameter().Type().Double();
+            parms.AddParameter().Type().Double();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeF32ToF32Sig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(1, out var ret, out var parms);
+            ret.Type().Single();
+            parms.AddParameter().Type().Single();
             return mb.GetOrAddBlob(blob);
         }
     }
