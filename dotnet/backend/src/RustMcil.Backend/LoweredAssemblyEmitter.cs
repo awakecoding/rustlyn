@@ -476,6 +476,20 @@ public static class LoweredAssemblyEmitter
             }
         }
 
+        // Identify allocas that have variable-index GEP access — these need localloc
+        // (can't be scalar-replaced because they need real addressable memory)
+        var locallocAllocas = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var block in function.Blocks)
+        {
+            foreach (var instr in block.Instructions)
+            {
+                if (instr is LoweredGetElementPointerInstruction gep && gep.IndexVariable is not null)
+                {
+                    locallocAllocas.Add(gep.Base);
+                }
+            }
+        }
+
         // SROA: for allocas accessed via constant-index GEPs, create element locals
         // gepElementLocal maps a GEP result name -> the local index of the element slot
         var gepElementLocal = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -497,6 +511,10 @@ public static class LoweredAssemblyEmitter
                         combinedOffset = parentGep.offset + gep.Index;
                     }
                     gepBaseOffset[gep.Result] = (rootBase, combinedOffset);
+
+                    // Skip SROA for allocas that need localloc (variable-index access)
+                    if (locallocAllocas.Contains(rootBase))
+                        continue;
 
                     var key = (rootBase, combinedOffset);
                     if (!allocaElementLocals.TryGetValue(key, out var elemLocalIdx))
@@ -580,7 +598,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas);
             }
         }
 
@@ -607,7 +625,8 @@ public static class LoweredAssemblyEmitter
         IReadOnlyDictionary<string, LoweredGlobal> globalMap,
         MetadataBuilder metadataBuilder,
         IReadOnlyDictionary<string, int> gepElementLocal,
-        IReadOnlyDictionary<string, int[]> multiValueLocals)
+        IReadOnlyDictionary<string, int[]> multiValueLocals,
+        IReadOnlySet<string> locallocAllocas)
     {
         var instruction = instructions[instrIdx];
         switch (instruction)
@@ -799,8 +818,17 @@ public static class LoweredAssemblyEmitter
                 }
                 break;
 
-            case LoweredAllocaInstruction:
-                // Alloca maps to a local variable slot — no IL needed
+            case LoweredAllocaInstruction alloca:
+                if (locallocAllocas.Contains(alloca.Result))
+                {
+                    // Emit localloc for allocas that need real addressable memory
+                    var allocSize = ParseAllocaSize(alloca.Type);
+                    encoder.LoadConstantI4(allocSize);
+                    encoder.OpCode(ILOpCode.Conv_u);
+                    encoder.OpCode(ILOpCode.Localloc);
+                    encoder.StoreLocal(localIndices[alloca.Result]);
+                }
+                // Otherwise: alloca maps to a local variable slot — no IL needed (SROA handles it)
                 break;
 
             case LoweredStoreInstruction store:
@@ -812,8 +840,18 @@ public static class LoweredAssemblyEmitter
                 }
                 else if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
                 {
-                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
-                    encoder.StoreLocal(storeLocalIdx);
+                    if (IsGepResult(store.Destination, instructions, instrIdx))
+                    {
+                        // Store through a pointer (non-SROA GEP result): ldloc ptr; value; stind
+                        encoder.LoadLocal(storeLocalIdx);
+                        EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitIndirectStore(encoder, store.Type);
+                    }
+                    else
+                    {
+                        EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        encoder.StoreLocal(storeLocalIdx);
+                    }
                 }
                 break;
 
@@ -1780,6 +1818,45 @@ public static class LoweredAssemblyEmitter
         {
             encoder.OpCode(ILOpCode.Ldind_i4);
         }
+    }
+
+    private static void EmitIndirectStore(InstructionEncoder encoder, string type)
+    {
+        if (TryGetIntegerBitWidth(type, out var width))
+        {
+            if (width <= 8)
+                encoder.OpCode(ILOpCode.Stind_i1);
+            else if (width <= 16)
+                encoder.OpCode(ILOpCode.Stind_i2);
+            else if (width <= 32)
+                encoder.OpCode(ILOpCode.Stind_i4);
+            else
+                encoder.OpCode(ILOpCode.Stind_i8);
+        }
+        else if (string.Equals(type, "float", StringComparison.Ordinal))
+        {
+            encoder.OpCode(ILOpCode.Stind_r4);
+        }
+        else if (string.Equals(type, "double", StringComparison.Ordinal))
+        {
+            encoder.OpCode(ILOpCode.Stind_r8);
+        }
+        else
+        {
+            encoder.OpCode(ILOpCode.Stind_i4);
+        }
+    }
+
+    private static int ParseAllocaSize(string allocaType)
+    {
+        // Parse "[N x i8]" → N, or type size for simple types
+        var match = System.Text.RegularExpressions.Regex.Match(allocaType, @"\[(\d+)\s+x\s+i8\]");
+        if (match.Success)
+            return int.Parse(match.Groups[1].Value);
+        // Fallback: estimate from type
+        if (TryGetIntegerBitWidth(allocaType, out var bits))
+            return (bits + 7) / 8;
+        return 8; // default
     }
 
     private static void EmitConstantValue(InstructionEncoder encoder, string type, long value)
