@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Build backend
+        run: |
+          dotnet build dotnet/backend/src/Rustlyn.Backend/Rustlyn.Backend.csproj -c Release
+          dotnet build dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -c Release
+          dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+
+      - name: Build tests
+        run: dotnet build dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj -c Release
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build sample bitcode (add)
+        shell: pwsh
+        run: ./scripts/Build-SampleBitcode.ps1 -Sample add
+
+      - name: Smoke test (add)
+        shell: pwsh
+        run: ./scripts/Test-Smoke.ps1 -Sample add -Mode Bitcode
+
+  bindings-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Build bindings tool
+        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+
+      - name: Validate binding surface
+        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime"
+
+      - name: Test delegate analysis
+        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- analyze-delegate "System.Func\`2[[System.Int32],[System.Int32]]"
