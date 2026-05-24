@@ -74,3 +74,28 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 3. Replace README capability claims with links to this matrix when behavior is preview, fixture-only, or planned.
 4. Expand CI from the `add` smoke path to a small but representative required tier.
 
+## IL emission and strict mode contract
+
+The emitter supports two behavior modes selected through `EmitOptions.StrictUnsupportedIr`:
+
+- **Permissive (default)** – unsupported IR shapes are emitted as method bodies that throw `NotSupportedException` at runtime. This is what `inspect`, sample fixtures, and exploratory `emit` calls use; it lets translation produce a complete assembly even when individual functions cannot be lowered. Use this mode for investigation only.
+- **Strict (production)** – any unsupported IR aborts emission with `UnsupportedIrException`. The exception carries one `UnsupportedIrFunction` per failing function (name + reason text). The CLI surfaces this through `rustlyn emit --strict` and `rustlyn translate --strict`; downstream tooling can consume the structured list.
+
+Typed unsupported records currently routed through strict-mode diagnostics: `invoke`, `landingpad`, `fence`, `volatile load`, `volatile store`. Raw instructions that the lowerer cannot type are also rejected. Aggregate/struct/vector layout, address spaces, and exception personality wiring are still pending and either fall through to permissive stubbing today or produce raw-instruction diagnostics in strict mode.
+
+Layout work routes through `TypeLayoutService`. It answers size/alignment for `i1`..`i128`, the standard floats, and pointers (using the module datalayout when present). Aggregates and vectors return the `Unknown` category — callers should treat that as a hard error in strict pipelines instead of silently picking `Int32`.
+
+## Runtime, memory, and atomics
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Heap allocator | Preview | `Rustlyn.Runtime` exposes `Allocate`/`Reallocate`/`Free` over `NativeMemory`. Layout-driven zeroing/aligned paths still need direct fixture coverage. |
+| `memcpy` / `memmove` / `memset` | Preview | Backed by `Buffer.MemoryCopy` and `Span.Fill`; volatile/aligned variants are not modeled distinctly yet. |
+| Volatile load/store | Unsupported | Lowered as typed records; strict mode rejects them. |
+| Atomic ordering | Fixture-only | `atomicrmw`/`cmpxchg` lowering exists but `Acquire`/`Release`/`SeqCst` semantics are treated as the strongest available ordering via `Interlocked`. |
+| `fence` | Unsupported | Lowered as `LoweredFenceInstruction`; strict mode rejects with the ordering text included. |
+| Panic = abort | Preview | Throws a managed exception that maps to `std::process::abort` in fixtures. |
+| Panic = unwind | Planned | Requires landingpad/invoke modeling, exception regions, and drop-on-unwind glue. |
+| Drop on early return | Preview | Works for fixtures that do not also need unwinding. |
+| Threading / `Mutex` / channels | Planned | Not validated by samples; treat as unsupported until coverage exists. |
+
