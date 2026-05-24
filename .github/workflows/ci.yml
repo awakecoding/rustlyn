@@ -55,6 +55,43 @@ jobs:
         shell: pwsh
         run: ./scripts/Test-DocClaims.ps1
 
+  extended:
+    name: Extended fixtures (preview-tier, advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build extended sample bitcode
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
+            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
+          }
+
+      - name: Smoke test extended samples
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
+            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
+          }
+
+      - name: Pack templates
+        continue-on-error: true
+        run: dotnet pack templates/Rustlyn.Templates.csproj -c Release
+
   bindings-test:
     runs-on: ubuntu-latest
     steps:
