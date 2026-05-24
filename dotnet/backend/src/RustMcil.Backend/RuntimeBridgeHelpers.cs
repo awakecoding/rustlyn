@@ -1,10 +1,13 @@
 using System.Runtime.InteropServices;
+using System.Globalization;
 using System.Numerics;
 
 namespace RustMcil.Backend;
 
 public static partial class RuntimeBridgeHelpers
 {
+    private const int RustFormatArgumentSize = 16;
+
     public static int CommandLineArgCount()
     {
         return RustMcil.Os.HostEnvironment.CommandLineArgCount();
@@ -305,11 +308,13 @@ public static partial class RuntimeBridgeHelpers
 
         var piecesPointer = Marshal.ReadIntPtr(argumentsPointer);
         var piecesLength = Marshal.ReadInt64(argumentsPointer, 8);
-        var argsPointer = Marshal.ReadIntPtr(argumentsPointer, 32);
-        var argsLength = Marshal.ReadInt64(argumentsPointer, 40);
-        if (argsPointer != IntPtr.Zero || argsLength != 0)
+        var argsPointer = Marshal.ReadIntPtr(argumentsPointer, 16);
+        var argsLength = Marshal.ReadInt64(argumentsPointer, 24);
+        var formatSpecsPointer = Marshal.ReadIntPtr(argumentsPointer, 32);
+        var formatSpecsLength = Marshal.ReadInt64(argumentsPointer, 40);
+        if (formatSpecsPointer != IntPtr.Zero || formatSpecsLength != 0)
         {
-            throw new NotSupportedException("std::fmt arguments with runtime values are not supported by the console bridge yet.");
+            throw new NotSupportedException("std::fmt arguments with non-default formatting specs are not supported by the console bridge yet.");
         }
 
         if (piecesLength == 0)
@@ -327,15 +332,80 @@ public static partial class RuntimeBridgeHelpers
             throw new NotSupportedException($"std::fmt pieces length {piecesLength} is outside the supported bridge range.");
         }
 
+        if (argsLength < 0 || argsLength > 256)
+        {
+            throw new NotSupportedException($"std::fmt runtime argument length {argsLength} is outside the supported bridge range.");
+        }
+
+        if (argsLength != 0 && argsPointer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("std::fmt arguments contained a null runtime argument pointer.");
+        }
+
+        if (argsLength > 0 && piecesLength != argsLength && piecesLength != argsLength + 1)
+        {
+            throw new NotSupportedException($"std::fmt pieces length {piecesLength} is not compatible with runtime argument length {argsLength}.");
+        }
+
         var builder = new System.Text.StringBuilder();
         for (var index = 0; index < piecesLength; index++)
         {
             var piecePointer = Marshal.ReadIntPtr(piecesPointer, checked((int)(index * 16)));
             var pieceLength = Marshal.ReadInt64(piecesPointer, checked((int)(index * 16 + 8)));
             builder.Append(RustMcil.Interop.InteropUtf8.ReadString(piecePointer, pieceLength));
+            if (index < argsLength)
+            {
+                builder.Append(ReadDefaultFormatArgument(argsPointer, index));
+            }
         }
 
         return builder.ToString();
+    }
+
+    private static string ReadDefaultFormatArgument(IntPtr argsPointer, long index)
+    {
+        var offset = checked((int)(index * RustFormatArgumentSize));
+        var valuePointer = Marshal.ReadIntPtr(argsPointer, offset);
+        var formatterPointer = Marshal.ReadIntPtr(argsPointer, offset + IntPtr.Size);
+        if (valuePointer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"std::fmt runtime argument {index.ToString(CultureInfo.InvariantCulture)} contained a null value pointer.");
+        }
+
+        if (formatterPointer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("std::fmt runtime argument contained a null formatter pointer.");
+        }
+
+        if (!IsDefaultI32Formatter(formatterPointer))
+        {
+            throw new NotSupportedException($"std::fmt runtime formatter 0x{formatterPointer.ToInt64().ToString("x", CultureInfo.InvariantCulture)} is not supported by the console bridge yet.");
+        }
+
+        return Marshal.ReadInt32(valuePointer).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static bool IsDefaultI32Formatter(IntPtr formatterPointer)
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var generatedType = assembly.GetType("RustMcil.GeneratedModule", throwOnError: false);
+            if (generatedType is null)
+            {
+                continue;
+            }
+
+            foreach (var method in generatedType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
+            {
+                if (method.Name.Contains("$u20$for$u20$i32$GT$3fmt", StringComparison.Ordinal)
+                    && method.MethodHandle.GetFunctionPointer() == formatterPointer)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void WriteRustBufferFromString(IntPtr destination, string value)

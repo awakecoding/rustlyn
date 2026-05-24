@@ -1108,9 +1108,22 @@ public static partial class LoweredIrLowerer
 
     private static string NormalizeIdentifier(string value)
     {
-        return value.Length > 0 && value.All(char.IsDigit)
-            ? $"tmp.{value}"
+        if (value.Length > 0 && value.All(char.IsDigit))
+        {
+            return $"tmp.{value}";
+        }
+
+        return IsGeneratedTemporaryName(value)
+            ? $"named_{value}"
             : value;
+    }
+
+    private static bool IsGeneratedTemporaryName(string value)
+    {
+        const string prefix = "tmp.";
+        return value.StartsWith(prefix, StringComparison.Ordinal)
+            && value.Length > prefix.Length
+            && value[prefix.Length..].All(char.IsDigit);
     }
 
     private static string NormalizeFunctionName(string value)
@@ -1525,25 +1538,25 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?<op>add|sub|mul|sdiv|udiv|srem|urem|fadd|fsub|fmul|fdiv|frem|and|or|xor|shl|lshr|ashr)(?:\\s+[^\\s]+)*\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<left>[^,]+),\\s*(?<right>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex BinaryInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*trunc(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*trunc(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex TruncateInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*zext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*zext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ZeroExtendInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex SignExtendInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*ptrtoint\\s+ptr\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType>[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*ptrtoint\\s+ptr\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType>[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex PtrToIntInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*inttoptr\\s+(?:[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+ptr$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*inttoptr\\s+(?:[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+ptr(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex IntToPtrInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*freeze\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*freeze\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex FreezeInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s]+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex FloatConvertInstructionRegex();
 
     [GeneratedRegex("^(?<result>%?[^\\s=]+)\\s*=\\s*select\\s+i1\\s+(?<condition>[^,]+),\\s+(?<valueType><[^>]+>|[^\\s]+)\\s+(?<trueValue>[^,]+),\\s+(?:<[^>]+>|[^\\s]+)\\s+(?<falseValue>.+)$", RegexOptions.CultureInvariant)]
@@ -1585,10 +1598,10 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^store\\s+(?:atomic\\s+)?(?<type><[^>]+>|[^\\s]+)\\s+(?<value><[^>]+>|[^,]+),\\s+ptr\\s+(?<destination>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex StoreInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*extractvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<source>[^,]+),\\s*(?<index>\\d+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*extractvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<source>[^,]+),\\s*(?<index>\\d+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ExtractValueInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*insertvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<base>[^,]+),\\s+(?:[^\\s]+)\\s+(?<value>[^,]+),\\s*(?<index>\\d+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*insertvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<base>[^,]+),\\s+(?:[^\\s]+)\\s+(?<value>[^,]+),\\s*(?<index>\\d+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex InsertValueInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*atomicrmw\\s+(?<op>\\w+)\\s+ptr\\s+(?<ptr>[^,]+),\\s*(?<valType>\\w+)\\s+(?<val>[^\\s,]+)", RegexOptions.CultureInvariant)]

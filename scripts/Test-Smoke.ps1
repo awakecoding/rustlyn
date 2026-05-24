@@ -502,6 +502,15 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"
     }
+    std_console_runtime = @{
+        CratePath = Join-Path $workspaceRoot "samples\std_console"
+        Method = "std_console_runtime_value_probe"
+        Arguments = @(17)
+        Expected = 0
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     std_time = @{
         Method = "std_time_probe"
         Arguments = @()
@@ -530,6 +539,13 @@ $sampleChecks = @{
         Method = "trait_object_score"
         Arguments = @(0)
         Expected = 12
+        SupportedModes = @("Cargo")
+    }
+    trait_object_pair_probe = @{
+        CratePath = Join-Path $workspaceRoot "samples\trait_object_probe"
+        Method = "trait_object_pair_score"
+        Arguments = @(0)
+        Expected = 507
         SupportedModes = @("Cargo")
     }
     dotnet_runtime_api = @{
@@ -572,8 +588,9 @@ $sampleChecks = @{
         CratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
         Arguments = @(
             "runtime",
-            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"),
-            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt")
+            (Join-Path $workspaceRoot "samples\generated_bindings_lousygrep\fixtures"),
+            "input.txt",
+            "second.txt"
         )
         ExpectedOutput = @(
             "alpha-runtime",
@@ -600,8 +617,9 @@ $sampleChecks = @{
     generated_bindings_lousygrep = @{
         Arguments = @(
             "runtime",
-            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"),
-            (Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt")
+            (Join-Path $workspaceRoot "samples\generated_bindings_lousygrep\fixtures"),
+            "input.txt",
+            "second.txt"
         )
         ExpectedOutput = @(
             "alpha-runtime",

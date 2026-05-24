@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using RustMcil.Bindings;
 
 namespace RustMcil.Backend;
 
@@ -85,17 +86,19 @@ public static class LoweredAssemblyEmitter
                          .OfType<LoweredSelectInstruction>()
                          .Where(static s => string.Equals(s.ValueType, "ptr", StringComparison.Ordinal)))
             {
-                if (functionMap.ContainsKey(select.TrueValue))
-                    pending.Push(select.TrueValue);
-                if (functionMap.ContainsKey(select.FalseValue))
-                    pending.Push(select.FalseValue);
+                var trueValue = NormalizeSymbolReference(select.TrueValue);
+                var falseValue = NormalizeSymbolReference(select.FalseValue);
+                if (functionMap.ContainsKey(trueValue))
+                    pending.Push(trueValue);
+                if (functionMap.ContainsKey(falseValue))
+                    pending.Push(falseValue);
             }
 
             // Function pointers stored into locals (e.g., store ptr @func -> local)
             foreach (var storeValue in function.Blocks
                          .SelectMany(static block => block.Instructions)
                          .OfType<LoweredStoreInstruction>()
-                         .Select(static store => store.Value)
+                         .Select(static store => NormalizeSymbolReference(store.Value))
                          .Where(functionMap.ContainsKey))
             {
                 pending.Push(storeValue);
@@ -106,7 +109,7 @@ public static class LoweredAssemblyEmitter
                          .SelectMany(static block => block.Instructions)
                          .OfType<LoweredCallInstruction>()
                          .SelectMany(static call => call.Arguments)
-                         .Select(static arg => arg.Value)
+                         .Select(static arg => NormalizeSymbolReference(arg.Value))
                          .Where(functionMap.ContainsKey))
             {
                 pending.Push(argValue);
@@ -698,6 +701,12 @@ public static class LoweredAssemblyEmitter
                             locallocAllocas.Add(arg.Value);
                     }
                 }
+                else if (instr is LoweredStoreInstruction store
+                    && string.Equals(store.Type, "ptr", StringComparison.Ordinal)
+                    && allocaNames.Contains(NormalizeSymbolReference(store.Value)))
+                {
+                    locallocAllocas.Add(NormalizeSymbolReference(store.Value));
+                }
             }
         }
 
@@ -958,15 +967,23 @@ public static class LoweredAssemblyEmitter
 
             case LoweredTruncateInstruction trunc:
                 EmitLoadValue(encoder, trunc.Value, paramIndices, localIndices, fieldHandles);
-                encoder.OpCode(trunc.ToType switch
+                if (string.Equals(trunc.ToType, "i1", StringComparison.Ordinal))
                 {
-                    "float" => ILOpCode.Conv_r4,
-                    "double" => ILOpCode.Conv_r8,
-                    "i8" => ILOpCode.Conv_i1,
-                    "i16" => ILOpCode.Conv_i2,
-                    "i64" => ILOpCode.Conv_i8,
-                    _ => ILOpCode.Conv_i4
-                });
+                    encoder.LoadConstantI4(1);
+                    encoder.OpCode(ILOpCode.And);
+                }
+                else
+                {
+                    encoder.OpCode(trunc.ToType switch
+                    {
+                        "float" => ILOpCode.Conv_r4,
+                        "double" => ILOpCode.Conv_r8,
+                        "i8" => ILOpCode.Conv_i1,
+                        "i16" => ILOpCode.Conv_i2,
+                        "i64" => ILOpCode.Conv_i8,
+                        _ => ILOpCode.Conv_i4
+                    });
+                }
                 encoder.StoreLocal(localIndices[trunc.Result]);
                 break;
 
@@ -1720,7 +1737,8 @@ public static class LoweredAssemblyEmitter
         }
 
         // Global field reference
-        if (fieldHandles.TryGetValue(value, out var fieldHandle))
+        var symbolValue = NormalizeSymbolReference(value);
+        if (fieldHandles.TryGetValue(symbolValue, out var fieldHandle))
         {
             encoder.OpCode(ILOpCode.Ldsfld);
             encoder.Token(fieldHandle);
@@ -1728,7 +1746,7 @@ public static class LoweredAssemblyEmitter
         }
 
         // Function reference → ldftn (for function pointers stored into locals)
-        if (methodHandles is not null && methodHandles.TryGetValue(value, out var fnHandle))
+        if (methodHandles is not null && methodHandles.TryGetValue(symbolValue, out var fnHandle))
         {
             encoder.OpCode(ILOpCode.Ldftn);
             encoder.Token(fnHandle);
@@ -2964,7 +2982,7 @@ public static class LoweredAssemblyEmitter
             // LLVM unnamed registers %0, %1, etc. correspond to lowered "tmp.N" names
             if (int.TryParse(name, out _))
                 return "tmp." + name;
-            return name;
+            return NormalizeNamedValue(name);
         }
         return value;
     }
@@ -2977,8 +2995,29 @@ public static class LoweredAssemblyEmitter
             normalized = normalized[1..];
         }
 
-        return normalized.Length > 0 && normalized.All(char.IsDigit)
-            ? $"tmp.{normalized}"
+        if (normalized.Length > 0 && normalized.All(char.IsDigit))
+        {
+            return $"tmp.{normalized}";
+        }
+
+        return NormalizeNamedValue(normalized);
+    }
+
+    private static string NormalizeNamedValue(string value)
+    {
+        const string prefix = "tmp.";
+        return value.StartsWith(prefix, StringComparison.Ordinal)
+            && value.Length > prefix.Length
+            && value[prefix.Length..].All(char.IsDigit)
+            ? $"named_{value}"
+            : value;
+    }
+
+    private static string NormalizeSymbolReference(string value)
+    {
+        var normalized = value.Trim();
+        return normalized.Length >= 2 && normalized[0] == '"' && normalized[^1] == '"'
+            ? normalized[1..^1]
             : normalized;
     }
 
@@ -3996,6 +4035,20 @@ public static class LoweredAssemblyEmitter
 
             var bridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal);
             sretHandles = [];
+            foreach (var binding in BindingSurface.CreateTinyBclSurface().ManagedGlueBindings)
+            {
+                if (!handles.TryGetValue(binding.RuntimeBridgeHelperMethodName, out var handle))
+                {
+                    throw new InvalidOperationException($"Generated binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.RuntimeBridgeHelperMethodName}'.");
+                }
+
+                bridgeMap[binding.Symbol] = handle;
+                if (RuntimeBridgeUsesSret(methods[binding.RuntimeBridgeHelperMethodName]))
+                {
+                    sretHandles.Add(handle);
+                }
+            }
+
             foreach (var (symbol, methodName) in RuntimeBridgeAliases)
             {
                 if (handles.TryGetValue(methodName, out var handle))

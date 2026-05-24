@@ -40,3 +40,10 @@ pub extern "C" fn std_console_probe() -> i32 {
 
     0
 }
+
+/// Exercises println! with a value that cannot be folded into a literal fmt string.
+#[unsafe(no_mangle)]
+pub extern "C" fn std_console_runtime_value_probe(value: i32) -> i32 {
+    println!("std_console: runtime={} doubled={}", value, value * 2);
+    0
+}

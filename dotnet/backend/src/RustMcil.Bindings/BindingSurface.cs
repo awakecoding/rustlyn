@@ -4,19 +4,37 @@ namespace RustMcil.Bindings;
 
 public sealed record BindingSurface(
     IReadOnlyList<ManagedApiRequirement> Requirements,
-    IReadOnlyList<RustExternBinding> Externs,
     IReadOnlyList<ManagedGlueBinding> ManagedGlueBindings,
-    IReadOnlyList<RustWrapperMethod> RustWrapperMethods)
+    IReadOnlyList<RustWrapperMethod> RustWrapperMethods,
+    IReadOnlyList<RustEnumProjection> RustEnumProjections)
 {
+    public IReadOnlyList<RustExternBinding> Externs
+        => ManagedGlueBindings.Select(RustExternBinding.FromManagedGlueBinding).ToArray();
+
     public static BindingSurface CreateTinyBclSurface()
     {
+        var scalarMathBindings = BindingSurfaceScanner.CreateStaticScalarMethodBindings(
+            new StaticScalarMethodBindingRequest(typeof(Math), nameof(Math.Abs), [typeof(double)], RustWrapperContainer.Math),
+            new StaticScalarMethodBindingRequest(typeof(Math), nameof(Math.Sqrt), [typeof(double)], RustWrapperContainer.Math),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Abs), [typeof(float)], RustWrapperContainer.MathF),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Cos), [typeof(float)], RustWrapperContainer.MathF),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Max), [typeof(float), typeof(float)], RustWrapperContainer.MathF),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Min), [typeof(float), typeof(float)], RustWrapperContainer.MathF),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Sin), [typeof(float)], RustWrapperContainer.MathF),
+            new StaticScalarMethodBindingRequest(typeof(MathF), nameof(MathF.Sqrt), [typeof(float)], RustWrapperContainer.MathF));
+        var directoryGetFilesBinding = BindingSurfaceScanner.CreateStaticObjectHandleMethodBinding(
+            new StaticObjectHandleMethodBindingRequest(typeof(Directory), nameof(Directory.GetFiles), [typeof(string), typeof(string)], RustWrapperContainer.IoDirectory));
+        var fileReadAllLinesBinding = BindingSurfaceScanner.CreateStaticObjectHandleMethodBinding(
+            new StaticObjectHandleMethodBindingRequest(typeof(File), nameof(File.ReadAllLines), [typeof(string)], RustWrapperContainer.IoFile));
+
         return new BindingSurface(
             [
                 ManagedApiRequirement.Method("System.Console.WriteLine(string)", typeof(Console), nameof(Console.WriteLine), [typeof(string)]),
                 ManagedApiRequirement.Method("System.Environment.GetCommandLineArgs()", typeof(Environment), nameof(Environment.GetCommandLineArgs), []),
                 ManagedApiRequirement.Property("System.Environment.CurrentDirectory", typeof(Environment), nameof(Environment.CurrentDirectory)),
                 ManagedApiRequirement.Method("System.IO.Directory.GetCurrentDirectory()", typeof(Directory), nameof(Directory.GetCurrentDirectory), []),
-                ManagedApiRequirement.Method("System.IO.File.ReadAllLines(string)", typeof(File), nameof(File.ReadAllLines), [typeof(string)]),
+                directoryGetFilesBinding.Requirement,
+                fileReadAllLinesBinding.Requirement,
                 ManagedApiRequirement.Method("System.IO.Path.ChangeExtension(string, string)", typeof(Path), nameof(Path.ChangeExtension), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.Combine(string, string)", typeof(Path), nameof(Path.Combine), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.EndsInDirectorySeparator(string)", typeof(Path), nameof(Path.EndsInDirectorySeparator), [typeof(string)]),
@@ -31,167 +49,41 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.IO.Path.HasExtension(string)", typeof(Path), nameof(Path.HasExtension), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.IsPathFullyQualified(string)", typeof(Path), nameof(Path.IsPathFullyQualified), [typeof(string)]),
                 ManagedApiRequirement.Method("System.IO.Path.IsPathRooted(string)", typeof(Path), nameof(Path.IsPathRooted), [typeof(string)]),
-                ManagedApiRequirement.Method("System.MathF.Sqrt(float)", typeof(MathF), nameof(MathF.Sqrt), [typeof(float)]),
+                .. scalarMathBindings.Select(static binding => binding.Requirement),
                 ManagedApiRequirement.Method("System.String.Contains(string, StringComparison)", typeof(string), nameof(string.Contains), [typeof(string), typeof(StringComparison)]),
+                ManagedApiRequirement.Method("System.String.IndexOf(string, StringComparison)", typeof(string), nameof(string.IndexOf), [typeof(string), typeof(StringComparison)]),
+                ManagedApiRequirement.Method("System.String.StartsWith(string, StringComparison)", typeof(string), nameof(string.StartsWith), [typeof(string), typeof(StringComparison)]),
+                ManagedApiRequirement.Method("System.String.EndsWith(string, StringComparison)", typeof(string), nameof(string.EndsWith), [typeof(string), typeof(StringComparison)]),
+                ManagedApiRequirement.ForType("System.StringComparison", typeof(StringComparison)),
+                ManagedApiRequirement.Method("System.String.Split(string, StringSplitOptions)", typeof(string), nameof(string.Split), [typeof(string), typeof(StringSplitOptions)]),
+                ManagedApiRequirement.ForType("System.StringSplitOptions", typeof(StringSplitOptions)),
+                ManagedApiRequirement.Method("System.String.Substring(int, int)", typeof(string), nameof(string.Substring), [typeof(int), typeof(int)]),
+                ManagedApiRequirement.Method("System.String.Replace(string, string)", typeof(string), nameof(string.Replace), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
-                ManagedApiRequirement.ForType("System.String[]", typeof(string[]))
-            ],
-            [
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_console_write_line_utf8",
-                    ["fn rust_mcil_bindgen_system_console_write_line_utf8(value_ptr: *const u8, value_len: i64) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_console_write_line_string",
-                    ["fn rust_mcil_bindgen_system_console_write_line_string(handle: i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_environment_get_command_line_args",
-                    ["fn rust_mcil_bindgen_system_environment_get_command_line_args(exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_environment_current_directory",
-                    ["fn rust_mcil_bindgen_system_environment_current_directory(exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_directory_get_current_directory",
-                    ["fn rust_mcil_bindgen_system_io_directory_get_current_directory(exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_file_read_all_lines_utf8",
-                    [
-                        "fn rust_mcil_bindgen_system_io_file_read_all_lines_utf8(",
-                        "    path_ptr: *const u8,",
-                        "    path_len: i64,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_file_read_all_lines_string",
-                    ["fn rust_mcil_bindgen_system_io_file_read_all_lines_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_change_extension_string_string",
-                    ["fn rust_mcil_bindgen_system_io_path_change_extension_string_string(path_handle: i32, extension_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_combine_string_string",
-                    ["fn rust_mcil_bindgen_system_io_path_combine_string_string(path1_handle: i32, path2_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string",
-                    ["fn rust_mcil_bindgen_system_io_path_ends_in_directory_separator_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_directory_name_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_directory_name_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_extension_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_file_name_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_file_name_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_file_name_without_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_full_path_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_full_path_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_path_root_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_path_root_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_relative_path_string_string",
-                    ["fn rust_mcil_bindgen_system_io_path_get_relative_path_string_string(relative_to_handle: i32, path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_get_temp_path",
-                    ["fn rust_mcil_bindgen_system_io_path_get_temp_path(exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_has_extension_string",
-                    ["fn rust_mcil_bindgen_system_io_path_has_extension_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string",
-                    ["fn rust_mcil_bindgen_system_io_path_is_path_fully_qualified_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_io_path_is_path_rooted_string",
-                    ["fn rust_mcil_bindgen_system_io_path_is_path_rooted_string(path_handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
-                    ["fn rust_mcil_bindgen_system_mathf_sqrt_f32(value: f32, exception_out: *mut i32) -> f32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_from_utf8",
-                    ["fn rust_mcil_bindgen_system_string_from_utf8(value_ptr: *const u8, value_len: i64, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_len",
-                    ["fn rust_mcil_bindgen_system_string_len(handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_utf8_len",
-                    ["fn rust_mcil_bindgen_system_string_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_copy_utf8",
-                    [
-                        "fn rust_mcil_bindgen_system_string_copy_utf8(",
-                        "    handle: i32,",
-                        "    destination_ptr: *mut u8,",
-                        "    destination_capacity: i64,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_contains_utf8",
-                    [
-                        "fn rust_mcil_bindgen_system_string_contains_utf8(",
-                        "    handle: i32,",
-                        "    needle_ptr: *const u8,",
-                        "    needle_len: i64,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_contains_string",
-                    [
-                        "fn rust_mcil_bindgen_system_string_contains_string(",
-                        "    handle: i32,",
-                        "    needle_handle: i32,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_array_len",
-                    ["fn rust_mcil_bindgen_system_string_array_len(handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_string_array_get",
-                    [
-                        "fn rust_mcil_bindgen_system_string_array_get(",
-                        "    handle: i32,",
-                        "    index: i32,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_object_release",
-                    ["fn rust_mcil_bindgen_system_object_release(handle: i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_exception_release",
-                    ["fn rust_mcil_bindgen_system_exception_release(handle: i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_exception_get_type_name_utf8_len",
-                    ["fn rust_mcil_bindgen_system_exception_get_type_name_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_exception_get_type_name_utf8",
-                    [
-                        "fn rust_mcil_bindgen_system_exception_get_type_name_utf8(",
-                        "    handle: i32,",
-                        "    destination_ptr: *mut u8,",
-                        "    destination_capacity: i64,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_exception_get_message_utf8_len",
-                    ["fn rust_mcil_bindgen_system_exception_get_message_utf8_len(handle: i32, exception_out: *mut i32) -> i32;"]),
-                new RustExternBinding(
-                    "rust_mcil_bindgen_system_exception_get_message_utf8",
-                    [
-                        "fn rust_mcil_bindgen_system_exception_get_message_utf8(",
-                        "    handle: i32,",
-                        "    destination_ptr: *mut u8,",
-                        "    destination_capacity: i64,",
-                        "    exception_out: *mut i32,",
-                        ") -> i32;"
-                    ])
+                ManagedApiRequirement.ForType("System.String[]", typeof(string[])),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedInteropRuntime.CreateStringArray(string, string, string)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateStringArray), [typeof(string), typeof(string), typeof(string)]),
+                ManagedApiRequirement.ForType("System.Int32[]", typeof(int[])),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedInteropRuntime.CreateInt32Array(int, int, int)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateInt32Array), [typeof(int), typeof(int), typeof(int)]),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedInteropRuntime.CopyInt32Array(int[], IntPtr, long)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyInt32Array), [typeof(int[]), typeof(IntPtr), typeof(long)]),
+                ManagedApiRequirement.ForType("System.Byte[]", typeof(byte[])),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedInteropRuntime.CreateByteArray(int, int, int)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateByteArray), [typeof(int), typeof(int), typeof(int)]),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedInteropRuntime.CopyByteArray(byte[], IntPtr, long)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyByteArray), [typeof(byte[]), typeof(IntPtr), typeof(long)]),
+                ManagedApiRequirement.Method("System.TimeSpan.FromMilliseconds(double)", typeof(TimeSpan), nameof(TimeSpan.FromMilliseconds), [typeof(double)]),
+                ManagedApiRequirement.Property("System.TimeSpan.Ticks", typeof(TimeSpan), nameof(TimeSpan.Ticks)),
+                ManagedApiRequirement.Property("System.TimeSpan.TotalMilliseconds", typeof(TimeSpan), nameof(TimeSpan.TotalMilliseconds)),
+                ManagedApiRequirement.Method("System.TimeSpan.ToString()", typeof(TimeSpan), nameof(TimeSpan.ToString), []),
+                ManagedApiRequirement.ForType("System.TimeSpan", typeof(TimeSpan)),
+                ManagedApiRequirement.Method("System.DateTimeOffset.FromUnixTimeMilliseconds(long)", typeof(DateTimeOffset), nameof(DateTimeOffset.FromUnixTimeMilliseconds), [typeof(long)]),
+                ManagedApiRequirement.Method("System.DateTimeOffset.ToUnixTimeMilliseconds()", typeof(DateTimeOffset), nameof(DateTimeOffset.ToUnixTimeMilliseconds), []),
+                ManagedApiRequirement.Method("System.DateTimeOffset.ToString()", typeof(DateTimeOffset), nameof(DateTimeOffset.ToString), []),
+                ManagedApiRequirement.ForType("System.DateTimeOffset", typeof(DateTimeOffset)),
+                ManagedApiRequirement.Method("System.Guid.Parse(string)", typeof(Guid), nameof(Guid.Parse), [typeof(string)]),
+                ManagedApiRequirement.Method("System.Guid.ToString()", typeof(Guid), nameof(Guid.ToString), []),
+                ManagedApiRequirement.ForType("System.Guid", typeof(Guid)),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedCallbackBridge.InvokeI32(IntPtr, int)", typeof(ManagedCallbackBridge), nameof(ManagedCallbackBridge.InvokeI32), [typeof(IntPtr), typeof(int)]),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedCallbackBridge.InvokeI32I32(IntPtr, int, int)", typeof(ManagedCallbackBridge), nameof(ManagedCallbackBridge.InvokeI32I32), [typeof(IntPtr), typeof(int), typeof(int)]),
+                ManagedApiRequirement.Method("RustMcil.Interop.ManagedCallbackBridge.InvokeObjectHandleTransform(IntPtr, int)", typeof(ManagedCallbackBridge), nameof(ManagedCallbackBridge.InvokeObjectHandleTransform), [typeof(IntPtr), typeof(int)])
             ],
             [
                 Glue(
@@ -224,18 +116,14 @@ public sealed record BindingSurface(
                     [Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(Directory), nameof(Directory.GetCurrentDirectory), [], [])))),
+                directoryGetFilesBinding.ManagedGlueBinding,
                 Glue(
                     "rust_mcil_bindgen_system_io_file_read_all_lines_utf8",
                     "BindgenSystemIoFileReadAllLinesUtf8",
                     [Pointer("pathPointer"), I64("pathLength"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         StaticMethod(typeof(File), nameof(File.ReadAllLines), [typeof(string)], [Utf8String("pathPointer", "pathLength")])))),
-                Glue(
-                    "rust_mcil_bindgen_system_io_file_read_all_lines_string",
-                    "BindgenSystemIoFileReadAllLinesString",
-                    [I32("pathHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        StaticMethod(typeof(File), nameof(File.ReadAllLines), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
+                fileReadAllLinesBinding.ManagedGlueBinding,
                 Glue(
                     "rust_mcil_bindgen_system_io_path_change_extension_string_string",
                     "BindgenSystemIoPathChangeExtensionStringString",
@@ -320,12 +208,7 @@ public sealed record BindingSurface(
                     [I32("pathHandle"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         StaticMethod(typeof(Path), nameof(Path.IsPathRooted), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
-                Glue(
-                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
-                    "BindgenSystemMathfSqrtF32",
-                    [F32("value"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Float(
-                        StaticMethod(typeof(MathF), nameof(MathF.Sqrt), [typeof(float)], [ManagedGlueExpression.Parameter("value")])))),
+                .. scalarMathBindings.Select(static binding => binding.ManagedGlueBinding),
                 Glue(
                     "rust_mcil_bindgen_system_string_from_utf8",
                     "BindgenSystemStringFromUtf8",
@@ -353,25 +236,91 @@ public sealed record BindingSurface(
                 Glue(
                     "rust_mcil_bindgen_system_string_contains_utf8",
                     "BindgenSystemStringContainsUtf8",
-                    [I32("stringHandle"), Pointer("needlePointer"), I64("needleLength"), Pointer("exceptionOutPointer")],
+                    [I32("stringHandle"), Pointer("needlePointer"), I64("needleLength"), I32("comparison"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         InstanceMethod(
                             ManagedObject(typeof(string), "stringHandle"),
                             typeof(string),
                             nameof(string.Contains),
                             [typeof(string), typeof(StringComparison)],
-                            [Utf8String("needlePointer", "needleLength"), ManagedGlueExpression.EnumValue(typeof(StringComparison), nameof(StringComparison.Ordinal))])))),
+                            [Utf8String("needlePointer", "needleLength"), ManagedGlueExpression.EnumParameter(typeof(StringComparison), "comparison")])))),
                 Glue(
                     "rust_mcil_bindgen_system_string_contains_string",
                     "BindgenSystemStringContainsString",
-                    [I32("stringHandle"), I32("needleHandle"), Pointer("exceptionOutPointer")],
+                    [I32("stringHandle"), I32("needleHandle"), I32("comparison"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         InstanceMethod(
                             ManagedObject(typeof(string), "stringHandle"),
                             typeof(string),
                             nameof(string.Contains),
                             [typeof(string), typeof(StringComparison)],
-                            [ManagedObject(typeof(string), "needleHandle"), ManagedGlueExpression.EnumValue(typeof(StringComparison), nameof(StringComparison.Ordinal))])))),
+                            [ManagedObject(typeof(string), "needleHandle"), ManagedGlueExpression.EnumParameter(typeof(StringComparison), "comparison")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_index_of_string",
+                    "BindgenSystemStringIndexOfString",
+                    [I32("stringHandle"), I32("valueHandle"), I32("comparison"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.IndexOf),
+                            [typeof(string), typeof(StringComparison)],
+                            [ManagedObject(typeof(string), "valueHandle"), ManagedGlueExpression.EnumParameter(typeof(StringComparison), "comparison")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_starts_with_string",
+                    "BindgenSystemStringStartsWithString",
+                    [I32("stringHandle"), I32("valueHandle"), I32("comparison"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.StartsWith),
+                            [typeof(string), typeof(StringComparison)],
+                            [ManagedObject(typeof(string), "valueHandle"), ManagedGlueExpression.EnumParameter(typeof(StringComparison), "comparison")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_ends_with_string",
+                    "BindgenSystemStringEndsWithString",
+                    [I32("stringHandle"), I32("valueHandle"), I32("comparison"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.EndsWith),
+                            [typeof(string), typeof(StringComparison)],
+                            [ManagedObject(typeof(string), "valueHandle"), ManagedGlueExpression.EnumParameter(typeof(StringComparison), "comparison")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_split_string_options",
+                    "BindgenSystemStringSplitStringOptions",
+                    [I32("stringHandle"), I32("separatorHandle"), I32("options"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.Split),
+                            [typeof(string), typeof(StringSplitOptions)],
+                            [ManagedObject(typeof(string), "separatorHandle"), ManagedGlueExpression.EnumParameter(typeof(StringSplitOptions), "options")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_substring_i32_i32",
+                    "BindgenSystemStringSubstringI32I32",
+                    [I32("stringHandle"), I32("startIndex"), I32("length"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.Substring),
+                            [typeof(int), typeof(int)],
+                            [ManagedGlueExpression.Parameter("startIndex"), ManagedGlueExpression.Parameter("length")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_replace_string_string",
+                    "BindgenSystemStringReplaceStringString",
+                    [I32("stringHandle"), I32("oldValueHandle"), I32("newValueHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(
+                            ManagedObject(typeof(string), "stringHandle"),
+                            typeof(string),
+                            nameof(string.Replace),
+                            [typeof(string), typeof(string)],
+                            [ManagedObject(typeof(string), "oldValueHandle"), ManagedObject(typeof(string), "newValueHandle")])))),
                 Glue(
                     "rust_mcil_bindgen_system_string_array_len",
                     "BindgenSystemStringArrayLength",
@@ -384,6 +333,164 @@ public sealed record BindingSurface(
                     [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
                         ManagedGlueExpression.ArrayElement(ManagedObject(typeof(string[]), "arrayHandle"), "index")))),
+                Glue(
+                    "rust_mcil_bindgen_system_string_array_from_strings",
+                    "BindgenSystemStringArrayFromStrings",
+                    [I32("firstHandle"), I32("secondHandle"), I32("thirdHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            nameof(ManagedInteropRuntime.CreateStringArray),
+                            [typeof(string), typeof(string), typeof(string)],
+                            [ManagedObject(typeof(string), "firstHandle"), ManagedObject(typeof(string), "secondHandle"), ManagedObject(typeof(string), "thirdHandle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_int_array_from_i32_triplet",
+                    "BindgenSystemIntArrayFromI32Triplet",
+                    [I32("first"), I32("second"), I32("third"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            nameof(ManagedInteropRuntime.CreateInt32Array),
+                            [typeof(int), typeof(int), typeof(int)],
+                            [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_int_array_len",
+                    "BindgenSystemIntArrayLength",
+                    [I32("arrayHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.ArrayLength(ManagedObject(typeof(int[]), "arrayHandle"))))),
+                Glue(
+                    "rust_mcil_bindgen_system_int_array_get",
+                    "BindgenSystemIntArrayGet",
+                    [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.ArrayElement(ManagedObject(typeof(int[]), "arrayHandle"), "index")))),
+                Glue(
+                    "rust_mcil_bindgen_system_int_array_copy",
+                    "BindgenSystemIntArrayCopy",
+                    [I32("arrayHandle"), Pointer("destinationPointer", "*mut i32"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            nameof(ManagedInteropRuntime.CopyInt32Array),
+                            [typeof(int[]), typeof(IntPtr), typeof(long)],
+                            [ManagedObject(typeof(int[]), "arrayHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_byte_array_from_u8_triplet",
+                    "BindgenSystemByteArrayFromU8Triplet",
+                    [I32("first"), I32("second"), I32("third"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            nameof(ManagedInteropRuntime.CreateByteArray),
+                            [typeof(int), typeof(int), typeof(int)],
+                            [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_byte_array_len",
+                    "BindgenSystemByteArrayLength",
+                    [I32("arrayHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.ArrayLength(ManagedObject(typeof(byte[]), "arrayHandle"))))),
+                Glue(
+                    "rust_mcil_bindgen_system_byte_array_get",
+                    "BindgenSystemByteArrayGet",
+                    [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.ArrayElement(ManagedObject(typeof(byte[]), "arrayHandle"), "index")))),
+                Glue(
+                    "rust_mcil_bindgen_system_byte_array_copy",
+                    "BindgenSystemByteArrayCopy",
+                    [I32("arrayHandle"), Pointer("destinationPointer", "*mut u8"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            nameof(ManagedInteropRuntime.CopyByteArray),
+                            [typeof(byte[]), typeof(IntPtr), typeof(long)],
+                            [ManagedObject(typeof(byte[]), "arrayHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_time_span_from_milliseconds_f64",
+                    "BindgenSystemTimeSpanFromMillisecondsF64",
+                    [F64("value"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(TimeSpan), nameof(TimeSpan.FromMilliseconds), [typeof(double)], [ManagedGlueExpression.Parameter("value")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_time_span_ticks",
+                    "BindgenSystemTimeSpanTicks",
+                    [I32("timeSpanHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Long(
+                        InstanceProperty(ManagedObject(typeof(TimeSpan), "timeSpanHandle"), typeof(TimeSpan), nameof(TimeSpan.Ticks))))),
+                Glue(
+                    "rust_mcil_bindgen_system_time_span_total_milliseconds",
+                    "BindgenSystemTimeSpanTotalMilliseconds",
+                    [I32("timeSpanHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Double(
+                        InstanceProperty(ManagedObject(typeof(TimeSpan), "timeSpanHandle"), typeof(TimeSpan), nameof(TimeSpan.TotalMilliseconds))))),
+                Glue(
+                    "rust_mcil_bindgen_system_time_span_to_string",
+                    "BindgenSystemTimeSpanToString",
+                    [I32("timeSpanHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(ManagedObject(typeof(TimeSpan), "timeSpanHandle"), typeof(TimeSpan), nameof(TimeSpan.ToString), [], [])))),
+                Glue(
+                    "rust_mcil_bindgen_system_date_time_offset_from_unix_time_milliseconds_i64",
+                    "BindgenSystemDateTimeOffsetFromUnixTimeMillisecondsI64",
+                    [I64("milliseconds"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(DateTimeOffset), nameof(DateTimeOffset.FromUnixTimeMilliseconds), [typeof(long)], [ManagedGlueExpression.Parameter("milliseconds")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_date_time_offset_to_unix_time_milliseconds",
+                    "BindgenSystemDateTimeOffsetToUnixTimeMilliseconds",
+                    [I32("dateTimeOffsetHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Long(
+                        InstanceMethod(ManagedObject(typeof(DateTimeOffset), "dateTimeOffsetHandle"), typeof(DateTimeOffset), nameof(DateTimeOffset.ToUnixTimeMilliseconds), [], [])))),
+                Glue(
+                    "rust_mcil_bindgen_system_date_time_offset_to_string",
+                    "BindgenSystemDateTimeOffsetToString",
+                    [I32("dateTimeOffsetHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(ManagedObject(typeof(DateTimeOffset), "dateTimeOffsetHandle"), typeof(DateTimeOffset), nameof(DateTimeOffset.ToString), [], [])))),
+                Glue(
+                    "rust_mcil_bindgen_system_guid_parse_string",
+                    "BindgenSystemGuidParseString",
+                    [I32("valueHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(typeof(Guid), nameof(Guid.Parse), [typeof(string)], [ManagedObject(typeof(string), "valueHandle")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_guid_to_string",
+                    "BindgenSystemGuidToString",
+                    [I32("guidHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        InstanceMethod(ManagedObject(typeof(Guid), "guidHandle"), typeof(Guid), nameof(Guid.ToString), [], [])))),
+                Glue(
+                    "rust_mcil_bindgen_system_callback_apply_i32",
+                    "BindgenSystemCallbackApplyI32",
+                    [Callback("i32CallbackPointer", "fn(i32) -> i32"), I32("value"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(
+                            typeof(ManagedCallbackBridge),
+                            nameof(ManagedCallbackBridge.InvokeI32),
+                            [typeof(IntPtr), typeof(int)],
+                            [ManagedGlueExpression.Parameter("i32CallbackPointer"), ManagedGlueExpression.Parameter("value")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_callback_apply_i32_i32",
+                    "BindgenSystemCallbackApplyI32I32",
+                    [Callback("i32I32CallbackPointer", "fn(i32, i32) -> i32"), I32("left"), I32("right"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(
+                            typeof(ManagedCallbackBridge),
+                            nameof(ManagedCallbackBridge.InvokeI32I32),
+                            [typeof(IntPtr), typeof(int), typeof(int)],
+                            [ManagedGlueExpression.Parameter("i32I32CallbackPointer"), ManagedGlueExpression.Parameter("left"), ManagedGlueExpression.Parameter("right")])))),
+                Glue(
+                    "rust_mcil_bindgen_system_callback_transform_managed_string",
+                    "BindgenSystemCallbackTransformManagedString",
+                    [Callback("stringTransformCallbackPointer", "fn(i32) -> i32"), I32("stringHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        StaticMethod(
+                            typeof(ManagedCallbackBridge),
+                            nameof(ManagedCallbackBridge.InvokeObjectHandleTransform),
+                            [typeof(IntPtr), typeof(int)],
+                            [ManagedGlueExpression.Parameter("stringTransformCallbackPointer"), ManagedGlueExpression.Parameter("stringHandle")])))),
                 Glue(
                     "rust_mcil_bindgen_system_object_release",
                     "BindgenSystemObjectRelease",
@@ -421,12 +528,106 @@ public sealed record BindingSurface(
             ],
             [
                 new RustWrapperMethod(
-                    RustWrapperContainer.MathF,
-                    "pub fn sqrt(value: f32) -> Result<f32, Exception>",
-                    "rust_mcil_bindgen_system_mathf_sqrt_f32",
-                    ["value"],
-                    "value",
-                    RustWrapperResult.Scalar("f32")),
+                    RustWrapperContainer.Callback,
+                    "pub fn apply_i32(callback: fn(i32) -> i32, value: i32) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_callback_apply_i32",
+                    ["callback", "value"],
+                    "result",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Callback,
+                    "pub fn apply_i32_i32(callback: fn(i32, i32) -> i32, left: i32, right: i32) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_callback_apply_i32_i32",
+                    ["callback", "left", "right"],
+                    "result",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Callback,
+                    "pub fn transform_managed_string(callback: fn(i32) -> i32, value: &ManagedString) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_callback_transform_managed_string",
+                    ["callback", "value.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Console,
+                    "pub fn write_line_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_console_write_line_utf8",
+                    ["value_ptr", "value_len"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Console,
+                    "pub fn write_line(value: &ManagedString) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_console_write_line_string",
+                    ["value.handle()"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Environment,
+                    "pub fn current_directory() -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_environment_current_directory",
+                    [],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Environment,
+                    "pub fn get_command_line_args() -> Result<ManagedStringArray, Exception>",
+                    "rust_mcil_bindgen_system_environment_get_command_line_args",
+                    [],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedStringArray")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Exception,
+                    "pub fn release(self) -> Result<(), Self>",
+                    "rust_mcil_bindgen_system_exception_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Exception,
+                    "pub fn type_name_utf8_len(&self) -> Result<i32, Self>",
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Exception,
+                    "pub fn copy_type_name_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Self>",
+                    "rust_mcil_bindgen_system_exception_get_type_name_utf8",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Exception,
+                    "pub fn message_utf8_len(&self) -> Result<i32, Self>",
+                    "rust_mcil_bindgen_system_exception_get_message_utf8_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Exception,
+                    "pub fn copy_message_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Self>",
+                    "rust_mcil_bindgen_system_exception_get_message_utf8",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")),
+                .. scalarMathBindings.Select(static binding => binding.RustWrapperMethod),
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoDirectory,
+                    "pub fn get_current_directory() -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_io_directory_get_current_directory",
+                    [],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                directoryGetFilesBinding.RustWrapperMethod,
+                new RustWrapperMethod(
+                    RustWrapperContainer.IoFile,
+                    "pub fn read_all_lines_utf8_parts(path_ptr: *const u8, path_len: i64) -> Result<ManagedStringArray, Exception>",
+                    "rust_mcil_bindgen_system_io_file_read_all_lines_utf8",
+                    ["path_ptr", "path_len"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedStringArray")),
+                fileReadAllLinesBinding.RustWrapperMethod,
                 new RustWrapperMethod(
                     RustWrapperContainer.IoPath,
                     "pub fn change_extension(path: &ManagedString, extension: &ManagedString) -> Result<ManagedString, Exception>",
@@ -524,7 +725,319 @@ public sealed record BindingSurface(
                     "rust_mcil_bindgen_system_io_path_is_path_rooted_string",
                     ["path.handle()"],
                     "value",
-                    RustWrapperResult.BooleanAsInt())
+                    RustWrapperResult.BooleanAsInt()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception>",
+                    "rust_mcil_bindgen_system_string_from_utf8",
+                    ["value_ptr", "value_len"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("Self")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn len(&self) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn utf8_len(&self) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_utf8_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn copy_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_copy_utf8",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn contains_utf8_parts(&self, needle_ptr: *const u8, needle_len: i64) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_contains_utf8",
+                    ["self.handle", "needle_ptr", "needle_len", "StringComparison::Ordinal.as_i32()"],
+                    "contains",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn contains_utf8_parts_with_comparison(&self, needle_ptr: *const u8, needle_len: i64, comparison: StringComparison) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_contains_utf8",
+                    ["self.handle", "needle_ptr", "needle_len", "comparison.as_i32()"],
+                    "contains",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn contains(&self, needle: &ManagedString) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_contains_string",
+                    ["self.handle", "needle.handle()", "StringComparison::Ordinal.as_i32()"],
+                    "contains",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn contains_with_comparison(&self, needle: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_contains_string",
+                    ["self.handle", "needle.handle()", "comparison.as_i32()"],
+                    "contains",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn index_of(&self, value: &ManagedString) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_index_of_string",
+                    ["self.handle", "value.handle()", "StringComparison::Ordinal.as_i32()"],
+                    "index",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn index_of_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_index_of_string",
+                    ["self.handle", "value.handle()", "comparison.as_i32()"],
+                    "index",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn starts_with(&self, value: &ManagedString) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_starts_with_string",
+                    ["self.handle", "value.handle()", "StringComparison::Ordinal.as_i32()"],
+                    "starts",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn starts_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_starts_with_string",
+                    ["self.handle", "value.handle()", "comparison.as_i32()"],
+                    "starts",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn ends_with(&self, value: &ManagedString) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_ends_with_string",
+                    ["self.handle", "value.handle()", "StringComparison::Ordinal.as_i32()"],
+                    "ends",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn ends_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>",
+                    "rust_mcil_bindgen_system_string_ends_with_string",
+                    ["self.handle", "value.handle()", "comparison.as_i32()"],
+                    "ends",
+                    RustWrapperResult.Boolean()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn split(&self, separator: &ManagedString, options: StringSplitOptions) -> Result<ManagedStringArray, Exception>",
+                    "rust_mcil_bindgen_system_string_split_string_options",
+                    ["self.handle", "separator.handle()", "options.as_i32()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedStringArray")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn substring(&self, start_index: i32, length: i32) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_string_substring_i32_i32",
+                    ["self.handle", "start_index", "length"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn replace(&self, old_value: &ManagedString, new_value: &ManagedString) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_string_replace_string_string",
+                    ["self.handle", "old_value.handle()", "new_value.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedStringArray,
+                    "pub fn from_strings(first: &ManagedString, second: &ManagedString, third: &ManagedString) -> Result<Self, Exception>",
+                    "rust_mcil_bindgen_system_string_array_from_strings",
+                    ["first.handle()", "second.handle()", "third.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("Self")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedStringArray,
+                    "pub fn len(&self) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_string_array_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedStringArray,
+                    "pub fn get(&self, index: i32) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_string_array_get",
+                    ["self.handle", "index"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedStringArray,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedIntArray,
+                    "pub fn from_i32_triplet(first: i32, second: i32, third: i32) -> Result<Self, Exception>",
+                    "rust_mcil_bindgen_system_int_array_from_i32_triplet",
+                    ["first", "second", "third"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("Self")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedIntArray,
+                    "pub fn len(&self) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_int_array_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedIntArray,
+                    "pub fn get(&self, index: i32) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_int_array_get",
+                    ["self.handle", "index"],
+                    "value",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedIntArray,
+                    "pub fn copy_into(&self, buffer: &mut [i32]) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_int_array_copy",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedIntArray,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedByteArray,
+                    "pub fn from_u8_triplet(first: u8, second: u8, third: u8) -> Result<Self, Exception>",
+                    "rust_mcil_bindgen_system_byte_array_from_u8_triplet",
+                    ["first as i32", "second as i32", "third as i32"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("Self")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedByteArray,
+                    "pub fn len(&self) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_byte_array_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedByteArray,
+                    "pub fn get(&self, index: i32) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_byte_array_get",
+                    ["self.handle", "index"],
+                    "value",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedByteArray,
+                    "pub fn copy_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>",
+                    "rust_mcil_bindgen_system_byte_array_copy",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedByteArray,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.TimeSpan,
+                    "pub fn from_milliseconds(value: f64) -> Result<ManagedTimeSpan, Exception>",
+                    "rust_mcil_bindgen_system_time_span_from_milliseconds_f64",
+                    ["value"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedTimeSpan")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedTimeSpan,
+                    "pub fn ticks(&self) -> Result<i64, Exception>",
+                    "rust_mcil_bindgen_system_time_span_ticks",
+                    ["self.handle"],
+                    "ticks",
+                    RustWrapperResult.Scalar("i64")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedTimeSpan,
+                    "pub fn total_milliseconds(&self) -> Result<f64, Exception>",
+                    "rust_mcil_bindgen_system_time_span_total_milliseconds",
+                    ["self.handle"],
+                    "milliseconds",
+                    RustWrapperResult.Scalar("f64")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedTimeSpan,
+                    "pub fn to_string(&self) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_time_span_to_string",
+                    ["self.handle"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedTimeSpan,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.DateTimeOffset,
+                    "pub fn from_unix_time_milliseconds(milliseconds: i64) -> Result<ManagedDateTimeOffset, Exception>",
+                    "rust_mcil_bindgen_system_date_time_offset_from_unix_time_milliseconds_i64",
+                    ["milliseconds"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedDateTimeOffset")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedDateTimeOffset,
+                    "pub fn to_unix_time_milliseconds(&self) -> Result<i64, Exception>",
+                    "rust_mcil_bindgen_system_date_time_offset_to_unix_time_milliseconds",
+                    ["self.handle"],
+                    "milliseconds",
+                    RustWrapperResult.Scalar("i64")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedDateTimeOffset,
+                    "pub fn to_string(&self) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_date_time_offset_to_string",
+                    ["self.handle"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedDateTimeOffset,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void()),
+                new RustWrapperMethod(
+                    RustWrapperContainer.Guid,
+                    "pub fn parse(value: &ManagedString) -> Result<ManagedGuid, Exception>",
+                    "rust_mcil_bindgen_system_guid_parse_string",
+                    ["value.handle()"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedGuid")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedGuid,
+                    "pub fn to_string(&self) -> Result<ManagedString, Exception>",
+                    "rust_mcil_bindgen_system_guid_to_string",
+                    ["self.handle"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("ManagedString")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedGuid,
+                    "pub fn release(self) -> Result<(), Exception>",
+                    "rust_mcil_bindgen_system_object_release",
+                    ["self.handle"],
+                    "unused",
+                    RustWrapperResult.Void())
+            ],
+            [
+                RustEnumProjection.FromManagedEnum(typeof(StringComparison)),
+                RustEnumProjection.FromManagedEnum(typeof(StringSplitOptions))
             ]);
     }
 
@@ -537,17 +1050,26 @@ public sealed record BindingSurface(
     private static ManagedGlueParameter I64(string name)
         => new("long", name);
 
-    private static ManagedGlueParameter F32(string name)
-        => new("float", name);
+    private static ManagedGlueParameter F64(string name)
+        => new("double", name);
+
+    private static ManagedGlueParameter Callback(string name, string rustAbiType)
+        => new("IntPtr", name, rustAbiType);
 
     private static ManagedGlueParameter Pointer(string name)
         => new("IntPtr", name);
+
+    private static ManagedGlueParameter Pointer(string name, string rustAbiType)
+        => new("IntPtr", name, rustAbiType);
 
     private static ManagedGlueExpression Utf8String(string pointerParameterName, string lengthParameterName)
         => ManagedGlueExpression.Utf8String(pointerParameterName, lengthParameterName);
 
     private static ManagedGlueExpression ManagedObject(Type type, string handleParameterName)
         => ManagedGlueExpression.ManagedObject(type, handleParameterName);
+
+    private static ManagedGlueExpression EnumParameter(Type enumType, string parameterName)
+        => ManagedGlueExpression.EnumParameter(enumType, parameterName);
 
     private static ManagedGlueExpression StaticMethod(Type declaringType, string methodName, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => ManagedGlueExpression.StaticMethod(declaringType, methodName, parameterTypes, arguments);
@@ -612,10 +1134,148 @@ public enum ManagedApiRequirementKind
 {
     Type,
     Method,
-    Property
+    Property,
+    Event
 }
 
-public sealed record RustExternBinding(string Symbol, IReadOnlyList<string> SignatureLines);
+public sealed record RustEnumProjection(string RustName, Type ManagedType, bool IsFlags, IReadOnlyList<RustEnumVariant> Variants)
+{
+    public static RustEnumProjection FromManagedEnum(Type managedType)
+    {
+        ArgumentNullException.ThrowIfNull(managedType);
+
+        if (!managedType.IsEnum)
+        {
+            throw new ArgumentException($"Managed type '{managedType.FullName}' is not an enum.", nameof(managedType));
+        }
+
+        var variants = Enum.GetNames(managedType)
+            .Select(name => new RustEnumVariant(name, Convert.ToInt32(Enum.Parse(managedType, name), System.Globalization.CultureInfo.InvariantCulture)))
+            .ToArray();
+        return new RustEnumProjection(managedType.Name, managedType, managedType.IsDefined(typeof(FlagsAttribute), inherit: false), variants);
+    }
+
+    public void Validate()
+    {
+        if (!ManagedType.IsEnum)
+        {
+            throw new InvalidOperationException($"Rust enum projection '{RustName}' targets non-enum managed type '{ManagedType.FullName}'.");
+        }
+
+        if (Enum.GetUnderlyingType(ManagedType) != typeof(int))
+        {
+            throw new InvalidOperationException($"Rust enum projection '{RustName}' requires an int-backed managed enum.");
+        }
+
+        var expectedVariants = Enum.GetNames(ManagedType)
+            .Select(name => new RustEnumVariant(name, Convert.ToInt32(Enum.Parse(ManagedType, name), System.Globalization.CultureInfo.InvariantCulture)))
+            .ToArray();
+        if (!Variants.SequenceEqual(expectedVariants))
+        {
+            throw new InvalidOperationException($"Rust enum projection '{RustName}' does not match managed enum '{ManagedType.FullName}'.");
+        }
+    }
+}
+
+public sealed record RustEnumVariant(string Name, int Value);
+
+public sealed record RustExternBinding(string Symbol, IReadOnlyList<string> SignatureLines)
+{
+    public static RustExternBinding FromManagedGlueBinding(ManagedGlueBinding binding)
+    {
+        binding.Validate();
+
+        var parameters = binding.Parameters
+            .Select(static parameter => $"{ToRustParameterName(parameter.Name)}: {ToRustParameterType(parameter)}")
+            .ToArray();
+        var returnType = ToRustReturnType(binding.ReturnType);
+        var singleLine = $"fn {binding.Symbol}({string.Join(", ", parameters)}) -> {returnType};";
+        if (singleLine.Length <= 120)
+        {
+            return new RustExternBinding(binding.Symbol, [singleLine]);
+        }
+
+        var lines = new List<string>
+        {
+            $"fn {binding.Symbol}("
+        };
+        lines.AddRange(parameters.Select(static parameter => $"    {parameter},"));
+        lines.Add($") -> {returnType};");
+        return new RustExternBinding(binding.Symbol, lines);
+    }
+
+    private static string ToRustParameterType(ManagedGlueParameter parameter)
+    {
+        if (parameter.RustAbiType is not null)
+        {
+            return parameter.RustAbiType;
+        }
+
+        return parameter.TypeName switch
+        {
+            "int" => "i32",
+            "long" => "i64",
+            "float" => "f32",
+            "double" => "f64",
+            "IntPtr" when parameter.Name.EndsWith("OutPointer", StringComparison.Ordinal) => "*mut i32",
+            "IntPtr" when parameter.Name.StartsWith("destination", StringComparison.Ordinal) => "*mut u8",
+            "IntPtr" => "*const u8",
+            _ => throw new NotSupportedException($"Managed glue parameter type '{parameter.TypeName}' is not supported in Rust extern bindings.")
+        };
+    }
+
+    private static string ToRustReturnType(string managedReturnType)
+    {
+        return managedReturnType switch
+        {
+            "int" => "i32",
+            "long" => "i64",
+            "float" => "f32",
+            "double" => "f64",
+            _ => throw new NotSupportedException($"Managed glue return type '{managedReturnType}' is not supported in Rust extern bindings.")
+        };
+    }
+
+    private static string ToRustParameterName(string managedName)
+    {
+        var snake = ToSnakeCase(managedName);
+        if (string.Equals(snake, "exception_out_pointer", StringComparison.Ordinal))
+        {
+            return "exception_out";
+        }
+
+        if (snake.EndsWith("_pointer", StringComparison.Ordinal))
+        {
+            return snake[..^"_pointer".Length] + "_ptr";
+        }
+
+        return snake;
+    }
+
+    private static string ToSnakeCase(string value)
+    {
+        var chars = new List<char>(value.Length + 8);
+        for (var index = 0; index < value.Length; index++)
+        {
+            var current = value[index];
+            if (char.IsUpper(current))
+            {
+                if (index > 0)
+                {
+                    chars.Add('_');
+                }
+
+                chars.Add(char.ToLowerInvariant(current));
+            }
+            else
+            {
+                chars.Add(current);
+            }
+        }
+
+        return new string(chars.ToArray());
+    }
+}
 
 public sealed record RustWrapperMethod(
     RustWrapperContainer Container,
@@ -627,12 +1287,32 @@ public sealed record RustWrapperMethod(
 
 public enum RustWrapperContainer
 {
+    Callback,
+    Console,
+    Environment,
+    Exception,
+    Math,
     MathF,
-    IoPath
+    TimeSpan,
+    DateTimeOffset,
+    Guid,
+    IoDirectory,
+    IoFile,
+    IoPath,
+    ManagedString,
+    ManagedStringArray,
+    ManagedIntArray,
+    ManagedByteArray,
+    ManagedTimeSpan,
+    ManagedDateTimeOffset,
+    ManagedGuid
 }
 
 public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustType)
 {
+    public static RustWrapperResult Boolean()
+        => new(RustWrapperResultKind.Boolean, RustType: null);
+
     public static RustWrapperResult BooleanAsInt()
         => new(RustWrapperResultKind.BooleanAsInt, RustType: null);
 
@@ -641,13 +1321,18 @@ public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustT
 
     public static RustWrapperResult Scalar(string rustType)
         => new(RustWrapperResultKind.Scalar, rustType);
+
+    public static RustWrapperResult Void()
+        => new(RustWrapperResultKind.Void, RustType: null);
 }
 
 public enum RustWrapperResultKind
 {
+    Boolean,
     BooleanAsInt,
     ObjectHandle,
-    Scalar
+    Scalar,
+    Void
 }
 
 public sealed record ManagedGlueBinding(
@@ -658,6 +1343,7 @@ public sealed record ManagedGlueBinding(
 {
     public string ReturnType => Operation.Result switch
     {
+        ManagedGlueLongResult => "long",
         ManagedGlueFloatResult => "float",
         ManagedGlueDoubleResult => "double",
         _ => "int"
@@ -682,7 +1368,7 @@ public sealed record ManagedGlueBinding(
     }
 }
 
-public sealed record ManagedGlueParameter(string TypeName, string Name);
+public sealed record ManagedGlueParameter(string TypeName, string Name, string? RustAbiType = null);
 
 public sealed record ManagedGlueOperation(
     ManagedGlueExceptionConvention ExceptionConvention,
@@ -715,6 +1401,9 @@ public abstract record ManagedGlueResult
     public static ManagedGlueResult Int(ManagedGlueExpression valueExpression)
         => new ManagedGlueIntResult(valueExpression);
 
+    public static ManagedGlueResult Long(ManagedGlueExpression valueExpression)
+        => new ManagedGlueLongResult(valueExpression);
+
     public static ManagedGlueResult Float(ManagedGlueExpression valueExpression)
         => new ManagedGlueFloatResult(valueExpression);
 
@@ -744,6 +1433,12 @@ public sealed record ManagedGlueObjectHandleResult(ManagedGlueExpression ValueEx
 }
 
 public sealed record ManagedGlueIntResult(ManagedGlueExpression ValueExpression) : ManagedGlueResult
+{
+    public override void Validate()
+        => ValueExpression.Validate();
+}
+
+public sealed record ManagedGlueLongResult(ManagedGlueExpression ValueExpression) : ManagedGlueResult
 {
     public override void Validate()
         => ValueExpression.Validate();

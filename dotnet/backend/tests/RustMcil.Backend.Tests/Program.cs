@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using RustMcil.Backend;
 using RustMcil.Bindings;
 using RustMcil.Interop;
@@ -22,11 +24,15 @@ RunTest("ManagedInteropRuntimeExposesExceptionText", ManagedInteropRuntimeExpose
 RunTest("InteropHandleNullReleaseSafety", InteropHandleNullReleaseSafety, failures);
 RunTest("InteropHandleDoubleReleaseSafety", InteropHandleDoubleReleaseSafety, failures);
 RunTest("InteropUtf16RoundTripsStrings", InteropUtf16RoundTripsStrings, failures);
+RunTest("ManagedCallbackBridgeInvokesI32Callback", ManagedCallbackBridgeInvokesI32Callback, failures);
 RunTest("InteropExceptionReleaseLifecycle", InteropExceptionReleaseLifecycle, failures);
 RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototypeUsesInteropHandles, failures);
 RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
 RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
+RunTest("GeneratedBindingManifestListsSurface", GeneratedBindingManifestListsSurface, failures);
+RunTest("GeneratedBindingJsonManifestListsSurface", GeneratedBindingJsonManifestListsSurface, failures);
+RunTest("GeneratedBindingPackWritesDeterministicArtifacts", GeneratedBindingPackWritesDeterministicArtifacts, failures);
 RunTest("RuntimeSplitFacadeForwardsNumericHelpers", RuntimeSplitFacadeForwardsNumericHelpers, failures);
 RunTest("RuntimeSplitOwnsMemoryHelpers", RuntimeSplitOwnsMemoryHelpers, failures);
 RunTest("RuntimeSplitOwnsPanicHelpers", RuntimeSplitOwnsPanicHelpers, failures);
@@ -50,6 +56,9 @@ RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgume
 RunTest("LowererPreservesVtablePointerRelocations", LowererPreservesVtablePointerRelocations, failures);
 RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
 RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScannerFindsInstanceAndNativeTypes, failures);
+RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
+RunTest("BindingSurfaceScannerCreatesStaticScalarBindings", BindingSurfaceScannerCreatesStaticScalarBindings, failures);
+RunTest("BindingSurfaceScannerCreatesStaticObjectHandleBindings", BindingSurfaceScannerCreatesStaticObjectHandleBindings, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -499,7 +508,7 @@ RunOptionalTest("BinTrivialSampleEmitsRunnableConsoleAssembly", BinTrivialSample
 RunOptionalTest("AvaloniaHelloSampleBuildsFromCargoManifest", AvaloniaHelloSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AvaloniaHelloSampleEmitsRunnableSmokeOutput", AvaloniaHelloSampleEmitsRunnableSmokeOutput, failures);
 RunOptionalTest("DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput", DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput, failures);
-RunOptionalTest("GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput", GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput, failures);
+RunTest("GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput", GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSingleFileSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveNumberedSingleFileSampleEmitsRunnableConsoleOutput, failures);
 RunOptionalTest("LousygrepPrimitiveSampleEmitsRunnableConsoleOutput", LousygrepPrimitiveSampleEmitsRunnableConsoleOutput, failures);
@@ -858,11 +867,18 @@ static void ManagedHandleStoreTracksObjects()
 
     Assert(!handle.IsNull, "Expected allocated object handle to be non-null.");
     Assert(store.Count == 1, $"Expected one tracked handle, but found {store.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(store.Snapshot == new ManagedHandleSnapshot(1, 0), "Expected object-handle snapshot to report one object and no exceptions.");
     Assert(store.GetObject<string>(handle) == "hello", "Expected object handle to resolve the original string value.");
     Assert(store.TryGetObject<string>(handle, out var value) && value == "hello", "Expected TryGetObject to resolve the original string value.");
     Assert(!store.TryGetObject<FileInfo>(handle, out _), "Expected TryGetObject to reject mismatched object types.");
+    var timeSpanHandle = store.AddObject(TimeSpan.FromTicks(42));
+    Assert(store.Snapshot == new ManagedHandleSnapshot(2, 0), "Expected boxed value handle to be counted as an object handle.");
+    Assert(store.GetObject<TimeSpan>(timeSpanHandle).Ticks == 42, "Expected object handles to resolve boxed value types.");
+    Assert(store.TryGetObject<TimeSpan>(timeSpanHandle, out var timeSpan) && timeSpan.Ticks == 42, "Expected TryGetObject to resolve boxed value types.");
+    Assert(store.Release(timeSpanHandle), "Expected releasing a boxed value type handle to succeed.");
     Assert(store.Release(handle), "Expected releasing an existing object handle to succeed.");
     Assert(store.Count == 0, $"Expected no tracked handles after release, but found {store.Count.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(store.Snapshot.TotalCount == 0, "Expected empty handle snapshot after all object releases.");
     Assert(!store.Release(handle), "Expected releasing an already released object handle to return false.");
 }
 
@@ -873,6 +889,7 @@ static void ManagedHandleStoreTracksExceptions()
     var handle = store.AddException(exception);
 
     Assert(!handle.IsNull, "Expected allocated exception handle to be non-null.");
+    Assert(store.Snapshot == new ManagedHandleSnapshot(0, 1), "Expected exception-handle snapshot to report one exception and no objects.");
     Assert(ReferenceEquals(store.GetException(handle), exception), "Expected exception handle to resolve the original exception instance.");
     Assert(store.TryGetException(handle, out var resolved) && ReferenceEquals(resolved, exception), "Expected TryGetException to resolve the original exception instance.");
     ExpectException<InvalidOperationException>(() => store.GetObject<Exception>(handle.Value));
@@ -935,8 +952,11 @@ static void ManagedInteropRuntimeExposesExceptionText()
         var objectHandle = ManagedInteropRuntime.AddObjectHandle(new StringBuilder("tracked"));
         var exceptionHandle = ManagedInteropRuntime.AddExceptionHandle(new InvalidOperationException("interop failure"));
 
-        Assert(ManagedInteropRuntime.HandleCount == 2, $"Expected two tracked runtime handles, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
-        Assert(ManagedInteropRuntime.GetObject<StringBuilder>(objectHandle).ToString() == "tracked", "Expected runtime object handle to resolve the tracked object.");
+    Assert(ManagedInteropRuntime.HandleCount == 2, $"Expected two tracked runtime handles, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(ManagedInteropRuntime.ObjectHandleCount == 1, "Expected runtime object handle counter to report one tracked object.");
+    Assert(ManagedInteropRuntime.ExceptionHandleCount == 1, "Expected runtime exception handle counter to report one tracked exception.");
+    Assert(ManagedInteropRuntime.SnapshotHandles() == new ManagedHandleSnapshot(1, 1), "Expected runtime snapshot to report one object and one exception.");
+    Assert(ManagedInteropRuntime.GetObject<StringBuilder>(objectHandle).ToString() == "tracked", "Expected runtime object handle to resolve the tracked object.");
         Assert(ManagedInteropRuntime.GetExceptionMessage(exceptionHandle) == "interop failure", "Expected runtime exception helper to expose the exception message.");
         Assert(ManagedInteropRuntime.GetExceptionTypeName(exceptionHandle).EndsWith("InvalidOperationException", StringComparison.Ordinal), "Expected runtime exception helper to expose the exception type name.");
 
@@ -955,9 +975,10 @@ static void ManagedInteropRuntimeExposesExceptionText()
             Marshal.FreeHGlobal(destination);
         }
 
-        Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected runtime exception handle release to succeed.");
-        Assert(ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected runtime object handle release to succeed.");
-        Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no runtime handles after release, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected runtime exception handle release to succeed.");
+    Assert(ManagedInteropRuntime.ReleaseObject(objectHandle), "Expected runtime object handle release to succeed.");
+    Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no runtime handles after release, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(ManagedInteropRuntime.SnapshotHandles().TotalCount == 0, "Expected empty runtime handle snapshot after release.");
     }
     finally
     {
@@ -1041,6 +1062,55 @@ static void InteropUtf16RoundTripsStrings()
     }
 }
 
+static unsafe void ManagedCallbackBridgeInvokesI32Callback()
+{
+    delegate* managed<int, int> callback = &ManagedCallbackBridgeTestDouble;
+    var result = ManagedCallbackBridge.InvokeI32((IntPtr)(void*)callback, 21);
+
+    Assert(result == 42, "Expected managed callback bridge to invoke a managed function pointer.");
+    ExpectException<ArgumentNullException>(() => ManagedCallbackBridge.InvokeI32(IntPtr.Zero, 21));
+
+    delegate* managed<int, int, int> pairCallback = &ManagedCallbackBridgeTestSum;
+    var pairResult = ManagedCallbackBridge.InvokeI32I32((IntPtr)(void*)pairCallback, 20, 22);
+    Assert(pairResult == 42, "Expected managed callback bridge to invoke a two-argument managed function pointer.");
+    ExpectException<ArgumentNullException>(() => ManagedCallbackBridge.InvokeI32I32(IntPtr.Zero, 20, 22));
+
+    ManagedInteropRuntime.Clear();
+    var inputHandle = ManagedInteropRuntime.AddObjectHandle("alpha");
+    delegate* managed<int, int> stringCallback = &ManagedCallbackBridgeTestStringTransform;
+    var transformed = ManagedCallbackBridge.InvokeObjectHandleTransform((IntPtr)(void*)stringCallback, inputHandle);
+    Assert(transformed is string transformedText && transformedText == "ALPHA", "Expected object-handle callback bridge to return the transformed managed object.");
+    Assert(ManagedInteropRuntime.HandleCount == 1, "Expected object-handle callback bridge to consume the callback-owned result handle.");
+    Assert(ManagedInteropRuntime.ReleaseObject(inputHandle), "Expected object-handle callback input handle release to succeed.");
+    ExpectException<ArgumentNullException>(() => ManagedCallbackBridge.InvokeObjectHandleTransform(IntPtr.Zero, inputHandle));
+
+    var borrowedInputHandle = ManagedInteropRuntime.AddObjectHandle("borrowed");
+    delegate* managed<int, int> borrowedCallback = &ManagedCallbackBridgeTestBorrowedHandleReturn;
+    ExpectException<InvalidOperationException>(() => ManagedCallbackBridge.InvokeObjectHandleTransform((IntPtr)(void*)borrowedCallback, borrowedInputHandle));
+    Assert(ManagedInteropRuntime.ReleaseObject(borrowedInputHandle), "Expected borrowed input handle to remain owned after invalid callback return.");
+    Assert(ManagedInteropRuntime.SnapshotHandles().TotalCount == 0, "Expected object-handle callback bridge test to leave no tracked handles.");
+}
+
+static int ManagedCallbackBridgeTestDouble(int value)
+{
+    return value * 2;
+}
+
+static int ManagedCallbackBridgeTestSum(int left, int right)
+{
+    return left + right;
+}
+
+static int ManagedCallbackBridgeTestStringTransform(int handle)
+{
+    return ManagedInteropRuntime.AddObjectHandle(ManagedInteropRuntime.GetObject<string>(handle).ToUpperInvariant());
+}
+
+static int ManagedCallbackBridgeTestBorrowedHandleReturn(int handle)
+{
+    return handle;
+}
+
 static void InteropExceptionReleaseLifecycle()
 {
     ManagedInteropRuntime.Clear();
@@ -1075,9 +1145,10 @@ static void InteropExceptionReleaseLifecycle()
     }
 }
 
-static void GeneratedBindingPrototypeUsesInteropHandles()
+static unsafe void GeneratedBindingPrototypeUsesInteropHandles()
 {
     ManagedInteropRuntime.Clear();
+    Assert(ManagedInteropRuntime.SnapshotHandles().TotalCount == 0, "Expected generated binding prototype test to start with an empty handle snapshot.");
     var exceptionOutPointer = Marshal.AllocHGlobal(sizeof(int));
     try
     {
@@ -1133,6 +1204,33 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
         Assert(RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineString(environmentDirectoryHandle) == 0, "Expected generated Console.WriteLine string-handle binding to accept a property-returned managed string.");
         Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(environmentDirectoryHandle) == 0, "Expected generated Environment.CurrentDirectory property string handle release to succeed.");
 
+        var enumerationDirectory = Path.Combine(Path.GetTempPath(), $"rust-msil-bindgen-files-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(enumerationDirectory);
+        try
+        {
+            File.WriteAllText(Path.Combine(enumerationDirectory, "alpha.txt"), "alpha");
+            File.WriteAllText(Path.Combine(enumerationDirectory, "beta.bin"), "beta");
+            var enumerationDirectoryHandle = ManagedInteropRuntime.AddObjectHandle(enumerationDirectory);
+            var searchPatternHandle = ManagedInteropRuntime.AddObjectHandle("*.txt");
+            var filesHandle = RuntimeBridgeHelpers.BindgenSystemIoDirectoryGetFilesStringString(enumerationDirectoryHandle, searchPatternHandle, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Directory.GetFiles binding to report no exception.");
+            Assert(filesHandle > 0, "Expected generated Directory.GetFiles binding to return a managed string array handle.");
+            var filesLength = RuntimeBridgeHelpers.BindgenSystemStringArrayLength(filesHandle, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Directory.GetFiles result length binding to report no exception.");
+            Assert(filesLength == 1, $"Expected generated Directory.GetFiles binding to return one matching file, but got {filesLength.ToString(CultureInfo.InvariantCulture)}.");
+            var matchedPathHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayGet(filesHandle, 0, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Directory.GetFiles result get binding to report no exception.");
+            Assert(ManagedInteropRuntime.GetObject<string>(matchedPathHandle).EndsWith("alpha.txt", StringComparison.Ordinal), "Expected generated Directory.GetFiles binding to return the matching file path.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(matchedPathHandle) == 0, "Expected generated Directory.GetFiles result element release to succeed.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(filesHandle) == 0, "Expected generated Directory.GetFiles result array release to succeed.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(searchPatternHandle) == 0, "Expected generated Directory.GetFiles search pattern handle release to succeed.");
+            Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(enumerationDirectoryHandle) == 0, "Expected generated Directory.GetFiles directory handle release to succeed.");
+        }
+        finally
+        {
+            Directory.Delete(enumerationDirectory, recursive: true);
+        }
+
         var argsHandle = RuntimeBridgeHelpers.BindgenSystemEnvironmentGetCommandLineArgs(exceptionOutPointer);
         Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated Environment.GetCommandLineArgs binding to report no exception.");
         Assert(argsHandle > 0, "Expected generated Environment.GetCommandLineArgs binding to return a managed string array handle.");
@@ -1146,6 +1244,83 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
         Assert(firstArgHandle > 0, "Expected generated command-line args get binding to return a managed string handle.");
         Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(firstArgHandle) == 0, "Expected generated command-line string handle release to succeed.");
         Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(argsHandle) == 0, "Expected generated command-line string array handle release to succeed.");
+
+        var firstStringHandle = ManagedInteropRuntime.AddObjectHandle("red");
+        var secondStringHandle = ManagedInteropRuntime.AddObjectHandle("green");
+        var thirdStringHandle = ManagedInteropRuntime.AddObjectHandle("blue");
+        var stringArrayHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayFromStrings(firstStringHandle, secondStringHandle, thirdStringHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string-array factory binding to report no exception.");
+        Assert(stringArrayHandle > 0, "Expected generated string-array factory binding to return a managed string array handle.");
+        var stringArrayLength = RuntimeBridgeHelpers.BindgenSystemStringArrayLength(stringArrayHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string-array factory length binding to report no exception.");
+        Assert(stringArrayLength == 3, $"Expected generated string-array factory length binding to report three elements, but got {stringArrayLength.ToString(CultureInfo.InvariantCulture)}.");
+        var secondElementHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayGet(stringArrayHandle, 1, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated string-array factory get binding to report no exception.");
+        Assert(secondElementHandle > 0, "Expected generated string-array factory get binding to return a managed string handle.");
+        Assert(ManagedInteropRuntime.GetObject<string>(secondElementHandle) == "green", "Expected generated string-array factory get binding to return the requested string element.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(secondElementHandle) == 0, "Expected generated string-array element handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(stringArrayHandle) == 0, "Expected generated string-array factory handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(firstStringHandle) == 0, "Expected generated string-array first input handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(secondStringHandle) == 0, "Expected generated string-array second input handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(thirdStringHandle) == 0, "Expected generated string-array third input handle release to succeed.");
+
+        var callbackStringHandle = ManagedInteropRuntime.AddObjectHandle("callback");
+        var transformedStringHandle = RuntimeBridgeHelpers.BindgenSystemCallbackTransformManagedString((IntPtr)(delegate* managed<int, int>)&ManagedCallbackBridgeTestStringTransform, callbackStringHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated object-handle callback binding to report no exception.");
+        Assert(transformedStringHandle > 0, "Expected generated object-handle callback binding to return a managed string handle.");
+        Assert(ManagedInteropRuntime.GetObject<string>(transformedStringHandle) == "CALLBACK", "Expected generated object-handle callback binding to return the transformed string.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(transformedStringHandle) == 0, "Expected generated transformed callback string handle release to succeed.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(callbackStringHandle) == 0, "Expected generated callback string input handle release to succeed.");
+
+        var intArrayHandle = RuntimeBridgeHelpers.BindgenSystemIntArrayFromI32Triplet(11, 22, 33, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated int-array factory binding to report no exception.");
+        Assert(intArrayHandle > 0, "Expected generated int-array factory binding to return a managed int array handle.");
+        var intArrayLength = RuntimeBridgeHelpers.BindgenSystemIntArrayLength(intArrayHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated int-array length binding to report no exception.");
+        Assert(intArrayLength == 3, $"Expected generated int-array length binding to report three elements, but got {intArrayLength.ToString(CultureInfo.InvariantCulture)}.");
+        var intArrayValue = RuntimeBridgeHelpers.BindgenSystemIntArrayGet(intArrayHandle, 1, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated int-array get binding to report no exception.");
+        Assert(intArrayValue == 22, "Expected generated int-array get binding to return the requested element.");
+        var intArrayDestination = Marshal.AllocHGlobal(2 * sizeof(int));
+        try
+        {
+            var intArrayRequired = RuntimeBridgeHelpers.BindgenSystemIntArrayCopy(intArrayHandle, intArrayDestination, 2, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated int-array copy binding to report no exception.");
+            Assert(intArrayRequired == 3, "Expected generated int-array copy binding to return the full required element count.");
+            Assert(Marshal.ReadInt32(intArrayDestination) == 11, "Expected generated int-array copy binding to copy the first element.");
+            Assert(Marshal.ReadInt32(intArrayDestination, sizeof(int)) == 22, "Expected generated int-array copy binding to respect destination capacity.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(intArrayDestination);
+        }
+
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(intArrayHandle) == 0, "Expected generated int-array handle release to succeed.");
+
+        var byteArrayHandle = RuntimeBridgeHelpers.BindgenSystemByteArrayFromU8Triplet(0x11, 0x22, 0xFE, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated byte-array factory binding to report no exception.");
+        Assert(byteArrayHandle > 0, "Expected generated byte-array factory binding to return a managed byte array handle.");
+        var byteArrayLength = RuntimeBridgeHelpers.BindgenSystemByteArrayLength(byteArrayHandle, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated byte-array length binding to report no exception.");
+        Assert(byteArrayLength == 3, $"Expected generated byte-array length binding to report three elements, but got {byteArrayLength.ToString(CultureInfo.InvariantCulture)}.");
+        var byteArrayValue = RuntimeBridgeHelpers.BindgenSystemByteArrayGet(byteArrayHandle, 2, exceptionOutPointer);
+        Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated byte-array get binding to report no exception.");
+        Assert(byteArrayValue == 0xFE, "Expected generated byte-array get binding to return the requested unsigned element as an int.");
+        var byteArrayDestination = Marshal.AllocHGlobal(2);
+        try
+        {
+            var byteArrayRequired = RuntimeBridgeHelpers.BindgenSystemByteArrayCopy(byteArrayHandle, byteArrayDestination, 2, exceptionOutPointer);
+            Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated byte-array copy binding to report no exception.");
+            Assert(byteArrayRequired == 3, "Expected generated byte-array copy binding to return the full required element count.");
+            Assert(Marshal.ReadByte(byteArrayDestination) == 0x11, "Expected generated byte-array copy binding to copy the first element.");
+            Assert(Marshal.ReadByte(byteArrayDestination, 1) == 0x22, "Expected generated byte-array copy binding to respect destination capacity.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(byteArrayDestination);
+        }
+
+        Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(byteArrayHandle) == 0, "Expected generated byte-array handle release to succeed.");
 
         var tempPath = Path.Combine(Path.GetTempPath(), $"rust-msil-bindgen-{Guid.NewGuid():N}.txt");
         File.WriteAllLines(tempPath, ["alpha-runtime", "beta"]);
@@ -1258,13 +1433,50 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
                 var needleHandle = ManagedInteropRuntime.AddObjectHandle("runtime");
                 try
                 {
-                    var contains = RuntimeBridgeHelpers.BindgenSystemStringContainsString(lineHandle, needleHandle, exceptionOutPointer);
+                    var contains = RuntimeBridgeHelpers.BindgenSystemStringContainsString(lineHandle, needleHandle, (int)StringComparison.Ordinal, exceptionOutPointer);
                     Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Contains string-handle binding to report no exception.");
                     Assert(contains == 1, "Expected generated String.Contains string-handle binding to find the needle in the first line.");
                 }
                 finally
                 {
                     Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(needleHandle) == 0, "Expected generated needle string handle release to succeed.");
+                }
+
+                var prefixHandle = ManagedInteropRuntime.AddObjectHandle("alpha");
+                var suffixHandle = ManagedInteropRuntime.AddObjectHandle("runtime");
+                try
+                {
+                    var starts = RuntimeBridgeHelpers.BindgenSystemStringStartsWithString(lineHandle, prefixHandle, (int)StringComparison.Ordinal, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.StartsWith string-handle binding to report no exception.");
+                    Assert(starts == 1, "Expected generated String.StartsWith string-handle binding to match the prefix.");
+                    var ends = RuntimeBridgeHelpers.BindgenSystemStringEndsWithString(lineHandle, suffixHandle, (int)StringComparison.Ordinal, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.EndsWith string-handle binding to report no exception.");
+                    Assert(ends == 1, "Expected generated String.EndsWith string-handle binding to match the suffix.");
+                }
+                finally
+                {
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(suffixHandle) == 0, "Expected generated suffix string handle release to succeed.");
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(prefixHandle) == 0, "Expected generated prefix string handle release to succeed.");
+                }
+
+                var separatorHandle = ManagedInteropRuntime.AddObjectHandle("-");
+                try
+                {
+                    var splitHandle = RuntimeBridgeHelpers.BindgenSystemStringSplitStringOptions(lineHandle, separatorHandle, (int)StringSplitOptions.RemoveEmptyEntries, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Split string-handle binding to report no exception.");
+                    Assert(splitHandle > 0, "Expected generated String.Split string-handle binding to return a managed string array handle.");
+                    var splitLength = RuntimeBridgeHelpers.BindgenSystemStringArrayLength(splitHandle, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Split result length binding to report no exception.");
+                    Assert(splitLength == 2, $"Expected generated String.Split result length to be two, but got {splitLength.ToString(CultureInfo.InvariantCulture)}.");
+                    var splitElementHandle = RuntimeBridgeHelpers.BindgenSystemStringArrayGet(splitHandle, 1, exceptionOutPointer);
+                    Assert(Marshal.ReadInt32(exceptionOutPointer) == 0, "Expected generated String.Split result get binding to report no exception.");
+                    Assert(ManagedInteropRuntime.GetObject<string>(splitElementHandle) == "runtime", "Expected generated String.Split result element to match the second segment.");
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(splitElementHandle) == 0, "Expected generated split element string handle release to succeed.");
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(splitHandle) == 0, "Expected generated split string array handle release to succeed.");
+                }
+                finally
+                {
+                    Assert(RuntimeBridgeHelpers.BindgenSystemObjectRelease(separatorHandle) == 0, "Expected generated split separator string handle release to succeed.");
                 }
 
                 Assert(RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineString(lineHandle) == 0, "Expected generated Console.WriteLine string-handle binding to succeed.");
@@ -1284,6 +1496,9 @@ static void GeneratedBindingPrototypeUsesInteropHandles()
         var exceptionHandle = RuntimeBridgeHelpers.BindgenSystemConsoleWriteLineUtf8(IntPtr.Zero, 1);
         Assert(exceptionHandle > 0, "Expected generated Console.WriteLine binding to return an exception handle for invalid UTF-8 input.");
         Assert(ManagedInteropRuntime.GetExceptionMessage(exceptionHandle).Contains("UTF-8", StringComparison.Ordinal), "Expected generated Console.WriteLine failure to be tracked in the interop exception store.");
+        Assert(ManagedInteropRuntime.SnapshotHandles() == new ManagedHandleSnapshot(0, 1), "Expected generated exception path to leave only the tracked exception handle before release.");
+        Assert(RuntimeBridgeHelpers.BindgenSystemExceptionRelease(exceptionHandle) == 0, "Expected generated exception release binding to release the tracked failure.");
+        Assert(ManagedInteropRuntime.SnapshotHandles().TotalCount == 0, "Expected generated binding prototype to release every managed handle it creates.");
     }
     finally
     {
@@ -1351,6 +1566,129 @@ static void BindingSurfaceScannerFindsInstanceAndNativeTypes()
     Assert(
         !requirements.Any(static requirement => requirement.MemberName == nameof(ScannerBindableProbe.OpenStream)),
         "Scanner should reject methods with unbindable return types.");
+}
+
+static void BindingSurfaceScannerReportsUnsupportedShapes()
+{
+    var scanResult = BindingSurfaceScanner.ScanTypeWithDiagnostics(typeof(ScannerUnsupportedProbe));
+
+    Assert(
+        scanResult.Requirements.Any(static requirement => requirement.MemberName == nameof(ScannerUnsupportedProbe.Supported)),
+        "Scanner diagnostics should retain supported requirements.");
+    var unsupportedByMember = scanResult.UnsupportedShapes
+        .Where(static shape => shape.MemberName is not null)
+        .ToDictionary(static shape => shape.MemberName!, StringComparer.Ordinal);
+
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.OpenStream)].Reason.Contains("return type 'System.IO.Stream' is unsupported", StringComparison.Ordinal),
+        "Scanner diagnostics should report unsupported return types.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.UsesStream)].Reason.Contains("parameter 'stream' has unsupported type 'System.IO.Stream'", StringComparison.Ordinal),
+        "Scanner diagnostics should report unsupported parameter types.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.RefValue)].Reason.Contains("ref parameter 'value' is not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report ref parameters.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.OutValue)].Reason.Contains("out parameter 'value' is not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report out parameters.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.Echo)].Reason.Contains("generic or open methods are not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report generic methods.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.ClosedGeneric)].Reason.Contains("generic constructed types are not supported; generic arguments: System.Int32", StringComparison.Ordinal),
+        "Scanner diagnostics should report closed generic arguments.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.MatrixValues)].Reason.Contains("array rank 2 is not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report unsupported array ranks.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.Callback)].Reason.Contains("delegate types are not supported; use explicit callback ABI metadata", StringComparison.Ordinal),
+        "Scanner diagnostics should report delegate parameters.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.LongEnum)].Reason.Contains("enum backing type 'System.Int64' is not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report unsupported enum backing types.");
+    Assert(
+        unsupportedByMember["Item"].Reason.Contains("indexed properties are not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report indexed properties.");
+    Assert(
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.Changed)].Kind == ManagedApiRequirementKind.Event &&
+        unsupportedByMember[nameof(ScannerUnsupportedProbe.Changed)].Reason.Contains("events are not supported", StringComparison.Ordinal),
+        "Scanner diagnostics should report events.");
+
+    var collisionResult = BindingSurfaceScanner.ScanTypeWithDiagnostics(typeof(ScannerOverloadCollisionProbe));
+    Assert(
+        collisionResult.Requirements.All(static requirement => requirement.MemberName != nameof(ScannerOverloadCollisionProbe.Collide)),
+        "Scanner diagnostics should reject overloads that collapse to the same projected Rust signature.");
+    Assert(
+        collisionResult.UnsupportedShapes.Count(static shape =>
+            shape.MemberName == nameof(ScannerOverloadCollisionProbe.Collide) &&
+            shape.Reason.Contains("duplicate Rust wrapper signature 'collide(i32)'", StringComparison.Ordinal)) == 2,
+        "Scanner diagnostics should report every colliding overload with the projected Rust signature.");
+
+    var manifest = BindingManifestGenerator.GenerateJson(BindingSurface.CreateTinyBclSurface(), scanResult.UnsupportedShapes);
+    using var document = JsonDocument.Parse(manifest);
+    var unsupportedShapes = document.RootElement.GetProperty("unsupportedShapes").EnumerateArray().ToArray();
+    Assert(unsupportedShapes.Length == scanResult.UnsupportedShapes.Count, "JSON manifest should include supplied unsupported-shape diagnostics.");
+    Assert(
+        unsupportedShapes.Any(static shape => shape.GetProperty("memberName").GetString() == nameof(ScannerUnsupportedProbe.OpenStream)),
+        "JSON manifest should preserve unsupported member names.");
+}
+
+static void BindingSurfaceScannerCreatesStaticScalarBindings()
+{
+    var bindings = BindingSurfaceScanner.CreateStaticScalarMethodBindings(
+        new StaticScalarMethodBindingRequest(typeof(Math), nameof(Math.BigMul), [typeof(int), typeof(int)], RustWrapperContainer.Math));
+
+    var binding = bindings.Single();
+    Assert(binding.Requirement.DisplayName == "System.Math.BigMul(int, int)", "Expected scanner-derived binding to preserve the managed member signature.");
+    Assert(binding.ManagedGlueBinding.Symbol == "rust_mcil_bindgen_system_math_big_mul_i32_i32", "Expected scanner-derived binding to use deterministic symbol naming.");
+    Assert(binding.ManagedGlueBinding.RuntimeBridgeHelperMethodName == "BindgenSystemMathBigMulI32I32", "Expected scanner-derived binding to use deterministic helper naming.");
+    Assert(binding.ManagedGlueBinding.ReturnType == "long", "Expected scanner-derived binding to preserve long return types.");
+    Assert(binding.ManagedGlueBinding.Parameters.Select(static parameter => parameter.TypeName).SequenceEqual(["int", "int", "IntPtr"]), "Expected scanner-derived binding to include scalar parameters plus exception-out pointer.");
+
+    var externBinding = RustExternBinding.FromManagedGlueBinding(binding.ManagedGlueBinding);
+    Assert(
+        externBinding.SignatureLines.Single() == "fn rust_mcil_bindgen_system_math_big_mul_i32_i32(x: i32, y: i32, exception_out: *mut i32) -> i64;",
+        "Expected scanner-derived binding to project a matching Rust extern ABI.");
+    Assert(
+        binding.RustWrapperMethod.Signature == "pub fn big_mul(x: i32, y: i32) -> Result<i64, Exception>",
+        "Expected scanner-derived binding to project a matching Rust wrapper signature.");
+}
+
+static void BindingSurfaceScannerCreatesStaticObjectHandleBindings()
+{
+    var bindings = BindingSurfaceScanner.CreateStaticObjectHandleMethodBindings(
+        new StaticObjectHandleMethodBindingRequest(typeof(Directory), nameof(Directory.GetFiles), [typeof(string), typeof(string)], RustWrapperContainer.IoDirectory),
+        new StaticObjectHandleMethodBindingRequest(typeof(File), nameof(File.ReadAllLines), [typeof(string)], RustWrapperContainer.IoFile));
+
+    var getFilesBinding = bindings[0];
+    Assert(getFilesBinding.Requirement.DisplayName == "System.IO.Directory.GetFiles(string, string)", "Expected scanner-derived Directory.GetFiles binding to preserve the managed member signature.");
+    Assert(getFilesBinding.ManagedGlueBinding.Symbol == "rust_mcil_bindgen_system_io_directory_get_files_string_string", "Expected scanner-derived Directory.GetFiles binding to use deterministic symbol naming.");
+    Assert(getFilesBinding.ManagedGlueBinding.RuntimeBridgeHelperMethodName == "BindgenSystemIoDirectoryGetFilesStringString", "Expected scanner-derived Directory.GetFiles binding to use deterministic helper naming.");
+    Assert(getFilesBinding.ManagedGlueBinding.ReturnType == "int", "Expected object-handle bindings to return managed object handles.");
+    Assert(
+        getFilesBinding.ManagedGlueBinding.Parameters.Select(static parameter => $"{parameter.TypeName} {parameter.Name}").SequenceEqual(["int pathHandle", "int searchPatternHandle", "IntPtr exceptionOutPointer"]),
+        "Expected scanner-derived Directory.GetFiles binding to project string parameters as managed handles plus exception-out pointer.");
+    Assert(
+        RustExternBinding.FromManagedGlueBinding(getFilesBinding.ManagedGlueBinding).SignatureLines.SequenceEqual(
+        [
+            "fn rust_mcil_bindgen_system_io_directory_get_files_string_string(",
+            "    path_handle: i32,",
+            "    search_pattern_handle: i32,",
+            "    exception_out: *mut i32,",
+            ") -> i32;"
+        ]),
+        "Expected scanner-derived Directory.GetFiles binding to project a matching Rust extern ABI.");
+    Assert(
+        getFilesBinding.RustWrapperMethod.Signature == "pub fn get_files(path: &ManagedString, search_pattern: &ManagedString) -> Result<ManagedStringArray, Exception>",
+        "Expected scanner-derived Directory.GetFiles binding to project a matching Rust wrapper signature.");
+
+    var readAllLinesBinding = bindings[1];
+    Assert(readAllLinesBinding.Requirement.DisplayName == "System.IO.File.ReadAllLines(string)", "Expected scanner-derived File.ReadAllLines binding to preserve the managed member signature.");
+    Assert(readAllLinesBinding.ManagedGlueBinding.Symbol == "rust_mcil_bindgen_system_io_file_read_all_lines_string", "Expected scanner-derived File.ReadAllLines binding to use deterministic symbol naming.");
+    Assert(readAllLinesBinding.ManagedGlueBinding.RuntimeBridgeHelperMethodName == "BindgenSystemIoFileReadAllLinesString", "Expected scanner-derived File.ReadAllLines binding to use deterministic helper naming.");
+    Assert(
+        readAllLinesBinding.RustWrapperMethod.Signature == "pub fn read_all_lines(path: &ManagedString) -> Result<ManagedStringArray, Exception>",
+        "Expected scanner-derived File.ReadAllLines binding to project a matching Rust wrapper signature.");
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
@@ -1427,6 +1765,281 @@ static void GeneratedBindingManagedGlueBuildOutputMatchesGenerator()
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(buildOutputText),
         $"Expected generated managed binding glue build output to match RustMcil.Bindings. {DescribeFirstTextDifference(generatedText, buildOutputText)}");
+}
+
+static void GeneratedBindingManifestListsSurface()
+{
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var manifest = BindingManifestGenerator.GenerateText(surface);
+
+    foreach (var binding in surface.ManagedGlueBindings)
+    {
+        Assert(manifest.Contains($"symbol: {binding.Symbol}", StringComparison.Ordinal), $"Expected manifest to include symbol '{binding.Symbol}'.");
+        Assert(manifest.Contains($"helper: {binding.RuntimeBridgeHelperMethodName}", StringComparison.Ordinal), $"Expected manifest to include helper '{binding.RuntimeBridgeHelperMethodName}'.");
+    }
+
+    Assert(
+        manifest.Contains("managed-target: MathF.Sqrt(value)", StringComparison.Ordinal),
+        "Expected manifest to include reflected managed target descriptions.");
+    Assert(
+        manifest.Contains("rust-extern: fn rust_mcil_bindgen_system_mathf_sqrt_f32(value: f32, exception_out: *mut i32) -> f32;", StringComparison.Ordinal),
+        "Expected manifest to include generated Rust ABI signatures.");
+    Assert(
+        manifest.Contains("wrapper: pub fn sqrt(value: f32) -> Result<f32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated Rust wrapper signatures.");
+    Assert(
+        manifest.Contains("managed-target: ManagedInteropRuntime.GetObject<string>(stringHandle).Substring(startIndex, length)", StringComparison.Ordinal),
+        "Expected manifest to include generated string object-handle projections.");
+    Assert(
+        manifest.Contains("wrapper: pub fn replace(&self, old_value: &ManagedString, new_value: &ManagedString) -> Result<ManagedString, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated string replacement wrappers.");
+    Assert(
+        manifest.Contains("enum: StringComparison", StringComparison.Ordinal)
+            && manifest.Contains("variant: Ordinal = 4", StringComparison.Ordinal),
+        "Expected manifest to include generated enum projection details.");
+    Assert(
+        manifest.Contains("enum: StringSplitOptions", StringComparison.Ordinal)
+            && manifest.Contains("flags: true", StringComparison.Ordinal)
+            && manifest.Contains("variant: RemoveEmptyEntries = 1", StringComparison.Ordinal),
+        "Expected manifest to include generated flags projection details.");
+    Assert(
+        manifest.Contains("managed-target: ManagedInteropRuntime.GetObject<string>(stringHandle).IndexOf(ManagedInteropRuntime.GetObject<string>(valueHandle), ((StringComparison)comparison))", StringComparison.Ordinal),
+        "Expected manifest to include enum-parameter managed targets.");
+    Assert(
+        manifest.Contains("wrapper: pub fn index_of_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<i32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated enum-accepting string wrappers.");
+    Assert(
+        manifest.Contains("wrapper: pub fn starts_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn ends_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated prefix/suffix string wrappers.");
+    Assert(
+        manifest.Contains("wrapper: pub fn split(&self, separator: &ManagedString, options: StringSplitOptions) -> Result<ManagedStringArray, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated collection-returning split wrappers.");
+    Assert(
+        manifest.Contains("managed-target: Directory.GetFiles(ManagedInteropRuntime.GetObject<string>(pathHandle), ManagedInteropRuntime.GetObject<string>(searchPatternHandle))", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn get_files(path: &ManagedString, search_pattern: &ManagedString) -> Result<ManagedStringArray, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated Directory.GetFiles collection wrapper.");
+    Assert(
+        manifest.Contains("managed-target: ManagedInteropRuntime.CreateStringArray(ManagedInteropRuntime.GetObject<string>(firstHandle), ManagedInteropRuntime.GetObject<string>(secondHandle), ManagedInteropRuntime.GetObject<string>(thirdHandle))", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn from_strings(first: &ManagedString, second: &ManagedString, third: &ManagedString) -> Result<Self, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated object-array handle factory wrappers.");
+    Assert(
+        manifest.Contains("managed-target: ManagedInteropRuntime.CreateInt32Array(first, second, third)", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn copy_into(&self, buffer: &mut [i32]) -> Result<i32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated primitive-array handle factory and copy wrappers.");
+    Assert(
+        manifest.Contains("managed-target: ManagedInteropRuntime.CreateByteArray(first, second, third)", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn copy_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated byte-array handle factory and copy wrappers.");
+    Assert(
+        manifest.Contains("managed-target: TimeSpan.FromMilliseconds(value)", StringComparison.Ordinal),
+        "Expected manifest to include generated value-type factory targets.");
+    Assert(
+        manifest.Contains("wrapper: pub fn to_unix_time_milliseconds(&self) -> Result<i64, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated value-type scalar extractors.");
+    Assert(
+        manifest.Contains("wrapper: pub fn parse(value: &ManagedString) -> Result<ManagedGuid, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated Guid handle wrappers.");
+    Assert(
+        manifest.Contains("wrapper: pub fn apply_i32(callback: fn(i32) -> i32, value: i32) -> Result<i32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include generated callback wrappers.");
+    Assert(
+        manifest.Contains("parameters: IntPtr i32I32CallbackPointer rust-abi:fn(i32, i32) -> i32, int left, int right, IntPtr exceptionOutPointer", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn apply_i32_i32(callback: fn(i32, i32) -> i32, left: i32, right: i32) -> Result<i32, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include metadata-driven multi-argument callback wrappers.");
+    Assert(
+        manifest.Contains("parameters: IntPtr stringTransformCallbackPointer rust-abi:fn(i32) -> i32, int stringHandle, IntPtr exceptionOutPointer", StringComparison.Ordinal)
+            && manifest.Contains("wrapper: pub fn transform_managed_string(callback: fn(i32) -> i32, value: &ManagedString) -> Result<ManagedString, Exception>", StringComparison.Ordinal),
+        "Expected manifest to include object-handle callback wrappers.");
+}
+
+static void GeneratedBindingJsonManifestListsSurface()
+{
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var manifest = BindingManifestGenerator.GenerateJson(surface);
+    var repeatedManifest = BindingManifestGenerator.GenerateJson(surface);
+
+    Assert(manifest == repeatedManifest, "Expected JSON manifest output to be deterministic.");
+    using var document = JsonDocument.Parse(manifest);
+    var root = document.RootElement;
+    Assert(root.GetProperty("formatVersion").GetInt32() == 1, "Expected JSON manifest format version.");
+    Assert(root.GetProperty("generatedBy").GetString() == "RustMcil.Bindings", "Expected JSON manifest generator name.");
+    Assert(root.GetProperty("requirements").GetArrayLength() == surface.Requirements.Count, "Expected JSON manifest to list every requirement.");
+    Assert(root.GetProperty("enumProjections").GetArrayLength() == surface.RustEnumProjections.Count, "Expected JSON manifest to list every enum projection.");
+    Assert(root.GetProperty("bindings").GetArrayLength() == surface.ManagedGlueBindings.Count, "Expected JSON manifest to list every binding.");
+    Assert(root.GetProperty("unsupportedShapes").GetArrayLength() == 0, "Expected current JSON manifest to list no unsupported generated shapes.");
+
+    var enumProjection = root.GetProperty("enumProjections").EnumerateArray().Single(enumProjection => enumProjection.GetProperty("rustName").GetString() == "StringComparison");
+    Assert(enumProjection.GetProperty("managedType").GetString() == "System.StringComparison", "Expected JSON manifest to include the managed enum type.");
+    Assert(!enumProjection.GetProperty("isFlags").GetBoolean(), "Expected JSON manifest to mark StringComparison as a non-flags enum.");
+    Assert(
+        enumProjection.GetProperty("variants").EnumerateArray().Any(static variant =>
+            variant.GetProperty("name").GetString() == "Ordinal"
+            && variant.GetProperty("value").GetInt32() == (int)StringComparison.Ordinal),
+        "Expected JSON manifest to include StringComparison.Ordinal.");
+    var flagsProjection = root.GetProperty("enumProjections").EnumerateArray().Single(enumProjection => enumProjection.GetProperty("rustName").GetString() == "StringSplitOptions");
+    Assert(flagsProjection.GetProperty("isFlags").GetBoolean(), "Expected JSON manifest to mark StringSplitOptions as a flags projection.");
+    Assert(
+        flagsProjection.GetProperty("variants").EnumerateArray().Any(static variant =>
+            variant.GetProperty("name").GetString() == "RemoveEmptyEntries"
+            && variant.GetProperty("value").GetInt32() == (int)StringSplitOptions.RemoveEmptyEntries),
+        "Expected JSON manifest to include StringSplitOptions.RemoveEmptyEntries.");
+
+    var bindings = root.GetProperty("bindings").EnumerateArray().ToArray();
+    var callbackBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_callback_apply_i32");
+    Assert(callbackBinding.GetProperty("helper").GetString() == "BindgenSystemCallbackApplyI32", "Expected JSON manifest to include callback helper.");
+    Assert(callbackBinding.GetProperty("managedTarget").GetString() == "ManagedCallbackBridge.InvokeI32(i32CallbackPointer, value)", "Expected JSON manifest to include callback managed target.");
+    Assert(callbackBinding.GetProperty("rustExtern").GetString() == "fn rust_mcil_bindgen_system_callback_apply_i32(i32_callback_ptr: fn(i32) -> i32, value: i32, exception_out: *mut i32) -> i32;", "Expected JSON manifest to include callback Rust extern signature.");
+    Assert(callbackBinding.GetProperty("parameters").EnumerateArray().First().GetProperty("rustAbiType").GetString() == "fn(i32) -> i32", "Expected JSON manifest to include callback Rust ABI metadata.");
+    var callbackWrapper = callbackBinding.GetProperty("wrappers").EnumerateArray().Single();
+    Assert(callbackWrapper.GetProperty("path").GetString() == "system::callback::apply_i32", "Expected JSON manifest to include callback wrapper path.");
+    Assert(callbackWrapper.GetProperty("signature").GetString() == "pub fn apply_i32(callback: fn(i32) -> i32, value: i32) -> Result<i32, Exception>", "Expected JSON manifest to include callback wrapper signature.");
+
+    var pairCallbackBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_callback_apply_i32_i32");
+    Assert(pairCallbackBinding.GetProperty("managedTarget").GetString() == "ManagedCallbackBridge.InvokeI32I32(i32I32CallbackPointer, left, right)", "Expected JSON manifest to include two-argument callback managed target.");
+    Assert(pairCallbackBinding.GetProperty("rustExtern").GetString() == "fn rust_mcil_bindgen_system_callback_apply_i32_i32(i32_i32_callback_ptr: fn(i32, i32) -> i32, left: i32, right: i32, exception_out: *mut i32) -> i32;", "Expected JSON manifest to include two-argument callback Rust extern signature.");
+    Assert(pairCallbackBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::callback::apply_i32_i32", "Expected JSON manifest to include two-argument callback wrapper path.");
+
+    var stringTransformCallbackBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_callback_transform_managed_string");
+    Assert(stringTransformCallbackBinding.GetProperty("managedTarget").GetString() == "ManagedCallbackBridge.InvokeObjectHandleTransform(stringTransformCallbackPointer, stringHandle)", "Expected JSON manifest to include object-handle callback managed target.");
+    Assert(stringTransformCallbackBinding.GetProperty("parameters").EnumerateArray().First().GetProperty("rustAbiType").GetString() == "fn(i32) -> i32", "Expected JSON manifest to include object-handle callback Rust ABI metadata.");
+    Assert(stringTransformCallbackBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::callback::transform_managed_string", "Expected JSON manifest to include object-handle callback wrapper path.");
+
+    var valueBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_time_span_ticks");
+    Assert(valueBinding.GetProperty("returnType").GetString() == "long", "Expected JSON manifest to preserve value-type scalar ABI width.");
+    Assert(valueBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::ManagedTimeSpan::ticks", "Expected JSON manifest to include value-type wrapper path.");
+
+    var stringBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_replace_string_string");
+    Assert(stringBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.GetObject<string>(stringHandle).Replace(ManagedInteropRuntime.GetObject<string>(oldValueHandle), ManagedInteropRuntime.GetObject<string>(newValueHandle))", "Expected JSON manifest to include string managed target.");
+    Assert(stringBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::ManagedString::replace", "Expected JSON manifest to include string wrapper path.");
+
+    var indexOfBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_index_of_string");
+    Assert(indexOfBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.GetObject<string>(stringHandle).IndexOf(ManagedInteropRuntime.GetObject<string>(valueHandle), ((StringComparison)comparison))", "Expected JSON manifest to include enum parameter managed target.");
+    Assert(
+        indexOfBinding.GetProperty("wrappers").EnumerateArray().Any(static wrapper =>
+            wrapper.GetProperty("signature").GetString() == "pub fn index_of_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<i32, Exception>"),
+        "Expected JSON manifest to include enum-accepting string wrapper.");
+
+    var startsWithBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_starts_with_string");
+    Assert(startsWithBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.GetObject<string>(stringHandle).StartsWith(ManagedInteropRuntime.GetObject<string>(valueHandle), ((StringComparison)comparison))", "Expected JSON manifest to include StartsWith enum parameter target.");
+    Assert(
+        startsWithBinding.GetProperty("wrappers").EnumerateArray().Any(static wrapper =>
+            wrapper.GetProperty("signature").GetString() == "pub fn starts_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>"),
+        "Expected JSON manifest to include StartsWith comparison wrapper.");
+    var endsWithBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_ends_with_string");
+    Assert(endsWithBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.GetObject<string>(stringHandle).EndsWith(ManagedInteropRuntime.GetObject<string>(valueHandle), ((StringComparison)comparison))", "Expected JSON manifest to include EndsWith enum parameter target.");
+    Assert(
+        endsWithBinding.GetProperty("wrappers").EnumerateArray().Any(static wrapper =>
+            wrapper.GetProperty("signature").GetString() == "pub fn ends_with_comparison(&self, value: &ManagedString, comparison: StringComparison) -> Result<bool, Exception>"),
+        "Expected JSON manifest to include EndsWith comparison wrapper.");
+
+    var splitBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_split_string_options");
+    Assert(splitBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.GetObject<string>(stringHandle).Split(ManagedInteropRuntime.GetObject<string>(separatorHandle), ((StringSplitOptions)options))", "Expected JSON manifest to include flags-parameter split target.");
+    Assert(splitBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("signature").GetString() == "pub fn split(&self, separator: &ManagedString, options: StringSplitOptions) -> Result<ManagedStringArray, Exception>", "Expected JSON manifest to include split wrapper signature.");
+
+    var directoryGetFilesBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_io_directory_get_files_string_string");
+    Assert(directoryGetFilesBinding.GetProperty("managedTarget").GetString() == "Directory.GetFiles(ManagedInteropRuntime.GetObject<string>(pathHandle), ManagedInteropRuntime.GetObject<string>(searchPatternHandle))", "Expected JSON manifest to include Directory.GetFiles target.");
+    Assert(directoryGetFilesBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::io::directory::get_files", "Expected JSON manifest to include Directory.GetFiles wrapper path.");
+
+    var stringArrayFactoryBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_string_array_from_strings");
+    Assert(stringArrayFactoryBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.CreateStringArray(ManagedInteropRuntime.GetObject<string>(firstHandle), ManagedInteropRuntime.GetObject<string>(secondHandle), ManagedInteropRuntime.GetObject<string>(thirdHandle))", "Expected JSON manifest to include object-array factory target.");
+    Assert(stringArrayFactoryBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::ManagedStringArray::from_strings", "Expected JSON manifest to include object-array wrapper path.");
+
+    var intArrayCopyBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_int_array_copy");
+    Assert(intArrayCopyBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.CopyInt32Array(ManagedInteropRuntime.GetObject<int[]>(arrayHandle), destinationPointer, destinationCapacity)", "Expected JSON manifest to include primitive-array copy target.");
+    Assert(intArrayCopyBinding.GetProperty("parameters").EnumerateArray().Any(static parameter =>
+        parameter.GetProperty("name").GetString() == "destinationPointer"
+        && parameter.GetProperty("rustAbiType").GetString() == "*mut i32"), "Expected JSON manifest to include primitive-array pointer ABI metadata.");
+    Assert(intArrayCopyBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::ManagedIntArray::copy_into", "Expected JSON manifest to include primitive-array wrapper path.");
+
+    var byteArrayCopyBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rust_mcil_bindgen_system_byte_array_copy");
+    Assert(byteArrayCopyBinding.GetProperty("managedTarget").GetString() == "ManagedInteropRuntime.CopyByteArray(ManagedInteropRuntime.GetObject<byte[]>(arrayHandle), destinationPointer, destinationCapacity)", "Expected JSON manifest to include byte-array copy target.");
+    Assert(byteArrayCopyBinding.GetProperty("parameters").EnumerateArray().Any(static parameter =>
+        parameter.GetProperty("name").GetString() == "destinationPointer"
+        && parameter.GetProperty("rustAbiType").GetString() == "*mut u8"), "Expected JSON manifest to include byte-array pointer ABI metadata.");
+    Assert(byteArrayCopyBinding.GetProperty("wrappers").EnumerateArray().Single().GetProperty("path").GetString() == "system::ManagedByteArray::copy_into", "Expected JSON manifest to include byte-array wrapper path.");
+}
+
+static void GeneratedBindingPackWritesDeterministicArtifacts()
+{
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var firstPackDirectory = Path.Combine(Path.GetTempPath(), $"rust-msil-bindings-pack-a-{Guid.NewGuid():N}");
+    var secondPackDirectory = Path.Combine(Path.GetTempPath(), $"rust-msil-bindings-pack-b-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(firstPackDirectory);
+    Directory.CreateDirectory(secondPackDirectory);
+
+    try
+    {
+        BindingArtifactPackGenerator.WritePack(surface, firstPackDirectory);
+        BindingArtifactPackGenerator.WritePack(surface, secondPackDirectory);
+
+        var expectedFiles = new[]
+        {
+            BindingArtifactPackGenerator.RustModuleFileName,
+            BindingArtifactPackGenerator.ManagedGlueFileName,
+            BindingArtifactPackGenerator.TextManifestFileName,
+            BindingArtifactPackGenerator.JsonManifestFileName,
+            BindingArtifactPackGenerator.SummaryFileName
+        };
+        foreach (var fileName in expectedFiles)
+        {
+            Assert(File.Exists(Path.Combine(firstPackDirectory, fileName)), $"Expected binding pack to write {fileName}.");
+            Assert(
+                File.ReadAllText(Path.Combine(firstPackDirectory, fileName)) == File.ReadAllText(Path.Combine(secondPackDirectory, fileName)),
+                $"Expected binding pack artifact {fileName} to be deterministic.");
+        }
+
+        Assert(
+            File.ReadAllText(Path.Combine(firstPackDirectory, BindingArtifactPackGenerator.RustModuleFileName)) == RustBindingGenerator.GenerateSystemModule(surface),
+            "Expected binding pack Rust module artifact to match the generator output.");
+        Assert(
+            File.ReadAllText(Path.Combine(firstPackDirectory, BindingArtifactPackGenerator.ManagedGlueFileName)) == ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface),
+            "Expected binding pack managed glue artifact to match the generator output.");
+
+        using var summary = JsonDocument.Parse(File.ReadAllText(Path.Combine(firstPackDirectory, BindingArtifactPackGenerator.SummaryFileName)));
+        var root = summary.RootElement;
+        Assert(root.GetProperty("formatVersion").GetInt32() == 2, "Expected binding pack summary format version.");
+        Assert(root.GetProperty("generatedBy").GetString() == "RustMcil.Bindings", "Expected binding pack summary generator name.");
+        Assert(!string.IsNullOrWhiteSpace(root.GetProperty("generatorVersion").GetString()), "Expected binding pack summary to include a generator version.");
+        Assert(root.GetProperty("managedAssemblies").GetArrayLength() > 0, "Expected binding pack summary to include managed assembly identities.");
+        var ownershipRules = root.GetProperty("ownershipRules").EnumerateArray().ToArray();
+        Assert(ownershipRules.Any(static rule =>
+            rule.GetProperty("name").GetString() == "object-handle" &&
+            rule.GetProperty("rule").GetString()!.Contains("rust_mcil_bindgen_system_object_release", StringComparison.Ordinal)),
+            "Expected binding pack summary to document object-handle release ownership.");
+        Assert(ownershipRules.Any(static rule =>
+            rule.GetProperty("name").GetString() == "exception-handle" &&
+            rule.GetProperty("rule").GetString()!.Contains("rust_mcil_bindgen_system_exception_release", StringComparison.Ordinal)),
+            "Expected binding pack summary to document exception-handle release ownership.");
+        Assert(ownershipRules.Any(static rule =>
+            rule.GetProperty("name").GetString() == "object-handle-callback" &&
+            rule.GetProperty("rule").GetString()!.Contains("borrowed input handles", StringComparison.Ordinal)),
+            "Expected binding pack summary to document object-handle callback ownership.");
+
+        var artifactEntries = root.GetProperty("artifacts").EnumerateArray().ToArray();
+        Assert(artifactEntries.Length == 4, "Expected binding pack summary to include the generated artifacts, excluding the summary itself.");
+        foreach (var artifact in artifactEntries)
+        {
+            var relativePath = artifact.GetProperty("path").GetString()
+                ?? throw new InvalidOperationException("Binding pack summary artifact path was null.");
+            var bytes = File.ReadAllBytes(Path.Combine(firstPackDirectory, relativePath));
+            var expectedHash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            Assert(artifact.GetProperty("sha256").GetString() == expectedHash, $"Expected binding pack summary hash for {relativePath} to match file contents.");
+            Assert(artifact.GetProperty("byteCount").GetInt32() == bytes.Length, $"Expected binding pack summary byte count for {relativePath} to match file contents.");
+        }
+    }
+    finally
+    {
+        if (Directory.Exists(firstPackDirectory))
+        {
+            Directory.Delete(firstPackDirectory, recursive: true);
+        }
+
+        if (Directory.Exists(secondPackDirectory))
+        {
+            Directory.Delete(secondPackDirectory, recursive: true);
+        }
+    }
 }
 
 static string GetBackendGeneratedBindingGluePath()
@@ -7118,6 +7731,7 @@ static void StdConsoleBuildsWithBuildStdStd()
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
     var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_console.");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_console_probe"), "Expected build-std std_console to contain std_console_probe.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "std_console_runtime_value_probe"), "Expected build-std std_console to contain std_console_runtime_value_probe.");
     Assert(moduleSummary.Functions.Count >= 5, $"Expected LTO'd std_console to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
 
     var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
@@ -7129,11 +7743,21 @@ static void StdConsoleBuildsWithBuildStdStd()
     using var outputWriter = new StringWriter(CultureInfo.InvariantCulture);
     using var errorWriter = new StringWriter(CultureInfo.InvariantCulture);
     object? actualResult;
+    object? runtimeResult;
+    string probeOutput;
+    string probeError;
+    string runtimeOutput;
     try
     {
         Console.SetOut(outputWriter);
         Console.SetError(errorWriter);
         actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_console_probe", [], llvmRoot);
+        probeOutput = outputWriter.ToString();
+        probeError = errorWriter.ToString();
+        outputWriter.GetStringBuilder().Clear();
+        errorWriter.GetStringBuilder().Clear();
+        runtimeResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "std_console_runtime_value_probe", [17], llvmRoot);
+        runtimeOutput = outputWriter.ToString();
     }
     finally
     {
@@ -7142,8 +7766,10 @@ static void StdConsoleBuildsWithBuildStdStd()
     }
 
     Assert(Equals(actualResult, 0), $"Expected build-std std_console_probe invocation to return 0, but got '{actualResult}'.");
-    Assert(outputWriter.ToString().Contains("std_console: hello stdout", StringComparison.Ordinal), "Expected println! output to be rendered by the std::io print bridge.");
-    Assert(errorWriter.ToString().Contains("std_console: hello stderr", StringComparison.Ordinal), "Expected eprintln! output to be rendered by the std::io eprint bridge.");
+    Assert(probeOutput.Contains("std_console: hello stdout", StringComparison.Ordinal), "Expected println! output to be rendered by the std::io print bridge.");
+    Assert(probeError.Contains("std_console: hello stderr", StringComparison.Ordinal), "Expected eprintln! output to be rendered by the std::io eprint bridge.");
+    Assert(Equals(runtimeResult, 0), $"Expected build-std std_console_runtime_value_probe invocation to return 0, but got '{runtimeResult}'.");
+    Assert(runtimeOutput.Contains("std_console: runtime=17 doubled=34", StringComparison.Ordinal), "Expected runtime i32 fmt arguments to be rendered by the std::io print bridge.");
 }
 
 static void DepHeavyCrosscrateCallsResolveThroughLto()
@@ -7395,6 +8021,12 @@ static void TraitObjectProbeReturnsExpectedResult()
 
     var mulResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "trait_object_score", [1], llvmRoot);
     Assert(Equals(mulResult, 15), $"Expected trait_object_score(1) to return 15, but got '{mulResult}'.");
+
+    var addPairResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "trait_object_pair_score", [0], llvmRoot);
+    Assert(Equals(addPairResult, 507), $"Expected trait_object_pair_score(0) to return 507, but got '{addPairResult}'.");
+
+    var mulPairResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "trait_object_pair_score", [1], llvmRoot);
+    Assert(Equals(mulPairResult, 1503), $"Expected trait_object_pair_score(1) to return 1503, but got '{mulPairResult}'.");
 }
 
 static void BinTrivialSampleBuildsFromCargoManifest()
@@ -7641,8 +8273,7 @@ static void GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput()
 {
     var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("generated_bindings_lousygrep", "generated_bindings_lousygrep");
     var workspaceRoot = FindWorkspaceRoot() ?? throw new InvalidOperationException("Workspace root could not be determined.");
-    var fixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "input.txt");
-    var secondFixturePath = Path.Combine(workspaceRoot, "samples", "lousygrep_primitive", "fixtures", "second.txt");
+    var fixtureDirectory = Path.Combine(workspaceRoot, "samples", "generated_bindings_lousygrep", "fixtures");
 
     using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
     LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
@@ -7660,8 +8291,9 @@ static void GeneratedBindingsLousygrepSampleEmitsRunnableConsoleOutput()
     };
     startInfo.ArgumentList.Add(tempAssembly.Path);
     startInfo.ArgumentList.Add("runtime");
-    startInfo.ArgumentList.Add(fixturePath);
-    startInfo.ArgumentList.Add(secondFixturePath);
+    startInfo.ArgumentList.Add(fixtureDirectory);
+    startInfo.ArgumentList.Add("input.txt");
+    startInfo.ArgumentList.Add("second.txt");
 
     using var process = System.Diagnostics.Process.Start(startInfo)
         ?? throw new InvalidOperationException("Failed to start the emitted console assembly with dotnet.");
@@ -18764,6 +19396,67 @@ file sealed class ScannerBindableProbe
 
     public Stream OpenStream()
         => Stream.Null;
+}
+
+file sealed class ScannerUnsupportedProbe
+{
+    public int Supported(int value)
+        => value;
+
+    public Stream OpenStream()
+        => Stream.Null;
+
+    public int UsesStream(Stream stream)
+        => stream.CanRead ? 1 : 0;
+
+    public void RefValue(ref int value)
+        => value++;
+
+    public void OutValue(out int value)
+        => value = 1;
+
+    public T Echo<T>(T value)
+        => value;
+
+    public System.Collections.Generic.IReadOnlyList<int> ClosedGeneric()
+        => Array.Empty<int>();
+
+    public int[,] MatrixValues()
+        => new int[0, 0];
+
+    public void Callback(Action callback)
+        => callback();
+
+    public ScannerLongBackedEnum LongEnum()
+        => ScannerLongBackedEnum.One;
+
+    public int this[int index]
+        => index;
+
+    public event EventHandler Changed
+    {
+        add { }
+        remove { }
+    }
+}
+
+file enum ScannerLongBackedEnum : long
+{
+    One = 1
+}
+
+file enum ScannerIntBackedEnum
+{
+    One = 1
+}
+
+file sealed class ScannerOverloadCollisionProbe
+{
+    public int Collide(int value)
+        => value;
+
+    public int Collide(ScannerIntBackedEnum value)
+        => (int)value;
 }
 
 file sealed class SkipTestException(string message) : Exception(message);

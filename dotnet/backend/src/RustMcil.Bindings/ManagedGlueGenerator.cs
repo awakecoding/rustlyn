@@ -89,6 +89,12 @@ public static class ManagedGlueGenerator
                 builder.AppendLine(";");
                 break;
 
+            case ManagedGlueLongResult integer64:
+                builder.Append("            return ");
+                builder.Append(integer64.ValueExpression.ToCode());
+                builder.AppendLine(";");
+                break;
+
             case ManagedGlueFloatResult single:
                 builder.Append("            return ");
                 builder.Append(single.ValueExpression.ToCode());

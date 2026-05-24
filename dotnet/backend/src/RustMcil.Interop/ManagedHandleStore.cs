@@ -17,6 +17,31 @@ public sealed class ManagedHandleStore
         }
     }
 
+    public ManagedHandleSnapshot Snapshot
+    {
+        get
+        {
+            lock (gate)
+            {
+                var objectCount = 0;
+                var exceptionCount = 0;
+                foreach (var entry in entries.Values)
+                {
+                    if (entry.Kind == ManagedHandleKind.Object)
+                    {
+                        objectCount++;
+                    }
+                    else if (entry.Kind == ManagedHandleKind.Exception)
+                    {
+                        exceptionCount++;
+                    }
+                }
+
+                return new ManagedHandleSnapshot(objectCount, exceptionCount);
+            }
+        }
+    }
+
     public ManagedObjectHandle AddObject(object value)
         => new(Add(value, ManagedHandleKind.Object));
 
@@ -24,11 +49,9 @@ public sealed class ManagedHandleStore
         => new(Add(exception, ManagedHandleKind.Exception));
 
     public T GetObject<T>(ManagedObjectHandle handle)
-        where T : class
         => GetObject<T>(handle.Value);
 
     public T GetObject<T>(int handle)
-        where T : class
         => Get<T>(handle, ManagedHandleKind.Object);
 
     public Exception GetException(ManagedExceptionHandle handle)
@@ -38,7 +61,6 @@ public sealed class ManagedHandleStore
         => Get<Exception>(handle, ManagedHandleKind.Exception);
 
     public bool TryGetObject<T>(ManagedObjectHandle handle, out T? value)
-        where T : class
         => TryGet(handle.Value, ManagedHandleKind.Object, out value);
 
     public bool TryGetException(ManagedExceptionHandle handle, out Exception? value)
@@ -102,15 +124,14 @@ public sealed class ManagedHandleStore
     }
 
     private T Get<T>(int handle, ManagedHandleKind expectedKind)
-        where T : class
     {
         var entry = GetEntry(handle, expectedKind);
-        return entry.Value as T
-            ?? throw new InvalidOperationException($"Managed handle {handle} stores '{entry.Value.GetType().FullName}', not '{typeof(T).FullName}'.");
+        return entry.Value is T typedValue
+            ? typedValue
+            : throw new InvalidOperationException($"Managed handle {handle} stores '{entry.Value.GetType().FullName}', not '{typeof(T).FullName}'.");
     }
 
     private bool TryGet<T>(int handle, ManagedHandleKind expectedKind, out T? value)
-        where T : class
     {
         lock (gate)
         {
@@ -123,7 +144,7 @@ public sealed class ManagedHandleStore
             }
         }
 
-        value = null;
+        value = default;
         return false;
     }
 
@@ -151,4 +172,9 @@ public sealed class ManagedHandleStore
     }
 
     private sealed record HandleEntry(object Value, ManagedHandleKind Kind);
+}
+
+public sealed record ManagedHandleSnapshot(int ObjectCount, int ExceptionCount)
+{
+    public int TotalCount => ObjectCount + ExceptionCount;
 }

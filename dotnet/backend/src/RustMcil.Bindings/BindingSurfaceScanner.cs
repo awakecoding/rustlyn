@@ -8,45 +8,228 @@ namespace RustMcil.Bindings;
 /// </summary>
 public static class BindingSurfaceScanner
 {
+    public static IReadOnlyList<ScannedBinding> CreateStaticScalarMethodBindings(params StaticScalarMethodBindingRequest[] requests)
+    {
+        ArgumentNullException.ThrowIfNull(requests);
+        return requests.Select(CreateStaticScalarMethodBinding).ToArray();
+    }
+
+    public static IReadOnlyList<ScannedBinding> CreateStaticObjectHandleMethodBindings(params StaticObjectHandleMethodBindingRequest[] requests)
+    {
+        ArgumentNullException.ThrowIfNull(requests);
+        return requests.Select(CreateStaticObjectHandleMethodBinding).ToArray();
+    }
+
+    public static ScannedBinding CreateStaticScalarMethodBinding(StaticScalarMethodBindingRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var method = request.DeclaringType.GetMethod(request.MethodName, BindingFlags.Public | BindingFlags.Static, request.ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Static scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' could not be resolved.");
+        if (!method.IsStatic)
+        {
+            throw new InvalidOperationException($"Static scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' is not static.");
+        }
+
+        if (!IsScalarBindingType(method.ReturnType))
+        {
+            throw new InvalidOperationException($"Static scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported return type '{method.ReturnType}'.");
+        }
+
+        foreach (var parameterType in request.ParameterTypes)
+        {
+            if (!IsScalarBindingType(parameterType))
+            {
+                throw new InvalidOperationException($"Static scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported parameter type '{parameterType}'.");
+            }
+        }
+
+        var parameterNames = CreateStableParameterNames(request.ParameterTypes.Count);
+        var symbol = CreateSymbol(method, request.ParameterTypes);
+        var helperMethodName = CreateHelperMethodName(symbol);
+        var glueParameters = parameterNames.Zip(request.ParameterTypes, static (name, type) => new ManagedGlueParameter(ToManagedGlueTypeName(type), name)).ToArray();
+        var arguments = glueParameters.Select(static parameter => ManagedGlueExpression.Parameter(parameter.Name)).ToArray();
+        var result = CreateScalarResult(
+            method.ReturnType,
+            ManagedGlueExpression.StaticMethod(request.DeclaringType, request.MethodName, request.ParameterTypes, arguments));
+        var operation = ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", result);
+        var parametersWithException = glueParameters.Append(new ManagedGlueParameter("IntPtr", "exceptionOutPointer")).ToArray();
+        var glue = new ManagedGlueBinding(symbol, helperMethodName, parametersWithException, operation);
+        var rustParameterList = parameterNames.Zip(request.ParameterTypes, static (name, type) => $"{name}: {ToRustTypeName(type)}");
+        var wrapper = new RustWrapperMethod(
+            request.Container,
+            $"pub fn {ToSnakeCase(request.MethodName)}({string.Join(", ", rustParameterList)}) -> Result<{ToRustTypeName(method.ReturnType)}, Exception>",
+            symbol,
+            parameterNames,
+            parameterNames.Length == 1 ? parameterNames[0] : "value",
+            RustWrapperResult.Scalar(ToRustTypeName(method.ReturnType)));
+
+        var requirement = ManagedApiRequirement.Method(
+            FormatMethodDisplayName(request.DeclaringType, request.MethodName, request.ParameterTypes.ToArray()),
+            request.DeclaringType,
+            request.MethodName,
+            request.ParameterTypes);
+        return new ScannedBinding(requirement, glue, wrapper);
+    }
+
+    public static ScannedBinding CreateStaticObjectHandleMethodBinding(StaticObjectHandleMethodBindingRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var method = request.DeclaringType.GetMethod(request.MethodName, BindingFlags.Public | BindingFlags.Static, request.ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Static object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' could not be resolved.");
+        if (!method.IsStatic)
+        {
+            throw new InvalidOperationException($"Static object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' is not static.");
+        }
+
+        if (!IsObjectHandleBindingType(method.ReturnType))
+        {
+            throw new InvalidOperationException($"Static object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported return type '{method.ReturnType}'.");
+        }
+
+        foreach (var parameterType in request.ParameterTypes)
+        {
+            if (!IsObjectHandleBindingType(parameterType))
+            {
+                throw new InvalidOperationException($"Static object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported parameter type '{parameterType}'.");
+            }
+        }
+
+        var discoveredParameterNames = method.GetParameters()
+            .Select(static parameter => string.IsNullOrWhiteSpace(parameter.Name) ? null : parameter.Name)
+            .ToArray();
+        var managedParameterNames = new string[discoveredParameterNames.Length];
+        for (var index = 0; index < discoveredParameterNames.Length; index++)
+        {
+            managedParameterNames[index] = discoveredParameterNames[index]
+                ?? $"value{(index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+
+        var symbol = CreateSymbol(method, request.ParameterTypes);
+        var helperMethodName = CreateHelperMethodName(symbol);
+        var glueParameters = managedParameterNames.Zip(request.ParameterTypes, static (name, type) => new ManagedGlueParameter("int", $"{name}Handle")).ToArray();
+        var arguments = glueParameters.Zip(request.ParameterTypes, static (parameter, type) => ManagedGlueExpression.ManagedObject(type, parameter.Name)).ToArray();
+        var result = ManagedGlueResult.ObjectHandle(
+            ManagedGlueExpression.StaticMethod(request.DeclaringType, request.MethodName, request.ParameterTypes, arguments));
+        var operation = ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", result);
+        var parametersWithException = glueParameters.Append(new ManagedGlueParameter("IntPtr", "exceptionOutPointer")).ToArray();
+        var glue = new ManagedGlueBinding(symbol, helperMethodName, parametersWithException, operation);
+
+        var rustParameterNames = managedParameterNames.Select(ToSnakeCase).ToArray();
+        var rustParameters = rustParameterNames.Zip(request.ParameterTypes, static (name, type) => $"{name}: &{ToRustObjectHandleTypeName(type)}").ToArray();
+        var wrapper = new RustWrapperMethod(
+            request.Container,
+            $"pub fn {ToSnakeCase(request.MethodName)}({string.Join(", ", rustParameters)}) -> Result<{ToRustObjectHandleTypeName(method.ReturnType)}, Exception>",
+            symbol,
+            rustParameterNames.Select(static name => $"{name}.handle()").ToArray(),
+            "object_handle",
+            RustWrapperResult.ObjectHandle(ToRustObjectHandleTypeName(method.ReturnType)));
+
+        var requirement = ManagedApiRequirement.Method(
+            FormatMethodDisplayName(request.DeclaringType, request.MethodName, request.ParameterTypes.ToArray()),
+            request.DeclaringType,
+            request.MethodName,
+            request.ParameterTypes);
+        return new ScannedBinding(requirement, glue, wrapper);
+    }
+
     /// <summary>
     /// Scans a type for public methods and properties that match supported binding signatures.
     /// Returns requirements for methods whose parameters are all bindable types.
     /// </summary>
     public static IReadOnlyList<ManagedApiRequirement> ScanType(Type type)
     {
+        return ScanTypeWithDiagnostics(type).Requirements;
+    }
+
+    public static BindingSurfaceScanResult ScanTypeWithDiagnostics(Type type)
+    {
         ArgumentNullException.ThrowIfNull(type);
 
         var requirements = new List<ManagedApiRequirement>();
+        var unsupportedShapes = new List<BindingScanUnsupportedShape>();
 
         // Always add a type requirement
         var typeName = type.FullName ?? type.Name;
         requirements.Add(ManagedApiRequirement.ForType(typeName, type));
 
+        var supportedMethodCandidates = new List<(MethodInfo Method, string DisplayName, ManagedApiRequirement Requirement)>();
+
         // Scan public static and instance methods.
-        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .OrderBy(static method => method.Name, StringComparer.Ordinal)
+            .ThenBy(static method => FormatParameterList(method.GetParameters().Select(static parameter => parameter.ParameterType)), StringComparer.Ordinal))
         {
             if (method.IsSpecialName) continue; // skip property accessors
             var parameters = method.GetParameters();
-            if (!AllParametersBindable(parameters)) continue;
-            if (!IsReturnTypeBindable(method.ReturnType)) continue;
-
             var paramTypes = parameters.Select(p => p.ParameterType).ToArray();
             var displayName = FormatMethodDisplayName(type, method.Name, paramTypes);
-            requirements.Add(ManagedApiRequirement.Method(displayName, type, method.Name, paramTypes));
+            var unsupportedReason = GetUnsupportedMethodReason(method, parameters);
+            if (unsupportedReason is not null)
+            {
+                unsupportedShapes.Add(new BindingScanUnsupportedShape(displayName, ManagedApiRequirementKind.Method, method.Name, unsupportedReason));
+                continue;
+            }
+
+            supportedMethodCandidates.Add((method, displayName, ManagedApiRequirement.Method(displayName, type, method.Name, paramTypes)));
+        }
+
+        foreach (var collisionGroup in supportedMethodCandidates
+            .GroupBy(static candidate => CreateProjectedRustMethodSignatureKey(candidate.Method), StringComparer.Ordinal)
+            .Where(static group => group.Count() > 1))
+        {
+            var collidingMembers = string.Join(", ", collisionGroup.Select(static candidate => candidate.DisplayName).Order(StringComparer.Ordinal));
+            foreach (var candidate in collisionGroup)
+            {
+                unsupportedShapes.Add(new BindingScanUnsupportedShape(
+                    candidate.DisplayName,
+                    ManagedApiRequirementKind.Method,
+                    candidate.Method.Name,
+                    $"overload projects to duplicate Rust wrapper signature '{collisionGroup.Key}' with {collidingMembers}"));
+            }
+        }
+
+        var collisionKeys = supportedMethodCandidates
+            .GroupBy(static candidate => CreateProjectedRustMethodSignatureKey(candidate.Method), StringComparer.Ordinal)
+            .Where(static group => group.Count() > 1)
+            .Select(static group => group.Key)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var candidate in supportedMethodCandidates)
+        {
+            if (!collisionKeys.Contains(CreateProjectedRustMethodSignatureKey(candidate.Method)))
+            {
+                requirements.Add(candidate.Requirement);
+            }
         }
 
         // Scan public static and instance properties with getters.
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .OrderBy(static property => property.Name, StringComparer.Ordinal))
         {
-            if (property.GetMethod is null) continue;
-            if (property.GetIndexParameters().Length != 0) continue;
-            if (!IsReturnTypeBindable(property.PropertyType)) continue;
-
             var displayName = $"{typeName}.{property.Name}";
+            var unsupportedReason = GetUnsupportedPropertyReason(property);
+            if (unsupportedReason is not null)
+            {
+                unsupportedShapes.Add(new BindingScanUnsupportedShape(displayName, ManagedApiRequirementKind.Property, property.Name, unsupportedReason));
+                continue;
+            }
+
             requirements.Add(ManagedApiRequirement.Property(displayName, type, property.Name));
         }
 
-        return requirements;
+        foreach (var eventInfo in type.GetEvents(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .OrderBy(static eventInfo => eventInfo.Name, StringComparer.Ordinal))
+        {
+            var displayName = $"{typeName}.{eventInfo.Name}";
+            unsupportedShapes.Add(new BindingScanUnsupportedShape(
+                displayName,
+                ManagedApiRequirementKind.Event,
+                eventInfo.Name,
+                "events are not supported; project explicit delegate registration methods instead"));
+        }
+
+        return new BindingSurfaceScanResult(requirements, unsupportedShapes);
     }
 
     /// <summary>
@@ -87,6 +270,11 @@ public static class BindingSurfaceScanner
         if (type == typeof(IntPtr)) return true;
         if (type.IsArray)
         {
+            if (!type.IsSZArray)
+            {
+                return false;
+            }
+
             var elementType = type.GetElementType();
             return elementType is not null && IsTypeBindable(elementType);
         }
@@ -106,12 +294,116 @@ public static class BindingSurfaceScanner
         return IsTypeBindable(returnType);
     }
 
+    private static string? GetUnsupportedMethodReason(MethodInfo method, ParameterInfo[] parameters)
+    {
+        if (method.IsGenericMethodDefinition || method.ContainsGenericParameters)
+        {
+            return "generic or open methods are not supported";
+        }
+
+        foreach (var parameter in parameters)
+        {
+            if (parameter.ParameterType.IsByRef)
+            {
+                var direction = parameter.IsOut ? "out" : "ref";
+                return $"{direction} parameter '{parameter.Name}' is not supported";
+            }
+
+            var typeReason = GetUnsupportedTypeReason(parameter.ParameterType);
+            if (typeReason is not null)
+            {
+                return $"parameter '{parameter.Name}' has unsupported type '{FormatDiagnosticTypeName(parameter.ParameterType)}': {typeReason}";
+            }
+        }
+
+        if (!IsReturnTypeBindable(method.ReturnType))
+        {
+            return $"return type '{FormatDiagnosticTypeName(method.ReturnType)}' is unsupported: {GetUnsupportedTypeReason(method.ReturnType)}";
+        }
+
+        return null;
+    }
+
+    private static string? GetUnsupportedPropertyReason(PropertyInfo property)
+    {
+        if (property.GetMethod is null)
+        {
+            return "property has no public getter";
+        }
+
+        if (property.GetIndexParameters().Length != 0)
+        {
+            return "indexed properties are not supported";
+        }
+
+        var typeReason = GetUnsupportedTypeReason(property.PropertyType);
+        if (typeReason is not null)
+        {
+            return $"property type '{FormatDiagnosticTypeName(property.PropertyType)}' is unsupported: {typeReason}";
+        }
+
+        return null;
+    }
+
+    private static string? GetUnsupportedTypeReason(Type type)
+    {
+        if (IsTypeBindable(type))
+        {
+            return null;
+        }
+
+        if (type.IsByRef)
+        {
+            return "by-reference types are not supported";
+        }
+
+        if (type.IsArray)
+        {
+            if (!type.IsSZArray)
+            {
+                return $"array rank {type.GetArrayRank().ToString(System.Globalization.CultureInfo.InvariantCulture)} is not supported";
+            }
+
+            var elementType = type.GetElementType();
+            var elementReason = elementType is null ? "array element type could not be resolved" : GetUnsupportedTypeReason(elementType);
+            return elementReason is null
+                ? null
+                : $"array element type '{FormatDiagnosticTypeName(elementType!)}' is unsupported: {elementReason}";
+        }
+
+        if (typeof(Delegate).IsAssignableFrom(type))
+        {
+            return "delegate types are not supported; use explicit callback ABI metadata";
+        }
+
+        if (type.ContainsGenericParameters)
+        {
+            return "generic or open types are not supported";
+        }
+
+        if (type.IsGenericType)
+        {
+            var genericArguments = string.Join(", ", type.GetGenericArguments().Select(FormatDiagnosticTypeName));
+            return $"generic constructed types are not supported; generic arguments: {genericArguments}";
+        }
+
+        if (type.IsEnum)
+        {
+            return $"enum backing type '{FormatDiagnosticTypeName(Enum.GetUnderlyingType(type))}' is not supported";
+        }
+
+        return "type is not in the bindable scalar, string, pointer, enum, or array set";
+    }
+
     private static string FormatMethodDisplayName(Type type, string methodName, Type[] paramTypes)
     {
         var typeName = type.FullName ?? type.Name;
-        var paramNames = string.Join(", ", paramTypes.Select(FormatTypeName));
+        var paramNames = FormatParameterList(paramTypes);
         return $"{typeName}.{methodName}({paramNames})";
     }
+
+    private static string FormatParameterList(IEnumerable<Type> parameterTypes)
+        => string.Join(", ", parameterTypes.Select(FormatTypeName));
 
     private static string FormatTypeName(Type type)
     {
@@ -132,4 +424,243 @@ public static class BindingSurfaceScanner
 
         return type.Name;
     }
+
+    private static string FormatDiagnosticTypeName(Type type)
+        => type.FullName?.Replace('+', '.') ?? type.Name;
+
+    private static bool IsScalarBindingType(Type type)
+    {
+        return type == typeof(int)
+            || type == typeof(long)
+            || type == typeof(float)
+            || type == typeof(double);
+    }
+
+    private static bool IsObjectHandleBindingType(Type type)
+    {
+        return type == typeof(string)
+            || type == typeof(string[])
+            || type == typeof(int[])
+            || type == typeof(byte[]);
+    }
+
+    private static string[] CreateStableParameterNames(int parameterCount)
+    {
+        return parameterCount switch
+        {
+            0 => [],
+            1 => ["value"],
+            2 => ["x", "y"],
+            _ => Enumerable.Range(0, parameterCount).Select(static index => $"value{(index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}").ToArray()
+        };
+    }
+
+    private static string CreateSymbol(MethodInfo method, IReadOnlyList<Type> parameterTypes)
+    {
+        var fullName = method.DeclaringType?.FullName
+            ?? throw new InvalidOperationException($"Method '{method.Name}' does not expose a declaring type.");
+        var typePart = string.Join("_", fullName.Split('.').Select(static part => part.ToLowerInvariant()));
+        var suffix = string.Join("_", parameterTypes.Select(ToSymbolTypeSuffix));
+        return $"rust_mcil_bindgen_{typePart}_{ToSnakeCase(method.Name)}_{suffix}";
+    }
+
+    private static string CreateHelperMethodName(string symbol)
+    {
+        const string prefix = "rust_mcil_";
+        var name = symbol.StartsWith(prefix, StringComparison.Ordinal)
+            ? symbol[prefix.Length..]
+            : symbol;
+        return string.Concat(name.Split('_').Select(static part => char.ToUpperInvariant(part[0]) + part[1..]));
+    }
+
+    private static ManagedGlueResult CreateScalarResult(Type returnType, ManagedGlueExpression valueExpression)
+    {
+        if (returnType == typeof(int))
+        {
+            return ManagedGlueResult.Int(valueExpression);
+        }
+
+        if (returnType == typeof(long))
+        {
+            return ManagedGlueResult.Long(valueExpression);
+        }
+
+        if (returnType == typeof(float))
+        {
+            return ManagedGlueResult.Float(valueExpression);
+        }
+
+        if (returnType == typeof(double))
+        {
+            return ManagedGlueResult.Double(valueExpression);
+        }
+
+        throw new NotSupportedException($"Scalar return type '{returnType}' is not supported.");
+    }
+
+    private static string ToManagedGlueTypeName(Type type)
+    {
+        if (type == typeof(int))
+        {
+            return "int";
+        }
+
+        if (type == typeof(long))
+        {
+            return "long";
+        }
+
+        if (type == typeof(float))
+        {
+            return "float";
+        }
+
+        if (type == typeof(double))
+        {
+            return "double";
+        }
+
+        throw new NotSupportedException($"Managed glue scalar type '{type}' is not supported.");
+    }
+
+    private static string ToRustTypeName(Type type)
+    {
+        if (type == typeof(int))
+        {
+            return "i32";
+        }
+
+        if (type == typeof(long))
+        {
+            return "i64";
+        }
+
+        if (type == typeof(float))
+        {
+            return "f32";
+        }
+
+        if (type == typeof(double))
+        {
+            return "f64";
+        }
+
+        throw new NotSupportedException($"Rust scalar type '{type}' is not supported.");
+    }
+
+    private static string ToRustObjectHandleTypeName(Type type)
+    {
+        if (type == typeof(string))
+        {
+            return "ManagedString";
+        }
+
+        if (type == typeof(string[]))
+        {
+            return "ManagedStringArray";
+        }
+
+        if (type == typeof(int[]))
+        {
+            return "ManagedIntArray";
+        }
+
+        if (type == typeof(byte[]))
+        {
+            return "ManagedByteArray";
+        }
+
+        throw new NotSupportedException($"Rust object-handle type '{type}' is not supported.");
+    }
+
+    private static string ToSymbolTypeSuffix(Type type)
+    {
+        if (type == typeof(string)) return "string";
+        if (type == typeof(bool)) return "bool";
+        if (type.IsArray)
+        {
+            var elementType = type.GetElementType()
+                ?? throw new InvalidOperationException($"Array type '{type}' does not expose an element type.");
+            return $"{ToSymbolTypeSuffix(elementType)}_array";
+        }
+
+        return ToRustTypeName(type);
+    }
+
+    private static string CreateProjectedRustMethodSignatureKey(MethodInfo method)
+    {
+        var parameterTypes = method.GetParameters().Select(static parameter => ToProjectedRustTypeKey(parameter.ParameterType));
+        return $"{ToSnakeCase(method.Name)}({string.Join(", ", parameterTypes)})";
+    }
+
+    private static string ToProjectedRustTypeKey(Type type)
+    {
+        if (type == typeof(string)) return "ManagedString";
+        if (type == typeof(int)) return "i32";
+        if (type == typeof(long)) return "i64";
+        if (type == typeof(float)) return "f32";
+        if (type == typeof(double)) return "f64";
+        if (type == typeof(bool)) return "bool";
+        if (type == typeof(IntPtr)) return "ptr";
+        if (type.IsEnum && Enum.GetUnderlyingType(type) == typeof(int)) return "i32";
+        if (type.IsSZArray)
+        {
+            var elementType = type.GetElementType()
+                ?? throw new InvalidOperationException($"Array type '{type}' does not expose an element type.");
+            return $"{ToProjectedRustTypeKey(elementType)}[]";
+        }
+
+        return FormatDiagnosticTypeName(type);
+    }
+
+    private static string ToSnakeCase(string value)
+    {
+        var chars = new List<char>(value.Length + 8);
+        for (var index = 0; index < value.Length; index++)
+        {
+            var current = value[index];
+            if (char.IsUpper(current))
+            {
+                if (index > 0)
+                {
+                    chars.Add('_');
+                }
+
+                chars.Add(char.ToLowerInvariant(current));
+            }
+            else
+            {
+                chars.Add(current);
+            }
+        }
+
+        return new string(chars.ToArray());
+    }
 }
+
+public sealed record StaticScalarMethodBindingRequest(
+    Type DeclaringType,
+    string MethodName,
+    IReadOnlyList<Type> ParameterTypes,
+    RustWrapperContainer Container);
+
+public sealed record StaticObjectHandleMethodBindingRequest(
+    Type DeclaringType,
+    string MethodName,
+    IReadOnlyList<Type> ParameterTypes,
+    RustWrapperContainer Container);
+
+public sealed record ScannedBinding(
+    ManagedApiRequirement Requirement,
+    ManagedGlueBinding ManagedGlueBinding,
+    RustWrapperMethod RustWrapperMethod);
+
+public sealed record BindingSurfaceScanResult(
+    IReadOnlyList<ManagedApiRequirement> Requirements,
+    IReadOnlyList<BindingScanUnsupportedShape> UnsupportedShapes);
+
+public sealed record BindingScanUnsupportedShape(
+    string DisplayName,
+    ManagedApiRequirementKind Kind,
+    string? MemberName,
+    string Reason);

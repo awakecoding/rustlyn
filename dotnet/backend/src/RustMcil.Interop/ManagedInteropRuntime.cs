@@ -6,6 +6,13 @@ public static class ManagedInteropRuntime
 
     public static int HandleCount => Store.Count;
 
+    public static int ObjectHandleCount => Store.Snapshot.ObjectCount;
+
+    public static int ExceptionHandleCount => Store.Snapshot.ExceptionCount;
+
+    public static ManagedHandleSnapshot SnapshotHandles()
+        => Store.Snapshot;
+
     public static ManagedObjectHandle AddObject(object value)
         => Store.AddObject(value);
 
@@ -19,11 +26,9 @@ public static class ManagedInteropRuntime
         => AddException(exception).Value;
 
     public static T GetObject<T>(ManagedObjectHandle handle)
-        where T : class
         => Store.GetObject<T>(handle);
 
     public static T GetObject<T>(int handle)
-        where T : class
         => Store.GetObject<T>(handle);
 
     public static Exception GetException(ManagedExceptionHandle handle)
@@ -93,6 +98,51 @@ public static class ManagedInteropRuntime
     {
         var value = Store.GetObject<string>(handle);
         return InteropUtf16.CopyChars(value, destinationPointer, destinationCapacityInChars);
+    }
+
+    public static int[] CreateInt32Array(int first, int second, int third)
+        => [first, second, third];
+
+    public static byte[] CreateByteArray(int first, int second, int third)
+        => [checked((byte)first), checked((byte)second), checked((byte)third)];
+
+    public static string[] CreateStringArray(string first, string second, string third)
+        => [first, second, third];
+
+    public static int CopyInt32Array(int[] values, IntPtr destinationPointer, long destinationCapacity)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        ArgumentOutOfRangeException.ThrowIfNegative(destinationCapacity);
+        if (destinationCapacity > 0 && destinationPointer == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(destinationPointer));
+        }
+
+        var count = Math.Min(values.Length, checked((int)destinationCapacity));
+        for (var index = 0; index < count; index++)
+        {
+            System.Runtime.InteropServices.Marshal.WriteInt32(destinationPointer, index * sizeof(int), values[index]);
+        }
+
+        return values.Length;
+    }
+
+    public static int CopyByteArray(byte[] values, IntPtr destinationPointer, long destinationCapacity)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        ArgumentOutOfRangeException.ThrowIfNegative(destinationCapacity);
+        if (destinationCapacity > 0 && destinationPointer == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(destinationPointer));
+        }
+
+        var count = Math.Min(values.Length, checked((int)destinationCapacity));
+        if (count > 0)
+        {
+            System.Runtime.InteropServices.Marshal.Copy(values, 0, destinationPointer, count);
+        }
+
+        return values.Length;
     }
 
     public static void Clear()

@@ -8,6 +8,9 @@ public abstract record ManagedGlueExpression
     public static ManagedGlueExpression EnumValue(Type enumType, string name)
         => new ManagedGlueEnumValueExpression(enumType, name);
 
+    public static ManagedGlueExpression EnumParameter(Type enumType, string parameterName)
+        => new ManagedGlueEnumParameterExpression(enumType, parameterName);
+
     public static ManagedGlueExpression Utf8String(string pointerParameterName, string lengthParameterName)
         => new ManagedGlueUtf8StringExpression(pointerParameterName, lengthParameterName);
 
@@ -61,6 +64,20 @@ public sealed record ManagedGlueEnumValueExpression(Type EnumType, string Name) 
         if (!EnumType.IsEnum || !Enum.GetNames(EnumType).Contains(Name, StringComparer.Ordinal))
         {
             throw new InvalidOperationException($"Managed glue enum value '{ManagedGlueCode.TypeName(EnumType)}.{Name}' could not be resolved.");
+        }
+    }
+}
+
+public sealed record ManagedGlueEnumParameterExpression(Type EnumType, string ParameterName) : ManagedGlueExpression
+{
+    public override string ToCode()
+        => $"(({ManagedGlueCode.TypeName(EnumType)}){ParameterName})";
+
+    public override void Validate()
+    {
+        if (!EnumType.IsEnum || Enum.GetUnderlyingType(EnumType) != typeof(int))
+        {
+            throw new InvalidOperationException($"Managed glue enum parameter '{ManagedGlueCode.TypeName(EnumType)} {ParameterName}' must be an int-backed enum.");
         }
     }
 }
@@ -236,6 +253,11 @@ internal static class ManagedGlueCode
         if (type == typeof(int))
         {
             return "int";
+        }
+
+        if (type == typeof(byte))
+        {
+            return "byte";
         }
 
         if (type == typeof(long))
