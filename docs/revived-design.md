@@ -85,7 +85,7 @@ Compared with Eric Sink's original design, this revived repo intentionally chang
 - from historical proof-of-concept packaging to repeatable local validation in repo
 - from implicit compiler behavior to aggressively pinned sample-by-sample coverage
 
-The tracked recovery plan for closing those gaps is [SourceGear parity roadmap](sourcegear-parity-roadmap.md), with the current fake-link gate recorded in [SourceGear fake-link decision](sourcegear-fake-link-decision.md).
+The tracked recovery plan for closing those gaps is complete; see the [historical parity record](sourcegear-parity-roadmap.md). The forward-looking [roadmap](roadmap.md) charts what comes next, with the current fake-link gate permanently closed per [SourceGear fake-link decision](sourcegear-fake-link-decision.md).
 
 ## Current Repository Shape
 

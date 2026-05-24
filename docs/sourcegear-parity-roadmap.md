@@ -1,8 +1,10 @@
-# SourceGear Parity Roadmap
+# SourceGear Parity Roadmap (Historical)
 
-This document tracks the work needed to recover the same kind of feature set as Eric Sink's original SourceGear/Llama Rust-on-.NET experiment while keeping the revived repository's cargo-first, test-first workflow.
+> **Status: Complete.** All parity items are closed. For the forward-looking roadmap beyond SourceGear, see [roadmap.md](roadmap.md).
 
-The goal is feature parity, not implementation parity. The old SDK's MSBuild shell, fake linker, generated bindings, runtime helpers, and OS compatibility layer are requirements evidence; the revived implementation should modernize those ideas around the current backend, .NET 10, current Rust, and focused executable validation.
+This document records the work that recovered the same kind of feature set as Eric Sink's original SourceGear/Llama Rust-on-.NET experiment. It is kept as historical evidence of what was achieved during the parity phase.
+
+The goal was feature parity, not implementation parity. The old SDK's MSBuild shell, fake linker, generated bindings, runtime helpers, and OS compatibility layer were requirements evidence; the revived implementation modernized those ideas around the current backend, .NET 10, current Rust, and focused executable validation.
 
 ## Parity Invariants
 

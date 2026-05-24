@@ -1,22 +1,27 @@
 # rustlyn
 
-`rustlyn` is a working experiment for turning Rust-produced LLVM bitcode into managed .NET assemblies.
+Rustlyn translates Rust-produced LLVM bitcode into managed .NET assemblies — like [Roslyn](https://github.com/dotnet/roslyn) is the .NET compiler platform, Rustlyn aims to be the Rust-to-.NET compiler platform.
 
-The immediate value of the repo is practical rather than aspirational:
+Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/entries/sg_rust_dotnet_preview.html) (2020–2021), which proved that LLVM-to-CIL translation is viable. Rustlyn reconstructs and modernizes that approach on .NET 10, current Rust toolchains, and LLVM 20 — then goes beyond what the original experiment demonstrated.
 
-- inspect LLVM bitcode coming out of small Rust crates
-- lower that bitcode into a simpler backend-owned IR
-- emit runnable managed assemblies from that IR
-- keep growing a regression corpus of narrow Rust samples that pin backend behavior
+**What it does today:**
 
-This is not trying to recreate the original SourceGear SDK developer experience first. The current repository is focused on recovering the compiler pipeline, validating it end to end, and documenting what was different about the original Eric Sink experiment versus the revived design in this repo.
+- Translates Rust crates to runnable .NET assemblies via LLVM bitcode
+- Handles arithmetic, control flow, structs, closures, trait objects, atomics, cross-crate LTO
+- Generates Rust bindings for .NET APIs (Console, File, Path, String, Environment)
+- Provides an MSBuild SDK for `dotnet build` on `.rsproj` files
+- Bridges to Avalonia for desktop GUI from Rust
+
+See the [roadmap](docs/roadmap.md) for what's next.
 
 ## What you can do here today
 
-1. Build sample bitcode from a crate in `samples/`.
-2. Inspect or lower the resulting LLVM bitcode.
-3. Emit a managed assembly or invoke a method directly from bitcode.
-4. Run smoke checks and focused backend regression tests while bringing up new slices.
+1. Translate a Rust crate into a managed .NET assembly via `rustlyn translate`.
+2. Inspect or lower LLVM bitcode to see the intermediate representation.
+3. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
+4. Run generated-bindings workloads (lousygrep) that call .NET APIs from Rust.
+5. Run the Avalonia desktop GUI sample entirely from Rust bitcode.
+6. Validate with smoke tests and a 18,000+ line regression harness.
 
 ## Quick Start
 
