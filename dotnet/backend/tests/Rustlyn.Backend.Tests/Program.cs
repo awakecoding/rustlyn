@@ -69,6 +69,9 @@ RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsV
 RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
 RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
 RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
+RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
+RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
+RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -1961,6 +1964,37 @@ static void LowererProducesTypedFenceRecord()
     var fence = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredFenceInstruction>().FirstOrDefault();
     Assert(fence is not null, "Expected lowered fence to materialize as LoweredFenceInstruction.");
     Assert(fence!.Ordering.StartsWith("seq_cst", StringComparison.Ordinal), $"Expected ordering 'seq_cst', got '{fence.Ordering}'.");
+}
+
+static void TypeLayoutScalarsAreCorrectlySized()
+{
+    var svc = new TypeLayoutService();
+    Assert(svc.TryGetLayout("i1", out var i1) && i1.SizeInBits == 1 && i1.Category == TypeLayoutCategory.Integer, "i1 layout incorrect.");
+    Assert(svc.TryGetLayout("i8", out var i8) && i8.SizeInBits == 8 && i8.SizeInBytes == 1, "i8 layout incorrect.");
+    Assert(svc.TryGetLayout("i32", out var i32) && i32.SizeInBits == 32 && i32.AlignmentInBytes == 4, "i32 layout incorrect.");
+    Assert(svc.TryGetLayout("i64", out var i64) && i64.SizeInBits == 64 && i64.AlignmentInBytes == 8, "i64 layout incorrect.");
+    Assert(svc.TryGetLayout("i128", out var i128) && i128.SizeInBits == 128, "i128 layout incorrect.");
+    Assert(svc.TryGetLayout("float", out var f32) && f32.SizeInBits == 32 && f32.Category == TypeLayoutCategory.Float, "float layout incorrect.");
+    Assert(svc.TryGetLayout("double", out var f64) && f64.SizeInBits == 64, "double layout incorrect.");
+}
+
+static void TypeLayoutPointerHonorsDataLayout()
+{
+    var svc64 = new TypeLayoutService(new LoweredModuleMetadata(DataLayout: "e-m:e-p:64:64-i64:64-n8:16:32:64-S128"));
+    Assert(svc64.TryGetLayout("ptr", out var p64) && p64.SizeInBits == 64 && p64.Category == TypeLayoutCategory.Pointer, "ptr should be 64-bit per datalayout.");
+    Assert(svc64.TryGetLayout("i32*", out var i32p) && i32p.SizeInBits == 64, "i32* should follow pointer width.");
+
+    var svc32 = new TypeLayoutService(new LoweredModuleMetadata(DataLayout: "e-p:32:32-i32:32-n32"));
+    Assert(svc32.TryGetLayout("ptr", out var p32) && p32.SizeInBits == 32, "ptr should be 32-bit per datalayout.");
+}
+
+static void TypeLayoutReturnsUnknownForAggregates()
+{
+    var svc = new TypeLayoutService();
+    Assert(!svc.TryGetLayout("{ i32, i64 }", out _), "Aggregate type should not be recognized by scalar layout service.");
+    Assert(!svc.TryGetLayout("[4 x i32]", out _), "Array type should not be recognized yet.");
+    var unk = svc.GetLayoutOrUnknown("%MyStruct");
+    Assert(unk.Category == TypeLayoutCategory.Unknown, "Unknown type should report Unknown category.");
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
