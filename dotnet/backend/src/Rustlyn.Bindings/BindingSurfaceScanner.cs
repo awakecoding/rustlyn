@@ -635,6 +635,107 @@ public static class BindingSurfaceScanner
         return bindings;
     }
 
+    /// <summary>
+    /// Generates bindings for a single concrete type (including closed generic types like List&lt;int&gt;).
+    /// Scans all public static methods, instance methods, and constructors with supported signatures.
+    /// </summary>
+    public static IReadOnlyList<ScannedBinding> GenerateBindingsForType(Type type, RustWrapperContainer container)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+
+        if (type.IsGenericTypeDefinition)
+        {
+            throw new ArgumentException($"Type '{type}' is an open generic definition. Provide a closed generic type (e.g., typeof(List<int>)).", nameof(type));
+        }
+
+        var bindings = new List<ScannedBinding>();
+
+        // Static methods
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Where(m => !m.IsSpecialName && !m.IsGenericMethodDefinition && !m.ContainsGenericParameters)
+            .OrderBy(m => m.Name, StringComparer.Ordinal))
+        {
+            var parameters = method.GetParameters();
+            if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+            var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+            if (paramTypes.All(IsScalarBindingType) && IsScalarBindingType(method.ReturnType))
+            {
+                try
+                {
+                    var request = new StaticScalarMethodBindingRequest(type, method.Name, paramTypes, container);
+                    bindings.Add(CreateStaticScalarMethodBinding(request));
+                }
+                catch (InvalidOperationException) { }
+                catch (NotSupportedException) { }
+            }
+            else if (paramTypes.All(t => IsObjectHandleBindingType(t) || IsScalarBindingType(t)) && IsObjectHandleBindingType(method.ReturnType))
+            {
+                try
+                {
+                    var request = new StaticObjectHandleMethodBindingRequest(type, method.Name, paramTypes, container);
+                    bindings.Add(CreateStaticObjectHandleMethodBinding(request));
+                }
+                catch (InvalidOperationException) { }
+                catch (NotSupportedException) { }
+            }
+        }
+
+        // Instance methods
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Where(m => !m.IsSpecialName && !m.IsGenericMethodDefinition && !m.ContainsGenericParameters)
+            .OrderBy(m => m.Name, StringComparer.Ordinal))
+        {
+            var parameters = method.GetParameters();
+            if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+            var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+            if (paramTypes.All(IsScalarBindingType) && IsScalarBindingType(method.ReturnType))
+            {
+                try
+                {
+                    var request = new InstanceScalarMethodBindingRequest(type, method.Name, paramTypes, container);
+                    bindings.Add(CreateInstanceScalarMethodBinding(request));
+                }
+                catch (InvalidOperationException) { }
+                catch (NotSupportedException) { }
+            }
+            else if (paramTypes.All(t => IsObjectHandleBindingType(t) || IsScalarBindingType(t)) && IsObjectHandleBindingType(method.ReturnType))
+            {
+                try
+                {
+                    var request = new InstanceObjectHandleMethodBindingRequest(type, method.Name, paramTypes, container);
+                    bindings.Add(CreateInstanceObjectHandleMethodBinding(request));
+                }
+                catch (InvalidOperationException) { }
+                catch (NotSupportedException) { }
+            }
+        }
+
+        // Constructors
+        foreach (var ctor in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .Where(c => !c.ContainsGenericParameters)
+            .OrderBy(c => c.GetParameters().Length))
+        {
+            var parameters = ctor.GetParameters();
+            if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+            var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+            if (paramTypes.All(t => IsScalarBindingType(t) || IsObjectHandleBindingType(t)))
+            {
+                try
+                {
+                    var request = new ConstructorBindingRequest(type, paramTypes, container);
+                    bindings.Add(CreateConstructorBinding(request));
+                }
+                catch (InvalidOperationException) { }
+                catch (NotSupportedException) { }
+            }
+        }
+
+        return bindings;
+    }
+
     private static bool MatchesNamespaceFilter(Type type, string? filter)
     {
         if (string.IsNullOrEmpty(filter)) return true;

@@ -126,6 +126,25 @@ if (args.Length >= 2
     return 0;
 }
 
+if (args.Length >= 2
+    && string.Equals(args[0], "bindgen-type", StringComparison.Ordinal))
+{
+    var typeName = args[1];
+    var type = Type.GetType(typeName, throwOnError: false)
+        ?? throw new InvalidOperationException($"Type '{typeName}' could not be resolved. Use assembly-qualified name for types outside mscorlib.");
+    var bindings = BindingSurfaceScanner.GenerateBindingsForType(type, RustWrapperContainer.Math);
+
+    Console.WriteLine($"Type: {type.FullName}");
+    Console.WriteLine($"Bindings generated: {bindings.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+    foreach (var binding in bindings)
+    {
+        Console.WriteLine($"  {binding.Requirement.DisplayName}");
+    }
+
+    return 0;
+}
+
 Console.Error.WriteLine("Usage: Rustlyn.Bindings.Tool managed-glue --out <path>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool rust-system-module --out <path>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool manifest --out <path>");
@@ -134,4 +153,5 @@ Console.Error.WriteLine("       Rustlyn.Bindings.Tool pack --out <directory>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool validate --type <assembly-qualified-type>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool scan <assembly.dll> [--namespace <filter>]");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool bindgen <assembly.dll> [--namespace <filter>]");
+Console.Error.WriteLine("       Rustlyn.Bindings.Tool bindgen-type <assembly-qualified-type>");
 return 2;
