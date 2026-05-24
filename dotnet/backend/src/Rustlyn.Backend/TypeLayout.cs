@@ -82,7 +82,128 @@ public sealed class TypeLayoutService
                 info = new TypeLayoutInfo(0, 8, TypeLayoutCategory.Unknown); return true;
         }
 
+        if (TryLayoutAggregate(t, out info)) { return true; }
+        if (TryLayoutArrayOrVector(t, out info)) { return true; }
+
         return false;
+    }
+
+    private bool TryLayoutAggregate(string t, out TypeLayoutInfo info)
+    {
+        info = default;
+        // Strip optional "packed" wrapper: <{ ... }>
+        var packed = t.StartsWith("<{", StringComparison.Ordinal) && t.EndsWith("}>", StringComparison.Ordinal);
+        if (packed) { t = t.Substring(1, t.Length - 2); }
+        if (!t.StartsWith("{", StringComparison.Ordinal) || !t.EndsWith("}", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var inner = t.Substring(1, t.Length - 2).Trim();
+        if (inner.Length == 0)
+        {
+            info = new TypeLayoutInfo(0, 8, TypeLayoutCategory.Aggregate);
+            return true;
+        }
+
+        var members = SplitTopLevel(inner, ',');
+        var totalBits = 0;
+        var maxAlign = 8;
+        foreach (var memberRaw in members)
+        {
+            var member = memberRaw.Trim();
+            if (!TryGetLayout(member, out var m))
+            {
+                return false;
+            }
+            var memberAlign = packed ? 8 : m.AlignmentInBits;
+            // Pad current offset up to member alignment.
+            totalBits = AlignUp(totalBits, memberAlign);
+            totalBits += m.SizeInBits;
+            if (memberAlign > maxAlign) { maxAlign = memberAlign; }
+        }
+
+        var structAlign = packed ? 8 : maxAlign;
+        var aligned = AlignUp(totalBits, structAlign);
+        info = new TypeLayoutInfo(aligned, structAlign, TypeLayoutCategory.Aggregate);
+        return true;
+    }
+
+    private bool TryLayoutArrayOrVector(string t, out TypeLayoutInfo info)
+    {
+        info = default;
+        var isVector = t.StartsWith("<", StringComparison.Ordinal) && t.EndsWith(">", StringComparison.Ordinal);
+        var isArray = t.StartsWith("[", StringComparison.Ordinal) && t.EndsWith("]", StringComparison.Ordinal);
+        if (!isVector && !isArray) { return false; }
+
+        var inner = t.Substring(1, t.Length - 2).Trim();
+        var xIdx = inner.IndexOf(" x ", StringComparison.Ordinal);
+        if (xIdx <= 0) { return false; }
+
+        var countText = inner.Substring(0, xIdx).Trim();
+        var elemText = inner.Substring(xIdx + 3).Trim();
+        if (!int.TryParse(countText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count) || count < 0)
+        {
+            return false;
+        }
+        if (!TryGetLayout(elemText, out var elem)) { return false; }
+
+        // For arrays, each element is padded up to element alignment.
+        // For vectors, elements are packed but the whole vector takes natural alignment up to its bit-width.
+        if (isVector)
+        {
+            var totalBits = count * elem.SizeInBits;
+            var vAlign = NaturalAlignForBits(totalBits);
+            info = new TypeLayoutInfo(totalBits, vAlign, TypeLayoutCategory.Vector);
+            return true;
+        }
+
+        var stride = AlignUp(elem.SizeInBits, elem.AlignmentInBits);
+        var arraySize = stride * count;
+        info = new TypeLayoutInfo(arraySize, elem.AlignmentInBits, TypeLayoutCategory.Aggregate);
+        return true;
+    }
+
+    private static int AlignUp(int bits, int alignment)
+    {
+        if (alignment <= 1) { return bits; }
+        var rem = bits % alignment;
+        return rem == 0 ? bits : bits + (alignment - rem);
+    }
+
+    private static IReadOnlyList<string> SplitTopLevel(string text, char separator)
+    {
+        var parts = new List<string>();
+        var depthAngle = 0;
+        var depthBrace = 0;
+        var depthBracket = 0;
+        var depthParen = 0;
+        var start = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            switch (c)
+            {
+                case '<': depthAngle++; break;
+                case '>': if (depthAngle > 0) depthAngle--; break;
+                case '{': depthBrace++; break;
+                case '}': if (depthBrace > 0) depthBrace--; break;
+                case '[': depthBracket++; break;
+                case ']': if (depthBracket > 0) depthBracket--; break;
+                case '(': depthParen++; break;
+                case ')': if (depthParen > 0) depthParen--; break;
+            }
+            if (c == separator && depthAngle == 0 && depthBrace == 0 && depthBracket == 0 && depthParen == 0)
+            {
+                parts.Add(text.Substring(start, i - start));
+                start = i + 1;
+            }
+        }
+        if (start <= text.Length)
+        {
+            parts.Add(text.Substring(start));
+        }
+        return parts;
     }
 
     public TypeLayoutInfo GetLayoutOrUnknown(string llvmType)

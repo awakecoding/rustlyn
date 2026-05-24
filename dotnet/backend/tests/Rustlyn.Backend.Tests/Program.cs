@@ -72,6 +72,8 @@ RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, fail
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
+RunTest("TypeLayoutAggregatesAreSizedWithPadding", TypeLayoutAggregatesAreSizedWithPadding, failures);
+RunTest("TypeLayoutArraysAndVectorsAreSized", TypeLayoutArraysAndVectorsAreSized, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -1992,10 +1994,42 @@ static void TypeLayoutPointerHonorsDataLayout()
 static void TypeLayoutReturnsUnknownForAggregates()
 {
     var svc = new TypeLayoutService();
-    Assert(!svc.TryGetLayout("{ i32, i64 }", out _), "Aggregate type should not be recognized by scalar layout service.");
-    Assert(!svc.TryGetLayout("[4 x i32]", out _), "Array type should not be recognized yet.");
+    // Aggregates and arrays now layout concretely; opaque named types still report Unknown.
+    Assert(svc.TryGetLayout("{ i32, i64 }", out _), "Aggregate type should be sized by aggregate layout.");
+    Assert(svc.TryGetLayout("[4 x i32]", out _), "Array type should be sized by array layout.");
     var unk = svc.GetLayoutOrUnknown("%MyStruct");
-    Assert(unk.Category == TypeLayoutCategory.Unknown, "Unknown type should report Unknown category.");
+    Assert(unk.Category == TypeLayoutCategory.Unknown, "Unknown named type should report Unknown category.");
+}
+
+static void TypeLayoutAggregatesAreSizedWithPadding()
+{
+    var svc = new TypeLayoutService();
+
+    // { i8, i32 } => i8 at 0, 3 bytes pad, i32 at 4, total 8 bytes, align 4.
+    Assert(svc.TryGetLayout("{ i8, i32 }", out var s1) && s1.SizeInBytes == 8 && s1.AlignmentInBytes == 4,
+        $"Expected {{i8,i32}} to be 8 bytes / 4-align, got size={s1.SizeInBytes} align={s1.AlignmentInBytes}.");
+
+    // { i32, i64 } => i32 at 0, 4 bytes pad, i64 at 8, total 16 bytes, align 8.
+    Assert(svc.TryGetLayout("{ i32, i64 }", out var s2) && s2.SizeInBytes == 16 && s2.AlignmentInBytes == 8,
+        $"Expected {{i32,i64}} to be 16 bytes / 8-align, got size={s2.SizeInBytes} align={s2.AlignmentInBytes}.");
+
+    // Empty aggregate
+    Assert(svc.TryGetLayout("{}", out var s3) && s3.SizeInBits == 0, "Empty aggregate should size to 0.");
+
+    // Packed <{ i8, i32 }> => no padding, 5 bytes, align 1.
+    Assert(svc.TryGetLayout("<{ i8, i32 }>", out var s4) && s4.SizeInBytes == 5 && s4.AlignmentInBytes == 1,
+        $"Expected packed <{{i8,i32}}> to be 5 bytes / 1-align, got size={s4.SizeInBytes} align={s4.AlignmentInBytes}.");
+}
+
+static void TypeLayoutArraysAndVectorsAreSized()
+{
+    var svc = new TypeLayoutService();
+    Assert(svc.TryGetLayout("[4 x i32]", out var a) && a.SizeInBytes == 16 && a.AlignmentInBytes == 4,
+        $"Expected [4 x i32] to be 16 bytes / 4-align, got size={a.SizeInBytes} align={a.AlignmentInBytes}.");
+    Assert(svc.TryGetLayout("[3 x i8]", out var a2) && a2.SizeInBytes == 3 && a2.AlignmentInBytes == 1,
+        $"Expected [3 x i8] to be 3 bytes / 1-align, got size={a2.SizeInBytes} align={a2.AlignmentInBytes}.");
+    Assert(svc.TryGetLayout("<4 x i32>", out var v) && v.SizeInBytes == 16 && v.Category == TypeLayoutCategory.Vector,
+        $"Expected <4 x i32> to be 16 bytes and Vector category, got size={v.SizeInBytes} cat={v.Category}.");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
