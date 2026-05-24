@@ -630,6 +630,20 @@ public static class BindingSurfaceScanner
                     catch (NotSupportedException) { }
                 }
             }
+
+            // Events — record delegate analysis for each event but don't emit bindings yet
+            // (event subscription requires callback bridge infrastructure, which is tracked separately)
+            foreach (var evt in type.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .OrderBy(e => e.Name, StringComparer.Ordinal))
+            {
+                if (evt.EventHandlerType is null) continue;
+                var analysis = AnalyzeEvent(evt);
+                if (analysis.DelegateAnalysis.IsBindable && analysis.HasPublicAdd && analysis.HasPublicRemove)
+                {
+                    // Event is bindable — will be emitted when callback bridge generation is implemented
+                    // For now, this validates the event surface is reachable
+                }
+            }
         }
 
         return bindings;
@@ -1144,6 +1158,93 @@ public static class BindingSurfaceScanner
 
         return new string(chars.ToArray());
     }
+
+    /// <summary>
+    /// Analyzes a delegate type to determine if it can be bridged as a callback from Rust.
+    /// Returns the callback signature shape, or an unsupported reason if the delegate cannot be bridged.
+    /// </summary>
+    public static DelegateAnalysisResult AnalyzeDelegateType(Type delegateType)
+    {
+        ArgumentNullException.ThrowIfNull(delegateType);
+
+        if (!typeof(Delegate).IsAssignableFrom(delegateType))
+        {
+            throw new ArgumentException($"Type '{delegateType}' is not a delegate type.", nameof(delegateType));
+        }
+
+        var invokeMethod = delegateType.GetMethod("Invoke")
+            ?? throw new InvalidOperationException($"Delegate type '{delegateType}' does not expose an Invoke method.");
+
+        var parameters = invokeMethod.GetParameters();
+        var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+        var returnType = invokeMethod.ReturnType;
+
+        // Check if all parameters and return type are bindable
+        var unsupportedParams = new List<string>();
+        foreach (var param in parameters)
+        {
+            if (!IsScalarBindingType(param.ParameterType) && !IsObjectHandleBindingType(param.ParameterType))
+            {
+                if (param.ParameterType != typeof(void))
+                {
+                    unsupportedParams.Add($"parameter '{param.Name}' has unsupported type '{FormatDiagnosticTypeName(param.ParameterType)}'");
+                }
+            }
+        }
+
+        if (returnType != typeof(void) && !IsScalarBindingType(returnType) && !IsObjectHandleBindingType(returnType))
+        {
+            unsupportedParams.Add($"return type '{FormatDiagnosticTypeName(returnType)}' is unsupported");
+        }
+
+        if (unsupportedParams.Count > 0)
+        {
+            return new DelegateAnalysisResult(
+                delegateType,
+                IsBindable: false,
+                UnsupportedReason: string.Join("; ", unsupportedParams),
+                RustCallbackSignature: null,
+                ParameterTypes: paramTypes,
+                ReturnType: returnType);
+        }
+
+        // Build the Rust callback signature: fn(param_types) -> return_type
+        var rustParams = paramTypes.Select(t => IsScalarBindingType(t) ? ToRustTypeName(t) : "i32");
+        var rustReturn = returnType == typeof(void)
+            ? "()"
+            : IsScalarBindingType(returnType) ? ToRustTypeName(returnType) : "i32";
+        var rustSignature = $"fn({string.Join(", ", rustParams)}) -> {rustReturn}";
+
+        return new DelegateAnalysisResult(
+            delegateType,
+            IsBindable: true,
+            UnsupportedReason: null,
+            RustCallbackSignature: rustSignature,
+            ParameterTypes: paramTypes,
+            ReturnType: returnType);
+    }
+
+    /// <summary>
+    /// Analyzes an event for binding compatibility. Returns info about the event's
+    /// delegate type and whether add/remove handlers can be generated.
+    /// </summary>
+    public static EventAnalysisResult AnalyzeEvent(EventInfo eventInfo)
+    {
+        ArgumentNullException.ThrowIfNull(eventInfo);
+
+        var handlerType = eventInfo.EventHandlerType
+            ?? throw new InvalidOperationException($"Event '{eventInfo.Name}' does not expose a handler type.");
+
+        var delegateResult = AnalyzeDelegateType(handlerType);
+        var addMethod = eventInfo.GetAddMethod(nonPublic: false);
+        var removeMethod = eventInfo.GetRemoveMethod(nonPublic: false);
+
+        return new EventAnalysisResult(
+            eventInfo,
+            delegateResult,
+            HasPublicAdd: addMethod is not null,
+            HasPublicRemove: removeMethod is not null);
+    }
 }
 
 public sealed record StaticScalarMethodBindingRequest(
@@ -1195,3 +1296,17 @@ public sealed record ConstructorBindingRequest(
     Type DeclaringType,
     IReadOnlyList<Type> ParameterTypes,
     RustWrapperContainer Container);
+
+public sealed record DelegateAnalysisResult(
+    Type DelegateType,
+    bool IsBindable,
+    string? UnsupportedReason,
+    string? RustCallbackSignature,
+    IReadOnlyList<Type> ParameterTypes,
+    Type ReturnType);
+
+public sealed record EventAnalysisResult(
+    EventInfo Event,
+    DelegateAnalysisResult DelegateAnalysis,
+    bool HasPublicAdd,
+    bool HasPublicRemove);

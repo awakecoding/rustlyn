@@ -145,6 +145,57 @@ if (args.Length >= 2
     return 0;
 }
 
+if (args.Length >= 2
+    && string.Equals(args[0], "analyze-delegate", StringComparison.Ordinal))
+{
+    var typeName = args[1];
+    var type = Type.GetType(typeName, throwOnError: false)
+        ?? throw new InvalidOperationException($"Type '{typeName}' could not be resolved. Use assembly-qualified name for types outside mscorlib.");
+    var result = BindingSurfaceScanner.AnalyzeDelegateType(type);
+
+    Console.WriteLine($"Delegate: {result.DelegateType.FullName}");
+    Console.WriteLine($"Bindable: {result.IsBindable}");
+    if (result.IsBindable)
+    {
+        Console.WriteLine($"Rust callback: {result.RustCallbackSignature}");
+    }
+    else
+    {
+        Console.WriteLine($"Reason: {result.UnsupportedReason}");
+    }
+
+    return 0;
+}
+
+if (args.Length >= 2
+    && string.Equals(args[0], "analyze-events", StringComparison.Ordinal))
+{
+    var typeName = args[1];
+    var type = Type.GetType(typeName, throwOnError: false)
+        ?? throw new InvalidOperationException($"Type '{typeName}' could not be resolved. Use assembly-qualified name for types outside mscorlib.");
+
+    var events = type.GetEvents(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+    Console.WriteLine($"Type: {type.FullName}");
+    Console.WriteLine($"Events: {events.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+    foreach (var evt in events)
+    {
+        var result = BindingSurfaceScanner.AnalyzeEvent(evt);
+        var status = result.DelegateAnalysis.IsBindable ? "bindable" : "unsupported";
+        Console.WriteLine($"  {evt.Name} ({status})");
+        if (result.DelegateAnalysis.IsBindable)
+        {
+            Console.WriteLine($"    Rust: {result.DelegateAnalysis.RustCallbackSignature}");
+        }
+        else
+        {
+            Console.WriteLine($"    Reason: {result.DelegateAnalysis.UnsupportedReason}");
+        }
+    }
+
+    return 0;
+}
+
 Console.Error.WriteLine("Usage: Rustlyn.Bindings.Tool managed-glue --out <path>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool rust-system-module --out <path>");
 Console.Error.WriteLine("       Rustlyn.Bindings.Tool manifest --out <path>");
