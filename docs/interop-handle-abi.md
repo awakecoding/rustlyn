@@ -1,6 +1,6 @@
 # Interop Handle ABI
 
-This document defines the public ABI contract for managed object handles exchanged between translated Rust code and the .NET runtime via `RustMcil.Interop`.
+This document defines the public ABI contract for managed object handles exchanged between translated Rust code and the .NET runtime via `Rustlyn.Interop`.
 
 ## Handle Representation
 

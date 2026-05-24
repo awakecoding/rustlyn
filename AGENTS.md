@@ -14,10 +14,10 @@ This repo is a backend reconstruction project for translating Rust-produced LLVM
 
 ## Architecture Anchors
 
-- `dotnet/backend/src/RustMcil.Tool/`: CLI entry point for inspect/lower/emit/invoke/translate flows
-- `dotnet/backend/src/RustMcil.Backend/LoweredIrLowerer.cs`: lowered IR parsing and normalization
-- `dotnet/backend/src/RustMcil.Backend/LoweredAssemblyEmitter.cs`: IL emission, helper generation, and intrinsic dispatch
-- `dotnet/backend/tests/RustMcil.Backend.Tests/Program.cs`: regression harness and expected-shape assertions
+- `dotnet/backend/src/Rustlyn.Tool/`: CLI entry point for inspect/lower/emit/invoke/translate flows
+- `dotnet/backend/src/Rustlyn.Backend/LoweredIrLowerer.cs`: lowered IR parsing and normalization
+- `dotnet/backend/src/Rustlyn.Backend/LoweredAssemblyEmitter.cs`: IL emission, helper generation, and intrinsic dispatch
+- `dotnet/backend/tests/Rustlyn.Backend.Tests/Program.cs`: regression harness and expected-shape assertions
 - `scripts/Build-SampleBitcode.ps1`: direct sample-to-bitcode builder
 - `scripts/Test-Smoke.ps1`: focused executable smoke checks
 
@@ -37,17 +37,17 @@ Use these before widening scope:
 .\scripts\Build-SampleBitcode.ps1 -Sample add
 .\scripts\Test-Smoke.ps1 -Sample add -Mode Bitcode
 .\scripts\Test-Smoke.ps1 -Sample add -Mode Cargo
-dotnet run -c Release --project .\dotnet\backend\tests\RustMcil.Backend.Tests\RustMcil.Backend.Tests.csproj
+dotnet run -c Release --project .\dotnet\backend\tests\Rustlyn.Backend.Tests\Rustlyn.Backend.Tests.csproj
 ```
 
 For direct tool work:
 
 ```powershell
-dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- inspect <bitcode>
-dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- lower <bitcode>
-dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- emit <bitcode> --out <assembly>
-dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- invoke <bitcode> --method <name>
-dotnet run --project .\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj -- translate <crate-dir> --out <assembly> --bitcode-out <bitcode>
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- inspect <bitcode>
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- lower <bitcode>
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit <bitcode> --out <assembly>
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- invoke <bitcode> --method <name>
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate <crate-dir> --out <assembly> --bitcode-out <bitcode>
 ```
 
 ## Documentation Split

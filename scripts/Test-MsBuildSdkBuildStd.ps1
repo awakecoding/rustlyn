@@ -11,18 +11,18 @@ $sdkRoot = Join-Path $workspaceRoot "dotnet\backend\src"
 $projectPath = Join-Path $workspaceRoot "samples\msbuild_build_std_core\msbuild_build_std_core.rsproj"
 $outputAssembly = Join-Path $workspaceRoot "samples\msbuild_build_std_core\bin\$Configuration\net10.0\msbuild_build_std_core.dll"
 $bitcodePath = Join-Path $workspaceRoot "samples\msbuild_build_std_core\obj\$Configuration\net10.0\msbuild_build_std_core.bc"
-$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
+$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
 
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
-    throw "RustMcil.Tool build failed with exit code $LASTEXITCODE."
+    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
 }
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
     $env:MSBuildSDKsPath = $sdkRoot
-    dotnet build $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $projectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK build-std sample build failed with exit code $LASTEXITCODE."
     }

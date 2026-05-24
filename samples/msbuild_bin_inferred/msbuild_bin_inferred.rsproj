@@ -1,7 +1,7 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AssemblyName>bin_trivial</AssemblyName>
-    <RustMcilCratePath>..\bin_trivial</RustMcilCratePath>
+    <RustlynCratePath>..\bin_trivial</RustlynCratePath>
   </PropertyGroup>
 </Project>

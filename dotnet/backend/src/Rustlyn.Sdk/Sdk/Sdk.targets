@@ -1,0 +1,107 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <RustlynCratePath Condition="'$(RustlynCratePath)' == '' and '$(RustCratePath)' != ''">$(RustCratePath)</RustlynCratePath>
+    <RustlynCratePath Condition="'$(RustlynCratePath)' == ''">$(MSBuildProjectDirectory)</RustlynCratePath>
+    <RustlynToolchain Condition="'$(RustlynToolchain)' == '' and '$(RustToolchain)' != ''">$(RustToolchain)</RustlynToolchain>
+    <RustEdition Condition="'$(RustEdition)' == ''">2018</RustEdition>
+    <Version Condition="'$(Version)' == ''">0.1.0</Version>
+    <RustlynCargoRelease Condition="'$(RustlynCargoRelease)' == '' and ('$(RustDebugOrRelease)' == 'debug' or '$(RustDebugOrRelease)' == 'Debug')">false</RustlynCargoRelease>
+    <RustlynCargoRelease Condition="'$(RustlynCargoRelease)' == '' and ('$(RustDebugOrRelease)' == 'release' or '$(RustDebugOrRelease)' == 'Release')">true</RustlynCargoRelease>
+    <RustlynCargoRelease Condition="'$(RustlynCargoRelease)' == '' and '$(Configuration)' == 'Debug'">false</RustlynCargoRelease>
+    <RustlynCargoRelease Condition="'$(RustlynCargoRelease)' == ''">true</RustlynCargoRelease>
+    <RustlynGeneratedCargoProjectPath Condition="'$(RustlynGeneratedCargoProjectPath)' == ''">$(IntermediateOutputPath)rs</RustlynGeneratedCargoProjectPath>
+    <RustlynGeneratedCargoSourcePath Condition="'$(RustlynGeneratedCargoSourcePath)' == '' and '$(OutputType)' == 'Exe'">$(MSBuildProjectDirectory)\src\main.rs</RustlynGeneratedCargoSourcePath>
+    <RustlynGeneratedCargoSourcePath Condition="'$(RustlynGeneratedCargoSourcePath)' == ''">$(MSBuildProjectDirectory)\src\lib.rs</RustlynGeneratedCargoSourcePath>
+    <RustlynUseGeneratedCargoProject Condition="'$(RustlynGenerateCargoProject)' == 'true'">true</RustlynUseGeneratedCargoProject>
+    <RustlynUseGeneratedCargoProject Condition="'$(RustlynUseGeneratedCargoProject)' == '' and !Exists('$(RustlynCratePath)\Cargo.toml') and Exists('$(RustlynGeneratedCargoSourcePath)')">true</RustlynUseGeneratedCargoProject>
+    <_RustlynEffectiveCratePath Condition="'$(RustlynUseGeneratedCargoProject)' == 'true'">$(RustlynGeneratedCargoProjectPath)</_RustlynEffectiveCratePath>
+    <_RustlynEffectiveCratePath Condition="'$(_RustlynEffectiveCratePath)' == ''">$(RustlynCratePath)</_RustlynEffectiveCratePath>
+    <_RustlynCargoPackageName>$(AssemblyName.Replace('.', '_'))</_RustlynCargoPackageName>
+    <RustlynOutputPath Condition="'$(RustlynOutputPath)' == ''">$(OutputPath)$(AssemblyName).dll</RustlynOutputPath>
+    <RustlynBitcodeOutputPath Condition="'$(RustlynBitcodeOutputPath)' == ''">$(IntermediateOutputPath)$(AssemblyName).bc</RustlynBitcodeOutputPath>
+    <RustlynRuntimeConfigOutputPath Condition="'$(RustlynRuntimeConfigOutputPath)' == ''">$(OutputPath)$(AssemblyName).runtimeconfig.json</RustlynRuntimeConfigOutputPath>
+    <RustlynBinaryTarget Condition="'$(RustlynBinaryTarget)' == '' and '$(OutputType)' == 'Exe'">$(AssemblyName)</RustlynBinaryTarget>
+  </PropertyGroup>
+
+  <Target Name="Build" DependsOnTargets="RustlynTranslate" />
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+
+  <Target Name="Clean">
+    <ItemGroup>
+      <_RustlynCleanFile Include="$(RustlynOutputPath);$(RustlynBitcodeOutputPath);$(RustlynRuntimeConfigOutputPath)" />
+      <_RustlynSupportAssembly Include="$(RustlynSupportAssemblyNames)" />
+      <_RustlynCleanFile Include="$(OutputPath)%(_RustlynSupportAssembly.Identity)" />
+    </ItemGroup>
+
+    <Delete Files="@(_RustlynCleanFile)" />
+    <RemoveDir Directories="$(RustlynGeneratedCargoProjectPath)" Condition="'$(RustlynGeneratedCargoProjectPath)' != ''" />
+  </Target>
+
+  <Target Name="Restore" />
+
+  <Target Name="RustlynGenerateCargoProject" Condition="'$(RustlynUseGeneratedCargoProject)' == 'true'">
+    <MakeDir Directories="$(RustlynGeneratedCargoProjectPath)" />
+
+    <Error Text="RustCrateReference '%(RustCrateReference.Identity)' requires Version metadata for generated Cargo manifest dependencies." Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.Version)' == ''" />
+
+    <ItemGroup>
+      <_RustlynRustReference Include="@(RustReference)">
+        <Name Condition="'%(RustReference.Name)' != ''">%(RustReference.Name)</Name>
+        <Name Condition="'%(RustReference.Name)' == ''">$([System.IO.Path]::GetFileName('%(RustReference.FullPath)'))</Name>
+      </_RustlynRustReference>
+    </ItemGroup>
+
+    <Error Text="RustReference '%(_RustlynRustReference.Identity)' requires Name metadata or an inferable path name for generated Cargo manifest dependencies." Condition="'@(_RustlynRustReference)' != '' and '%(_RustlynRustReference.Name)' == ''" />
+
+    <ItemGroup>
+      <_RustlynGeneratedCargoLine Include="[package]" />
+      <_RustlynGeneratedCargoLine Include="name = &quot;$(_RustlynCargoPackageName)&quot;" />
+      <_RustlynGeneratedCargoLine Include="version = &quot;$(Version)&quot;" />
+      <_RustlynGeneratedCargoLine Include="edition = &quot;$(RustEdition)&quot;" />
+      <_RustlynGeneratedCargoLine Include="autobins = false" />
+      <_RustlynGeneratedCargoLine Include="autoexamples = false" />
+      <_RustlynGeneratedCargoLine Include="autotests = false" />
+      <_RustlynGeneratedCargoLine Include="autobenches = false" />
+      <_RustlynGeneratedCargoLine Include="[lib]" Condition="'$(OutputType)' != 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="crate-type = [&quot;lib&quot;]" Condition="'$(OutputType)' != 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="path = '$(RustlynGeneratedCargoSourcePath)'" Condition="'$(OutputType)' != 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="[[bin]]" Condition="'$(OutputType)' == 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="name = &quot;$(RustlynBinaryTarget)&quot;" Condition="'$(OutputType)' == 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="path = '$(RustlynGeneratedCargoSourcePath)'" Condition="'$(OutputType)' == 'Exe'" />
+      <_RustlynGeneratedCargoLine Include="[dependencies]" Condition="'@(_RustlynRustReference)' != '' or '@(RustCrateReference)' != ''" />
+      <_RustlynGeneratedCargoLine Include="%(_RustlynRustReference.Name) = { path = '%(_RustlynRustReference.FullPath)' }" Condition="'@(_RustlynRustReference)' != ''" />
+      <_RustlynGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)' }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' == '' and '%(RustCrateReference.Features)' == ''" />
+      <_RustlynGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', default-features = %(RustCrateReference.DefaultFeatures) }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != '' and '%(RustCrateReference.Features)' == ''" />
+      <_RustlynGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', features = ['$([System.String]::Copy('%(RustCrateReference.Features)').Replace(&quot;,&quot;, &quot;','&quot;))'] }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' == '' and '%(RustCrateReference.Features)' != ''" />
+      <_RustlynGeneratedCargoLine Include="%(RustCrateReference.Identity) = { version = '%(RustCrateReference.Version)', default-features = %(RustCrateReference.DefaultFeatures), features = ['$([System.String]::Copy('%(RustCrateReference.Features)').Replace(&quot;,&quot;, &quot;','&quot;))'] }" Condition="'@(RustCrateReference)' != '' and '%(RustCrateReference.DefaultFeatures)' != '' and '%(RustCrateReference.Features)' != ''" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(RustlynGeneratedCargoProjectPath)\Cargo.toml" Lines="@(_RustlynGeneratedCargoLine)" Overwrite="true" />
+  </Target>
+
+  <Target Name="RustlynTranslate" DependsOnTargets="RustlynGenerateCargoProject">
+    <MakeDir Directories="$(OutputPath);$(IntermediateOutputPath)" />
+
+    <PropertyGroup>
+      <_RustlynToolInvocation Condition="'$(RustlynToolDll)' != ''">dotnet &quot;$(RustlynToolDll)&quot;</_RustlynToolInvocation>
+      <_RustlynToolInvocation Condition="'$(RustlynToolDll)' == ''">dotnet run -c &quot;$(RustlynToolConfiguration)&quot; --project &quot;$(RustlynToolProject)&quot; --</_RustlynToolInvocation>
+      <_RustlynTranslateCommand>$(_RustlynToolInvocation) translate &quot;$(_RustlynEffectiveCratePath)&quot; --out &quot;$(RustlynOutputPath)&quot; --bitcode-out &quot;$(RustlynBitcodeOutputPath)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynBinaryTarget)' != ''">$(_RustlynTranslateCommand) --bin &quot;$(RustlynBinaryTarget)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynCargoRelease)' == 'false'">$(_RustlynTranslateCommand) --debug</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynToolchain)' != ''">$(_RustlynTranslateCommand) --toolchain &quot;$(RustlynToolchain)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynTarget)' != ''">$(_RustlynTranslateCommand) --target &quot;$(RustlynTarget)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynBuildStd)' != ''">$(_RustlynTranslateCommand) --build-std &quot;$(RustlynBuildStd)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynBuildStdFeatures)' != ''">$(_RustlynTranslateCommand) --build-std-features &quot;$(RustlynBuildStdFeatures)&quot;</_RustlynTranslateCommand>
+      <_RustlynTranslateCommand Condition="'$(RustlynLlvmRoot)' != ''">$(_RustlynTranslateCommand) --llvm-root &quot;$(RustlynLlvmRoot)&quot;</_RustlynTranslateCommand>
+    </PropertyGroup>
+
+    <Message Text="Rustlyn: translating $(_RustlynEffectiveCratePath) -> $(RustlynOutputPath)" Importance="High" />
+    <Exec Command="$(_RustlynTranslateCommand)" EnvironmentVariables="MSBuildSDKsPath=" />
+
+    <ItemGroup>
+      <FileWrites Include="$(RustlynOutputPath);$(RustlynBitcodeOutputPath);$(RustlynRuntimeConfigOutputPath)" />
+    </ItemGroup>
+  </Target>
+</Project>

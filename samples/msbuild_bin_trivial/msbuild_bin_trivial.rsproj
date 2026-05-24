@@ -1,8 +1,8 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_bin_trivial</AssemblyName>
     <OutputType>Exe</OutputType>
-    <RustMcilCratePath>..\bin_trivial</RustMcilCratePath>
-    <RustMcilBinaryTarget>bin_trivial</RustMcilBinaryTarget>
+    <RustlynCratePath>..\bin_trivial</RustlynCratePath>
+    <RustlynBinaryTarget>bin_trivial</RustlynBinaryTarget>
   </PropertyGroup>
 </Project>

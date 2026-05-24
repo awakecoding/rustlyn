@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Rustlyn.Bindings</AssemblyName>
+    <RootNamespace>Rustlyn.Bindings</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+  </ItemGroup>
+</Project>

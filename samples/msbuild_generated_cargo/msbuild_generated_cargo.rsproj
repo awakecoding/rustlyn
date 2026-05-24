@@ -1,4 +1,4 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_generated_cargo</AssemblyName>
     <RustEdition>2024</RustEdition>

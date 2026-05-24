@@ -1480,7 +1480,7 @@ pub extern "C" fn generated_bindings_score() -> i32 {
         return -180;
     }
 
-    let missing_path = b"__rust_mcil_missing_exception_probe__.txt";
+    let missing_path = b"__rustlyn_missing_exception_probe__.txt";
     let missing_exception = match system::io::file::read_all_lines_utf8_parts(
         missing_path.as_ptr(),
         missing_path.len() as i64,

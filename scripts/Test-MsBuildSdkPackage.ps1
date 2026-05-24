@@ -7,11 +7,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
-$sdkProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Sdk\RustMcil.Sdk.csproj"
-$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
+$sdkProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Sdk\Rustlyn.Sdk.csproj"
+$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
 $packageSource = Join-Path $workspaceRoot "artifacts\scratch\packages"
-$packagePath = Join-Path $packageSource "RustMcil.Sdk.0.1.0-local.nupkg"
+$packagePath = Join-Path $packageSource "Rustlyn.Sdk.0.1.0-local.nupkg"
 $scratchProjectRoot = Join-Path $workspaceRoot "artifacts\scratch\msbuild-sdk-package"
 $nugetPackages = Join-Path $scratchProjectRoot "nuget-packages"
 $projectPath = Join-Path $scratchProjectRoot "msbuild_add_packaged.rsproj"
@@ -31,7 +31,7 @@ $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 $workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
 $fixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"
 $secondFixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt"
-$supportAssemblyNames = @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")
+$supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
 if (Test-Path $scratchProjectRoot) {
     Remove-Item -Recurse -Force $scratchProjectRoot
@@ -45,20 +45,20 @@ New-Item -ItemType Directory -Force -Path $packageSource, $scratchProjectRoot, $
 
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
-    throw "RustMcil.Tool build failed with exit code $LASTEXITCODE."
+    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
 }
 
 dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo
 if ($LASTEXITCODE -ne 0) {
-    throw "RustMcil.Sdk pack failed with exit code $LASTEXITCODE."
+    throw "Rustlyn.Sdk pack failed with exit code $LASTEXITCODE."
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $package = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
 try {
-    $toolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/net10.0/RustMcil.Tool.dll" } | Select-Object -First 1
+    $toolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/net10.0/Rustlyn.Tool.dll" } | Select-Object -First 1
     if ($null -eq $toolEntry) {
-        throw "Expected packaged SDK to contain tools/net10.0/RustMcil.Tool.dll."
+        throw "Expected packaged SDK to contain tools/net10.0/Rustlyn.Tool.dll."
     }
 }
 finally {
@@ -66,32 +66,32 @@ finally {
 }
 
 $projectXml = @"
-<Project Sdk="RustMcil.Sdk/0.1.0-local">
+<Project Sdk="Rustlyn.Sdk/0.1.0-local">
   <PropertyGroup>
     <AssemblyName>msbuild_add_packaged</AssemblyName>
-    <RustMcilCratePath>$addCratePath</RustMcilCratePath>
+    <RustlynCratePath>$addCratePath</RustlynCratePath>
   </PropertyGroup>
 </Project>
 "@
 Set-Content -Path $projectPath -Value $projectXml -Encoding UTF8
 
 $binaryProjectXml = @"
-<Project Sdk="RustMcil.Sdk/0.1.0-local">
+<Project Sdk="Rustlyn.Sdk/0.1.0-local">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AssemblyName>bin_trivial</AssemblyName>
-        <RustMcilCratePath>$binTrivialCratePath</RustMcilCratePath>
+        <RustlynCratePath>$binTrivialCratePath</RustlynCratePath>
     </PropertyGroup>
 </Project>
 "@
 Set-Content -Path $binaryProjectPath -Value $binaryProjectXml -Encoding UTF8
 
 $workloadProjectXml = @"
-<Project Sdk="RustMcil.Sdk/0.1.0-local">
+<Project Sdk="Rustlyn.Sdk/0.1.0-local">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AssemblyName>generated_bindings_lousygrep</AssemblyName>
-        <RustMcilCratePath>$workloadCratePath</RustMcilCratePath>
+        <RustlynCratePath>$workloadCratePath</RustlynCratePath>
     </PropertyGroup>
 </Project>
 "@
@@ -103,7 +103,7 @@ $nugetConfigXml = @"
 <configuration>
   <packageSources>
     <clear />
-    <add key="rust-msil-scratch" value="$packageSourceUri" />
+    <add key="rustlyn-scratch" value="$packageSourceUri" />
   </packageSources>
 </configuration>
 "@

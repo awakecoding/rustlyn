@@ -1,5 +1,0 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-<PropertyGroup>
-<SourceGearRustNetVersion Condition=" '$(SourceGearRustNetVersion)'=='' ">0.1.5</SourceGearRustNetVersion>
-</PropertyGroup>
-</Project>

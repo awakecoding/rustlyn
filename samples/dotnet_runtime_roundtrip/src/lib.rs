@@ -1,18 +1,18 @@
 unsafe extern "C" {
-    fn rust_mcil_dotnet_path_get_file_name_utf8_len(path_ptr: *const u8, path_len: i64) -> i32;
-    fn rust_mcil_dotnet_path_copy_file_name_utf8(
+    fn rustlyn_dotnet_path_get_file_name_utf8_len(path_ptr: *const u8, path_len: i64) -> i32;
+    fn rustlyn_dotnet_path_copy_file_name_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_contains(
+    fn rustlyn_dotnet_string_contains(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
         needle_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_index_of(
+    fn rustlyn_dotnet_string_index_of(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
@@ -25,10 +25,10 @@ pub extern "C" fn dotnet_runtime_roundtrip_score() -> i32 {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "\\..\\std_fs\\fixtures\\input.txt");
     let needle = "txt";
     let required_len =
-        unsafe { rust_mcil_dotnet_path_get_file_name_utf8_len(path.as_ptr(), path.len() as i64) };
+        unsafe { rustlyn_dotnet_path_get_file_name_utf8_len(path.as_ptr(), path.len() as i64) };
     let mut file_name = vec![0u8; required_len as usize];
     let written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             path.as_ptr(),
             path.len() as i64,
             file_name.as_mut_ptr(),
@@ -36,7 +36,7 @@ pub extern "C" fn dotnet_runtime_roundtrip_score() -> i32 {
         )
     };
     let contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             file_name.as_ptr(),
             written as i64,
             needle.as_ptr(),
@@ -44,7 +44,7 @@ pub extern "C" fn dotnet_runtime_roundtrip_score() -> i32 {
         )
     };
     let index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             file_name.as_ptr(),
             written as i64,
             needle.as_ptr(),

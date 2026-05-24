@@ -41,7 +41,7 @@ pub extern "C" fn std_env_probe() -> i32 {
     }
 
     // A non-existent env var should fail
-    if env::var("RUSTMCIL_NONEXISTENT_VAR_12345").is_ok() {
+    if env::var("RUSTLYN_NONEXISTENT_VAR_12345").is_ok() {
         return -8;
     }
 
@@ -52,7 +52,7 @@ pub extern "C" fn std_env_probe() -> i32 {
     }
 
     // Construct a path from components
-    let joined = Path::new(&temp_dir).join("rustmcil_test");
+    let joined = Path::new(&temp_dir).join("rustlyn_test");
     if joined.as_os_str().is_empty() {
         return -10;
     }

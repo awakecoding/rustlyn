@@ -1,4 +1,0 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- helper import to get $(SourceGearRustNetVersion) property -->
-  <Import Project="$(MSBuildThisFileDirectory)..\build\SourceGear.Rust.NET.Version.props" />
-</Project>

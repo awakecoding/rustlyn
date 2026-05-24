@@ -1,13 +1,9 @@
 artifacts/toolchains/
 artifacts/out/
 artifacts/scratch/
+artifacts/decompiled/
 artifacts/sdk-*/SourceGear.Rust.NET.Sdk.*.nupkg
-artifacts/sdk-*/extracted/.signature.p7s
-artifacts/sdk-*/extracted/**/*.dll
-artifacts/sdk-*/extracted/**/*.exe
-artifacts/sdk-*/extracted/**/*.pdb
-artifacts/sdk-*/extracted/**/*.so
-artifacts/sdk-*/extracted/**/*.dylib
+artifacts/sdk-*/extracted/
 
 dotnet/**/bin/
 dotnet/**/obj/

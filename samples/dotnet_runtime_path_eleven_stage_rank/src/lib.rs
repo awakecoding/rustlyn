@@ -1,26 +1,26 @@
 unsafe extern "C" {
-    fn rust_mcil_dotnet_current_directory_utf8_len() -> i32;
-    fn rust_mcil_dotnet_copy_current_directory_utf8(
+    fn rustlyn_dotnet_current_directory_utf8_len() -> i32;
+    fn rustlyn_dotnet_copy_current_directory_utf8(
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_temp_path_utf8_len() -> i32;
-    fn rust_mcil_dotnet_copy_temp_path_utf8(
+    fn rustlyn_dotnet_temp_path_utf8_len() -> i32;
+    fn rustlyn_dotnet_copy_temp_path_utf8(
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_documents_utf8_len() -> i32;
-    fn rust_mcil_dotnet_copy_documents_utf8(
+    fn rustlyn_dotnet_documents_utf8_len() -> i32;
+    fn rustlyn_dotnet_copy_documents_utf8(
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_full_utf8_len(
+    fn rustlyn_dotnet_path_get_full_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
         base_ptr: *const u8,
         base_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_full_utf8(
+    fn rustlyn_dotnet_path_copy_full_utf8(
         path_ptr: *const u8,
         path_len: i64,
         base_ptr: *const u8,
@@ -28,23 +28,23 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_root_utf8_len(
+    fn rustlyn_dotnet_path_get_root_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_root_utf8(
+    fn rustlyn_dotnet_path_copy_root_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_relative_utf8_len(
+    fn rustlyn_dotnet_path_get_relative_utf8_len(
         relative_to_ptr: *const u8,
         relative_to_len: i64,
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_relative_utf8(
+    fn rustlyn_dotnet_path_copy_relative_utf8(
         relative_to_ptr: *const u8,
         relative_to_len: i64,
         path_ptr: *const u8,
@@ -52,17 +52,17 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_directory_name_utf8_len(
+    fn rustlyn_dotnet_path_get_directory_name_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_directory_name_utf8(
+    fn rustlyn_dotnet_path_copy_directory_name_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_combine3_utf8_len(
+    fn rustlyn_dotnet_path_combine3_utf8_len(
         first_ptr: *const u8,
         first_len: i64,
         second_ptr: *const u8,
@@ -70,7 +70,7 @@ unsafe extern "C" {
         third_ptr: *const u8,
         third_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_combine3_utf8(
+    fn rustlyn_dotnet_path_copy_combine3_utf8(
         first_ptr: *const u8,
         first_len: i64,
         second_ptr: *const u8,
@@ -80,23 +80,23 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_file_name_utf8_len(
+    fn rustlyn_dotnet_path_get_file_name_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_file_name_utf8(
+    fn rustlyn_dotnet_path_copy_file_name_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_change_extension_utf8_len(
+    fn rustlyn_dotnet_path_change_extension_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
         extension_ptr: *const u8,
         extension_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_change_extension_utf8(
+    fn rustlyn_dotnet_path_copy_change_extension_utf8(
         path_ptr: *const u8,
         path_len: i64,
         extension_ptr: *const u8,
@@ -104,17 +104,17 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+    fn rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+    fn rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_replace_utf8_len(
+    fn rustlyn_dotnet_string_replace_utf8_len(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -122,7 +122,7 @@ unsafe extern "C" {
         new_ptr: *const u8,
         new_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_copy_replace_utf8(
+    fn rustlyn_dotnet_string_copy_replace_utf8(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -132,13 +132,13 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_contains(
+    fn rustlyn_dotnet_string_contains(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
         needle_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_index_of(
+    fn rustlyn_dotnet_string_index_of(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
@@ -250,17 +250,17 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     let quay_new = "quay";
     let quay_needle = "quay";
 
-    let current_base_len = unsafe { rust_mcil_dotnet_current_directory_utf8_len() };
+    let current_base_len = unsafe { rustlyn_dotnet_current_directory_utf8_len() };
     let mut current_base = vec![0u8; current_base_len as usize];
     let current_base_written = unsafe {
-        rust_mcil_dotnet_copy_current_directory_utf8(
+        rustlyn_dotnet_copy_current_directory_utf8(
             current_base.as_mut_ptr(),
             current_base.len() as i64,
         )
     };
 
     let current_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             current_relative_input.as_ptr(),
             current_relative_input.len() as i64,
             current_base.as_ptr(),
@@ -269,7 +269,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_full = vec![0u8; current_full_len as usize];
     let current_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             current_relative_input.as_ptr(),
             current_relative_input.len() as i64,
             current_base.as_ptr(),
@@ -280,11 +280,11 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_root_len = unsafe {
-        rust_mcil_dotnet_path_get_root_utf8_len(current_full.as_ptr(), current_full_written as i64)
+        rustlyn_dotnet_path_get_root_utf8_len(current_full.as_ptr(), current_full_written as i64)
     };
     let mut current_root = vec![0u8; current_root_len as usize];
     let current_root_written = unsafe {
-        rust_mcil_dotnet_path_copy_root_utf8(
+        rustlyn_dotnet_path_copy_root_utf8(
             current_full.as_ptr(),
             current_full_written as i64,
             current_root.as_mut_ptr(),
@@ -293,7 +293,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_relative_len = unsafe {
-        rust_mcil_dotnet_path_get_relative_utf8_len(
+        rustlyn_dotnet_path_get_relative_utf8_len(
             current_root.as_ptr(),
             current_root_written as i64,
             current_full.as_ptr(),
@@ -302,7 +302,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_relative = vec![0u8; current_relative_len as usize];
     let current_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_relative_utf8(
+        rustlyn_dotnet_path_copy_relative_utf8(
             current_root.as_ptr(),
             current_root_written as i64,
             current_full.as_ptr(),
@@ -313,14 +313,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_directory_len = unsafe {
-        rust_mcil_dotnet_path_get_directory_name_utf8_len(
+        rustlyn_dotnet_path_get_directory_name_utf8_len(
             current_relative.as_ptr(),
             current_relative_written as i64,
         )
     };
     let mut current_directory = vec![0u8; current_directory_len as usize];
     let current_directory_written = unsafe {
-        rust_mcil_dotnet_path_copy_directory_name_utf8(
+        rustlyn_dotnet_path_copy_directory_name_utf8(
             current_relative.as_ptr(),
             current_relative_written as i64,
             current_directory.as_mut_ptr(),
@@ -329,14 +329,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_file_name_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_utf8_len(
+        rustlyn_dotnet_path_get_file_name_utf8_len(
             current_relative.as_ptr(),
             current_relative_written as i64,
         )
     };
     let mut current_file_name = vec![0u8; current_file_name_len as usize];
     let current_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             current_relative.as_ptr(),
             current_relative_written as i64,
             current_file_name.as_mut_ptr(),
@@ -344,7 +344,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let current_changed_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             current_file_name.as_ptr(),
             current_file_name_written as i64,
             current_extension.as_ptr(),
@@ -353,7 +353,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_changed = vec![0u8; current_changed_len as usize];
     let current_changed_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             current_file_name.as_ptr(),
             current_file_name_written as i64,
             current_extension.as_ptr(),
@@ -363,14 +363,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let current_leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             current_changed.as_ptr(),
             current_changed_written as i64,
         )
     };
     let mut current_leaf = vec![0u8; current_leaf_len as usize];
     let current_leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             current_changed.as_ptr(),
             current_changed_written as i64,
             current_leaf.as_mut_ptr(),
@@ -378,7 +378,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let current_transformed_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             current_leaf.as_ptr(),
             current_leaf_written as i64,
             current_old.as_ptr(),
@@ -389,7 +389,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_transformed = vec![0u8; current_transformed_len as usize];
     let current_transformed_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             current_leaf.as_ptr(),
             current_leaf_written as i64,
             current_old.as_ptr(),
@@ -401,7 +401,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let current_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             current_transformed.as_ptr(),
             current_transformed_written as i64,
             documents_needle.as_ptr(),
@@ -409,13 +409,13 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
 
-    let temp_root_len = unsafe { rust_mcil_dotnet_temp_path_utf8_len() };
+    let temp_root_len = unsafe { rustlyn_dotnet_temp_path_utf8_len() };
     let mut temp_root = vec![0u8; temp_root_len as usize];
     let temp_root_written = unsafe {
-        rust_mcil_dotnet_copy_temp_path_utf8(temp_root.as_mut_ptr(), temp_root.len() as i64)
+        rustlyn_dotnet_copy_temp_path_utf8(temp_root.as_mut_ptr(), temp_root.len() as i64)
     };
     let temp_combined_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             temp_root.as_ptr(),
             temp_root_written as i64,
             temp_second.as_ptr(),
@@ -426,7 +426,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_combined = vec![0u8; temp_combined_len as usize];
     let temp_combined_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             temp_root.as_ptr(),
             temp_root_written as i64,
             temp_second.as_ptr(),
@@ -438,7 +438,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_changed_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             temp_combined.as_ptr(),
             temp_combined_written as i64,
             temp_extension.as_ptr(),
@@ -447,7 +447,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_changed = vec![0u8; temp_changed_len as usize];
     let temp_changed_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             temp_combined.as_ptr(),
             temp_combined_written as i64,
             temp_extension.as_ptr(),
@@ -457,7 +457,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_relative_len = unsafe {
-        rust_mcil_dotnet_path_get_relative_utf8_len(
+        rustlyn_dotnet_path_get_relative_utf8_len(
             temp_root.as_ptr(),
             temp_root_written as i64,
             temp_changed.as_ptr(),
@@ -466,7 +466,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_relative = vec![0u8; temp_relative_len as usize];
     let temp_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_relative_utf8(
+        rustlyn_dotnet_path_copy_relative_utf8(
             temp_root.as_ptr(),
             temp_root_written as i64,
             temp_changed.as_ptr(),
@@ -476,14 +476,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_directory_len = unsafe {
-        rust_mcil_dotnet_path_get_directory_name_utf8_len(
+        rustlyn_dotnet_path_get_directory_name_utf8_len(
             temp_relative.as_ptr(),
             temp_relative_written as i64,
         )
     };
     let mut temp_directory = vec![0u8; temp_directory_len as usize];
     let temp_directory_written = unsafe {
-        rust_mcil_dotnet_path_copy_directory_name_utf8(
+        rustlyn_dotnet_path_copy_directory_name_utf8(
             temp_relative.as_ptr(),
             temp_relative_written as i64,
             temp_directory.as_mut_ptr(),
@@ -491,11 +491,11 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_file_name_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_utf8_len(temp_changed.as_ptr(), temp_changed_written as i64)
+        rustlyn_dotnet_path_get_file_name_utf8_len(temp_changed.as_ptr(), temp_changed_written as i64)
     };
     let mut temp_file_name = vec![0u8; temp_file_name_len as usize];
     let temp_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             temp_changed.as_ptr(),
             temp_changed_written as i64,
             temp_file_name.as_mut_ptr(),
@@ -503,14 +503,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             temp_file_name.as_ptr(),
             temp_file_name_written as i64,
         )
     };
     let mut temp_leaf = vec![0u8; temp_leaf_len as usize];
     let temp_leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             temp_file_name.as_ptr(),
             temp_file_name_written as i64,
             temp_leaf.as_mut_ptr(),
@@ -518,7 +518,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_transformed_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             temp_leaf.as_ptr(),
             temp_leaf_written as i64,
             temp_old.as_ptr(),
@@ -529,7 +529,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_transformed = vec![0u8; temp_transformed_len as usize];
     let temp_transformed_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             temp_leaf.as_ptr(),
             temp_leaf_written as i64,
             temp_old.as_ptr(),
@@ -541,7 +541,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             temp_transformed.as_ptr(),
             temp_transformed_written as i64,
             documents_needle.as_ptr(),
@@ -549,16 +549,16 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
 
-    let documents_root_len = unsafe { rust_mcil_dotnet_documents_utf8_len() };
+    let documents_root_len = unsafe { rustlyn_dotnet_documents_utf8_len() };
     let mut documents_root = vec![0u8; documents_root_len as usize];
     let documents_root_written = unsafe {
-        rust_mcil_dotnet_copy_documents_utf8(
+        rustlyn_dotnet_copy_documents_utf8(
             documents_root.as_mut_ptr(),
             documents_root.len() as i64,
         )
     };
     let documents_combined_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             documents_root.as_ptr(),
             documents_root_written as i64,
             documents_second.as_ptr(),
@@ -569,7 +569,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_combined = vec![0u8; documents_combined_len as usize];
     let documents_combined_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             documents_root.as_ptr(),
             documents_root_written as i64,
             documents_second.as_ptr(),
@@ -581,7 +581,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_changed_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             documents_combined.as_ptr(),
             documents_combined_written as i64,
             documents_extension.as_ptr(),
@@ -590,7 +590,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_changed = vec![0u8; documents_changed_len as usize];
     let documents_changed_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             documents_combined.as_ptr(),
             documents_combined_written as i64,
             documents_extension.as_ptr(),
@@ -600,7 +600,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_relative_len = unsafe {
-        rust_mcil_dotnet_path_get_relative_utf8_len(
+        rustlyn_dotnet_path_get_relative_utf8_len(
             documents_root.as_ptr(),
             documents_root_written as i64,
             documents_changed.as_ptr(),
@@ -609,7 +609,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_relative = vec![0u8; documents_relative_len as usize];
     let documents_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_relative_utf8(
+        rustlyn_dotnet_path_copy_relative_utf8(
             documents_root.as_ptr(),
             documents_root_written as i64,
             documents_changed.as_ptr(),
@@ -619,14 +619,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_directory_len = unsafe {
-        rust_mcil_dotnet_path_get_directory_name_utf8_len(
+        rustlyn_dotnet_path_get_directory_name_utf8_len(
             documents_relative.as_ptr(),
             documents_relative_written as i64,
         )
     };
     let mut documents_directory = vec![0u8; documents_directory_len as usize];
     let documents_directory_written = unsafe {
-        rust_mcil_dotnet_path_copy_directory_name_utf8(
+        rustlyn_dotnet_path_copy_directory_name_utf8(
             documents_relative.as_ptr(),
             documents_relative_written as i64,
             documents_directory.as_mut_ptr(),
@@ -634,14 +634,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_file_name_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_utf8_len(
+        rustlyn_dotnet_path_get_file_name_utf8_len(
             documents_changed.as_ptr(),
             documents_changed_written as i64,
         )
     };
     let mut documents_file_name = vec![0u8; documents_file_name_len as usize];
     let documents_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             documents_changed.as_ptr(),
             documents_changed_written as i64,
             documents_file_name.as_mut_ptr(),
@@ -649,14 +649,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             documents_file_name.as_ptr(),
             documents_file_name_written as i64,
         )
     };
     let mut documents_leaf = vec![0u8; documents_leaf_len as usize];
     let documents_leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             documents_file_name.as_ptr(),
             documents_file_name_written as i64,
             documents_leaf.as_mut_ptr(),
@@ -664,7 +664,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_transformed_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             documents_leaf.as_ptr(),
             documents_leaf_written as i64,
             documents_old.as_ptr(),
@@ -675,7 +675,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_transformed = vec![0u8; documents_transformed_len as usize];
     let documents_transformed_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             documents_leaf.as_ptr(),
             documents_leaf_written as i64,
             documents_old.as_ptr(),
@@ -687,7 +687,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             documents_transformed.as_ptr(),
             documents_transformed_written as i64,
             documents_needle.as_ptr(),
@@ -764,14 +764,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let selected_leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_file_name_ptr,
             selected_file_name_written as i64,
         )
     };
     let mut selected_leaf = vec![0u8; selected_leaf_len as usize];
     let selected_leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             selected_leaf.as_mut_ptr(),
@@ -780,7 +780,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let trace_variant_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             trace_old.as_ptr(),
@@ -791,7 +791,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut trace_variant = vec![0u8; trace_variant_len as usize];
     let trace_variant_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             trace_old.as_ptr(),
@@ -803,7 +803,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let trace_variant_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             trace_variant.as_ptr(),
             trace_variant_written as i64,
             trace_needle.as_ptr(),
@@ -812,7 +812,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let grid_variant_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             grid_old.as_ptr(),
@@ -823,7 +823,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut grid_variant = vec![0u8; grid_variant_len as usize];
     let grid_variant_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             grid_old.as_ptr(),
@@ -835,7 +835,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let grid_variant_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             grid_variant.as_ptr(),
             grid_variant_written as i64,
             grid_needle.as_ptr(),
@@ -844,7 +844,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let flow_variant_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             flow_old.as_ptr(),
@@ -855,7 +855,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut flow_variant = vec![0u8; flow_variant_len as usize];
     let flow_variant_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_leaf.as_ptr(),
             selected_leaf_written as i64,
             flow_old.as_ptr(),
@@ -867,7 +867,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let flow_variant_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             flow_variant.as_ptr(),
             flow_variant_written as i64,
             flow_needle.as_ptr(),
@@ -876,7 +876,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let trace_file_name_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             trace_extension.as_ptr(),
@@ -885,7 +885,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut trace_file_name = vec![0u8; trace_file_name_len as usize];
     let trace_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             trace_extension.as_ptr(),
@@ -896,7 +896,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let grid_file_name_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             grid_extension.as_ptr(),
@@ -905,7 +905,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut grid_file_name = vec![0u8; grid_file_name_len as usize];
     let grid_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             grid_extension.as_ptr(),
@@ -916,7 +916,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let flow_file_name_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             flow_extension.as_ptr(),
@@ -925,7 +925,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut flow_file_name = vec![0u8; flow_file_name_len as usize];
     let flow_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_file_name_ptr,
             selected_file_name_written as i64,
             flow_extension.as_ptr(),
@@ -983,7 +983,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let current_rebased_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             current_directory.as_ptr(),
             current_directory_written as i64,
             current_segment.as_ptr(),
@@ -994,7 +994,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_rebased_relative = vec![0u8; current_rebased_relative_len as usize];
     let current_rebased_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             current_directory.as_ptr(),
             current_directory_written as i64,
             current_segment.as_ptr(),
@@ -1007,7 +1007,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_rebased_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             current_rebased_relative.as_ptr(),
             current_rebased_relative_written as i64,
             current_root.as_ptr(),
@@ -1016,7 +1016,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut current_rebased_full = vec![0u8; current_rebased_full_len as usize];
     let current_rebased_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             current_rebased_relative.as_ptr(),
             current_rebased_relative_written as i64,
             current_root.as_ptr(),
@@ -1027,7 +1027,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let current_stage_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             current_rebased_full.as_ptr(),
             current_rebased_full_written as i64,
             current_stage_needle.as_ptr(),
@@ -1035,7 +1035,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let current_stage_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             current_rebased_full.as_ptr(),
             current_rebased_full_written as i64,
             current_stage_needle.as_ptr(),
@@ -1044,7 +1044,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let temp_rebased_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             temp_directory.as_ptr(),
             temp_directory_written as i64,
             current_segment.as_ptr(),
@@ -1055,7 +1055,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_rebased_relative = vec![0u8; temp_rebased_relative_len as usize];
     let temp_rebased_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             temp_directory.as_ptr(),
             temp_directory_written as i64,
             current_segment.as_ptr(),
@@ -1068,7 +1068,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let temp_rebased_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             temp_rebased_relative.as_ptr(),
             temp_rebased_relative_written as i64,
             temp_root.as_ptr(),
@@ -1077,7 +1077,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_rebased_full = vec![0u8; temp_rebased_full_len as usize];
     let temp_rebased_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             temp_rebased_relative.as_ptr(),
             temp_rebased_relative_written as i64,
             temp_root.as_ptr(),
@@ -1088,7 +1088,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let temp_stage_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             temp_rebased_full.as_ptr(),
             temp_rebased_full_written as i64,
             temp_stage_needle.as_ptr(),
@@ -1096,7 +1096,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_stage_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             temp_rebased_full.as_ptr(),
             temp_rebased_full_written as i64,
             temp_stage_needle.as_ptr(),
@@ -1105,7 +1105,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let documents_rebased_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             documents_directory.as_ptr(),
             documents_directory_written as i64,
             current_segment.as_ptr(),
@@ -1116,7 +1116,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_rebased_relative = vec![0u8; documents_rebased_relative_len as usize];
     let documents_rebased_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             documents_directory.as_ptr(),
             documents_directory_written as i64,
             current_segment.as_ptr(),
@@ -1129,7 +1129,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let documents_rebased_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             documents_rebased_relative.as_ptr(),
             documents_rebased_relative_written as i64,
             documents_root.as_ptr(),
@@ -1138,7 +1138,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_rebased_full = vec![0u8; documents_rebased_full_len as usize];
     let documents_rebased_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             documents_rebased_relative.as_ptr(),
             documents_rebased_relative_written as i64,
             documents_root.as_ptr(),
@@ -1149,7 +1149,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let documents_stage_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             documents_rebased_full.as_ptr(),
             documents_rebased_full_written as i64,
             documents_stage_needle.as_ptr(),
@@ -1157,7 +1157,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_stage_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             documents_rebased_full.as_ptr(),
             documents_rebased_full_written as i64,
             documents_stage_needle.as_ptr(),
@@ -1219,14 +1219,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let selected_leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_full_path_ptr,
             selected_full_path_written as i64,
         )
     };
     let mut selected_final_leaf = vec![0u8; selected_leaf_len as usize];
     let selected_final_leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             selected_final_leaf.as_mut_ptr(),
@@ -1235,7 +1235,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let mesh_leaf_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             mesh_old.as_ptr(),
@@ -1246,7 +1246,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut mesh_leaf = vec![0u8; mesh_leaf_len as usize];
     let mesh_leaf_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             mesh_old.as_ptr(),
@@ -1258,7 +1258,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let mesh_leaf_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             mesh_leaf.as_ptr(),
             mesh_leaf_written as i64,
             mesh_needle.as_ptr(),
@@ -1267,7 +1267,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let route_leaf_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             route_old.as_ptr(),
@@ -1278,7 +1278,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut route_leaf = vec![0u8; route_leaf_len as usize];
     let route_leaf_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             route_old.as_ptr(),
@@ -1290,7 +1290,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let route_leaf_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             route_leaf.as_ptr(),
             route_leaf_written as i64,
             route_needle.as_ptr(),
@@ -1299,7 +1299,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let array_leaf_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             array_old.as_ptr(),
@@ -1310,7 +1310,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut array_leaf = vec![0u8; array_leaf_len as usize];
     let array_leaf_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_final_leaf.as_ptr(),
             selected_final_leaf_written as i64,
             array_old.as_ptr(),
@@ -1322,7 +1322,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let array_leaf_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             array_leaf.as_ptr(),
             array_leaf_written as i64,
             array_needle.as_ptr(),
@@ -1378,7 +1378,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let spine_path_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             spine_old.as_ptr(),
@@ -1389,7 +1389,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut spine_path = vec![0u8; spine_path_len as usize];
     let spine_path_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             spine_old.as_ptr(),
@@ -1401,7 +1401,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let spine_path_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             spine_path.as_ptr(),
             spine_path_written as i64,
             spine_needle.as_ptr(),
@@ -1410,7 +1410,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let weave_path_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             weave_old.as_ptr(),
@@ -1421,7 +1421,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut weave_path = vec![0u8; weave_path_len as usize];
     let weave_path_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             weave_old.as_ptr(),
@@ -1433,7 +1433,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let weave_path_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             weave_path.as_ptr(),
             weave_path_written as i64,
             weave_needle.as_ptr(),
@@ -1442,7 +1442,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let orbit_path_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             orbit_old.as_ptr(),
@@ -1453,7 +1453,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut orbit_path = vec![0u8; orbit_path_len as usize];
     let orbit_path_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_full_path_ptr,
             selected_full_path_written as i64,
             orbit_old.as_ptr(),
@@ -1465,7 +1465,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let orbit_path_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             orbit_path.as_ptr(),
             orbit_path_written as i64,
             orbit_needle.as_ptr(),
@@ -1521,14 +1521,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let selected_path_directory_len = unsafe {
-        rust_mcil_dotnet_path_get_directory_name_utf8_len(
+        rustlyn_dotnet_path_get_directory_name_utf8_len(
             selected_path_transform_ptr,
             selected_path_transform_written as i64,
         )
     };
     let mut selected_path_directory = vec![0u8; selected_path_directory_len as usize];
     let selected_path_directory_written = unsafe {
-        rust_mcil_dotnet_path_copy_directory_name_utf8(
+        rustlyn_dotnet_path_copy_directory_name_utf8(
             selected_path_transform_ptr,
             selected_path_transform_written as i64,
             selected_path_directory.as_mut_ptr(),
@@ -1537,14 +1537,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let selected_path_file_name_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_utf8_len(
+        rustlyn_dotnet_path_get_file_name_utf8_len(
             selected_path_transform_ptr,
             selected_path_transform_written as i64,
         )
     };
     let mut selected_path_file_name = vec![0u8; selected_path_file_name_len as usize];
     let selected_path_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             selected_path_transform_ptr,
             selected_path_transform_written as i64,
             selected_path_file_name.as_mut_ptr(),
@@ -1553,7 +1553,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let self_recomposed_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             selected_path_directory.as_ptr(),
             selected_path_directory_written as i64,
             current_segment.as_ptr(),
@@ -1564,7 +1564,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut self_recomposed_relative = vec![0u8; self_recomposed_relative_len as usize];
     let self_recomposed_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             selected_path_directory.as_ptr(),
             selected_path_directory_written as i64,
             current_segment.as_ptr(),
@@ -1576,7 +1576,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let self_recomposed_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             self_recomposed_relative.as_ptr(),
             self_recomposed_relative_written as i64,
             current_root.as_ptr(),
@@ -1585,7 +1585,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut self_recomposed_full = vec![0u8; self_recomposed_full_len as usize];
     let self_recomposed_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             self_recomposed_relative.as_ptr(),
             self_recomposed_relative_written as i64,
             current_root.as_ptr(),
@@ -1595,7 +1595,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let self_recomposed_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             self_recomposed_full.as_ptr(),
             self_recomposed_full_written as i64,
             self_stage_needle.as_ptr(),
@@ -1604,7 +1604,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let temp_recomposed_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             temp_directory.as_ptr(),
             temp_directory_written as i64,
             current_segment.as_ptr(),
@@ -1615,7 +1615,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_recomposed_relative = vec![0u8; temp_recomposed_relative_len as usize];
     let temp_recomposed_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             temp_directory.as_ptr(),
             temp_directory_written as i64,
             current_segment.as_ptr(),
@@ -1627,7 +1627,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_recomposed_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             temp_recomposed_relative.as_ptr(),
             temp_recomposed_relative_written as i64,
             temp_root.as_ptr(),
@@ -1636,7 +1636,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut temp_recomposed_full = vec![0u8; temp_recomposed_full_len as usize];
     let temp_recomposed_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             temp_recomposed_relative.as_ptr(),
             temp_recomposed_relative_written as i64,
             temp_root.as_ptr(),
@@ -1646,7 +1646,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let temp_recomposed_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             temp_recomposed_full.as_ptr(),
             temp_recomposed_full_written as i64,
             temp_stage_six_needle.as_ptr(),
@@ -1655,7 +1655,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let documents_recomposed_relative_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             documents_directory.as_ptr(),
             documents_directory_written as i64,
             current_segment.as_ptr(),
@@ -1666,7 +1666,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_recomposed_relative = vec![0u8; documents_recomposed_relative_len as usize];
     let documents_recomposed_relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             documents_directory.as_ptr(),
             documents_directory_written as i64,
             current_segment.as_ptr(),
@@ -1678,7 +1678,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_recomposed_full_len = unsafe {
-        rust_mcil_dotnet_path_get_full_utf8_len(
+        rustlyn_dotnet_path_get_full_utf8_len(
             documents_recomposed_relative.as_ptr(),
             documents_recomposed_relative_written as i64,
             documents_root.as_ptr(),
@@ -1687,7 +1687,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut documents_recomposed_full = vec![0u8; documents_recomposed_full_len as usize];
     let documents_recomposed_full_written = unsafe {
-        rust_mcil_dotnet_path_copy_full_utf8(
+        rustlyn_dotnet_path_copy_full_utf8(
             documents_recomposed_relative.as_ptr(),
             documents_recomposed_relative_written as i64,
             documents_root.as_ptr(),
@@ -1697,7 +1697,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let documents_recomposed_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             documents_recomposed_full.as_ptr(),
             documents_recomposed_full_written as i64,
             documents_stage_six_needle.as_ptr(),
@@ -1753,7 +1753,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let final_transformed_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_recomposition_ptr,
             selected_recomposition_written as i64,
             final_old.as_ptr(),
@@ -1764,7 +1764,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut final_transformed = vec![0u8; final_transformed_len as usize];
     let final_transformed_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_recomposition_ptr,
             selected_recomposition_written as i64,
             final_old.as_ptr(),
@@ -1776,7 +1776,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let final_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
             final_needle.as_ptr(),
@@ -1784,7 +1784,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let final_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
             final_needle.as_ptr(),
@@ -1793,7 +1793,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let crown_path_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
             crown_old.as_ptr(),
@@ -1804,7 +1804,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut crown_path = vec![0u8; crown_path_len as usize];
     let crown_path_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
             crown_old.as_ptr(),
@@ -1816,7 +1816,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let crown_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             crown_path.as_ptr(),
             crown_path_written as i64,
             crown_needle.as_ptr(),
@@ -1825,7 +1825,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let pulse_path_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_recomposition_ptr,
             selected_recomposition_written as i64,
             pulse_extension.as_ptr(),
@@ -1834,7 +1834,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut pulse_path = vec![0u8; pulse_path_len as usize];
     let pulse_path_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_recomposition_ptr,
             selected_recomposition_written as i64,
             pulse_extension.as_ptr(),
@@ -1844,14 +1844,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let pulse_file_name_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_utf8_len(
+        rustlyn_dotnet_path_get_file_name_utf8_len(
             pulse_path.as_ptr(),
             pulse_path_written as i64,
         )
     };
     let mut pulse_file_name = vec![0u8; pulse_file_name_len as usize];
     let pulse_file_name_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_utf8(
+        rustlyn_dotnet_path_copy_file_name_utf8(
             pulse_path.as_ptr(),
             pulse_path_written as i64,
             pulse_file_name.as_mut_ptr(),
@@ -1859,7 +1859,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let pulse_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             pulse_file_name.as_ptr(),
             pulse_file_name_written as i64,
             pulse_needle.as_ptr(),
@@ -1868,14 +1868,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let anchor_source_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
         )
     };
     let mut anchor_source = vec![0u8; anchor_source_len as usize];
     let anchor_source_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             final_transformed.as_ptr(),
             final_transformed_written as i64,
             anchor_source.as_mut_ptr(),
@@ -1883,7 +1883,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let anchor_leaf_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             anchor_source.as_ptr(),
             anchor_source_written as i64,
             anchor_old.as_ptr(),
@@ -1894,7 +1894,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut anchor_leaf = vec![0u8; anchor_leaf_len as usize];
     let anchor_leaf_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             anchor_source.as_ptr(),
             anchor_source_written as i64,
             anchor_old.as_ptr(),
@@ -1906,7 +1906,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let anchor_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             anchor_leaf.as_ptr(),
             anchor_leaf_written as i64,
             anchor_needle.as_ptr(),
@@ -1965,7 +1965,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let crest_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_closure_ptr,
             selected_closure_written as i64,
             crest_old.as_ptr(),
@@ -1976,7 +1976,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut crest_value = vec![0u8; crest_value_len as usize];
     let crest_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_closure_ptr,
             selected_closure_written as i64,
             crest_old.as_ptr(),
@@ -1988,7 +1988,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let crest_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             crest_value.as_ptr(),
             crest_value_written as i64,
             crest_needle.as_ptr(),
@@ -1997,7 +1997,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let flare_value_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_closure_ptr,
             selected_closure_written as i64,
             flare_extension.as_ptr(),
@@ -2006,7 +2006,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut flare_value = vec![0u8; flare_value_len as usize];
     let flare_value_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_closure_ptr,
             selected_closure_written as i64,
             flare_extension.as_ptr(),
@@ -2016,7 +2016,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let flare_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             flare_value.as_ptr(),
             flare_value_written as i64,
             flare_needle.as_ptr(),
@@ -2025,14 +2025,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let lattice_source_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_closure_ptr,
             selected_closure_written as i64,
         )
     };
     let mut lattice_source = vec![0u8; lattice_source_len as usize];
     let lattice_source_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_closure_ptr,
             selected_closure_written as i64,
             lattice_source.as_mut_ptr(),
@@ -2040,7 +2040,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let lattice_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             lattice_source.as_ptr(),
             lattice_source_written as i64,
             lattice_old.as_ptr(),
@@ -2051,7 +2051,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut lattice_value = vec![0u8; lattice_value_len as usize];
     let lattice_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             lattice_source.as_ptr(),
             lattice_source_written as i64,
             lattice_old.as_ptr(),
@@ -2063,7 +2063,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let lattice_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             lattice_value.as_ptr(),
             lattice_value_written as i64,
             lattice_needle.as_ptr(),
@@ -2122,7 +2122,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let summit_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_apex_ptr,
             selected_apex_written as i64,
             summit_old.as_ptr(),
@@ -2133,7 +2133,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut summit_value = vec![0u8; summit_value_len as usize];
     let summit_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_apex_ptr,
             selected_apex_written as i64,
             summit_old.as_ptr(),
@@ -2145,7 +2145,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let summit_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             summit_value.as_ptr(),
             summit_value_written as i64,
             summit_needle.as_ptr(),
@@ -2154,7 +2154,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let prism_value_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_apex_ptr,
             selected_apex_written as i64,
             prism_extension.as_ptr(),
@@ -2163,7 +2163,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut prism_value = vec![0u8; prism_value_len as usize];
     let prism_value_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_apex_ptr,
             selected_apex_written as i64,
             prism_extension.as_ptr(),
@@ -2173,7 +2173,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let prism_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             prism_value.as_ptr(),
             prism_value_written as i64,
             prism_needle.as_ptr(),
@@ -2182,14 +2182,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let vault_source_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_apex_ptr,
             selected_apex_written as i64,
         )
     };
     let mut vault_source = vec![0u8; vault_source_len as usize];
     let vault_source_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_apex_ptr,
             selected_apex_written as i64,
             vault_source.as_mut_ptr(),
@@ -2197,7 +2197,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let vault_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             vault_source.as_ptr(),
             vault_source_written as i64,
             vault_old.as_ptr(),
@@ -2208,7 +2208,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut vault_value = vec![0u8; vault_value_len as usize];
     let vault_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             vault_source.as_ptr(),
             vault_source_written as i64,
             vault_old.as_ptr(),
@@ -2220,7 +2220,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let vault_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             vault_value.as_ptr(),
             vault_value_written as i64,
             vault_needle.as_ptr(),
@@ -2279,7 +2279,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let beacon_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_summit_ptr,
             selected_summit_written as i64,
             beacon_old.as_ptr(),
@@ -2290,7 +2290,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut beacon_value = vec![0u8; beacon_value_len as usize];
     let beacon_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_summit_ptr,
             selected_summit_written as i64,
             beacon_old.as_ptr(),
@@ -2302,7 +2302,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let beacon_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             beacon_value.as_ptr(),
             beacon_value_written as i64,
             beacon_needle.as_ptr(),
@@ -2311,7 +2311,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let ember_value_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_summit_ptr,
             selected_summit_written as i64,
             ember_extension.as_ptr(),
@@ -2320,7 +2320,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut ember_value = vec![0u8; ember_value_len as usize];
     let ember_value_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_summit_ptr,
             selected_summit_written as i64,
             ember_extension.as_ptr(),
@@ -2330,7 +2330,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let ember_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             ember_value.as_ptr(),
             ember_value_written as i64,
             ember_needle.as_ptr(),
@@ -2339,14 +2339,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let harbor_source_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_summit_ptr,
             selected_summit_written as i64,
         )
     };
     let mut harbor_source = vec![0u8; harbor_source_len as usize];
     let harbor_source_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_summit_ptr,
             selected_summit_written as i64,
             harbor_source.as_mut_ptr(),
@@ -2354,7 +2354,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let harbor_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             harbor_source.as_ptr(),
             harbor_source_written as i64,
             harbor_old.as_ptr(),
@@ -2365,7 +2365,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut harbor_value = vec![0u8; harbor_value_len as usize];
     let harbor_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             harbor_source.as_ptr(),
             harbor_source_written as i64,
             harbor_old.as_ptr(),
@@ -2377,7 +2377,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let harbor_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             harbor_value.as_ptr(),
             harbor_value_written as i64,
             harbor_needle.as_ptr(),
@@ -2436,7 +2436,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     }
 
     let ridge_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             selected_terminal_ptr,
             selected_terminal_written as i64,
             ridge_old.as_ptr(),
@@ -2447,7 +2447,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut ridge_value = vec![0u8; ridge_value_len as usize];
     let ridge_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             selected_terminal_ptr,
             selected_terminal_written as i64,
             ridge_old.as_ptr(),
@@ -2459,7 +2459,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let ridge_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             ridge_value.as_ptr(),
             ridge_value_written as i64,
             ridge_needle.as_ptr(),
@@ -2468,7 +2468,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let glow_value_len = unsafe {
-        rust_mcil_dotnet_path_change_extension_utf8_len(
+        rustlyn_dotnet_path_change_extension_utf8_len(
             selected_terminal_ptr,
             selected_terminal_written as i64,
             glow_extension.as_ptr(),
@@ -2477,7 +2477,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut glow_value = vec![0u8; glow_value_len as usize];
     let glow_value_written = unsafe {
-        rust_mcil_dotnet_path_copy_change_extension_utf8(
+        rustlyn_dotnet_path_copy_change_extension_utf8(
             selected_terminal_ptr,
             selected_terminal_written as i64,
             glow_extension.as_ptr(),
@@ -2487,7 +2487,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let glow_index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             glow_value.as_ptr(),
             glow_value_written as i64,
             glow_needle.as_ptr(),
@@ -2496,14 +2496,14 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
 
     let quay_source_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             selected_terminal_ptr,
             selected_terminal_written as i64,
         )
     };
     let mut quay_source = vec![0u8; quay_source_len as usize];
     let quay_source_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             selected_terminal_ptr,
             selected_terminal_written as i64,
             quay_source.as_mut_ptr(),
@@ -2511,7 +2511,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let quay_value_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             quay_source.as_ptr(),
             quay_source_written as i64,
             quay_old.as_ptr(),
@@ -2522,7 +2522,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
     };
     let mut quay_value = vec![0u8; quay_value_len as usize];
     let quay_value_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             quay_source.as_ptr(),
             quay_source_written as i64,
             quay_old.as_ptr(),
@@ -2534,7 +2534,7 @@ pub extern "C" fn dotnet_runtime_path_eleven_stage_rank_score() -> i32 {
         )
     };
     let quay_contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             quay_value.as_ptr(),
             quay_value_written as i64,
             quay_needle.as_ptr(),
