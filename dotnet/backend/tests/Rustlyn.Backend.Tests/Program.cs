@@ -80,6 +80,7 @@ RunTest("NicheLayoutPolicyHandlesPointersAndNonZero", NicheLayoutPolicyHandlesPo
 RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRequiresDiscriminantForPlainInts, failures);
 RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrderingsToStrategies, failures);
 RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRestoresArtifactWithoutReEmission, failures);
+RunTest("MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs", MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2190,6 +2191,41 @@ static void TranslationCacheRestoresArtifactWithoutReEmission()
     {
         try { Directory.Delete(tempRoot, recursive: true); } catch { }
     }
+}
+
+static void MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? sdkTargets = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "dotnet", "backend", "src", "Rustlyn.Sdk", "Sdk", "Sdk.targets");
+        if (File.Exists(probe))
+        {
+            sdkTargets = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(sdkTargets is not null, "Sdk.targets not found by walking parent directories.");
+
+    var doc = new System.Xml.XmlDocument();
+    doc.Load(sdkTargets!);
+    var ns = new System.Xml.XmlNamespaceManager(doc.NameTable);
+    ns.AddNamespace("m", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+    var target = doc.SelectSingleNode("//m:Target[@Name='RustlynTranslate']", ns);
+    Assert(target is not null, "RustlynTranslate target not found.");
+    var inputs = target!.Attributes?["Inputs"]?.Value;
+    var outputs = target.Attributes?["Outputs"]?.Value;
+    Assert(!string.IsNullOrWhiteSpace(inputs), "RustlynTranslate target must declare Inputs for incremental builds.");
+    Assert(!string.IsNullOrWhiteSpace(outputs), "RustlynTranslate target must declare Outputs for incremental builds.");
+    Assert(inputs!.Contains("RustlynBitcodeInputs", StringComparison.Ordinal), "Inputs must reference RustlynBitcodeInputs item group.");
+    Assert(outputs!.Contains("RustlynOutputPath", StringComparison.Ordinal), "Outputs must reference RustlynOutputPath property.");
+
+    var itemGroup = doc.SelectSingleNode("//m:ItemGroup[m:RustlynBitcodeInputs]", ns);
+    Assert(itemGroup is not null, "Default RustlynBitcodeInputs ItemGroup must exist so projects without explicit inputs still get an up-to-date check.");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
