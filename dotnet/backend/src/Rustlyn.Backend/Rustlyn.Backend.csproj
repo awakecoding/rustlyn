@@ -2,6 +2,9 @@
   <PropertyGroup>
     <AssemblyName>Rustlyn.Backend</AssemblyName>
     <RootNamespace>Rustlyn.Backend</RootNamespace>
+    <!-- Backend uses reflection-generated binding glue from Rustlyn.Bindings -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
   </PropertyGroup>
 
   <Target Name="GenerateRustlynBindingGlue" BeforeTargets="CoreCompile">
