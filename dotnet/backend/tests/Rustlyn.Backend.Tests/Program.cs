@@ -82,6 +82,7 @@ RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrd
 RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRestoresArtifactWithoutReEmission, failures);
 RunTest("MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs", MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs, failures);
 RunTest("DotNetNewTemplatesAreShapedCorrectly", DotNetNewTemplatesAreShapedCorrectly, failures);
+RunTest("BindingSurfaceMatchesDocumentedInventory", BindingSurfaceMatchesDocumentedInventory, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2268,6 +2269,54 @@ static void DotNetNewTemplatesAreShapedCorrectly()
     Assert(pkg.Contains("rustlyn-classlib", StringComparison.Ordinal) &&
            pkg.Contains("rustlyn-console", StringComparison.Ordinal),
         "Rustlyn.Templates.csproj must include both template directories.");
+}
+
+static void BindingSurfaceMatchesDocumentedInventory()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? docPath = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "docs", "bindings-surface.md");
+        if (File.Exists(probe))
+        {
+            docPath = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(docPath is not null, "docs/bindings-surface.md not found.");
+
+    var doc = File.ReadAllText(docPath!);
+
+    var live = BindingSurface.CreateTinyBclSurface().Requirements
+        .Select(r => r.DisplayName)
+        .OrderBy(s => s, StringComparer.Ordinal)
+        .ToList();
+
+    // Pull every backtick-quoted token out of the doc; that is the canonical
+    // form of every signature line. Then keep only the ones that look like
+    // BCL signatures (contain a '.' or end in '[]') so explanatory backticks
+    // around words such as `CreateTinyBclSurface()` and `BindingSurface.cs`
+    // don't pollute the comparison.
+    var matches = System.Text.RegularExpressions.Regex.Matches(doc, "`([^`]+)`");
+    var documented = matches
+        .Select(m => m.Groups[1].Value)
+        .Where(s => s.StartsWith("System.", StringComparison.Ordinal) || s.StartsWith("Rustlyn.Interop.", StringComparison.Ordinal))
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(s => s, StringComparer.Ordinal)
+        .ToList();
+
+    var missingFromDoc = live.Except(documented, StringComparer.Ordinal).ToList();
+    var extraInDoc = documented.Except(live, StringComparer.Ordinal).ToList();
+
+    Assert(missingFromDoc.Count == 0,
+        $"Live BindingSurface has {missingFromDoc.Count} signatures missing from docs/bindings-surface.md: " +
+        string.Join("; ", missingFromDoc.Take(8)));
+    Assert(extraInDoc.Count == 0,
+        $"docs/bindings-surface.md documents {extraInDoc.Count} signatures that no longer exist in BindingSurface: " +
+        string.Join("; ", extraInDoc.Take(8)));
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
