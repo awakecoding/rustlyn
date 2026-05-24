@@ -76,6 +76,8 @@ RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, 
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
 RunTest("TypeLayoutAggregatesAreSizedWithPadding", TypeLayoutAggregatesAreSizedWithPadding, failures);
 RunTest("TypeLayoutArraysAndVectorsAreSized", TypeLayoutArraysAndVectorsAreSized, failures);
+RunTest("NicheLayoutPolicyHandlesPointersAndNonZero", NicheLayoutPolicyHandlesPointersAndNonZero, failures);
+RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRequiresDiscriminantForPlainInts, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2077,6 +2079,44 @@ static void LowererCoalescesSwitchWithMultipleCases()
     Assert(sw is not null && sw.Cases.Count == 4, "Expected 4 coalesced cases.");
     Assert(sw!.Cases[0].Value == -1L, $"Expected first case value -1, got {sw.Cases[0].Value}.");
     Assert(sw.Cases[3].Target == "meaning", $"Expected last case target 'meaning', got '{sw.Cases[3].Target}'.");
+}
+
+static void NicheLayoutPolicyHandlesPointersAndNonZero()
+{
+    var ptr = NicheLayoutPolicy.OptionLikeFor("ptr");
+    Assert(!ptr.NeedsDiscriminant && ptr.Carrier == NicheCarrierKind.NullablePointer,
+        $"Expected ptr to carry niche, got {ptr}.");
+
+    var refI32 = NicheLayoutPolicy.OptionLikeFor("&i32");
+    Assert(!refI32.NeedsDiscriminant && refI32.Carrier == NicheCarrierKind.NullablePointer,
+        $"Expected &i32 to carry niche, got {refI32}.");
+
+    var nz32 = NicheLayoutPolicy.OptionLikeFor("NonZeroU32");
+    Assert(!nz32.NeedsDiscriminant && nz32.Carrier == NicheCarrierKind.NonZeroInteger,
+        $"Expected NonZeroU32 to carry niche, got {nz32}.");
+
+    var nzPath = NicheLayoutPolicy.OptionLikeFor("core::num::NonZeroUsize");
+    Assert(!nzPath.NeedsDiscriminant && nzPath.Carrier == NicheCarrierKind.NonZeroInteger,
+        $"Expected path-qualified NonZeroUsize to carry niche, got {nzPath}.");
+
+    var b = NicheLayoutPolicy.OptionLikeFor("i1");
+    Assert(!b.NeedsDiscriminant && b.Carrier == NicheCarrierKind.NarrowBool,
+        $"Expected i1 to carry niche, got {b}.");
+}
+
+static void NicheLayoutPolicyRequiresDiscriminantForPlainInts()
+{
+    var u32 = NicheLayoutPolicy.OptionLikeFor("u32");
+    Assert(u32.NeedsDiscriminant, $"Expected u32 to require a discriminant, got {u32}.");
+
+    var i64 = NicheLayoutPolicy.OptionLikeFor("i64");
+    Assert(i64.NeedsDiscriminant, $"Expected i64 to require a discriminant, got {i64}.");
+
+    var f64 = NicheLayoutPolicy.OptionLikeFor("double");
+    Assert(f64.NeedsDiscriminant, $"Expected double to require a discriminant, got {f64}.");
+
+    var empty = NicheLayoutPolicy.OptionLikeFor("");
+    Assert(empty.NeedsDiscriminant, "Expected empty payload to require a discriminant.");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
