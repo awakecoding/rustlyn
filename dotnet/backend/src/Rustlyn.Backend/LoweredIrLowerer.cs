@@ -1708,7 +1708,80 @@ public static partial class LoweredIrLowerer
 
         public LoweredBlock ToBlock()
         {
-            return new LoweredBlock(Name, _instructions);
+            return new LoweredBlock(Name, CoalesceSwitches(_instructions));
+        }
+
+        private static IReadOnlyList<LoweredInstruction> CoalesceSwitches(IReadOnlyList<LoweredInstruction> instructions)
+        {
+            // Detect the multi-line LLVM switch pattern that the text lowerer emits as raw lines:
+            //   switch <type> <value>, label %<default> [
+            //     <type> <case-value>, label %<target>
+            //     ...
+            //   ]
+            // and replace it with a single LoweredSwitchInstruction. This frees downstream tools
+            // from re-parsing the IR text and gives strict diagnostics structured switch metadata.
+            var headerRegex = new System.Text.RegularExpressions.Regex(
+                "^switch (?<type>i\\d+) (?<value>[^,]+), label %(?<defaultTarget>\"[^\"]+\"|[^\\s]+) \\[$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            var caseRegex = new System.Text.RegularExpressions.Regex(
+                "^(?<type>i\\d+) (?<value>-?\\d+), label %(?<target>\"[^\"]+\"|[^\\s]+)$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+            List<LoweredInstruction>? rewritten = null;
+            for (var i = 0; i < instructions.Count; i++)
+            {
+                if (instructions[i] is LoweredRawInstruction raw)
+                {
+                    var hdr = headerRegex.Match(raw.Text);
+                    if (hdr.Success)
+                    {
+                        // Scan forward for cases until "]".
+                        var cases = new List<LoweredSwitchCase>();
+                        var j = i + 1;
+                        var closing = -1;
+                        while (j < instructions.Count && instructions[j] is LoweredRawInstruction caseRaw)
+                        {
+                            if (string.Equals(caseRaw.Text, "]", StringComparison.Ordinal))
+                            {
+                                closing = j;
+                                break;
+                            }
+                            var cm = caseRegex.Match(caseRaw.Text);
+                            if (cm.Success)
+                            {
+                                cases.Add(new LoweredSwitchCase(
+                                    long.Parse(cm.Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture),
+                                    StripLabelQuotes(cm.Groups["target"].Value)));
+                                j++;
+                                continue;
+                            }
+                            break;
+                        }
+
+                        if (closing >= 0)
+                        {
+                            rewritten ??= new List<LoweredInstruction>(instructions.Take(i));
+                            rewritten.Add(new LoweredSwitchInstruction(
+                                hdr.Groups["type"].Value,
+                                hdr.Groups["value"].Value.Trim(),
+                                StripLabelQuotes(hdr.Groups["defaultTarget"].Value),
+                                cases));
+                            i = closing;
+                            continue;
+                        }
+                    }
+                }
+
+                rewritten?.Add(instructions[i]);
+            }
+
+            return rewritten ?? instructions;
+        }
+
+        private static string StripLabelQuotes(string raw)
+        {
+            var t = raw.Trim();
+            return t.Length >= 2 && t[0] == '"' && t[^1] == '"' ? t.Substring(1, t.Length - 2) : t;
         }
     }
 }

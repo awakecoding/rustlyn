@@ -69,6 +69,8 @@ RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsV
 RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
 RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
 RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
+RunTest("LowererCoalescesSwitchIntoTypedInstruction", LowererCoalescesSwitchIntoTypedInstruction, failures);
+RunTest("LowererCoalescesSwitchWithMultipleCases", LowererCoalescesSwitchWithMultipleCases, failures);
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
@@ -2030,6 +2032,51 @@ static void TypeLayoutArraysAndVectorsAreSized()
         $"Expected [3 x i8] to be 3 bytes / 1-align, got size={a2.SizeInBytes} align={a2.AlignmentInBytes}.");
     Assert(svc.TryGetLayout("<4 x i32>", out var v) && v.SizeInBytes == 16 && v.Category == TypeLayoutCategory.Vector,
         $"Expected <4 x i32> to be 16 bytes and Vector category, got size={v.SizeInBytes} cat={v.Category}.");
+}
+
+static void LowererCoalescesSwitchIntoTypedInstruction()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @sw(i32 %v) {\n" +
+        "entry:\n" +
+        "  switch i32 %v, label %default [\n" +
+        "    i32 1, label %one\n" +
+        "    i32 2, label %two\n" +
+        "  ]\n" +
+        "one:\n  ret i32 11\n" +
+        "two:\n  ret i32 22\n" +
+        "default:\n  ret i32 0\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null, "Expected switch to coalesce into LoweredSwitchInstruction.");
+    Assert(sw!.ValueType == "i32", $"Expected ValueType 'i32', got '{sw.ValueType}'.");
+    Assert(sw.DefaultLabel == "default", $"Expected default 'default', got '{sw.DefaultLabel}'.");
+    Assert(sw.Cases.Count == 2, $"Expected 2 cases, got {sw.Cases.Count}.");
+    Assert(sw.Cases[0].Value == 1 && sw.Cases[0].Target == "one", "Case 0 mismatch.");
+    Assert(sw.Cases[1].Value == 2 && sw.Cases[1].Target == "two", "Case 1 mismatch.");
+}
+
+static void LowererCoalescesSwitchWithMultipleCases()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @big(i32 %v) {\n" +
+        "entry:\n" +
+        "  switch i32 %v, label %def [\n" +
+        "    i32 -1, label %neg\n" +
+        "    i32 0, label %zero\n" +
+        "    i32 7, label %seven\n" +
+        "    i32 42, label %meaning\n" +
+        "  ]\n" +
+        "neg:\n  ret i32 1\n" +
+        "zero:\n  ret i32 2\n" +
+        "seven:\n  ret i32 3\n" +
+        "meaning:\n  ret i32 4\n" +
+        "def:\n  ret i32 0\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null && sw.Cases.Count == 4, "Expected 4 coalesced cases.");
+    Assert(sw!.Cases[0].Value == -1L, $"Expected first case value -1, got {sw.Cases[0].Value}.");
+    Assert(sw.Cases[3].Target == "meaning", $"Expected last case target 'meaning', got '{sw.Cases[3].Target}'.");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()

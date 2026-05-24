@@ -217,6 +217,19 @@ public sealed record LoweredVolatileStoreInstruction(
     string Value,
     string Pointer) : LoweredInstruction;
 
+/// <summary>
+/// Typed representation of LLVM <c>switch</c>. Replaces the previous multi-raw-instruction state
+/// machine in the emitter so the model carries every case explicitly and downstream tools (strict
+/// diagnostics, JIT-style codegen) can reason about switch shape without re-parsing IR text.
+/// </summary>
+public sealed record LoweredSwitchInstruction(
+    string ValueType,
+    string Value,
+    string DefaultLabel,
+    System.Collections.Generic.IReadOnlyList<LoweredSwitchCase> Cases) : LoweredInstruction;
+
+public sealed record LoweredSwitchCase(long Value, string Target);
+
 public sealed record LoweredArgument(
     string Type,
     string Value);

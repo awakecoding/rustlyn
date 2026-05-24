@@ -1656,6 +1656,10 @@ public static class LoweredAssemblyEmitter
             case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock):
                 break;
 
+            case LoweredSwitchInstruction sw:
+                EmitTypedSwitch(encoder, sw, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock);
+                break;
+
             case LoweredRawInstruction raw:
                 if (StrictUnsupportedIr)
                 {
@@ -2955,6 +2959,43 @@ public static class LoweredAssemblyEmitter
             }
         }
         return null;
+    }
+
+    private static void EmitTypedSwitch(
+        InstructionEncoder encoder,
+        LoweredSwitchInstruction sw,
+        SrmTypeContext typeContext,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        IReadOnlyDictionary<string, LabelHandle> labelMap,
+        IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock,
+        string sourceBlock)
+    {
+        var switchValue = NormalizeRawValue(sw.Value);
+        var isWideSwitch = string.Equals(sw.ValueType, "i64", StringComparison.Ordinal);
+
+        foreach (var c in sw.Cases)
+        {
+            EmitLoadValue(encoder, switchValue, paramIndices, localIndices, fieldHandles);
+            if (isWideSwitch)
+            {
+                encoder.LoadConstantI8(c.Value);
+            }
+            else
+            {
+                encoder.LoadConstantI4((int)c.Value);
+            }
+            encoder.OpCode(ILOpCode.Ceq);
+            var nextCase = encoder.DefineLabel();
+            encoder.Branch(ILOpCode.Brfalse, nextCase);
+            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, c.Target);
+            encoder.Branch(ILOpCode.Br, labelMap[c.Target]);
+            encoder.MarkLabel(nextCase);
+        }
+
+        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, sw.DefaultLabel);
+        encoder.Branch(ILOpCode.Br, labelMap[sw.DefaultLabel]);
     }
 
     private static bool TryEmitRawSwitch(
