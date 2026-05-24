@@ -41,6 +41,9 @@ public abstract record ManagedGlueExpression
     public static ManagedGlueExpression ArrayElement(ManagedGlueExpression array, string indexParameterName)
         => new ManagedGlueArrayElementExpression(array, indexParameterName);
 
+    public static ManagedGlueExpression Constructor(Type declaringType, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
+        => new ManagedGlueConstructorExpression(declaringType, parameterTypes, arguments);
+
     public abstract string ToCode();
 
     public virtual void Validate()
@@ -239,6 +242,31 @@ public sealed record ManagedGlueArrayElementExpression(ManagedGlueExpression Arr
 
     public override void Validate()
         => Array.Validate();
+}
+
+public sealed record ManagedGlueConstructorExpression(
+    Type DeclaringType,
+    IReadOnlyList<Type> ParameterTypes,
+    IReadOnlyList<ManagedGlueExpression> Arguments) : ManagedGlueExpression
+{
+    public override string ToCode()
+        => $"new {ManagedGlueCode.TypeName(DeclaringType)}({string.Join(", ", Arguments.Select(a => a.ToCode()))})";
+
+    public override void Validate()
+    {
+        if (ParameterTypes.Count != Arguments.Count)
+        {
+            throw new InvalidOperationException($"Managed glue constructor '{ManagedGlueCode.TypeName(DeclaringType)}' has {Arguments.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} arguments for {ParameterTypes.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} parameters.");
+        }
+
+        foreach (var argument in Arguments)
+        {
+            argument.Validate();
+        }
+
+        var ctor = DeclaringType.GetConstructor(ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Managed glue constructor '{ManagedGlueCode.TypeName(DeclaringType)}' could not be resolved.");
+    }
 }
 
 internal static class ManagedGlueCode

@@ -1095,6 +1095,9 @@ public sealed record ManagedApiRequirement(string DisplayName, Type Type, Manage
     public static ManagedApiRequirement Property(string displayName, Type type, string propertyName)
         => new(displayName, type, ManagedApiRequirementKind.Property, propertyName, []);
 
+    public static ManagedApiRequirement Constructor(string displayName, Type type, IReadOnlyList<Type> parameterTypes)
+        => new(displayName, type, ManagedApiRequirementKind.Constructor, ".ctor", parameterTypes);
+
     public void Validate()
     {
         if (Kind == ManagedApiRequirementKind.Type)
@@ -1126,6 +1129,13 @@ public sealed record ManagedApiRequirement(string DisplayName, Type Type, Manage
             return;
         }
 
+        if (Kind == ManagedApiRequirementKind.Constructor)
+        {
+            _ = Type.GetConstructor(ParameterTypes.ToArray())
+                ?? throw new InvalidOperationException($"Managed binding requirement '{DisplayName}' could not be resolved.");
+            return;
+        }
+
         throw new NotSupportedException($"Managed binding requirement kind '{Kind}' is not supported.");
     }
 }
@@ -1135,7 +1145,8 @@ public enum ManagedApiRequirementKind
     Type,
     Method,
     Property,
-    Event
+    Event,
+    Constructor
 }
 
 public sealed record RustEnumProjection(string RustName, Type ManagedType, bool IsFlags, IReadOnlyList<RustEnumVariant> Variants)

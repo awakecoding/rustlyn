@@ -135,6 +135,232 @@ public static class BindingSurfaceScanner
     }
 
     /// <summary>
+    /// Creates a binding for an instance method that takes scalar parameters and returns a scalar.
+    /// The instance is received as an object handle (GC-tracked int).
+    /// </summary>
+    public static ScannedBinding CreateInstanceScalarMethodBinding(InstanceScalarMethodBindingRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var method = request.DeclaringType.GetMethod(request.MethodName, BindingFlags.Public | BindingFlags.Instance, request.ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Instance scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' could not be resolved.");
+        if (method.IsStatic)
+        {
+            throw new InvalidOperationException($"Instance scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' is static.");
+        }
+
+        if (!IsScalarBindingType(method.ReturnType))
+        {
+            throw new InvalidOperationException($"Instance scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported return type '{method.ReturnType}'.");
+        }
+
+        foreach (var parameterType in request.ParameterTypes)
+        {
+            if (!IsScalarBindingType(parameterType))
+            {
+                throw new InvalidOperationException($"Instance scalar binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported parameter type '{parameterType}'.");
+            }
+        }
+
+        var parameterNames = CreateStableParameterNames(request.ParameterTypes.Count);
+        var symbol = CreateInstanceSymbol(method, request.ParameterTypes);
+        var helperMethodName = CreateHelperMethodName(symbol);
+
+        var selfParameter = new ManagedGlueParameter("int", "selfHandle");
+        var selfExpression = ManagedGlueExpression.ManagedObject(request.DeclaringType, "selfHandle");
+        var glueParameters = parameterNames.Zip(request.ParameterTypes, static (name, type) => new ManagedGlueParameter(ToManagedGlueTypeName(type), name)).ToArray();
+        var arguments = glueParameters.Select(static parameter => ManagedGlueExpression.Parameter(parameter.Name)).ToArray();
+
+        var result = CreateScalarResult(
+            method.ReturnType,
+            ManagedGlueExpression.InstanceMethod(selfExpression, request.DeclaringType, request.MethodName, request.ParameterTypes, arguments));
+        var operation = ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", result);
+        var allGlueParameters = new[] { selfParameter }.Concat(glueParameters).Append(new ManagedGlueParameter("IntPtr", "exceptionOutPointer")).ToArray();
+        var glue = new ManagedGlueBinding(symbol, helperMethodName, allGlueParameters, operation);
+
+        var rustSelfParam = $"self_handle: &{ToRustObjectHandleTypeName(request.DeclaringType)}";
+        var rustParameterList = parameterNames.Zip(request.ParameterTypes, static (name, type) => $"{name}: {ToRustTypeName(type)}");
+        var allRustParams = new[] { rustSelfParam }.Concat(rustParameterList);
+        var rustCallArgs = new[] { "self_handle.handle()" }.Concat(parameterNames);
+
+        var wrapper = new RustWrapperMethod(
+            request.Container,
+            $"pub fn {ToSnakeCase(request.MethodName)}({string.Join(", ", allRustParams)}) -> Result<{ToRustTypeName(method.ReturnType)}, Exception>",
+            symbol,
+            rustCallArgs.ToArray(),
+            parameterNames.Length == 1 ? parameterNames[0] : "value",
+            RustWrapperResult.Scalar(ToRustTypeName(method.ReturnType)));
+
+        var requirement = ManagedApiRequirement.Method(
+            FormatMethodDisplayName(request.DeclaringType, request.MethodName, request.ParameterTypes.ToArray()),
+            request.DeclaringType,
+            request.MethodName,
+            request.ParameterTypes);
+        return new ScannedBinding(requirement, glue, wrapper);
+    }
+
+    /// <summary>
+    /// Creates a binding for an instance method that takes scalar/object-handle parameters and returns an object handle.
+    /// The instance is received as an object handle (GC-tracked int).
+    /// </summary>
+    public static ScannedBinding CreateInstanceObjectHandleMethodBinding(InstanceObjectHandleMethodBindingRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var method = request.DeclaringType.GetMethod(request.MethodName, BindingFlags.Public | BindingFlags.Instance, request.ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Instance object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' could not be resolved.");
+        if (method.IsStatic)
+        {
+            throw new InvalidOperationException($"Instance object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' is static.");
+        }
+
+        if (!IsObjectHandleBindingType(method.ReturnType))
+        {
+            throw new InvalidOperationException($"Instance object-handle binding target '{request.DeclaringType.FullName}.{request.MethodName}' has unsupported return type '{method.ReturnType}'.");
+        }
+
+        var discoveredParameterNames = method.GetParameters()
+            .Select(static parameter => string.IsNullOrWhiteSpace(parameter.Name) ? null : parameter.Name)
+            .ToArray();
+        var managedParameterNames = new string[discoveredParameterNames.Length];
+        for (var index = 0; index < discoveredParameterNames.Length; index++)
+        {
+            managedParameterNames[index] = discoveredParameterNames[index]
+                ?? $"value{(index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+
+        var symbol = CreateInstanceSymbol(method, request.ParameterTypes);
+        var helperMethodName = CreateHelperMethodName(symbol);
+
+        var selfParameter = new ManagedGlueParameter("int", "selfHandle");
+        var selfExpression = ManagedGlueExpression.ManagedObject(request.DeclaringType, "selfHandle");
+        var glueParameters = managedParameterNames.Zip(request.ParameterTypes, static (name, type) => new ManagedGlueParameter("int", $"{name}Handle")).ToArray();
+        var arguments = glueParameters.Zip(request.ParameterTypes, static (parameter, type) => ManagedGlueExpression.ManagedObject(type, parameter.Name)).ToArray();
+
+        var result = ManagedGlueResult.ObjectHandle(
+            ManagedGlueExpression.InstanceMethod(selfExpression, request.DeclaringType, request.MethodName, request.ParameterTypes, arguments));
+        var operation = ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", result);
+        var allGlueParameters = new[] { selfParameter }.Concat(glueParameters).Append(new ManagedGlueParameter("IntPtr", "exceptionOutPointer")).ToArray();
+        var glue = new ManagedGlueBinding(symbol, helperMethodName, allGlueParameters, operation);
+
+        var rustParameterNames = managedParameterNames.Select(ToSnakeCase).ToArray();
+        var rustSelfParam = $"self_handle: &{ToRustObjectHandleTypeName(request.DeclaringType)}";
+        var rustParameters = rustParameterNames.Zip(request.ParameterTypes, static (name, type) => $"{name}: &{ToRustObjectHandleTypeName(type)}").ToArray();
+        var allRustParams = new[] { rustSelfParam }.Concat(rustParameters);
+        var rustCallArgs = new[] { "self_handle.handle()" }.Concat(rustParameterNames.Select(static name => $"{name}.handle()"));
+
+        var wrapper = new RustWrapperMethod(
+            request.Container,
+            $"pub fn {ToSnakeCase(request.MethodName)}({string.Join(", ", allRustParams)}) -> Result<{ToRustObjectHandleTypeName(method.ReturnType)}, Exception>",
+            symbol,
+            rustCallArgs.ToArray(),
+            "object_handle",
+            RustWrapperResult.ObjectHandle(ToRustObjectHandleTypeName(method.ReturnType)));
+
+        var requirement = ManagedApiRequirement.Method(
+            FormatMethodDisplayName(request.DeclaringType, request.MethodName, request.ParameterTypes.ToArray()),
+            request.DeclaringType,
+            request.MethodName,
+            request.ParameterTypes);
+        return new ScannedBinding(requirement, glue, wrapper);
+    }
+
+    /// <summary>
+    /// Creates a binding for a public constructor that takes scalar/object-handle parameters.
+    /// Returns an object handle representing the new instance.
+    /// </summary>
+    public static ScannedBinding CreateConstructorBinding(ConstructorBindingRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var ctor = request.DeclaringType.GetConstructor(request.ParameterTypes.ToArray())
+            ?? throw new InvalidOperationException($"Constructor binding target '{request.DeclaringType.FullName}' with parameter types [{string.Join(", ", request.ParameterTypes.Select(FormatDiagnosticTypeName))}] could not be resolved.");
+
+        foreach (var parameterType in request.ParameterTypes)
+        {
+            if (!IsScalarBindingType(parameterType) && !IsObjectHandleBindingType(parameterType))
+            {
+                throw new InvalidOperationException($"Constructor binding target '{request.DeclaringType.FullName}' has unsupported parameter type '{parameterType}'.");
+            }
+        }
+
+        var discoveredParameterNames = ctor.GetParameters()
+            .Select(static parameter => string.IsNullOrWhiteSpace(parameter.Name) ? null : parameter.Name)
+            .ToArray();
+        var managedParameterNames = new string[discoveredParameterNames.Length];
+        for (var index = 0; index < discoveredParameterNames.Length; index++)
+        {
+            managedParameterNames[index] = discoveredParameterNames[index]
+                ?? $"value{(index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+
+        var fullName = request.DeclaringType.FullName
+            ?? throw new InvalidOperationException($"Constructor target type does not expose a full name.");
+        var typePart = string.Join("_", fullName.Split('.').Select(static part => part.ToLowerInvariant()));
+        var suffix = request.ParameterTypes.Count > 0
+            ? string.Join("_", request.ParameterTypes.Select(ToSymbolTypeSuffix))
+            : "void";
+        var symbol = $"rustlyn_bindgen_{typePart}_new_{suffix}";
+        var helperMethodName = CreateHelperMethodName(symbol);
+
+        var glueParameters = new List<ManagedGlueParameter>();
+        var arguments = new List<ManagedGlueExpression>();
+        for (var i = 0; i < request.ParameterTypes.Count; i++)
+        {
+            var paramType = request.ParameterTypes[i];
+            var paramName = managedParameterNames[i];
+            if (IsScalarBindingType(paramType))
+            {
+                glueParameters.Add(new ManagedGlueParameter(ToManagedGlueTypeName(paramType), paramName));
+                arguments.Add(ManagedGlueExpression.Parameter(paramName));
+            }
+            else
+            {
+                glueParameters.Add(new ManagedGlueParameter("int", $"{paramName}Handle"));
+                arguments.Add(ManagedGlueExpression.ManagedObject(paramType, $"{paramName}Handle"));
+            }
+        }
+
+        var constructorExpression = ManagedGlueExpression.Constructor(request.DeclaringType, request.ParameterTypes, arguments);
+        var result = ManagedGlueResult.ObjectHandle(constructorExpression);
+        var operation = ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", result);
+        var allGlueParameters = glueParameters.Append(new ManagedGlueParameter("IntPtr", "exceptionOutPointer")).ToArray();
+        var glue = new ManagedGlueBinding(symbol, helperMethodName, allGlueParameters, operation);
+
+        var rustParameterNames = managedParameterNames.Select(ToSnakeCase).ToArray();
+        var rustParams = new List<string>();
+        var rustCallArgs = new List<string>();
+        for (var i = 0; i < request.ParameterTypes.Count; i++)
+        {
+            var paramType = request.ParameterTypes[i];
+            var rustName = rustParameterNames[i];
+            if (IsScalarBindingType(paramType))
+            {
+                rustParams.Add($"{rustName}: {ToRustTypeName(paramType)}");
+                rustCallArgs.Add(rustName);
+            }
+            else
+            {
+                rustParams.Add($"{rustName}: &{ToRustObjectHandleTypeName(paramType)}");
+                rustCallArgs.Add($"{rustName}.handle()");
+            }
+        }
+
+        var rustReturnType = ToRustObjectHandleTypeName(request.DeclaringType);
+        var wrapper = new RustWrapperMethod(
+            request.Container,
+            $"pub fn new({string.Join(", ", rustParams)}) -> Result<{rustReturnType}, Exception>",
+            symbol,
+            rustCallArgs.ToArray(),
+            "object_handle",
+            RustWrapperResult.ObjectHandle(rustReturnType));
+
+        var displayName = $"{request.DeclaringType.FullName}..ctor({string.Join(", ", request.ParameterTypes.Select(FormatTypeName))})";
+        var requirement = ManagedApiRequirement.Constructor(displayName, request.DeclaringType, request.ParameterTypes);
+        return new ScannedBinding(requirement, glue, wrapper);
+    }
+
+    /// <summary>
     /// Scans a type for public methods and properties that match supported binding signatures.
     /// Returns requirements for methods whose parameters are all bindable types.
     /// </summary>
@@ -252,6 +478,175 @@ public static class BindingSurfaceScanner
         }
 
         return all;
+    }
+
+    /// <summary>
+    /// Scans an assembly loaded from a file path, filtering types by namespace pattern.
+    /// Returns all bindable requirements and diagnostics for unsupported shapes.
+    /// The namespace filter supports trailing wildcard (e.g., "System.IO.*") or exact match.
+    /// </summary>
+    public static AssemblyScanResult ScanAssembly(string assemblyPath, string? namespaceFilter = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
+
+        var fullPath = Path.GetFullPath(assemblyPath);
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException($"Assembly not found: {fullPath}", fullPath);
+        }
+
+        var assembly = Assembly.LoadFrom(fullPath);
+        return ScanLoadedAssembly(assembly, namespaceFilter);
+    }
+
+    /// <summary>
+    /// Scans a loaded assembly, filtering types by namespace pattern.
+    /// </summary>
+    public static AssemblyScanResult ScanLoadedAssembly(Assembly assembly, string? namespaceFilter = null)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        var allRequirements = new List<ManagedApiRequirement>();
+        var allUnsupported = new List<BindingScanUnsupportedShape>();
+        var scannedTypes = new List<Type>();
+
+        foreach (var type in assembly.GetExportedTypes()
+            .Where(t => !t.IsGenericTypeDefinition && !t.IsInterface && !t.IsAbstract)
+            .Where(t => MatchesNamespaceFilter(t, namespaceFilter))
+            .OrderBy(t => t.FullName, StringComparer.Ordinal))
+        {
+            var result = ScanTypeWithDiagnostics(type);
+            allRequirements.AddRange(result.Requirements);
+            allUnsupported.AddRange(result.UnsupportedShapes);
+            scannedTypes.Add(type);
+        }
+
+        return new AssemblyScanResult(
+            assembly.GetName().Name ?? assembly.FullName ?? "Unknown",
+            scannedTypes,
+            allRequirements,
+            allUnsupported);
+    }
+
+    /// <summary>
+    /// Scans an assembly and produces complete ScannedBinding entries for all supported
+    /// static methods — ready for code generation without manual binding request construction.
+    /// </summary>
+    public static IReadOnlyList<ScannedBinding> AutoGenerateBindings(Assembly assembly, string? namespaceFilter = null, RustWrapperContainer? container = null)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        var targetContainer = container ?? RustWrapperContainer.Math;
+        var bindings = new List<ScannedBinding>();
+
+        foreach (var type in assembly.GetExportedTypes()
+            .Where(t => !t.IsGenericTypeDefinition && !t.IsInterface && !t.IsAbstract)
+            .Where(t => MatchesNamespaceFilter(t, namespaceFilter))
+            .OrderBy(t => t.FullName, StringComparer.Ordinal))
+        {
+            // Static methods
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Where(m => !m.IsSpecialName && !m.IsGenericMethodDefinition && !m.ContainsGenericParameters)
+                .OrderBy(m => m.Name, StringComparer.Ordinal))
+            {
+                var parameters = method.GetParameters();
+                if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+                var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+
+                if (paramTypes.All(IsScalarBindingType) && IsScalarBindingType(method.ReturnType))
+                {
+                    try
+                    {
+                        var request = new StaticScalarMethodBindingRequest(type, method.Name, paramTypes, targetContainer);
+                        bindings.Add(CreateStaticScalarMethodBinding(request));
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+                }
+                else if (paramTypes.All(t => IsObjectHandleBindingType(t) || IsScalarBindingType(t))
+                    && IsObjectHandleBindingType(method.ReturnType))
+                {
+                    try
+                    {
+                        var request = new StaticObjectHandleMethodBindingRequest(type, method.Name, paramTypes, targetContainer);
+                        bindings.Add(CreateStaticObjectHandleMethodBinding(request));
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+                }
+            }
+
+            // Instance methods
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(m => !m.IsSpecialName && !m.IsGenericMethodDefinition && !m.ContainsGenericParameters)
+                .OrderBy(m => m.Name, StringComparer.Ordinal))
+            {
+                var parameters = method.GetParameters();
+                if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+                var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+
+                if (paramTypes.All(IsScalarBindingType) && IsScalarBindingType(method.ReturnType))
+                {
+                    try
+                    {
+                        var request = new InstanceScalarMethodBindingRequest(type, method.Name, paramTypes, targetContainer);
+                        bindings.Add(CreateInstanceScalarMethodBinding(request));
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+                }
+                else if (paramTypes.All(t => IsObjectHandleBindingType(t) || IsScalarBindingType(t))
+                    && IsObjectHandleBindingType(method.ReturnType))
+                {
+                    try
+                    {
+                        var request = new InstanceObjectHandleMethodBindingRequest(type, method.Name, paramTypes, targetContainer);
+                        bindings.Add(CreateInstanceObjectHandleMethodBinding(request));
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+                }
+            }
+
+            // Constructors
+            foreach (var ctor in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+                .Where(c => !c.ContainsGenericParameters)
+                .OrderBy(c => c.GetParameters().Length))
+            {
+                var parameters = ctor.GetParameters();
+                if (parameters.Any(p => p.ParameterType.IsByRef)) continue;
+
+                var paramTypes = parameters.Select(p => p.ParameterType).ToList();
+                if (paramTypes.All(t => IsScalarBindingType(t) || IsObjectHandleBindingType(t)))
+                {
+                    try
+                    {
+                        var request = new ConstructorBindingRequest(type, paramTypes, targetContainer);
+                        bindings.Add(CreateConstructorBinding(request));
+                    }
+                    catch (InvalidOperationException) { }
+                    catch (NotSupportedException) { }
+                }
+            }
+        }
+
+        return bindings;
+    }
+
+    private static bool MatchesNamespaceFilter(Type type, string? filter)
+    {
+        if (string.IsNullOrEmpty(filter)) return true;
+
+        var ns = type.Namespace ?? string.Empty;
+        if (filter.EndsWith(".*", StringComparison.Ordinal))
+        {
+            var prefix = filter[..^2];
+            return ns.StartsWith(prefix, StringComparison.Ordinal);
+        }
+
+        return string.Equals(ns, filter, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -464,6 +859,17 @@ public static class BindingSurfaceScanner
         return $"rustlyn_bindgen_{typePart}_{ToSnakeCase(method.Name)}_{suffix}";
     }
 
+    private static string CreateInstanceSymbol(MethodInfo method, IReadOnlyList<Type> parameterTypes)
+    {
+        var fullName = method.DeclaringType?.FullName
+            ?? throw new InvalidOperationException($"Method '{method.Name}' does not expose a declaring type.");
+        var typePart = string.Join("_", fullName.Split('.').Select(static part => part.ToLowerInvariant()));
+        var suffix = parameterTypes.Count > 0
+            ? string.Join("_", parameterTypes.Select(ToSymbolTypeSuffix))
+            : "void";
+        return $"rustlyn_bindgen_{typePart}_inst_{ToSnakeCase(method.Name)}_{suffix}";
+    }
+
     private static string CreateHelperMethodName(string symbol)
     {
         const string prefix = "rustlyn_";
@@ -570,7 +976,8 @@ public static class BindingSurfaceScanner
             return "ManagedByteArray";
         }
 
-        throw new NotSupportedException($"Rust object-handle type '{type}' is not supported.");
+        // Generic fallback for arbitrary managed types used as object handles
+        return $"Managed{type.Name}";
     }
 
     private static string ToSymbolTypeSuffix(Type type)
@@ -664,3 +1071,26 @@ public sealed record BindingScanUnsupportedShape(
     ManagedApiRequirementKind Kind,
     string? MemberName,
     string Reason);
+
+public sealed record AssemblyScanResult(
+    string AssemblyName,
+    IReadOnlyList<Type> ScannedTypes,
+    IReadOnlyList<ManagedApiRequirement> Requirements,
+    IReadOnlyList<BindingScanUnsupportedShape> UnsupportedShapes);
+
+public sealed record InstanceScalarMethodBindingRequest(
+    Type DeclaringType,
+    string MethodName,
+    IReadOnlyList<Type> ParameterTypes,
+    RustWrapperContainer Container);
+
+public sealed record InstanceObjectHandleMethodBindingRequest(
+    Type DeclaringType,
+    string MethodName,
+    IReadOnlyList<Type> ParameterTypes,
+    RustWrapperContainer Container);
+
+public sealed record ConstructorBindingRequest(
+    Type DeclaringType,
+    IReadOnlyList<Type> ParameterTypes,
+    RustWrapperContainer Container);
