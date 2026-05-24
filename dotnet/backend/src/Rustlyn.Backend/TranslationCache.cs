@@ -102,6 +102,73 @@ public sealed class TranslationCache
         return Convert.ToHexString(hash);
     }
 
+    /// <summary>
+    /// Computes a stable hash that represents the entire module's translation inputs:
+    /// every function's IR shape plus the emit options that affect output. If two runs
+    /// produce the same module hash, the emitted assembly can be reused without
+    /// re-running emission.
+    /// </summary>
+    public static string ComputeModuleHash(IReadOnlyList<LoweredFunction> functions, string emitOptionsKey)
+    {
+        using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hasher.AppendData(Encoding.UTF8.GetBytes(emitOptionsKey ?? string.Empty));
+        foreach (var f in functions.OrderBy(f => f.Name, StringComparer.Ordinal))
+        {
+            hasher.AppendData(Encoding.UTF8.GetBytes(ComputeFunctionHash(f)));
+        }
+        return Convert.ToHexString(hasher.GetHashAndReset());
+    }
+
+    /// <summary>
+    /// Try to restore a previously-emitted assembly for <paramref name="moduleHash"/> into
+    /// <paramref name="destinationPath"/>. Returns true on a cache hit. On hit, the
+    /// destination file is overwritten with the cached bytes.
+    /// </summary>
+    public bool TryRestoreArtifact(string moduleHash, string destinationPath)
+    {
+        var artifact = GetArtifactPath(moduleHash);
+        if (!File.Exists(artifact))
+        {
+            return false;
+        }
+        var dir = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+        File.Copy(artifact, destinationPath, overwrite: true);
+        return true;
+    }
+
+    /// <summary>
+    /// Record the freshly-emitted assembly at <paramref name="sourceAssemblyPath"/> as the
+    /// cached artifact for <paramref name="moduleHash"/>.
+    /// </summary>
+    public void RecordArtifact(string moduleHash, string sourceAssemblyPath)
+    {
+        if (!File.Exists(sourceAssemblyPath))
+        {
+            return;
+        }
+        var artifact = GetArtifactPath(moduleHash);
+        var dir = Path.GetDirectoryName(artifact);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+        File.Copy(sourceAssemblyPath, artifact, overwrite: true);
+    }
+
+    private string GetArtifactPath(string moduleHash)
+    {
+        var dir = Path.GetDirectoryName(_cachePath);
+        if (string.IsNullOrEmpty(dir))
+        {
+            dir = ".";
+        }
+        return Path.Combine(dir, "artifacts", moduleHash + ".bin");
+    }
+
     private static Dictionary<string, CacheEntry> Load(string path)
     {
         if (!File.Exists(path))

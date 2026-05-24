@@ -79,6 +79,7 @@ RunTest("TypeLayoutArraysAndVectorsAreSized", TypeLayoutArraysAndVectorsAreSized
 RunTest("NicheLayoutPolicyHandlesPointersAndNonZero", NicheLayoutPolicyHandlesPointersAndNonZero, failures);
 RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRequiresDiscriminantForPlainInts, failures);
 RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrderingsToStrategies, failures);
+RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRestoresArtifactWithoutReEmission, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2146,6 +2147,49 @@ static void AtomicOrderingMapsRustOrderingsToStrategies()
     Assert(fenceSC.Strategy == AtomicLoweringStrategy.BarrierFenced, "seqcst fence -> full barrier");
     var fenceMono = AtomicOrderingMap.ForFence(AtomicOrdering.Monotonic);
     Assert(fenceMono.Strategy == AtomicLoweringStrategy.VolatileAccess, "monotonic fence is a no-op");
+}
+
+static void TranslationCacheRestoresArtifactWithoutReEmission()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), "rustlyn-cache-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(tempRoot);
+    try
+    {
+        var cachePath = Path.Combine(tempRoot, "cache.json");
+        var firstOutput = Path.Combine(tempRoot, "first.dll");
+        var secondOutput = Path.Combine(tempRoot, "second.dll");
+
+        var module = LoweredIrLowerer.LowerLlvmIr(
+            "define i32 @id(i32 %x) {\nentry:\n  ret i32 %x\n}\n");
+
+        var cache = new TranslationCache(cachePath);
+        var hash = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=false;pdb=false");
+
+        // First run: miss, simulate emission by writing bytes, then record artifact.
+        Assert(!cache.TryRestoreArtifact(hash, firstOutput), "First run must miss the cache.");
+        var simulated = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00 };
+        File.WriteAllBytes(firstOutput, simulated);
+        cache.RecordArtifact(hash, firstOutput);
+        cache.Save();
+
+        // Second run: same hash should restore the exact bytes.
+        var cache2 = new TranslationCache(cachePath);
+        var hash2 = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=false;pdb=false");
+        Assert(hash == hash2, "Module hash must be deterministic.");
+        Assert(cache2.TryRestoreArtifact(hash2, secondOutput), "Second run must hit the cache.");
+
+        var restored = File.ReadAllBytes(secondOutput);
+        Assert(restored.SequenceEqual(simulated), "Restored bytes must equal the recorded bytes.");
+
+        // Different emit options must invalidate the cache.
+        var hashStrict = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=true;pdb=false");
+        Assert(hash != hashStrict, "Different emit options must produce different module hashes.");
+        Assert(!cache2.TryRestoreArtifact(hashStrict, secondOutput), "Strict-mode emit options must miss the cache.");
+    }
+    finally
+    {
+        try { Directory.Delete(tempRoot, recursive: true); } catch { }
+    }
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
