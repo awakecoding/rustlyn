@@ -20,7 +20,21 @@ public static class LoweredAssemblyEmitter
         EmitModule(loweredModule, outputAssemblyPath);
     }
 
+    public static void EmitBitcode(string artifactPath, string outputAssemblyPath, EmitOptions options, string? llvmRoot = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputAssemblyPath);
+
+        var loweredModule = LoweredIrLowerer.LowerBitcode(artifactPath, llvmRoot);
+        EmitModule(loweredModule, outputAssemblyPath, options);
+    }
+
     public static void EmitModule(LoweredModule loweredModule, string outputAssemblyPath)
+    {
+        EmitModule(loweredModule, outputAssemblyPath, EmitOptions.Default);
+    }
+
+    public static void EmitModule(LoweredModule loweredModule, string outputAssemblyPath, EmitOptions options)
     {
         ArgumentNullException.ThrowIfNull(loweredModule);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputAssemblyPath);
@@ -33,7 +47,28 @@ public static class LoweredAssemblyEmitter
         var consoleEntrypoint = TrySelectConsoleEntrypoint(emittedFunctions);
         var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions);
 
-        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport);
+        // Emit PDB if requested
+        PortablePdbResult? pdbResult = null;
+        if (options.EmitPdb)
+        {
+            var pdbPath = Path.ChangeExtension(outputFullPath, ".pdb");
+            var pdbEmitter = new PortablePdbEmitter();
+
+            // Register a synthetic source document based on the module source path or assembly name
+            var sourceDoc = pdbEmitter.GetOrAddDocument(
+                loweredModule.SourcePath ?? $"{assemblyName}.rs");
+
+            // Add entry-point sequence points for each function (line = function index + 1)
+            for (var i = 0; i < emittedFunctions.Count; i++)
+            {
+                var methodHandle = MetadataTokens.MethodDefinitionHandle(i + 1);
+                pdbEmitter.AddMethodEntryPoint(methodHandle, sourceDoc, startLine: i + 1);
+            }
+
+            pdbResult = pdbEmitter.Serialize(pdbPath);
+        }
+
+        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, pdbResult);
 
         if (consoleEntrypoint is not null)
         {
@@ -282,7 +317,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread)
+    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, PortablePdbResult? pdbResult = null)
     {
         var metadataBuilder = new MetadataBuilder();
         var ilBuilder = new BlobBuilder();
@@ -500,7 +535,7 @@ public static class LoweredAssemblyEmitter
         }
 
         // Write PE
-        WritePE(outputPath, metadataBuilder, ilBuilder, entryPoint: entryPointHandle);
+        WritePE(outputPath, metadataBuilder, ilBuilder, entryPoint: entryPointHandle, pdbResult: pdbResult);
     }
 
     private static BlobHandle BuildMethodSignature(MetadataBuilder metadataBuilder, LoweredFunction function)
@@ -3342,7 +3377,7 @@ public static class LoweredAssemblyEmitter
             attributes: localCount > 0 ? MethodBodyAttributes.InitLocals : MethodBodyAttributes.None);
     }
 
-    private static void WritePE(string outputPath, MetadataBuilder metadataBuilder, BlobBuilder ilBuilder, MethodDefinitionHandle entryPoint)
+    private static void WritePE(string outputPath, MetadataBuilder metadataBuilder, BlobBuilder ilBuilder, MethodDefinitionHandle entryPoint, PortablePdbResult? pdbResult = null)
     {
         var metadataRootBuilder = new MetadataRootBuilder(metadataBuilder);
 
@@ -3350,11 +3385,20 @@ public static class LoweredAssemblyEmitter
             ? PEHeaderBuilder.CreateLibraryHeader()
             : PEHeaderBuilder.CreateExecutableHeader();
 
+        // Build debug directory entries if PDB was emitted
+        var debugDirectoryBuilder = pdbResult is not null ? new DebugDirectoryBuilder() : null;
+        if (pdbResult is not null && debugDirectoryBuilder is not null)
+        {
+            var pdbFileName = Path.GetFileName(pdbResult.PdbPath);
+            debugDirectoryBuilder.AddCodeViewEntry(pdbFileName, pdbResult.ContentId, portablePdbVersion: 0x0100);
+        }
+
         var peBuilder = new ManagedPEBuilder(
             header: peHeaderBuilder,
             metadataRootBuilder: metadataRootBuilder,
             ilStream: ilBuilder,
-            entryPoint: entryPoint);
+            entryPoint: entryPoint,
+            debugDirectoryBuilder: debugDirectoryBuilder);
 
         var peBlob = new BlobBuilder();
         peBuilder.Serialize(peBlob);

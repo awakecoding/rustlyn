@@ -71,12 +71,17 @@ if (TryParseLowerArguments(args, out var lowerArtifactPath, out var lowerLlvmRoo
     }
 }
 
-if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot))
+if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb))
 {
     try
     {
-        LoweredAssemblyEmitter.EmitBitcode(emitArtifactPath, emitOutputPath, emitLlvmRoot);
+        var emitOptions = new EmitOptions { EmitPdb = emitPdb };
+        LoweredAssemblyEmitter.EmitBitcode(emitArtifactPath, emitOutputPath, emitOptions, emitLlvmRoot);
         Console.WriteLine(Path.GetFullPath(emitOutputPath));
+        if (emitPdb)
+        {
+            Console.WriteLine(Path.GetFullPath(Path.ChangeExtension(emitOutputPath, ".pdb")));
+        }
         return 0;
     }
     catch (NotSupportedException ex)
@@ -314,11 +319,12 @@ static string GetInnermostExceptionMessage(Exception exception)
     return current.Message;
 }
 
-static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot)
+static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot, out bool emitPdb)
 {
     artifactPath = string.Empty;
     outputPath = string.Empty;
     llvmRoot = null;
+    emitPdb = false;
 
     if (args.Length < 4 || !string.Equals(args[0], "emit", StringComparison.OrdinalIgnoreCase))
     {
@@ -340,6 +346,12 @@ static bool TryParseEmitArguments(string[] args, out string artifactPath, out st
         {
             outputPath = args[index + 1];
             index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--pdb", StringComparison.OrdinalIgnoreCase))
+        {
+            emitPdb = true;
             continue;
         }
 

@@ -2,7 +2,8 @@ namespace Rustlyn.Backend;
 
 public sealed record LoweredModule(
     IReadOnlyList<LoweredFunction> Functions,
-    IReadOnlyList<LoweredGlobal> Globals);
+    IReadOnlyList<LoweredGlobal> Globals,
+    string? SourcePath = null);
 
 public sealed record LoweredGlobal(
     string Name,
