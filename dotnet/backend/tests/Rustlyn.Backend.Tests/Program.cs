@@ -59,6 +59,9 @@ RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScanne
 RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
 RunTest("BindingSurfaceScannerCreatesStaticScalarBindings", BindingSurfaceScannerCreatesStaticScalarBindings, failures);
 RunTest("BindingSurfaceScannerCreatesStaticObjectHandleBindings", BindingSurfaceScannerCreatesStaticObjectHandleBindings, failures);
+RunTest("StrictModeRejectsRawInstruction", StrictModeRejectsRawInstruction, failures);
+RunTest("StrictModeStillSucceedsForValidModule", StrictModeStillSucceedsForValidModule, failures);
+RunTest("PermissiveModeStubsRawInstruction", PermissiveModeStubsRawInstruction, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -1689,6 +1692,96 @@ static void BindingSurfaceScannerCreatesStaticObjectHandleBindings()
     Assert(
         readAllLinesBinding.RustWrapperMethod.Signature == "pub fn read_all_lines(path: &ManagedString) -> Result<ManagedStringArray, Exception>",
         "Expected scanner-derived File.ReadAllLines binding to project a matching Rust wrapper signature.");
+}
+
+static void StrictModeRejectsRawInstruction()
+{
+    var rawInstr = new LoweredRawInstruction("addrspacecast i8* %p to i8 addrspace(1)*");
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        rawInstr,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("unsupported_raw", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-strict-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "strict_raw.dll");
+
+    try
+    {
+        var threw = false;
+        try
+        {
+            LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        }
+        catch (UnsupportedIrException ex)
+        {
+            threw = true;
+            Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
+            Assert(ex.Functions[0].Name == "unsupported_raw", "Expected unsupported function name to propagate.");
+            Assert(ex.Functions[0].Reason.Contains("unsupported raw LLVM instruction", StringComparison.Ordinal), "Expected diagnostic to mention the raw instruction.");
+            Assert(ex.Functions[0].Reason.Contains("addrspacecast", StringComparison.Ordinal), "Expected diagnostic to echo offending instruction text.");
+        }
+        Assert(threw, "Expected strict mode to throw UnsupportedIrException for raw LLVM instruction.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void StrictModeStillSucceedsForValidModule()
+{
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("trivial", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-strict-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "strict_ok.dll");
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        Assert(File.Exists(outPath), "Expected strict-mode emission to produce an assembly for a fully supported module.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void PermissiveModeStubsRawInstruction()
+{
+    var rawInstr = new LoweredRawInstruction("addrspacecast i8* %p to i8 addrspace(1)*");
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        rawInstr,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("unsupported_raw_permissive", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-permissive-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "permissive_raw.dll");
+
+    try
+    {
+        // Permissive mode (default) must keep the historical behaviour: the function body becomes a no-op style stub
+        // and no exception escapes emission. We only care that this does not throw.
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = false });
+        Assert(File.Exists(outPath), "Expected permissive emission to still produce an assembly with stubbed bodies.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()

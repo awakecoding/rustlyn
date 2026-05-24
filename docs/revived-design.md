@@ -25,6 +25,8 @@ The goal is not to recreate the old SDK packaging and project-system experience 
 
 ## Current Pipeline In This Repo
 
+The pipeline is sample-driven and intentionally conservative. Use the [support matrix](support-matrix.md) to distinguish supported behavior from preview, fixture-only, planned, and unsupported areas.
+
 ### 1. Sample crates
 
 `samples/` contains small Rust crates that isolate specific behaviors such as arithmetic, control flow, comparisons, vector reductions, adjacent transformed loops, and managed runtime bridge calls.

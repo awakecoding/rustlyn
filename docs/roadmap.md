@@ -19,14 +19,16 @@ Rustlyn reconstructed and modernized that approach:
 
 ## Current Capabilities
 
+The table below is a high-level summary. The conservative source of truth for what is supported, preview, fixture-only, planned, or unsupported is the [support matrix](support-matrix.md).
+
 | Area | Status |
 | --- | --- |
-| LLVM IR → CIL translation | Arithmetic, logic, shifts, comparisons, control flow, phi, switches, structs, arrays, tuples, function pointers, atomics, floating point, saturating math, bit ops, pointers, GEP, wide integers, trait objects, closures |
-| Cargo integration | Direct bitcode emission, LTO staticlib for cross-crate, `build-std` for core/alloc/std |
-| Generated .NET bindings | Console, File, Directory, Path, String, Environment — metadata-driven glue |
-| Runtime support | `Rustlyn.Runtime` (LLVM semantics), `Rustlyn.Os` (std compat), `Rustlyn.Interop` (managed handles) |
-| MSBuild SDK | Library/binary/build-std/generated-cargo/NuGet-packaged builds via `.rsproj` |
-| Desktop bridge | Avalonia GUI from Rust through explicit bridge calls |
+| LLVM IR -> CIL translation | Fixture-backed coverage for arithmetic, logic, shifts, comparisons, control flow, phi, switches, structs, arrays, tuples, function pointers, atomics, floating point, saturating math, bit ops, pointers, GEP, wide integers, trait objects, and closures |
+| Cargo integration | Direct bitcode emission, LTO staticlib for cross-crate workloads, and preview `build-std` rungs for core/alloc/std |
+| Generated .NET bindings | Curated Console, File, Directory, Path, String, and Environment glue plus metadata-driven scanner/generator footholds |
+| Runtime support | `Rustlyn.Runtime` (LLVM semantics), `Rustlyn.Os` (std compat), and `Rustlyn.Interop` (managed handles) with behavior promoted fixture by fixture |
+| MSBuild SDK | Preview library/binary/build-std/generated-cargo/package-resolution builds via `.rsproj` |
+| Desktop bridge | Avalonia GUI fixture through explicit bridge calls |
 
 ## Forward Roadmap
 
