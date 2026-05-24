@@ -8,20 +8,29 @@ Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/e
 
 - Translates Rust crates to runnable .NET assemblies via LLVM bitcode
 - Handles arithmetic, control flow, structs, closures, trait objects, atomics, cross-crate LTO
+- Supports complex enums, iterators, error propagation (`?`), async state machines, generic collections
 - Generates Rust bindings for .NET APIs (Console, File, Path, String, Environment)
+- Automated binding generation: scans any .NET assembly and produces type/method/event bindings
+- Emits Portable PDB debug info with source mapping back to `.rs` files
+- Packages translated crates as NuGet packages via `rustlyn pack`
+- Incremental translation with function-level caching (`--cache`)
+- Native AOT and trimming compatible
 - Provides an MSBuild SDK for `dotnet build` on `.rsproj` files
 - Bridges to Avalonia for desktop GUI from Rust
+- Cross-platform CI (Windows, Linux, macOS)
 
 See the [roadmap](docs/roadmap.md) for what's next.
 
 ## What you can do here today
 
 1. Translate a Rust crate into a managed .NET assembly via `rustlyn translate`.
-2. Inspect or lower LLVM bitcode to see the intermediate representation.
-3. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
-4. Run generated-bindings workloads (lousygrep) that call .NET APIs from Rust.
-5. Run the Avalonia desktop GUI sample entirely from Rust bitcode.
-6. Validate with smoke tests and a 18,000+ line regression harness.
+2. Package a translated crate as a NuGet package via `rustlyn pack`.
+3. Inspect or lower LLVM bitcode to see the intermediate representation.
+4. Generate bindings for any .NET assembly via `rustlyn-bindings scan/bindgen`.
+5. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
+6. Run generated-bindings workloads (lousygrep) that call .NET APIs from Rust.
+7. Run the Avalonia desktop GUI sample entirely from Rust bitcode.
+8. Validate with smoke tests and a 18,000+ line regression harness.
 
 ## Quick Start
 
@@ -55,7 +64,10 @@ Drive the backend tool directly:
 dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- inspect .\artifacts\out\add\add.bc
 dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- lower .\artifacts\out\add\add.bc
 dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll --pdb
 dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate .\samples\add --out .\artifacts\out\add\add.from-cargo.dll --bitcode-out .\artifacts\out\add\add.from-cargo.bc
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate .\samples\add --out .\artifacts\out\add\add.dll --cache .\artifacts\scratch\.cache.json
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- pack .\samples\add --out .\artifacts\out\add --version 1.0.0
 ```
 
 Run the backend regression harness:
@@ -98,18 +110,26 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 ## Repo Map
 
 - `samples/`: narrow Rust crates used as regression fixtures
+- `samples/enum_complex/`: multi-field enum variants, nested Option/Result patterns
+- `samples/iterator_chain/`: map/filter/sum, zip, chain/take, flat_map adapter chains
+- `samples/error_propagation/`: `?` operator with multi-step validation
+- `samples/string_vec_ops/`: `Vec<T>` operations with no_std + alloc
+- `samples/async_state_machine/`: poll coroutines, cooperative scheduler, retry-with-backoff
+- `samples/generic_collections/`: monomorphized FixedStack, RingBuffer, Pair, generic search
 - `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, path, and string method/property APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
-- `dotnet/backend/src/Rustlyn.Tool/`: CLI for inspect, lower, emit, invoke, and translate flows
-- `dotnet/backend/src/Rustlyn.Backend/`: lowering and IL emission logic
-- `dotnet/backend/src/Rustlyn.Bindings/`: tiny generated .NET binding prototype for Rust wrapper output, managed glue source, metadata-backed wrapper methods, and managed string handles created from Rust UTF-8 buffers
-- `dotnet/backend/src/Rustlyn.Bindings.Tool/`: build-time generator for backend managed binding glue
+- `dotnet/backend/src/Rustlyn.Tool/`: CLI for inspect, lower, emit, invoke, translate, and pack flows
+- `dotnet/backend/src/Rustlyn.Backend/`: lowering, IL emission, Portable PDB, translation cache, NuGet packaging
+- `dotnet/backend/src/Rustlyn.Bindings/`: binding generation — assembly scanner, instance/constructor/generic/delegate/event analysis
+- `dotnet/backend/src/Rustlyn.Bindings.Tool/`: CLI for scan, bindgen, analyze-delegate, analyze-events commands
 - `dotnet/backend/src/Rustlyn.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
 - `dotnet/backend/src/Rustlyn.Runtime/`: future home for LLVM/runtime semantic helpers
 - `dotnet/backend/src/Rustlyn.Os/`: future home for host OS and Rust `std` compatibility helpers
 - `dotnet/backend/src/Rustlyn.Sdk/`: local and packable SDK-style MSBuild facade that delegates `.rsproj` builds to the backend translate driver
 - `dotnet/backend/tests/Rustlyn.Backend.Tests/`: focused regression harness for lowering and runtime behavior
+- `dotnet/backend/benchmarks/Rustlyn.Benchmarks/`: BenchmarkDotNet suite for translation performance
+- `.github/workflows/ci.yml`: cross-platform CI (Windows, Linux, macOS)
 
 Historical SourceGear package details are summarized in `docs/` and linked to public package/blog sources; extracted package trees and decompiled payloads are intentionally not kept as repo content.
 

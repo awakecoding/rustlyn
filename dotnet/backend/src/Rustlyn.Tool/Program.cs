@@ -96,12 +96,32 @@ if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath
     }
 }
 
-if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot))
+if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot, out var translateCachePath))
 {
     try
     {
         var bitcodePath = RustBitcodeCompiler.BuildBitcode(cratePath, translateBuildOptions);
-        LoweredAssemblyEmitter.EmitBitcode(bitcodePath, translateOutputPath, translateLlvmRoot);
+
+        TranslationCache? cache = null;
+        if (translateCachePath is not null)
+        {
+            cache = new TranslationCache(translateCachePath);
+        }
+
+        var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, translateLlvmRoot);
+
+        if (cache is not null)
+        {
+            var stats = cache.GetStats(loweredModule.Functions);
+            Console.WriteLine($"Cache: {stats.CachedFunctions}/{stats.TotalFunctions} functions up-to-date, {stats.StaleFunctions} need re-translation");
+
+            // Record all functions in cache after successful emission
+            foreach (var fn in loweredModule.Functions)
+                cache.RecordTranslation(fn);
+            cache.Save();
+        }
+
+        LoweredAssemblyEmitter.EmitModule(loweredModule, translateOutputPath);
         Console.WriteLine($"Bitcode: {Path.GetFullPath(bitcodePath)}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(translateOutputPath)}");
         return 0;
@@ -153,20 +173,59 @@ if (TryParseInvokeArguments(args, out var invokeArtifactPath, out var invokeMeth
     }
 }
 
+if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, out var packVersion, out var packBuildOptions, out var packLlvmRoot))
+{
+    try
+    {
+        var crateName = Path.GetFileName(packCratePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var assemblyPath = Path.Combine(packOutputDir, $"{crateName}.dll");
+
+        // Translate
+        var bitcodePath = RustBitcodeCompiler.BuildBitcode(packCratePath, packBuildOptions);
+        var emitOptions = new EmitOptions { EmitPdb = true };
+        LoweredAssemblyEmitter.EmitBitcode(bitcodePath, assemblyPath, emitOptions, packLlvmRoot);
+
+        // Generate .nuspec
+        var spec = NuGetPackager.CreatePackSpec(crateName, packVersion, assemblyPath);
+        var nuspecContent = NuGetPackager.GenerateNuspec(spec);
+        var nuspecPath = Path.Combine(packOutputDir, $"{spec.PackageId}.nuspec");
+        File.WriteAllText(nuspecPath, nuspecContent);
+
+        Console.WriteLine($"Package ID: {spec.PackageId}");
+        Console.WriteLine($"Version: {spec.Version}");
+        Console.WriteLine($"Assembly: {Path.GetFullPath(assemblyPath)}");
+        Console.WriteLine($"Nuspec: {Path.GetFullPath(nuspecPath)}");
+        Console.WriteLine($"Files: {spec.Files.Count}");
+        return 0;
+    }
+    catch (NotSupportedException ex)
+    {
+        Console.Error.WriteLine($"Unsupported IR: {ex.Message}");
+        return 4;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 1;
+    }
+}
+
 Console.Error.WriteLine("Usage: Rustlyn.Tool inspect <path-to-bc> [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool lower <path-to-bc> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--llvm-root <path>]");
+Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]   (types: i32, i64, u32, u64)");
+Console.Error.WriteLine("   or: Rustlyn.Tool pack <crate-path> --out <dir> [--version <semver>] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool diagnose [--llvm-root <path>]");
 return 1;
 
-static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot)
+static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath)
 {
     cratePath = string.Empty;
     outputPath = string.Empty;
     buildOptions = new RustBitcodeBuildOptions();
     llvmRoot = null;
+    cachePath = null;
 
     if (args.Length < 4 || !string.Equals(args[0], "translate", StringComparison.OrdinalIgnoreCase))
     {
@@ -201,6 +260,13 @@ static bool TryParseTranslateArguments(string[] args, out string cratePath, out 
         if (string.Equals(args[index], "--llvm-root", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
         {
             llvmRoot = args[index + 1];
+            index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--cache", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            cachePath = args[index + 1];
             index++;
             continue;
         }
@@ -413,6 +479,50 @@ static bool TryParseInspectArguments(string[] args, out string artifactPath, out
     }
 
     return true;
+}
+
+static bool TryParsePackArguments(string[] args, out string cratePath, out string outputDir, out string version, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot)
+{
+    cratePath = string.Empty;
+    outputDir = string.Empty;
+    version = "0.1.0";
+    buildOptions = new RustBitcodeBuildOptions();
+    llvmRoot = null;
+
+    if (args.Length < 4 || !string.Equals(args[0], "pack", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    cratePath = args[1];
+
+    for (var index = 2; index < args.Length; index++)
+    {
+        if (string.Equals(args[index], "--out", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            outputDir = args[index + 1];
+            index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--version", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            version = args[index + 1];
+            index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--llvm-root", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            llvmRoot = args[index + 1];
+            index++;
+            continue;
+        }
+
+        return false;
+    }
+
+    return !string.IsNullOrWhiteSpace(outputDir);
 }
 
 static int RunDiagnose(string[] args)
