@@ -18,8 +18,8 @@ $generatedProjectPath = Join-Path $workspaceRoot "samples\msbuild_generated_carg
 $generatedOutputAssembly = Join-Path $workspaceRoot "samples\msbuild_generated_cargo\bin\$Configuration\net10.0\msbuild_generated_cargo.dll"
 $generatedBitcodePath = Join-Path $workspaceRoot "samples\msbuild_generated_cargo\obj\$Configuration\net10.0\msbuild_generated_cargo.bc"
 $generatedCargoManifestPath = Join-Path $workspaceRoot "samples\msbuild_generated_cargo\obj\$Configuration\net10.0\rs\Cargo.toml"
-$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
+$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
 
 function Assert-MsBuildProperty {
     param(
@@ -45,7 +45,7 @@ function Assert-MsBuildProperty {
 
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
-    throw "RustMcil.Tool build failed with exit code $LASTEXITCODE."
+    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
 }
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
@@ -59,17 +59,17 @@ try {
     Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefineCommonReferenceSchemas" -ExpectedValue "true"
     Assert-MsBuildProperty -ProjectPath $projectPath -Name "DefineCommonCapabilities" -ExpectedValue "true"
 
-    dotnet build $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $projectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK sample build failed with exit code $LASTEXITCODE."
     }
 
-    dotnet build $aliasProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $aliasProjectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK SourceGear-alias sample build failed with exit code $LASTEXITCODE."
     }
 
-    dotnet build $generatedProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $generatedProjectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK generated Cargo sample build failed with exit code $LASTEXITCODE."
     }

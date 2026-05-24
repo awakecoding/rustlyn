@@ -1,10 +1,10 @@
 unsafe extern "C" {
-    fn rust_mcil_dotnet_current_directory_utf8_len() -> i32;
-    fn rust_mcil_dotnet_copy_current_directory_utf8(
+    fn rustlyn_dotnet_current_directory_utf8_len() -> i32;
+    fn rustlyn_dotnet_copy_current_directory_utf8(
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_combine3_utf8_len(
+    fn rustlyn_dotnet_path_combine3_utf8_len(
         first_ptr: *const u8,
         first_len: i64,
         second_ptr: *const u8,
@@ -12,7 +12,7 @@ unsafe extern "C" {
         third_ptr: *const u8,
         third_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_combine3_utf8(
+    fn rustlyn_dotnet_path_copy_combine3_utf8(
         first_ptr: *const u8,
         first_len: i64,
         second_ptr: *const u8,
@@ -22,23 +22,23 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_directory_name_utf8_len(
+    fn rustlyn_dotnet_path_get_directory_name_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_directory_name_utf8(
+    fn rustlyn_dotnet_path_copy_directory_name_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_relative_utf8_len(
+    fn rustlyn_dotnet_path_get_relative_utf8_len(
         relative_to_ptr: *const u8,
         relative_to_len: i64,
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_relative_utf8(
+    fn rustlyn_dotnet_path_copy_relative_utf8(
         relative_to_ptr: *const u8,
         relative_to_len: i64,
         path_ptr: *const u8,
@@ -46,17 +46,17 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+    fn rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
         path_ptr: *const u8,
         path_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+    fn rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
         path_ptr: *const u8,
         path_len: i64,
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_replace_utf8_len(
+    fn rustlyn_dotnet_string_replace_utf8_len(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -64,7 +64,7 @@ unsafe extern "C" {
         new_ptr: *const u8,
         new_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_copy_replace_utf8(
+    fn rustlyn_dotnet_string_copy_replace_utf8(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -74,13 +74,13 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_contains(
+    fn rustlyn_dotnet_string_contains(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
         needle_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_index_of(
+    fn rustlyn_dotnet_string_index_of(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
@@ -96,14 +96,14 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     let new = "trace";
     let needle = "ace";
 
-    let root_len = unsafe { rust_mcil_dotnet_current_directory_utf8_len() };
+    let root_len = unsafe { rustlyn_dotnet_current_directory_utf8_len() };
     let mut root = vec![0u8; root_len as usize];
     let root_written = unsafe {
-        rust_mcil_dotnet_copy_current_directory_utf8(root.as_mut_ptr(), root.len() as i64)
+        rustlyn_dotnet_copy_current_directory_utf8(root.as_mut_ptr(), root.len() as i64)
     };
 
     let full_path_len = unsafe {
-        rust_mcil_dotnet_path_combine3_utf8_len(
+        rustlyn_dotnet_path_combine3_utf8_len(
             root.as_ptr(),
             root_written as i64,
             second.as_ptr(),
@@ -114,7 +114,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
     let mut full_path = vec![0u8; full_path_len as usize];
     let full_path_written = unsafe {
-        rust_mcil_dotnet_path_copy_combine3_utf8(
+        rustlyn_dotnet_path_copy_combine3_utf8(
             root.as_ptr(),
             root_written as i64,
             second.as_ptr(),
@@ -127,14 +127,14 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
 
     let directory_len = unsafe {
-        rust_mcil_dotnet_path_get_directory_name_utf8_len(
+        rustlyn_dotnet_path_get_directory_name_utf8_len(
             full_path.as_ptr(),
             full_path_written as i64,
         )
     };
     let mut directory = vec![0u8; directory_len as usize];
     let directory_written = unsafe {
-        rust_mcil_dotnet_path_copy_directory_name_utf8(
+        rustlyn_dotnet_path_copy_directory_name_utf8(
             full_path.as_ptr(),
             full_path_written as i64,
             directory.as_mut_ptr(),
@@ -143,7 +143,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
 
     let relative_len = unsafe {
-        rust_mcil_dotnet_path_get_relative_utf8_len(
+        rustlyn_dotnet_path_get_relative_utf8_len(
             root.as_ptr(),
             root_written as i64,
             directory.as_ptr(),
@@ -152,7 +152,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
     let mut relative = vec![0u8; relative_len as usize];
     let relative_written = unsafe {
-        rust_mcil_dotnet_path_copy_relative_utf8(
+        rustlyn_dotnet_path_copy_relative_utf8(
             root.as_ptr(),
             root_written as i64,
             directory.as_ptr(),
@@ -163,14 +163,14 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
 
     let leaf_len = unsafe {
-        rust_mcil_dotnet_path_get_file_name_without_extension_utf8_len(
+        rustlyn_dotnet_path_get_file_name_without_extension_utf8_len(
             relative.as_ptr(),
             relative_written as i64,
         )
     };
     let mut leaf = vec![0u8; leaf_len as usize];
     let leaf_written = unsafe {
-        rust_mcil_dotnet_path_copy_file_name_without_extension_utf8(
+        rustlyn_dotnet_path_copy_file_name_without_extension_utf8(
             relative.as_ptr(),
             relative_written as i64,
             leaf.as_mut_ptr(),
@@ -179,7 +179,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
 
     let transformed_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             leaf.as_ptr(),
             leaf_written as i64,
             old.as_ptr(),
@@ -190,7 +190,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
     };
     let mut transformed = vec![0u8; transformed_len as usize];
     let transformed_written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             leaf.as_ptr(),
             leaf_written as i64,
             old.as_ptr(),
@@ -202,7 +202,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
         )
     };
     let contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             transformed.as_ptr(),
             transformed_written as i64,
             needle.as_ptr(),
@@ -210,7 +210,7 @@ pub extern "C" fn dotnet_runtime_directory_name_score() -> i32 {
         )
     };
     let index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             transformed.as_ptr(),
             transformed_written as i64,
             needle.as_ptr(),

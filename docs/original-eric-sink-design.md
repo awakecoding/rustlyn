@@ -59,15 +59,14 @@ Constraints:
 - large binary package payloads
 - proof-of-concept quality and explicit non-production positioning
 
-## In-Repo Historical Evidence
+## Historical Evidence
 
-This repo keeps the textual and reverse-engineered evidence that is most useful for study:
+This repo keeps the summarized historical analysis that is most useful for study:
 
-- package metadata and textual extracted contents under `artifacts/sdk-0.1.5/extracted/`
-- decompiled source views under `artifacts/decompiled/`
 - the long-form reconstruction notebook in [reconstruction-notes.md](reconstruction-notes.md)
+- public SourceGear package and blog links below
 
-The published binary payloads are intentionally documented by link rather than retained as regular repo content.
+The extracted package tree, decompiled source views, and published binary payloads are intentionally documented by link and summary rather than retained as regular repo content.
 
 ## Eric Sink Blog Posts
 

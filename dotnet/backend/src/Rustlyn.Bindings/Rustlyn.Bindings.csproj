@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Rustlyn.Bindings</AssemblyName>
+    <RootNamespace>Rustlyn.Bindings</RootNamespace>
+    <!-- Bindings is a build-time code-generation tool that uses reflection by design -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+  </ItemGroup>
+</Project>

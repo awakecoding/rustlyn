@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <AssemblyName>RustMcil.Bindings</AssemblyName>
-    <RootNamespace>RustMcil.Bindings</RootNamespace>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RustMcil.Interop\RustMcil.Interop.csproj" />
-  </ItemGroup>
-</Project>

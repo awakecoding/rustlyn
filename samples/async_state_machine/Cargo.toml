@@ -1,0 +1,12 @@
+[package]
+name = "async_state_machine"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+opt-level = 2

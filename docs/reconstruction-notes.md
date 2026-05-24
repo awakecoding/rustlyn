@@ -9,10 +9,10 @@ It documents two things:
 1. What the 2020-2021 SourceGear Rust.NET SDK actually shipped and how it worked.
 2. How to rebuild the same kind of project from the ground up in 2026.
 
-The evidence for the reverse-engineering in this workspace comes from:
+The historical analysis was reconstructed from:
 
-- `artifacts/sdk-0.1.5/extracted/` for the extracted NuGet package
-- `artifacts/decompiled/` for decompiled managed assemblies
+- the public `SourceGear.Rust.NET.Sdk` NuGet package metadata and package contents
+- temporary local decompilation/extraction notes that are summarized here rather than kept in the repo
 - Eric Sink's blog posts:
   - `sg_rust_dotnet_preview.html`
   - `llama_rust_013.html`
@@ -978,11 +978,11 @@ As of May 2026, this workspace has a working milestone-0 prototype for the first
 What is implemented now:
 
 - `scripts/Build-SampleBitcode.ps1` builds LLVM bitcode for the current samples
-- `RustMcil.Tool inspect` reads `.bc` artifacts and prints module summaries
-- `RustMcil.Tool lower` lowers LLVM text IR into a compiler-owned typed IR dump
-- `RustMcil.Tool emit` emits a runnable managed DLL with Mono.Cecil
-- `RustMcil.Tool invoke` emits and immediately executes a chosen generated method
-- `RustMcil.Tool translate` builds a Cargo library crate to LLVM bitcode and emits a managed DLL in one step
+- `Rustlyn.Tool inspect` reads `.bc` artifacts and prints module summaries
+- `Rustlyn.Tool lower` lowers LLVM text IR into a compiler-owned typed IR dump
+- `Rustlyn.Tool emit` emits a runnable managed DLL with Mono.Cecil
+- `Rustlyn.Tool invoke` emits and immediately executes a chosen generated method
+- `Rustlyn.Tool translate` builds a Cargo library crate to LLVM bitcode and emits a managed DLL in one step
 - `scripts/Test-Smoke.ps1 -Sample add,sub,max,call_chain,global_init` validates inspect, lower, emit, and execution end to end
 - `scripts/Test-Smoke.ps1 -Mode Cargo -Sample add,sub,max,call_chain,global_init` validates the crate-path `translate` workflow end to end across the same sample matrix
 
@@ -1163,11 +1163,11 @@ Current limit for that slice: the prototype now covers the exact local packed-st
 Useful commands in the current repo:
 
 ```text
-dotnet run --project ./dotnet/backend/src/RustMcil.Tool/RustMcil.Tool.csproj -- inspect ./artifacts/out/add/add.bc
-dotnet run --project ./dotnet/backend/src/RustMcil.Tool/RustMcil.Tool.csproj -- lower ./artifacts/out/max/max.bc
-dotnet run --project ./dotnet/backend/src/RustMcil.Tool/RustMcil.Tool.csproj -- emit ./artifacts/out/call_chain/call_chain.bc --out ./artifacts/out/call_chain/call_chain.generated.dll
-dotnet run --project ./dotnet/backend/src/RustMcil.Tool/RustMcil.Tool.csproj -- invoke ./artifacts/out/global_init/global_init.bc --method read_global_i32
-dotnet run --project ./dotnet/backend/src/RustMcil.Tool/RustMcil.Tool.csproj -- translate ./samples/add --out ./artifacts/out/add/add.from-cargo.dll --bitcode-out ./artifacts/out/add/add.from-cargo.bc
+dotnet run --project ./dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -- inspect ./artifacts/out/add/add.bc
+dotnet run --project ./dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -- lower ./artifacts/out/max/max.bc
+dotnet run --project ./dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -- emit ./artifacts/out/call_chain/call_chain.bc --out ./artifacts/out/call_chain/call_chain.generated.dll
+dotnet run --project ./dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -- invoke ./artifacts/out/global_init/global_init.bc --method read_global_i32
+dotnet run --project ./dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -- translate ./samples/add --out ./artifacts/out/add/add.from-cargo.dll --bitcode-out ./artifacts/out/add/add.from-cargo.bc
 ```
 
 One concrete difference between direct `rustc` artifacts and `cargo rustc` artifacts in this repo is that Cargo-built LLVM IR currently includes ABI attributes such as `noundef` in function signatures and argument lists. The lowered IR layer now strips those attributes before type matching so the emitter can stay focused on semantic types rather than frontend-specific ABI decoration.

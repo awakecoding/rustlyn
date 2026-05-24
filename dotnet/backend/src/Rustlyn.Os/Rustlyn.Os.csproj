@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Rustlyn.Os</AssemblyName>
+    <RootNamespace>Rustlyn.Os</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+    <ProjectReference Include="..\Rustlyn.Runtime\Rustlyn.Runtime.csproj" />
+  </ItemGroup>
+</Project>

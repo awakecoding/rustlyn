@@ -1,0 +1,26 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
+    <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+    <DefaultLanguageSourceExtension Condition="'$(DefaultLanguageSourceExtension)' == ''">.rs</DefaultLanguageSourceExtension>
+    <Language Condition="'$(Language)' == ''">Rust</Language>
+    <TargetRuntime Condition="'$(TargetRuntime)' == ''">Managed</TargetRuntime>
+    <AlwaysUseNumericalSuffixInItemNames Condition="'$(AlwaysUseNumericalSuffixInItemNames)' == ''">true</AlwaysUseNumericalSuffixInItemNames>
+    <DefineCommonItemSchemas Condition="'$(DefineCommonItemSchemas)' == ''">true</DefineCommonItemSchemas>
+    <DefineCommonReferenceSchemas Condition="'$(DefineCommonReferenceSchemas)' == ''">true</DefineCommonReferenceSchemas>
+    <DefineCommonCapabilities Condition="'$(DefineCommonCapabilities)' == ''">true</DefineCommonCapabilities>
+
+    <OutputPath Condition="'$(OutputPath)' == ''">$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\</OutputPath>
+    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(MSBuildProjectDirectory)\obj\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(IntermediateOutputPath)' == ''">$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
+
+    <RustlynToolProject Condition="'$(RustlynToolProject)' == ''">$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\Rustlyn.Tool.csproj</RustlynToolProject>
+    <RustlynToolConfiguration Condition="'$(RustlynToolConfiguration)' == ''">$(Configuration)</RustlynToolConfiguration>
+    <RustlynToolDll Condition="'$(RustlynToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\tools\net10.0\Rustlyn.Tool.dll')">$(MSBuildThisFileDirectory)..\tools\net10.0\Rustlyn.Tool.dll</RustlynToolDll>
+    <RustlynToolDll Condition="'$(RustlynToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\bin\$(RustlynToolConfiguration)\net10.0\Rustlyn.Tool.dll')">$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\bin\$(RustlynToolConfiguration)\net10.0\Rustlyn.Tool.dll</RustlynToolDll>
+    <RustlynSupportAssemblyNames Condition="'$(RustlynSupportAssemblyNames)' == ''">Rustlyn.Backend.dll;Rustlyn.Runtime.dll;Rustlyn.Os.dll;Rustlyn.Interop.dll</RustlynSupportAssemblyNames>
+  </PropertyGroup>
+</Project>

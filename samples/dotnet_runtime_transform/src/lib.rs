@@ -1,5 +1,5 @@
 unsafe extern "C" {
-    fn rust_mcil_dotnet_string_replace_utf8_len(
+    fn rustlyn_dotnet_string_replace_utf8_len(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -7,7 +7,7 @@ unsafe extern "C" {
         new_ptr: *const u8,
         new_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_copy_replace_utf8(
+    fn rustlyn_dotnet_string_copy_replace_utf8(
         source_ptr: *const u8,
         source_len: i64,
         old_ptr: *const u8,
@@ -17,13 +17,13 @@ unsafe extern "C" {
         destination_ptr: *mut u8,
         destination_capacity: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_contains(
+    fn rustlyn_dotnet_string_contains(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
         needle_len: i64,
     ) -> i32;
-    fn rust_mcil_dotnet_string_index_of(
+    fn rustlyn_dotnet_string_index_of(
         haystack_ptr: *const u8,
         haystack_len: i64,
         needle_ptr: *const u8,
@@ -39,7 +39,7 @@ pub extern "C" fn dotnet_runtime_transform_score() -> i32 {
     let needle = "interop";
 
     let required_len = unsafe {
-        rust_mcil_dotnet_string_replace_utf8_len(
+        rustlyn_dotnet_string_replace_utf8_len(
             source.as_ptr(),
             source.len() as i64,
             old.as_ptr(),
@@ -50,7 +50,7 @@ pub extern "C" fn dotnet_runtime_transform_score() -> i32 {
     };
     let mut transformed = vec![0u8; required_len as usize];
     let written = unsafe {
-        rust_mcil_dotnet_string_copy_replace_utf8(
+        rustlyn_dotnet_string_copy_replace_utf8(
             source.as_ptr(),
             source.len() as i64,
             old.as_ptr(),
@@ -62,7 +62,7 @@ pub extern "C" fn dotnet_runtime_transform_score() -> i32 {
         )
     };
     let contains = unsafe {
-        rust_mcil_dotnet_string_contains(
+        rustlyn_dotnet_string_contains(
             transformed.as_ptr(),
             written as i64,
             new.as_ptr(),
@@ -70,7 +70,7 @@ pub extern "C" fn dotnet_runtime_transform_score() -> i32 {
         )
     };
     let index = unsafe {
-        rust_mcil_dotnet_string_index_of(
+        rustlyn_dotnet_string_index_of(
             transformed.as_ptr(),
             written as i64,
             needle.as_ptr(),

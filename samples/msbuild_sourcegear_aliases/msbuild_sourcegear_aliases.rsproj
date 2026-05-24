@@ -1,4 +1,4 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_sourcegear_aliases</AssemblyName>
     <RustCratePath>..\profile_probe</RustCratePath>

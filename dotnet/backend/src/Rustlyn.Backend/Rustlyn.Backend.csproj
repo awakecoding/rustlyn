@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Rustlyn.Backend</AssemblyName>
+    <RootNamespace>Rustlyn.Backend</RootNamespace>
+    <!-- Backend uses reflection-generated binding glue from Rustlyn.Bindings -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
+  </PropertyGroup>
+
+  <Target Name="GenerateRustlynBindingGlue" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <GeneratedBindingGlueDirectory>$(IntermediateOutputPath)Generated\</GeneratedBindingGlueDirectory>
+      <GeneratedBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.Bindings.g.cs</GeneratedBindingGlueFile>
+    </PropertyGroup>
+    <MakeDir Directories="$(GeneratedBindingGlueDirectory)" />
+    <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- managed-glue --out &quot;$(GeneratedBindingGlueFile)&quot;" />
+    <ItemGroup>
+      <Compile Include="$(GeneratedBindingGlueFile)" Link="RuntimeBridgeHelpers.Bindings.g.cs" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.AvaloniaSupport\Rustlyn.AvaloniaSupport.csproj" />
+    <ProjectReference Include="..\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+    <ProjectReference Include="..\Rustlyn.Os\Rustlyn.Os.csproj" />
+    <ProjectReference Include="..\Rustlyn.Runtime\Rustlyn.Runtime.csproj" />
+    <PackageReference Include="LLVMSharp.Interop" Version="20.1.2" />
+  </ItemGroup>
+</Project>

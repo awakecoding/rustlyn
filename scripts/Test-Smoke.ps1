@@ -1678,24 +1678,24 @@ function Invoke-SmokeCheck {
         $cleanupState = $prepared.State
     }
 
-    dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $ArtifactPath
+    dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- inspect $ArtifactPath
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet run inspect failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
-    dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $ArtifactPath | Out-Null
+    dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- lower $ArtifactPath | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet run lower failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
-    $emittedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
+    $emittedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rustlyn-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
     try {
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        $loadContext = [System.Runtime.Loader.AssemblyLoadContext]::new("rust-msil-smoke-$CurrentSample-$([Guid]::NewGuid().ToString('N'))", $true)
+        $loadContext = [System.Runtime.Loader.AssemblyLoadContext]::new("rustlyn-smoke-$CurrentSample-$([Guid]::NewGuid().ToString('N'))", $true)
         try {
             $assemblyBytes = [System.IO.File]::ReadAllBytes($emittedAssemblyPath)
             $assemblyStream = [System.IO.MemoryStream]::new($assemblyBytes)
@@ -1706,7 +1706,7 @@ function Invoke-SmokeCheck {
                 $assemblyStream.Dispose()
             }
 
-            $generatedType = $assembly.GetType("RustMcil.GeneratedModule", $true)
+            $generatedType = $assembly.GetType("Rustlyn.GeneratedModule", $true)
             $method = $generatedType.GetMethod($Check.Method, [System.Reflection.BindingFlags]::Public -bor [System.Reflection.BindingFlags]::Static)
             if ($null -eq $method) {
                 throw "Generated method '$($Check.Method)' was not found for '$CurrentSample'."
@@ -1762,11 +1762,11 @@ function Invoke-TranslateSmokeCheck {
         $cleanupState = $prepared.State
     }
 
-    $translatedOutputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-msil-translate-smoke-{0}-{1}" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
+    $translatedOutputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("rustlyn-translate-smoke-{0}-{1}" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
     $translatedBitcodePath = Join-Path $translatedOutputDirectory ("{0}.bc" -f $CurrentSample)
     $translatedAssemblyPath = Join-Path $translatedOutputDirectory ("{0}.dll" -f $CurrentSample)
     $translatedRuntimeConfigPath = [System.IO.Path]::ChangeExtension($translatedAssemblyPath, ".runtimeconfig.json")
-    $translatedBackendAssemblyPath = Join-Path ([System.IO.Path]::GetDirectoryName($translatedAssemblyPath)) "RustMcil.Backend.dll"
+    $translatedBackendAssemblyPath = Join-Path ([System.IO.Path]::GetDirectoryName($translatedAssemblyPath)) "Rustlyn.Backend.dll"
     try {
         New-Item -ItemType Directory -Path $translatedOutputDirectory -Force | Out-Null
 
@@ -1775,7 +1775,7 @@ function Invoke-TranslateSmokeCheck {
             '-c',
             $Configuration,
             '--project',
-            '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
+            '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj',
             '--',
             'translate',
             $CratePath,
@@ -1815,12 +1815,12 @@ function Invoke-TranslateSmokeCheck {
             throw "dotnet run translate failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- inspect $translatedBitcodePath
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- inspect $translatedBitcodePath
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run inspect failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj" -- lower $translatedBitcodePath | Out-Null
+        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- lower $translatedBitcodePath | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet run lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
@@ -1859,7 +1859,7 @@ function Invoke-TranslateSmokeCheck {
                 '-c',
                 $Configuration,
                 '--project',
-                '.\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj',
+                '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj',
                 '--',
                 'invoke',
                 $translatedBitcodePath,
@@ -1940,7 +1940,7 @@ function Format-InvokeArgument {
 
 Push-Location $workspaceRoot
 try {
-    dotnet build -c $Configuration ".\dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
+    dotnet build -c $Configuration ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet build failed with exit code $LASTEXITCODE"
     }

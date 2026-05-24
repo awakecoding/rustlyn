@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Rustlyn.Backend.Tests</AssemblyName>
+    <RootNamespace>Rustlyn.Backend.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Rustlyn.Backend\Rustlyn.Backend.csproj" />
+    <ProjectReference Include="..\..\src\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
+    <ProjectReference Include="..\..\src\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+  </ItemGroup>
+</Project>

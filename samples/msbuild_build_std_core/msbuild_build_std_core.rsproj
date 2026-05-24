@@ -1,8 +1,8 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_build_std_core</AssemblyName>
-    <RustMcilCratePath>..\add</RustMcilCratePath>
-    <RustMcilToolchain>nightly</RustMcilToolchain>
-    <RustMcilBuildStd>core</RustMcilBuildStd>
+    <RustlynCratePath>..\add</RustlynCratePath>
+    <RustlynToolchain>nightly</RustlynToolchain>
+    <RustlynBuildStd>core</RustlynBuildStd>
   </PropertyGroup>
 </Project>

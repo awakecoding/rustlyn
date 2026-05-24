@@ -16,24 +16,24 @@ $inferredProjectPath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\ms
 $inferredOutputAssembly = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\bin\$Configuration\net10.0\bin_trivial.dll"
 $inferredRuntimeConfigPath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\bin\$Configuration\net10.0\bin_trivial.runtimeconfig.json"
 $inferredBitcodePath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\obj\$Configuration\net10.0\bin_trivial.bc"
-$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\RustMcil.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\RustMcil.Tool\bin\$Configuration\net10.0\RustMcil.Tool.dll"
-$supportAssemblyNames = @("RustMcil.Backend.dll", "RustMcil.Runtime.dll", "RustMcil.Os.dll", "RustMcil.Interop.dll")
+$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
 dotnet build $toolProject -c $Configuration /nologo
 if ($LASTEXITCODE -ne 0) {
-    throw "RustMcil.Tool build failed with exit code $LASTEXITCODE."
+    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
 }
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
     $env:MSBuildSDKsPath = $sdkRoot
-    dotnet build $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $projectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK binary sample build failed with exit code $LASTEXITCODE."
     }
 
-    dotnet build $inferredProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo
+    dotnet build $inferredProjectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK inferred binary sample build failed with exit code $LASTEXITCODE."
     }
@@ -75,7 +75,7 @@ if ($actualOutput -ne "") {
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
     $env:MSBuildSDKsPath = $sdkRoot
-    dotnet clean $projectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo | Out-Null
+    dotnet clean $projectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK binary sample clean failed with exit code $LASTEXITCODE."
     }
@@ -123,7 +123,7 @@ if ($actualInferredOutput -ne "") {
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
     $env:MSBuildSDKsPath = $sdkRoot
-    dotnet clean $inferredProjectPath -c $Configuration "/p:RustMcilToolDll=$toolDll" /nologo | Out-Null
+    dotnet clean $inferredProjectPath -c $Configuration "/p:RustlynToolDll=$toolDll" /nologo | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "MSBuild SDK inferred binary sample clean failed with exit code $LASTEXITCODE."
     }

@@ -6,7 +6,7 @@ Date: 2026-05-21 (initial), 2026-05-22 (updated with LTO evidence)
 
 ## Decision
 
-Do not implement a revived `RustMcil.FakeLink` or reintroduce SourceGear-style target `pre-link-args`. The LTO staticlib approach provides whole-program bitcode through standard Cargo without linker interception.
+Do not implement a revived `Rustlyn.FakeLink` or reintroduce SourceGear-style target `pre-link-args`. The LTO staticlib approach provides whole-program bitcode through standard Cargo without linker interception.
 
 ## Evidence
 
@@ -50,7 +50,7 @@ The permanent backend test `RustBitcodeBuildStdArgumentsAvoidFakeLinker` pins th
 
 1. Requires `crate-type = ["staticlib"]` — the crate must be a library, not a binary
 2. Requires `lto = "fat"` in the release profile — incremental builds are slower
-3. OS FFI calls (e.g., `GetProcessHeap`) remain as `declare` — resolved by `RustMcil.Os` at runtime
+3. OS FFI calls (e.g., `GetProcessHeap`) remain as `declare` — resolved by `Rustlyn.Os` at runtime
 
 ## Fixture
 

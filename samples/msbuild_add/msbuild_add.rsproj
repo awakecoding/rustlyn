@@ -1,6 +1,6 @@
-<Project Sdk="RustMcil.Sdk">
+<Project Sdk="Rustlyn.Sdk">
   <PropertyGroup>
     <AssemblyName>msbuild_add</AssemblyName>
-    <RustMcilCratePath>..\add</RustMcilCratePath>
+    <RustlynCratePath>..\add</RustlynCratePath>
   </PropertyGroup>
 </Project>

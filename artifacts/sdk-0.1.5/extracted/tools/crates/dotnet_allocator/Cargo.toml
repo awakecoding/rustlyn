@@ -1,8 +1,0 @@
-[package]
-name = "dotnet_allocator"
-version = "0.1.5"
-edition = "2018"
-
-[dependencies.dotnet]
-path = "../rs_dotnet/dotnet"
-
