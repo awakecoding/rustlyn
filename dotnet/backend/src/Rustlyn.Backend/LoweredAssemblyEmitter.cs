@@ -1664,6 +1664,21 @@ public static class LoweredAssemblyEmitter
                 encoder.OpCode(ILOpCode.Nop);
                 break;
 
+            case LoweredInvokeInstruction invoke:
+                throw new NotSupportedException($"LLVM 'invoke' is not yet supported (normal=%{invoke.NormalLabel}, unwind=%{invoke.UnwindLabel}) — see docs/support-matrix.md (panic-unwind).");
+
+            case LoweredLandingPadInstruction landingPad:
+                throw new NotSupportedException($"LLVM 'landingpad' is not yet supported (cleanup={landingPad.IsCleanup}) — see docs/support-matrix.md (panic-unwind).");
+
+            case LoweredFenceInstruction fence:
+                throw new NotSupportedException($"LLVM 'fence {fence.Ordering}' is not yet supported — see docs/support-matrix.md (atomics).");
+
+            case LoweredVolatileLoadInstruction volatileLoad:
+                throw new NotSupportedException($"LLVM volatile load is not yet supported (result %{volatileLoad.Result}) — see docs/support-matrix.md (memory model).");
+
+            case LoweredVolatileStoreInstruction:
+                throw new NotSupportedException("LLVM volatile store is not yet supported — see docs/support-matrix.md (memory model).");
+
             case LoweredUnreachableInstruction:
                 encoder.OpCode(ILOpCode.Ldnull);
                 encoder.OpCode(ILOpCode.Throw);

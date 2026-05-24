@@ -231,6 +231,12 @@ public static partial class LoweredIrLowerer
 
     private static LoweredInstruction ParseInstruction(string line)
     {
+        var earlyTyped = TryParseUnsupportedTyped(line);
+        if (earlyTyped is not null)
+        {
+            return earlyTyped;
+        }
+
         if (TryParseBinaryInstruction(line, out var binaryInstruction))
         {
             return binaryInstruction;
@@ -476,7 +482,86 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(cmpxchgMatch.Groups["newVal"].Value));
         }
 
+        // Typed detectors for known-unsupported constructs. We keep them as semantic records so
+        // the emitter can fail with structured diagnostics in strict mode (or stub bodies in
+        // permissive mode) instead of treating every unknown line as opaque raw text.
+        var typed = TryParseUnsupportedTyped(line);
+        if (typed is not null)
+        {
+            return typed;
+        }
+
         return new LoweredRawInstruction(line);
+    }
+
+    private static LoweredInstruction? TryParseUnsupportedTyped(string line)
+    {
+        var trimmed = line.TrimStart();
+
+        // Strip "<result> = " prefix if present, capturing the result name.
+        string? result = null;
+        var eqIndex = trimmed.IndexOf('=');
+        if (eqIndex > 0 && trimmed.StartsWith('%'))
+        {
+            result = NormalizeResultName(trimmed.Substring(0, eqIndex).Trim());
+            trimmed = trimmed.Substring(eqIndex + 1).TrimStart();
+        }
+
+        if (trimmed.StartsWith("invoke ", StringComparison.Ordinal))
+        {
+            // Capture normal/unwind labels for diagnostics, callee text in body.
+            string normalLabel = "?", unwindLabel = "?";
+            var toIdx = trimmed.IndexOf(" to label %", StringComparison.Ordinal);
+            if (toIdx >= 0)
+            {
+                var rest = trimmed.Substring(toIdx + " to label %".Length);
+                var space = rest.IndexOf(' ');
+                normalLabel = space > 0 ? rest.Substring(0, space) : rest;
+                var unwindIdx = rest.IndexOf("unwind label %", StringComparison.Ordinal);
+                if (unwindIdx >= 0)
+                {
+                    var u = rest.Substring(unwindIdx + "unwind label %".Length);
+                    var us = u.IndexOf(' ');
+                    unwindLabel = us > 0 ? u.Substring(0, us) : u;
+                }
+            }
+            return new LoweredInvokeInstruction(result, "void", trimmed, [], normalLabel, unwindLabel);
+        }
+
+        if (trimmed.StartsWith("landingpad ", StringComparison.Ordinal))
+        {
+            var isCleanup = trimmed.Contains("cleanup", StringComparison.Ordinal);
+            return new LoweredLandingPadInstruction(result, "i8*", trimmed, isCleanup);
+        }
+
+        if (trimmed.StartsWith("fence ", StringComparison.Ordinal))
+        {
+            var orderingText = trimmed.Substring("fence ".Length).Trim();
+            string? scope = null;
+            const string scopeMarker = "syncscope(";
+            var scopeIdx = orderingText.IndexOf(scopeMarker, StringComparison.Ordinal);
+            if (scopeIdx >= 0)
+            {
+                var afterScope = orderingText.Substring(scopeIdx + scopeMarker.Length);
+                var close = afterScope.IndexOf(')');
+                if (close > 0) { scope = afterScope.Substring(0, close); }
+            }
+            return new LoweredFenceInstruction(orderingText, scope);
+        }
+
+        // Volatile load: "load volatile <ty>, <ty>* <ptr>"
+        if (result is not null && trimmed.StartsWith("load volatile ", StringComparison.Ordinal))
+        {
+            return new LoweredVolatileLoadInstruction(result, "?", trimmed);
+        }
+
+        // Volatile store: "store volatile <ty> <val>, <ty>* <ptr>"
+        if (trimmed.StartsWith("store volatile ", StringComparison.Ordinal))
+        {
+            return new LoweredVolatileStoreInstruction("?", "?", trimmed);
+        }
+
+        return null;
     }
 
     private static List<LoweredArgument> ParseArguments(string argumentText)

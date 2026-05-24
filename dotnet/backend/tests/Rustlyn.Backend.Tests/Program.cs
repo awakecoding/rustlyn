@@ -62,6 +62,13 @@ RunTest("BindingSurfaceScannerCreatesStaticObjectHandleBindings", BindingSurface
 RunTest("StrictModeRejectsRawInstruction", StrictModeRejectsRawInstruction, failures);
 RunTest("StrictModeStillSucceedsForValidModule", StrictModeStillSucceedsForValidModule, failures);
 RunTest("PermissiveModeStubsRawInstruction", PermissiveModeStubsRawInstruction, failures);
+RunTest("StrictModeRejectsInvokeWithStructuredMessage", StrictModeRejectsInvokeWithStructuredMessage, failures);
+RunTest("StrictModeRejectsLandingPadWithStructuredMessage", StrictModeRejectsLandingPadWithStructuredMessage, failures);
+RunTest("StrictModeRejectsFenceWithStructuredMessage", StrictModeRejectsFenceWithStructuredMessage, failures);
+RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsVolatileLoadWithStructuredMessage, failures);
+RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
+RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
+RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -1850,6 +1857,110 @@ static void StringVecOpsSampleProducesModuleSummary()
         "vec_push_sum",
         ["vec_push_sum", "vec_capacity_len", "vec_squares_sum"],
         minimumFunctionCount: 3);
+}
+
+static void AssertStrictModeRejects(LoweredInstruction unsupported, string expectedReasonSubstring, string functionName = "unsupported")
+{
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        unsupported,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var fn = new LoweredFunction(functionName, "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { fn }, Array.Empty<LoweredGlobal>());
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-typed-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, $"{functionName}.dll");
+
+    try
+    {
+        var threw = false;
+        try
+        {
+            LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        }
+        catch (UnsupportedIrException ex)
+        {
+            threw = true;
+            Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
+            Assert(ex.Functions[0].Reason.Contains(expectedReasonSubstring, StringComparison.Ordinal),
+                $"Expected diagnostic to contain '{expectedReasonSubstring}', got '{ex.Functions[0].Reason}'.");
+        }
+        Assert(threw, $"Expected strict mode to throw UnsupportedIrException for {unsupported.GetType().Name}.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort */ } }
+    }
+}
+
+static void StrictModeRejectsInvokeWithStructuredMessage()
+{
+    var inv = new LoweredInvokeInstruction(null, "void", "invoke void @callee() to label %normal unwind label %landing", [], "normal", "landing");
+    AssertStrictModeRejects(inv, "invoke", "invoke_caller");
+}
+
+static void StrictModeRejectsLandingPadWithStructuredMessage()
+{
+    var lp = new LoweredLandingPadInstruction("res", "i8*", "landingpad { i8*, i32 } cleanup", true);
+    AssertStrictModeRejects(lp, "landingpad", "lpad_handler");
+}
+
+static void StrictModeRejectsFenceWithStructuredMessage()
+{
+    var fence = new LoweredFenceInstruction("seq_cst", null);
+    AssertStrictModeRejects(fence, "fence", "fence_user");
+}
+
+static void StrictModeRejectsVolatileLoadWithStructuredMessage()
+{
+    var vl = new LoweredVolatileLoadInstruction("r", "i32", "load volatile i32, i32* %p");
+    AssertStrictModeRejects(vl, "volatile load", "volatile_loader");
+}
+
+static void LowererProducesTypedInvokeRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() {\n" +
+        "entry:\n" +
+        "  invoke void @callee() to label %normal unwind label %cleanup\n" +
+        "normal:\n" +
+        "  ret i32 0\n" +
+        "cleanup:\n" +
+        "  ret i32 1\n" +
+        "}\n");
+    Assert(module.Functions.Count == 1, "Expected one function in lowered example.");
+    var instrs = module.Functions[0].Blocks.SelectMany(b => b.Instructions).ToList();
+    var invokeInstr = instrs.OfType<LoweredInvokeInstruction>().FirstOrDefault();
+    Assert(invokeInstr is not null, "Expected lowered invoke to materialize as LoweredInvokeInstruction.");
+    Assert(invokeInstr!.NormalLabel == "normal", $"Expected normal label 'normal', got '{invokeInstr.NormalLabel}'.");
+    Assert(invokeInstr.UnwindLabel == "cleanup", $"Expected unwind label 'cleanup', got '{invokeInstr.UnwindLabel}'.");
+}
+
+static void LowererProducesTypedLandingPadRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() personality i32 0 {\n" +
+        "entry:\n" +
+        "  %lp = landingpad { i8*, i32 } cleanup\n" +
+        "  ret i32 0\n" +
+        "}\n");
+    var lp = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredLandingPadInstruction>().FirstOrDefault();
+    Assert(lp is not null, "Expected lowered landingpad to materialize as LoweredLandingPadInstruction.");
+    Assert(lp!.IsCleanup, "Expected cleanup flag to be set.");
+}
+
+static void LowererProducesTypedFenceRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() {\n" +
+        "entry:\n" +
+        "  fence seq_cst\n" +
+        "  ret i32 0\n" +
+        "}\n");
+    var fence = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredFenceInstruction>().FirstOrDefault();
+    Assert(fence is not null, "Expected lowered fence to materialize as LoweredFenceInstruction.");
+    Assert(fence!.Ordering.StartsWith("seq_cst", StringComparison.Ordinal), $"Expected ordering 'seq_cst', got '{fence.Ordering}'.");
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
