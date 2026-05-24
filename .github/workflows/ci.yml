@@ -33,13 +33,23 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build sample bitcode (add)
+      - name: Build sample bitcode (core matrix)
         shell: pwsh
-        run: ./scripts/Build-SampleBitcode.ps1 -Sample add
+        run: |
+          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
+            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
+          }
 
-      - name: Smoke test (add)
+      - name: Smoke test (core matrix)
         shell: pwsh
-        run: ./scripts/Test-Smoke.ps1 -Sample add -Mode Bitcode
+        run: |
+          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
+            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
+          }
+
+      - name: Run backend regression harness
+        shell: pwsh
+        run: dotnet run -c Release --project ./dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj
 
   bindings-test:
     runs-on: ubuntu-latest

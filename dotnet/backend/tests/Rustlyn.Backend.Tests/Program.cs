@@ -818,6 +818,15 @@ RunOptionalTest("ArrayOpsProbeReturnsExpectedResult", ArrayOpsProbeReturnsExpect
 RunOptionalTest("NestedMatchProbeReturnsExpectedResult", NestedMatchProbeReturnsExpectedResult, failures);
 RunOptionalTest("TraitObjectProbeReturnsExpectedResult", TraitObjectProbeReturnsExpectedResult, failures);
 
+// Advanced fixtures — module-summary smoke (skipped until Build-SampleBitcode.ps1 has run for each).
+RunOptionalTest("AsyncStateMachineSampleProducesModuleSummary", AsyncStateMachineSampleProducesModuleSummary, failures);
+RunOptionalTest("EnumComplexSampleProducesModuleSummary", EnumComplexSampleProducesModuleSummary, failures);
+RunOptionalTest("ErrorPropagationSampleProducesModuleSummary", ErrorPropagationSampleProducesModuleSummary, failures);
+RunOptionalTest("GenericCollectionsSampleProducesModuleSummary", GenericCollectionsSampleProducesModuleSummary, failures);
+RunOptionalTest("GlobalPtrPassSampleProducesModuleSummary", GlobalPtrPassSampleProducesModuleSummary, failures);
+RunOptionalTest("IteratorChainSampleProducesModuleSummary", IteratorChainSampleProducesModuleSummary, failures);
+RunOptionalTest("StringVecOpsSampleProducesModuleSummary", StringVecOpsSampleProducesModuleSummary, failures);
+
 if (failures.Count == 0)
 {
     Console.WriteLine("All backend inspector tests passed.");
@@ -1782,6 +1791,65 @@ static void PermissiveModeStubsRawInstruction()
     {
         if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
     }
+}
+
+static void AsyncStateMachineSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "async_state_machine",
+        "poll_accumulator",
+        ["poll_accumulator", "fibonacci_generator", "cooperative_step", "join_poll", "select_first_ready", "retry_backoff"],
+        minimumFunctionCount: 6);
+}
+
+static void EnumComplexSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "enum_complex",
+        "enum_complex_shapes",
+        ["enum_complex_shapes", "enum_complex_exprs", "enum_complex_nested_option", "enum_complex_result_chain"],
+        minimumFunctionCount: 4);
+}
+
+static void ErrorPropagationSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "error_propagation",
+        "error_prop_success",
+        ["error_prop_success", "error_prop_early_fail", "error_prop_pipeline_ok", "error_prop_pipeline_fail"],
+        minimumFunctionCount: 4);
+}
+
+static void GenericCollectionsSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "generic_collections",
+        "stack_i32_push_pop",
+        ["stack_i32_push_pop", "stack_i64_operations", "pair_swap_sum", "pair_mixed_width", "search_in_array", "min_max_sum_i32", "min_max_sum_i64", "ring_buffer_fifo"],
+        minimumFunctionCount: 8);
+}
+
+static void GlobalPtrPassSampleProducesModuleSummary()
+{
+    AssertSingleFunctionSampleModuleSummary("global_ptr_pass", "global_ptr_pass_probe");
+}
+
+static void IteratorChainSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "iterator_chain",
+        "iter_map_filter_sum",
+        ["iter_map_filter_sum", "iter_enumerate_filter_map", "iter_zip_dot_product", "iter_chain_take_product"],
+        minimumFunctionCount: 4);
+}
+
+static void StringVecOpsSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "string_vec_ops",
+        "vec_push_sum",
+        ["vec_push_sum", "vec_capacity_len", "vec_squares_sum"],
+        minimumFunctionCount: 3);
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()
