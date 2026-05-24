@@ -78,6 +78,7 @@ RunTest("TypeLayoutAggregatesAreSizedWithPadding", TypeLayoutAggregatesAreSizedW
 RunTest("TypeLayoutArraysAndVectorsAreSized", TypeLayoutArraysAndVectorsAreSized, failures);
 RunTest("NicheLayoutPolicyHandlesPointersAndNonZero", NicheLayoutPolicyHandlesPointersAndNonZero, failures);
 RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRequiresDiscriminantForPlainInts, failures);
+RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrderingsToStrategies, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2117,6 +2118,34 @@ static void NicheLayoutPolicyRequiresDiscriminantForPlainInts()
 
     var empty = NicheLayoutPolicy.OptionLikeFor("");
     Assert(empty.NeedsDiscriminant, "Expected empty payload to require a discriminant.");
+}
+
+static void AtomicOrderingMapsRustOrderingsToStrategies()
+{
+    Assert(AtomicOrderingMap.TryParse("monotonic", out var mono) && mono == AtomicOrdering.Monotonic, "monotonic parses");
+    Assert(AtomicOrderingMap.TryParse("acq_rel", out var acqrel) && acqrel == AtomicOrdering.AcqRel, "acq_rel parses");
+    Assert(AtomicOrderingMap.TryParse("seq_cst", out var sc) && sc == AtomicOrdering.SeqCst, "seq_cst parses");
+    Assert(!AtomicOrderingMap.TryParse("bogus", out _), "bogus rejected");
+
+    var loadMono = AtomicOrderingMap.ForLoad(AtomicOrdering.Monotonic);
+    Assert(loadMono.Strategy == AtomicLoweringStrategy.VolatileAccess, $"monotonic load -> volatile, got {loadMono.Strategy}");
+
+    var loadAcq = AtomicOrderingMap.ForLoad(AtomicOrdering.Acquire);
+    Assert(loadAcq.Strategy == AtomicLoweringStrategy.VolatileAcquire, $"acquire load -> volatile-acquire, got {loadAcq.Strategy}");
+
+    var loadSC = AtomicOrderingMap.ForLoad(AtomicOrdering.SeqCst);
+    Assert(loadSC.Strategy == AtomicLoweringStrategy.BarrierFenced, $"seqcst load -> barrier, got {loadSC.Strategy}");
+
+    var storeRel = AtomicOrderingMap.ForStore(AtomicOrdering.Release);
+    Assert(storeRel.Strategy == AtomicLoweringStrategy.VolatileRelease, $"release store -> volatile-release, got {storeRel.Strategy}");
+
+    var rmw = AtomicOrderingMap.ForReadModifyWrite(AtomicOrdering.Monotonic);
+    Assert(rmw.Strategy == AtomicLoweringStrategy.InterlockedRmw, "RMW always goes through Interlocked");
+
+    var fenceSC = AtomicOrderingMap.ForFence(AtomicOrdering.SeqCst);
+    Assert(fenceSC.Strategy == AtomicLoweringStrategy.BarrierFenced, "seqcst fence -> full barrier");
+    var fenceMono = AtomicOrderingMap.ForFence(AtomicOrdering.Monotonic);
+    Assert(fenceMono.Strategy == AtomicLoweringStrategy.VolatileAccess, "monotonic fence is a no-op");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()

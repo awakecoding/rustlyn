@@ -92,7 +92,7 @@ Layout work routes through `TypeLayoutService`. It answers size/alignment for `i
 | Heap allocator | Preview | `Rustlyn.Runtime` exposes `Allocate`/`Reallocate`/`Free` over `NativeMemory`. Layout-driven zeroing/aligned paths still need direct fixture coverage. |
 | `memcpy` / `memmove` / `memset` | Preview | Backed by `Buffer.MemoryCopy` and `Span.Fill`; volatile/aligned variants are not modeled distinctly yet. |
 | Volatile load/store | Unsupported | Lowered as typed records; strict mode rejects them. |
-| Atomic ordering | Fixture-only | `atomicrmw`/`cmpxchg` lowering exists but `Acquire`/`Release`/`SeqCst` semantics are treated as the strongest available ordering via `Interlocked`. |
+| Atomic ordering | Fixture-only | `atomicrmw`/`cmpxchg` lowering exists. `AtomicOrderingMap` (see `dotnet/backend/src/Rustlyn.Backend/AtomicOrderingMap.cs`) codifies the policy: `Monotonic` → `Volatile.Read`/`Write`, `Acquire`/`Release` → volatile access whose intrinsic carries the half-fence, `AcqRel`/`SeqCst` → `Interlocked.*` (and `Thread.MemoryBarrier` for plain SeqCst load/store). |
 | `fence` | Unsupported | Lowered as `LoweredFenceInstruction`; strict mode rejects with the ordering text included. |
 | Panic = abort | Preview | Throws a managed exception that maps to `std::process::abort` in fixtures. |
 | Panic = unwind | Planned | Requires landingpad/invoke modeling, exception regions, and drop-on-unwind glue. |
