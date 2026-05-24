@@ -81,6 +81,7 @@ RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRe
 RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrderingsToStrategies, failures);
 RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRestoresArtifactWithoutReEmission, failures);
 RunTest("MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs", MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs, failures);
+RunTest("DotNetNewTemplatesAreShapedCorrectly", DotNetNewTemplatesAreShapedCorrectly, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
@@ -2226,6 +2227,47 @@ static void MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs()
 
     var itemGroup = doc.SelectSingleNode("//m:ItemGroup[m:RustlynBitcodeInputs]", ns);
     Assert(itemGroup is not null, "Default RustlynBitcodeInputs ItemGroup must exist so projects without explicit inputs still get an up-to-date check.");
+}
+
+static void DotNetNewTemplatesAreShapedCorrectly()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? templatesDir = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "templates");
+        if (Directory.Exists(probe) && File.Exists(Path.Combine(probe, "Rustlyn.Templates.csproj")))
+        {
+            templatesDir = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(templatesDir is not null, "templates directory not found.");
+
+    foreach (var shortName in new[] { "rustlyn-classlib", "rustlyn-console" })
+    {
+        var tpl = Path.Combine(templatesDir!, shortName, ".template.config", "template.json");
+        Assert(File.Exists(tpl), $"template.json missing for {shortName}.");
+        var contents = File.ReadAllText(tpl);
+        Assert(contents.Contains($"\"shortName\": \"{shortName}\"", StringComparison.Ordinal),
+            $"{tpl} must declare shortName '{shortName}'.");
+        Assert(contents.Contains("\"identity\"", StringComparison.Ordinal),
+            $"{tpl} must declare an identity.");
+    }
+
+    Assert(File.Exists(Path.Combine(templatesDir!, "rustlyn-classlib", "src", "lib.rs")),
+        "classlib template missing src/lib.rs starter.");
+    Assert(File.Exists(Path.Combine(templatesDir!, "rustlyn-console", "src", "main.rs")),
+        "console template missing src/main.rs starter.");
+
+    var pkg = File.ReadAllText(Path.Combine(templatesDir!, "Rustlyn.Templates.csproj"));
+    Assert(pkg.Contains("<PackageType>Template</PackageType>", StringComparison.Ordinal),
+        "Rustlyn.Templates.csproj must declare PackageType=Template.");
+    Assert(pkg.Contains("rustlyn-classlib", StringComparison.Ordinal) &&
+           pkg.Contains("rustlyn-console", StringComparison.Ordinal),
+        "Rustlyn.Templates.csproj must include both template directories.");
 }
 
 static void NuGetPackagerWritesValidNupkgArchive()
