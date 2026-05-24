@@ -72,6 +72,7 @@ RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, fail
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
+RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -1995,6 +1996,34 @@ static void TypeLayoutReturnsUnknownForAggregates()
     Assert(!svc.TryGetLayout("[4 x i32]", out _), "Array type should not be recognized yet.");
     var unk = svc.GetLayoutOrUnknown("%MyStruct");
     Assert(unk.Category == TypeLayoutCategory.Unknown, "Unknown type should report Unknown category.");
+}
+
+static void NuGetPackagerWritesValidNupkgArchive()
+{
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-nupkg-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    try
+    {
+        var fakeAsm = Path.Combine(tempDir, "demo_crate.dll");
+        File.WriteAllBytes(fakeAsm, new byte[] { 0x4d, 0x5a, 0x90, 0x00 }); // MZ header bytes are fine for archive test
+        var spec = NuGetPackager.CreatePackSpec("demo_crate", "1.2.3", fakeAsm);
+        var nupkgPath = Path.Combine(tempDir, $"{spec.PackageId}.{spec.Version}.nupkg");
+        NuGetPackager.WriteNupkg(spec, nupkgPath);
+
+        Assert(File.Exists(nupkgPath), "Expected .nupkg file to be created.");
+        using var fs = File.OpenRead(nupkgPath);
+        using var zip = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Read);
+        var entries = zip.Entries.Select(e => e.FullName).ToList();
+        Assert(entries.Any(e => e.EndsWith(".nuspec", StringComparison.Ordinal)), "Expected .nuspec entry inside .nupkg.");
+        Assert(entries.Contains("[Content_Types].xml"), "Expected [Content_Types].xml entry.");
+        Assert(entries.Contains("_rels/.rels"), "Expected _rels/.rels entry.");
+        Assert(entries.Any(e => e.StartsWith("lib/net10.0/", StringComparison.Ordinal) && e.EndsWith(".dll", StringComparison.Ordinal)),
+            "Expected lib/net10.0/<crate>.dll entry.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort */ } }
+    }
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()

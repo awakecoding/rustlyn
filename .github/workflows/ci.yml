@@ -51,6 +51,10 @@ jobs:
         shell: pwsh
         run: dotnet run -c Release --project ./dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj
 
+      - name: Audit documentation claims against support matrix
+        shell: pwsh
+        run: ./scripts/Test-DocClaims.ps1
+
   bindings-test:
     runs-on: ubuntu-latest
     steps:

@@ -202,10 +202,15 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
         var nuspecPath = Path.Combine(packOutputDir, $"{spec.PackageId}.nuspec");
         File.WriteAllText(nuspecPath, nuspecContent);
 
+        // Produce a real .nupkg alongside the .nuspec.
+        var nupkgPath = Path.Combine(packOutputDir, $"{spec.PackageId}.{spec.Version}.nupkg");
+        NuGetPackager.WriteNupkg(spec, nupkgPath);
+
         Console.WriteLine($"Package ID: {spec.PackageId}");
         Console.WriteLine($"Version: {spec.Version}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(assemblyPath)}");
         Console.WriteLine($"Nuspec: {Path.GetFullPath(nuspecPath)}");
+        Console.WriteLine($"Nupkg: {Path.GetFullPath(nupkgPath)}");
         Console.WriteLine($"Files: {spec.Files.Count}");
         return 0;
     }
