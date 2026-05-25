@@ -1656,6 +1656,41 @@ $sampleChecks = @{
         Arguments = @(3, 9)
         Expected = 9
     }
+    async_state_machine = @{
+        Method = "retry_backoff"
+        Arguments = @(0, 5, 3)
+        Expected = 3
+    }
+    enum_complex = @{
+        Method = "enum_complex_nested_option"
+        Arguments = @(0)
+        Expected = 0
+    }
+    error_propagation = @{
+        Method = "error_prop_success"
+        Arguments = @()
+        Expected = 0
+    }
+    generic_collections = @{
+        Method = "pair_swap_sum"
+        Arguments = @(3, 4)
+        Expected = 7
+    }
+    global_ptr_pass = @{
+        Method = "global_ptr_pass_probe"
+        Arguments = @(1)
+        Expected = 43
+    }
+    iterator_chain = @{
+        Method = "iter_map_filter_sum"
+        Arguments = @(5)
+        Expected = 30
+    }
+    string_vec_ops = @{
+        Method = "vec_push_sum"
+        Arguments = @(4)
+        Expected = 10
+    }
 }
 
 function Invoke-SmokeCheck {

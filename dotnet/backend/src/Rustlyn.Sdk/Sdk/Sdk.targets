@@ -24,6 +24,14 @@
     <RustlynBinaryTarget Condition="'$(RustlynBinaryTarget)' == '' and '$(OutputType)' == 'Exe'">$(AssemblyName)</RustlynBinaryTarget>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Default incremental inputs: every Rust source and manifest under the effective crate root.
+         Projects may add to or replace this item group to refine MSBuild's up-to-date check. -->
+    <RustlynBitcodeInputs Include="$(_RustlynEffectiveCratePath)\**\*.rs" Condition="'@(RustlynBitcodeInputs)' == ''" />
+    <RustlynBitcodeInputs Include="$(_RustlynEffectiveCratePath)\**\Cargo.toml" Condition="Exists('$(_RustlynEffectiveCratePath)\Cargo.toml')" />
+    <RustlynBitcodeInputs Include="$(_RustlynEffectiveCratePath)\**\Cargo.lock" Condition="Exists('$(_RustlynEffectiveCratePath)\Cargo.lock')" />
+  </ItemGroup>
+
   <Target Name="Build" DependsOnTargets="RustlynTranslate" />
 
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
@@ -81,7 +89,9 @@
     <WriteLinesToFile File="$(RustlynGeneratedCargoProjectPath)\Cargo.toml" Lines="@(_RustlynGeneratedCargoLine)" Overwrite="true" />
   </Target>
 
-  <Target Name="RustlynTranslate" DependsOnTargets="RustlynGenerateCargoProject">
+  <Target Name="RustlynTranslate" DependsOnTargets="RustlynGenerateCargoProject"
+          Inputs="@(RustlynBitcodeInputs);$(_RustlynEffectiveCratePath)\Cargo.toml;$(MSBuildProjectFullPath);$(MSBuildThisFileFullPath)"
+          Outputs="$(RustlynOutputPath)">
     <MakeDir Directories="$(OutputPath);$(IntermediateOutputPath)" />
 
     <PropertyGroup>

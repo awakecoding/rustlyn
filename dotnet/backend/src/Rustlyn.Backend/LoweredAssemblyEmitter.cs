@@ -11,6 +11,11 @@ namespace Rustlyn.Backend;
 /// </summary>
 public static class LoweredAssemblyEmitter
 {
+    [ThreadStatic]
+    private static bool _strictUnsupportedIr;
+
+    /// <summary>True when emission is running under <see cref="EmitOptions.StrictUnsupportedIr"/>.</summary>
+    private static bool StrictUnsupportedIr => _strictUnsupportedIr;
     public static void EmitBitcode(string artifactPath, string outputAssemblyPath, string? llvmRoot = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactPath);
@@ -68,7 +73,7 @@ public static class LoweredAssemblyEmitter
             pdbResult = pdbEmitter.Serialize(pdbPath);
         }
 
-        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, pdbResult);
+        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, pdbResult, options);
 
         if (consoleEntrypoint is not null)
         {
@@ -317,7 +322,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, PortablePdbResult? pdbResult = null)
+    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, PortablePdbResult? pdbResult = null, EmitOptions? emitOptions = null)
     {
         var metadataBuilder = new MetadataBuilder();
         var ilBuilder = new BlobBuilder();
@@ -442,31 +447,51 @@ public static class LoweredAssemblyEmitter
         // Emit method bodies first (need all handle mappings available for intra-module calls)
         var bodyOffsets = new int[totalMethods];
         var skippedFunctions = new List<(string Name, string Reason)>();
-        for (var i = 0; i < functions.Count; i++)
+        var strict = emitOptions?.StrictUnsupportedIr == true;
+        _strictUnsupportedIr = strict;
+        try
         {
-            try
+            for (var i = 0; i < functions.Count; i++)
             {
-                bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions, mutatedGlobals);
+                try
+                {
+                    bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions, mutatedGlobals);
+                }
+                catch (NotSupportedException ex)
+                {
+                    skippedFunctions.Add((functions[i].Name, ex.Message));
+                    if (!strict)
+                    {
+                        bodyOffsets[i] = EmitStubBody(metadataBuilder, methodBodyStream, typeContext, functions[i].Name, ex.Message);
+                    }
+                }
+                catch (Exception ex) when (ex is not OutOfMemoryException)
+                {
+                    skippedFunctions.Add((functions[i].Name, ex.Message));
+                    if (!strict)
+                    {
+                        bodyOffsets[i] = EmitStubBody(metadataBuilder, methodBodyStream, typeContext, functions[i].Name, ex.Message);
+                    }
+                }
             }
-            catch (NotSupportedException ex)
+
+            if (skippedFunctions.Count > 0)
             {
-                skippedFunctions.Add((functions[i].Name, ex.Message));
-                bodyOffsets[i] = EmitStubBody(metadataBuilder, methodBodyStream, typeContext, functions[i].Name, ex.Message);
-            }
-            catch (Exception ex) when (ex is not OutOfMemoryException)
-            {
-                skippedFunctions.Add((functions[i].Name, ex.Message));
-                bodyOffsets[i] = EmitStubBody(metadataBuilder, methodBodyStream, typeContext, functions[i].Name, ex.Message);
+                if (strict)
+                {
+                    throw new UnsupportedIrException(skippedFunctions.ConvertAll(f => new UnsupportedIrFunction(f.Name, f.Reason)));
+                }
+
+                Console.Error.WriteLine($"Warning: {skippedFunctions.Count} function(s) stubbed due to unsupported IR:");
+                foreach (var (name, reason) in skippedFunctions)
+                {
+                    Console.Error.WriteLine($"  {name}: {reason}");
+                }
             }
         }
-
-        if (skippedFunctions.Count > 0)
+        finally
         {
-            Console.Error.WriteLine($"Warning: {skippedFunctions.Count} function(s) stubbed due to unsupported IR:");
-            foreach (var (name, reason) in skippedFunctions)
-            {
-                Console.Error.WriteLine($"  {name}: {reason}");
-            }
+            _strictUnsupportedIr = false;
         }
 
         // Emit .cctor body if we have globals
@@ -1631,9 +1656,32 @@ public static class LoweredAssemblyEmitter
             case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock):
                 break;
 
-            case LoweredRawInstruction:
+            case LoweredSwitchInstruction sw:
+                EmitTypedSwitch(encoder, sw, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock);
+                break;
+
+            case LoweredRawInstruction raw:
+                if (StrictUnsupportedIr)
+                {
+                    throw new NotSupportedException($"unsupported raw LLVM instruction in block '{sourceBlock}': '{raw.Text}'");
+                }
                 encoder.OpCode(ILOpCode.Nop);
                 break;
+
+            case LoweredInvokeInstruction invoke:
+                throw new NotSupportedException($"LLVM 'invoke' is not yet supported (normal=%{invoke.NormalLabel}, unwind=%{invoke.UnwindLabel}) — see docs/support-matrix.md (panic-unwind).");
+
+            case LoweredLandingPadInstruction landingPad:
+                throw new NotSupportedException($"LLVM 'landingpad' is not yet supported (cleanup={landingPad.IsCleanup}) — see docs/support-matrix.md (panic-unwind).");
+
+            case LoweredFenceInstruction fence:
+                throw new NotSupportedException($"LLVM 'fence {fence.Ordering}' is not yet supported — see docs/support-matrix.md (atomics).");
+
+            case LoweredVolatileLoadInstruction volatileLoad:
+                throw new NotSupportedException($"LLVM volatile load is not yet supported (result %{volatileLoad.Result}) — see docs/support-matrix.md (memory model).");
+
+            case LoweredVolatileStoreInstruction:
+                throw new NotSupportedException("LLVM volatile store is not yet supported — see docs/support-matrix.md (memory model).");
 
             case LoweredUnreachableInstruction:
                 encoder.OpCode(ILOpCode.Ldnull);
@@ -2911,6 +2959,43 @@ public static class LoweredAssemblyEmitter
             }
         }
         return null;
+    }
+
+    private static void EmitTypedSwitch(
+        InstructionEncoder encoder,
+        LoweredSwitchInstruction sw,
+        SrmTypeContext typeContext,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        IReadOnlyDictionary<string, LabelHandle> labelMap,
+        IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock,
+        string sourceBlock)
+    {
+        var switchValue = NormalizeRawValue(sw.Value);
+        var isWideSwitch = string.Equals(sw.ValueType, "i64", StringComparison.Ordinal);
+
+        foreach (var c in sw.Cases)
+        {
+            EmitLoadValue(encoder, switchValue, paramIndices, localIndices, fieldHandles);
+            if (isWideSwitch)
+            {
+                encoder.LoadConstantI8(c.Value);
+            }
+            else
+            {
+                encoder.LoadConstantI4((int)c.Value);
+            }
+            encoder.OpCode(ILOpCode.Ceq);
+            var nextCase = encoder.DefineLabel();
+            encoder.Branch(ILOpCode.Brfalse, nextCase);
+            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, c.Target);
+            encoder.Branch(ILOpCode.Br, labelMap[c.Target]);
+            encoder.MarkLabel(nextCase);
+        }
+
+        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, sw.DefaultLabel);
+        encoder.Branch(ILOpCode.Br, labelMap[sw.DefaultLabel]);
     }
 
     private static bool TryEmitRawSwitch(

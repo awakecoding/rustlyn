@@ -108,6 +108,84 @@ public static class NuGetPackager
             .Replace(">", "&gt;", StringComparison.Ordinal)
             .Replace("\"", "&quot;", StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// Writes a real <c>.nupkg</c> (zip archive) to <paramref name="outputNupkgPath"/> containing
+    /// the .nuspec, every file from <paramref name="spec"/>, and the standard NuGet
+    /// <c>[Content_Types].xml</c> + <c>_rels/.rels</c> entries that make the package valid for
+    /// <c>nuget restore</c> and IDE consumption.
+    /// </summary>
+    public static void WriteNupkg(NuGetPackSpec spec, string outputNupkgPath)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputNupkgPath);
+
+        var dir = Path.GetDirectoryName(Path.GetFullPath(outputNupkgPath));
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+        if (File.Exists(outputNupkgPath))
+        {
+            File.Delete(outputNupkgPath);
+        }
+
+        using var fs = File.Create(outputNupkgPath);
+        using var zip = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Create);
+
+        // 1. .nuspec at the root
+        var nuspecName = $"{spec.PackageId}.nuspec";
+        WriteZipText(zip, nuspecName, GenerateNuspec(spec));
+
+        // 2. All declared files at their target paths
+        foreach (var file in spec.Files)
+        {
+            if (!File.Exists(file.SourcePath))
+            {
+                continue;
+            }
+            var entry = zip.CreateEntry(NormalizeZipPath(file.TargetPath), System.IO.Compression.CompressionLevel.Optimal);
+            using var entryStream = entry.Open();
+            using var source = File.OpenRead(file.SourcePath);
+            source.CopyTo(entryStream);
+        }
+
+        // 3. [Content_Types].xml — NuGet/OPC requirement
+        WriteZipText(zip, "[Content_Types].xml", BuildContentTypesXml());
+
+        // 4. _rels/.rels relating the package root to the nuspec
+        WriteZipText(zip, "_rels/.rels", BuildRelsXml(nuspecName));
+    }
+
+    private static void WriteZipText(System.IO.Compression.ZipArchive zip, string path, string content)
+    {
+        var entry = zip.CreateEntry(NormalizeZipPath(path), System.IO.Compression.CompressionLevel.Optimal);
+        using var stream = entry.Open();
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
+        writer.Write(content);
+    }
+
+    private static string NormalizeZipPath(string path) => path.Replace('\\', '/');
+
+    private static string BuildContentTypesXml() => """
+        <?xml version="1.0" encoding="utf-8"?>
+        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+          <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" />
+          <Default Extension="nuspec" ContentType="application/octet" />
+          <Default Extension="dll" ContentType="application/octet" />
+          <Default Extension="pdb" ContentType="application/octet" />
+          <Default Extension="json" ContentType="application/octet" />
+          <Default Extension="xml" ContentType="application/octet" />
+          <Default Extension="md" ContentType="application/octet" />
+        </Types>
+        """;
+
+    private static string BuildRelsXml(string nuspecName) => $"""
+        <?xml version="1.0" encoding="utf-8"?>
+        <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          <Relationship Type="http://schemas.microsoft.com/packaging/2010/07/manifest" Target="/{nuspecName}" Id="R1" />
+        </Relationships>
+        """;
 }
 
 /// <summary>

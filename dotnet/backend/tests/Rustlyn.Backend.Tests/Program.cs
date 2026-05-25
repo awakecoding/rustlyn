@@ -59,6 +59,31 @@ RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScanne
 RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
 RunTest("BindingSurfaceScannerCreatesStaticScalarBindings", BindingSurfaceScannerCreatesStaticScalarBindings, failures);
 RunTest("BindingSurfaceScannerCreatesStaticObjectHandleBindings", BindingSurfaceScannerCreatesStaticObjectHandleBindings, failures);
+RunTest("StrictModeRejectsRawInstruction", StrictModeRejectsRawInstruction, failures);
+RunTest("StrictModeStillSucceedsForValidModule", StrictModeStillSucceedsForValidModule, failures);
+RunTest("PermissiveModeStubsRawInstruction", PermissiveModeStubsRawInstruction, failures);
+RunTest("StrictModeRejectsInvokeWithStructuredMessage", StrictModeRejectsInvokeWithStructuredMessage, failures);
+RunTest("StrictModeRejectsLandingPadWithStructuredMessage", StrictModeRejectsLandingPadWithStructuredMessage, failures);
+RunTest("StrictModeRejectsFenceWithStructuredMessage", StrictModeRejectsFenceWithStructuredMessage, failures);
+RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsVolatileLoadWithStructuredMessage, failures);
+RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
+RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
+RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
+RunTest("LowererCoalescesSwitchIntoTypedInstruction", LowererCoalescesSwitchIntoTypedInstruction, failures);
+RunTest("LowererCoalescesSwitchWithMultipleCases", LowererCoalescesSwitchWithMultipleCases, failures);
+RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
+RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
+RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
+RunTest("TypeLayoutAggregatesAreSizedWithPadding", TypeLayoutAggregatesAreSizedWithPadding, failures);
+RunTest("TypeLayoutArraysAndVectorsAreSized", TypeLayoutArraysAndVectorsAreSized, failures);
+RunTest("NicheLayoutPolicyHandlesPointersAndNonZero", NicheLayoutPolicyHandlesPointersAndNonZero, failures);
+RunTest("NicheLayoutPolicyRequiresDiscriminantForPlainInts", NicheLayoutPolicyRequiresDiscriminantForPlainInts, failures);
+RunTest("AtomicOrderingMapsRustOrderingsToStrategies", AtomicOrderingMapsRustOrderingsToStrategies, failures);
+RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRestoresArtifactWithoutReEmission, failures);
+RunTest("MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs", MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs, failures);
+RunTest("DotNetNewTemplatesAreShapedCorrectly", DotNetNewTemplatesAreShapedCorrectly, failures);
+RunTest("BindingSurfaceMatchesDocumentedInventory", BindingSurfaceMatchesDocumentedInventory, failures);
+RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -814,6 +839,15 @@ RunOptionalTest("MutualRecursionProbeReturnsExpectedResult", MutualRecursionProb
 RunOptionalTest("ArrayOpsProbeReturnsExpectedResult", ArrayOpsProbeReturnsExpectedResult, failures);
 RunOptionalTest("NestedMatchProbeReturnsExpectedResult", NestedMatchProbeReturnsExpectedResult, failures);
 RunOptionalTest("TraitObjectProbeReturnsExpectedResult", TraitObjectProbeReturnsExpectedResult, failures);
+
+// Advanced fixtures — module-summary smoke (skipped until Build-SampleBitcode.ps1 has run for each).
+RunOptionalTest("AsyncStateMachineSampleProducesModuleSummary", AsyncStateMachineSampleProducesModuleSummary, failures);
+RunOptionalTest("EnumComplexSampleProducesModuleSummary", EnumComplexSampleProducesModuleSummary, failures);
+RunOptionalTest("ErrorPropagationSampleProducesModuleSummary", ErrorPropagationSampleProducesModuleSummary, failures);
+RunOptionalTest("GenericCollectionsSampleProducesModuleSummary", GenericCollectionsSampleProducesModuleSummary, failures);
+RunOptionalTest("GlobalPtrPassSampleProducesModuleSummary", GlobalPtrPassSampleProducesModuleSummary, failures);
+RunOptionalTest("IteratorChainSampleProducesModuleSummary", IteratorChainSampleProducesModuleSummary, failures);
+RunOptionalTest("StringVecOpsSampleProducesModuleSummary", StringVecOpsSampleProducesModuleSummary, failures);
 
 if (failures.Count == 0)
 {
@@ -1689,6 +1723,628 @@ static void BindingSurfaceScannerCreatesStaticObjectHandleBindings()
     Assert(
         readAllLinesBinding.RustWrapperMethod.Signature == "pub fn read_all_lines(path: &ManagedString) -> Result<ManagedStringArray, Exception>",
         "Expected scanner-derived File.ReadAllLines binding to project a matching Rust wrapper signature.");
+}
+
+static void StrictModeRejectsRawInstruction()
+{
+    var rawInstr = new LoweredRawInstruction("addrspacecast i8* %p to i8 addrspace(1)*");
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        rawInstr,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("unsupported_raw", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-strict-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "strict_raw.dll");
+
+    try
+    {
+        var threw = false;
+        try
+        {
+            LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        }
+        catch (UnsupportedIrException ex)
+        {
+            threw = true;
+            Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
+            Assert(ex.Functions[0].Name == "unsupported_raw", "Expected unsupported function name to propagate.");
+            Assert(ex.Functions[0].Reason.Contains("unsupported raw LLVM instruction", StringComparison.Ordinal), "Expected diagnostic to mention the raw instruction.");
+            Assert(ex.Functions[0].Reason.Contains("addrspacecast", StringComparison.Ordinal), "Expected diagnostic to echo offending instruction text.");
+        }
+        Assert(threw, "Expected strict mode to throw UnsupportedIrException for raw LLVM instruction.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void StrictModeStillSucceedsForValidModule()
+{
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("trivial", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-strict-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "strict_ok.dll");
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        Assert(File.Exists(outPath), "Expected strict-mode emission to produce an assembly for a fully supported module.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void PermissiveModeStubsRawInstruction()
+{
+    var rawInstr = new LoweredRawInstruction("addrspacecast i8* %p to i8 addrspace(1)*");
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        rawInstr,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction("unsupported_raw_permissive", "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-permissive-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "permissive_raw.dll");
+
+    try
+    {
+        // Permissive mode (default) must keep the historical behaviour: the function body becomes a no-op style stub
+        // and no exception escapes emission. We only care that this does not throw.
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = false });
+        Assert(File.Exists(outPath), "Expected permissive emission to still produce an assembly with stubbed bodies.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void AsyncStateMachineSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "async_state_machine",
+        "poll_accumulator",
+        ["poll_accumulator", "fibonacci_generator", "cooperative_step", "join_poll", "select_first_ready", "retry_backoff"],
+        minimumFunctionCount: 6);
+}
+
+static void EnumComplexSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "enum_complex",
+        "enum_complex_shapes",
+        ["enum_complex_shapes", "enum_complex_exprs", "enum_complex_nested_option", "enum_complex_result_chain"],
+        minimumFunctionCount: 4);
+}
+
+static void ErrorPropagationSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "error_propagation",
+        "error_prop_success",
+        ["error_prop_success", "error_prop_early_fail", "error_prop_pipeline_ok", "error_prop_pipeline_fail"],
+        minimumFunctionCount: 4);
+}
+
+static void GenericCollectionsSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "generic_collections",
+        "stack_i32_push_pop",
+        ["stack_i32_push_pop", "stack_i64_operations", "pair_swap_sum", "pair_mixed_width", "search_in_array", "min_max_sum_i32", "min_max_sum_i64", "ring_buffer_fifo"],
+        minimumFunctionCount: 8);
+}
+
+static void GlobalPtrPassSampleProducesModuleSummary()
+{
+    AssertSingleFunctionSampleModuleSummary("global_ptr_pass", "global_ptr_pass_probe");
+}
+
+static void IteratorChainSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "iterator_chain",
+        "iter_map_filter_sum",
+        ["iter_map_filter_sum", "iter_enumerate_filter_map", "iter_zip_dot_product", "iter_chain_take_product"],
+        minimumFunctionCount: 4);
+}
+
+static void StringVecOpsSampleProducesModuleSummary()
+{
+    AssertMultiFunctionSampleModuleSummary(
+        "string_vec_ops",
+        "vec_push_sum",
+        ["vec_push_sum", "vec_capacity_len", "vec_squares_sum"],
+        minimumFunctionCount: 3);
+}
+
+static void AssertStrictModeRejects(LoweredInstruction unsupported, string expectedReasonSubstring, string functionName = "unsupported")
+{
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        unsupported,
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var fn = new LoweredFunction(functionName, "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { fn }, Array.Empty<LoweredGlobal>());
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-typed-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, $"{functionName}.dll");
+
+    try
+    {
+        var threw = false;
+        try
+        {
+            LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        }
+        catch (UnsupportedIrException ex)
+        {
+            threw = true;
+            Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
+            Assert(ex.Functions[0].Reason.Contains(expectedReasonSubstring, StringComparison.Ordinal),
+                $"Expected diagnostic to contain '{expectedReasonSubstring}', got '{ex.Functions[0].Reason}'.");
+        }
+        Assert(threw, $"Expected strict mode to throw UnsupportedIrException for {unsupported.GetType().Name}.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort */ } }
+    }
+}
+
+static void StrictModeRejectsInvokeWithStructuredMessage()
+{
+    var inv = new LoweredInvokeInstruction(null, "void", "invoke void @callee() to label %normal unwind label %landing", [], "normal", "landing");
+    AssertStrictModeRejects(inv, "invoke", "invoke_caller");
+}
+
+static void StrictModeRejectsLandingPadWithStructuredMessage()
+{
+    var lp = new LoweredLandingPadInstruction("res", "i8*", "landingpad { i8*, i32 } cleanup", true);
+    AssertStrictModeRejects(lp, "landingpad", "lpad_handler");
+}
+
+static void StrictModeRejectsFenceWithStructuredMessage()
+{
+    var fence = new LoweredFenceInstruction("seq_cst", null);
+    AssertStrictModeRejects(fence, "fence", "fence_user");
+}
+
+static void StrictModeRejectsVolatileLoadWithStructuredMessage()
+{
+    var vl = new LoweredVolatileLoadInstruction("r", "i32", "load volatile i32, i32* %p");
+    AssertStrictModeRejects(vl, "volatile load", "volatile_loader");
+}
+
+static void LowererProducesTypedInvokeRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() {\n" +
+        "entry:\n" +
+        "  invoke void @callee() to label %normal unwind label %cleanup\n" +
+        "normal:\n" +
+        "  ret i32 0\n" +
+        "cleanup:\n" +
+        "  ret i32 1\n" +
+        "}\n");
+    Assert(module.Functions.Count == 1, "Expected one function in lowered example.");
+    var instrs = module.Functions[0].Blocks.SelectMany(b => b.Instructions).ToList();
+    var invokeInstr = instrs.OfType<LoweredInvokeInstruction>().FirstOrDefault();
+    Assert(invokeInstr is not null, "Expected lowered invoke to materialize as LoweredInvokeInstruction.");
+    Assert(invokeInstr!.NormalLabel == "normal", $"Expected normal label 'normal', got '{invokeInstr.NormalLabel}'.");
+    Assert(invokeInstr.UnwindLabel == "cleanup", $"Expected unwind label 'cleanup', got '{invokeInstr.UnwindLabel}'.");
+}
+
+static void LowererProducesTypedLandingPadRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() personality i32 0 {\n" +
+        "entry:\n" +
+        "  %lp = landingpad { i8*, i32 } cleanup\n" +
+        "  ret i32 0\n" +
+        "}\n");
+    var lp = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredLandingPadInstruction>().FirstOrDefault();
+    Assert(lp is not null, "Expected lowered landingpad to materialize as LoweredLandingPadInstruction.");
+    Assert(lp!.IsCleanup, "Expected cleanup flag to be set.");
+}
+
+static void LowererProducesTypedFenceRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() {\n" +
+        "entry:\n" +
+        "  fence seq_cst\n" +
+        "  ret i32 0\n" +
+        "}\n");
+    var fence = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredFenceInstruction>().FirstOrDefault();
+    Assert(fence is not null, "Expected lowered fence to materialize as LoweredFenceInstruction.");
+    Assert(fence!.Ordering.StartsWith("seq_cst", StringComparison.Ordinal), $"Expected ordering 'seq_cst', got '{fence.Ordering}'.");
+}
+
+static void TypeLayoutScalarsAreCorrectlySized()
+{
+    var svc = new TypeLayoutService();
+    Assert(svc.TryGetLayout("i1", out var i1) && i1.SizeInBits == 1 && i1.Category == TypeLayoutCategory.Integer, "i1 layout incorrect.");
+    Assert(svc.TryGetLayout("i8", out var i8) && i8.SizeInBits == 8 && i8.SizeInBytes == 1, "i8 layout incorrect.");
+    Assert(svc.TryGetLayout("i32", out var i32) && i32.SizeInBits == 32 && i32.AlignmentInBytes == 4, "i32 layout incorrect.");
+    Assert(svc.TryGetLayout("i64", out var i64) && i64.SizeInBits == 64 && i64.AlignmentInBytes == 8, "i64 layout incorrect.");
+    Assert(svc.TryGetLayout("i128", out var i128) && i128.SizeInBits == 128, "i128 layout incorrect.");
+    Assert(svc.TryGetLayout("float", out var f32) && f32.SizeInBits == 32 && f32.Category == TypeLayoutCategory.Float, "float layout incorrect.");
+    Assert(svc.TryGetLayout("double", out var f64) && f64.SizeInBits == 64, "double layout incorrect.");
+}
+
+static void TypeLayoutPointerHonorsDataLayout()
+{
+    var svc64 = new TypeLayoutService(new LoweredModuleMetadata(DataLayout: "e-m:e-p:64:64-i64:64-n8:16:32:64-S128"));
+    Assert(svc64.TryGetLayout("ptr", out var p64) && p64.SizeInBits == 64 && p64.Category == TypeLayoutCategory.Pointer, "ptr should be 64-bit per datalayout.");
+    Assert(svc64.TryGetLayout("i32*", out var i32p) && i32p.SizeInBits == 64, "i32* should follow pointer width.");
+
+    var svc32 = new TypeLayoutService(new LoweredModuleMetadata(DataLayout: "e-p:32:32-i32:32-n32"));
+    Assert(svc32.TryGetLayout("ptr", out var p32) && p32.SizeInBits == 32, "ptr should be 32-bit per datalayout.");
+}
+
+static void TypeLayoutReturnsUnknownForAggregates()
+{
+    var svc = new TypeLayoutService();
+    // Aggregates and arrays now layout concretely; opaque named types still report Unknown.
+    Assert(svc.TryGetLayout("{ i32, i64 }", out _), "Aggregate type should be sized by aggregate layout.");
+    Assert(svc.TryGetLayout("[4 x i32]", out _), "Array type should be sized by array layout.");
+    var unk = svc.GetLayoutOrUnknown("%MyStruct");
+    Assert(unk.Category == TypeLayoutCategory.Unknown, "Unknown named type should report Unknown category.");
+}
+
+static void TypeLayoutAggregatesAreSizedWithPadding()
+{
+    var svc = new TypeLayoutService();
+
+    // { i8, i32 } => i8 at 0, 3 bytes pad, i32 at 4, total 8 bytes, align 4.
+    Assert(svc.TryGetLayout("{ i8, i32 }", out var s1) && s1.SizeInBytes == 8 && s1.AlignmentInBytes == 4,
+        $"Expected {{i8,i32}} to be 8 bytes / 4-align, got size={s1.SizeInBytes} align={s1.AlignmentInBytes}.");
+
+    // { i32, i64 } => i32 at 0, 4 bytes pad, i64 at 8, total 16 bytes, align 8.
+    Assert(svc.TryGetLayout("{ i32, i64 }", out var s2) && s2.SizeInBytes == 16 && s2.AlignmentInBytes == 8,
+        $"Expected {{i32,i64}} to be 16 bytes / 8-align, got size={s2.SizeInBytes} align={s2.AlignmentInBytes}.");
+
+    // Empty aggregate
+    Assert(svc.TryGetLayout("{}", out var s3) && s3.SizeInBits == 0, "Empty aggregate should size to 0.");
+
+    // Packed <{ i8, i32 }> => no padding, 5 bytes, align 1.
+    Assert(svc.TryGetLayout("<{ i8, i32 }>", out var s4) && s4.SizeInBytes == 5 && s4.AlignmentInBytes == 1,
+        $"Expected packed <{{i8,i32}}> to be 5 bytes / 1-align, got size={s4.SizeInBytes} align={s4.AlignmentInBytes}.");
+}
+
+static void TypeLayoutArraysAndVectorsAreSized()
+{
+    var svc = new TypeLayoutService();
+    Assert(svc.TryGetLayout("[4 x i32]", out var a) && a.SizeInBytes == 16 && a.AlignmentInBytes == 4,
+        $"Expected [4 x i32] to be 16 bytes / 4-align, got size={a.SizeInBytes} align={a.AlignmentInBytes}.");
+    Assert(svc.TryGetLayout("[3 x i8]", out var a2) && a2.SizeInBytes == 3 && a2.AlignmentInBytes == 1,
+        $"Expected [3 x i8] to be 3 bytes / 1-align, got size={a2.SizeInBytes} align={a2.AlignmentInBytes}.");
+    Assert(svc.TryGetLayout("<4 x i32>", out var v) && v.SizeInBytes == 16 && v.Category == TypeLayoutCategory.Vector,
+        $"Expected <4 x i32> to be 16 bytes and Vector category, got size={v.SizeInBytes} cat={v.Category}.");
+}
+
+static void LowererCoalescesSwitchIntoTypedInstruction()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @sw(i32 %v) {\n" +
+        "entry:\n" +
+        "  switch i32 %v, label %default [\n" +
+        "    i32 1, label %one\n" +
+        "    i32 2, label %two\n" +
+        "  ]\n" +
+        "one:\n  ret i32 11\n" +
+        "two:\n  ret i32 22\n" +
+        "default:\n  ret i32 0\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null, "Expected switch to coalesce into LoweredSwitchInstruction.");
+    Assert(sw!.ValueType == "i32", $"Expected ValueType 'i32', got '{sw.ValueType}'.");
+    Assert(sw.DefaultLabel == "default", $"Expected default 'default', got '{sw.DefaultLabel}'.");
+    Assert(sw.Cases.Count == 2, $"Expected 2 cases, got {sw.Cases.Count}.");
+    Assert(sw.Cases[0].Value == 1 && sw.Cases[0].Target == "one", "Case 0 mismatch.");
+    Assert(sw.Cases[1].Value == 2 && sw.Cases[1].Target == "two", "Case 1 mismatch.");
+}
+
+static void LowererCoalescesSwitchWithMultipleCases()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @big(i32 %v) {\n" +
+        "entry:\n" +
+        "  switch i32 %v, label %def [\n" +
+        "    i32 -1, label %neg\n" +
+        "    i32 0, label %zero\n" +
+        "    i32 7, label %seven\n" +
+        "    i32 42, label %meaning\n" +
+        "  ]\n" +
+        "neg:\n  ret i32 1\n" +
+        "zero:\n  ret i32 2\n" +
+        "seven:\n  ret i32 3\n" +
+        "meaning:\n  ret i32 4\n" +
+        "def:\n  ret i32 0\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null && sw.Cases.Count == 4, "Expected 4 coalesced cases.");
+    Assert(sw!.Cases[0].Value == -1L, $"Expected first case value -1, got {sw.Cases[0].Value}.");
+    Assert(sw.Cases[3].Target == "meaning", $"Expected last case target 'meaning', got '{sw.Cases[3].Target}'.");
+}
+
+static void NicheLayoutPolicyHandlesPointersAndNonZero()
+{
+    var ptr = NicheLayoutPolicy.OptionLikeFor("ptr");
+    Assert(!ptr.NeedsDiscriminant && ptr.Carrier == NicheCarrierKind.NullablePointer,
+        $"Expected ptr to carry niche, got {ptr}.");
+
+    var refI32 = NicheLayoutPolicy.OptionLikeFor("&i32");
+    Assert(!refI32.NeedsDiscriminant && refI32.Carrier == NicheCarrierKind.NullablePointer,
+        $"Expected &i32 to carry niche, got {refI32}.");
+
+    var nz32 = NicheLayoutPolicy.OptionLikeFor("NonZeroU32");
+    Assert(!nz32.NeedsDiscriminant && nz32.Carrier == NicheCarrierKind.NonZeroInteger,
+        $"Expected NonZeroU32 to carry niche, got {nz32}.");
+
+    var nzPath = NicheLayoutPolicy.OptionLikeFor("core::num::NonZeroUsize");
+    Assert(!nzPath.NeedsDiscriminant && nzPath.Carrier == NicheCarrierKind.NonZeroInteger,
+        $"Expected path-qualified NonZeroUsize to carry niche, got {nzPath}.");
+
+    var b = NicheLayoutPolicy.OptionLikeFor("i1");
+    Assert(!b.NeedsDiscriminant && b.Carrier == NicheCarrierKind.NarrowBool,
+        $"Expected i1 to carry niche, got {b}.");
+}
+
+static void NicheLayoutPolicyRequiresDiscriminantForPlainInts()
+{
+    var u32 = NicheLayoutPolicy.OptionLikeFor("u32");
+    Assert(u32.NeedsDiscriminant, $"Expected u32 to require a discriminant, got {u32}.");
+
+    var i64 = NicheLayoutPolicy.OptionLikeFor("i64");
+    Assert(i64.NeedsDiscriminant, $"Expected i64 to require a discriminant, got {i64}.");
+
+    var f64 = NicheLayoutPolicy.OptionLikeFor("double");
+    Assert(f64.NeedsDiscriminant, $"Expected double to require a discriminant, got {f64}.");
+
+    var empty = NicheLayoutPolicy.OptionLikeFor("");
+    Assert(empty.NeedsDiscriminant, "Expected empty payload to require a discriminant.");
+}
+
+static void AtomicOrderingMapsRustOrderingsToStrategies()
+{
+    Assert(AtomicOrderingMap.TryParse("monotonic", out var mono) && mono == AtomicOrdering.Monotonic, "monotonic parses");
+    Assert(AtomicOrderingMap.TryParse("acq_rel", out var acqrel) && acqrel == AtomicOrdering.AcqRel, "acq_rel parses");
+    Assert(AtomicOrderingMap.TryParse("seq_cst", out var sc) && sc == AtomicOrdering.SeqCst, "seq_cst parses");
+    Assert(!AtomicOrderingMap.TryParse("bogus", out _), "bogus rejected");
+
+    var loadMono = AtomicOrderingMap.ForLoad(AtomicOrdering.Monotonic);
+    Assert(loadMono.Strategy == AtomicLoweringStrategy.VolatileAccess, $"monotonic load -> volatile, got {loadMono.Strategy}");
+
+    var loadAcq = AtomicOrderingMap.ForLoad(AtomicOrdering.Acquire);
+    Assert(loadAcq.Strategy == AtomicLoweringStrategy.VolatileAcquire, $"acquire load -> volatile-acquire, got {loadAcq.Strategy}");
+
+    var loadSC = AtomicOrderingMap.ForLoad(AtomicOrdering.SeqCst);
+    Assert(loadSC.Strategy == AtomicLoweringStrategy.BarrierFenced, $"seqcst load -> barrier, got {loadSC.Strategy}");
+
+    var storeRel = AtomicOrderingMap.ForStore(AtomicOrdering.Release);
+    Assert(storeRel.Strategy == AtomicLoweringStrategy.VolatileRelease, $"release store -> volatile-release, got {storeRel.Strategy}");
+
+    var rmw = AtomicOrderingMap.ForReadModifyWrite(AtomicOrdering.Monotonic);
+    Assert(rmw.Strategy == AtomicLoweringStrategy.InterlockedRmw, "RMW always goes through Interlocked");
+
+    var fenceSC = AtomicOrderingMap.ForFence(AtomicOrdering.SeqCst);
+    Assert(fenceSC.Strategy == AtomicLoweringStrategy.BarrierFenced, "seqcst fence -> full barrier");
+    var fenceMono = AtomicOrderingMap.ForFence(AtomicOrdering.Monotonic);
+    Assert(fenceMono.Strategy == AtomicLoweringStrategy.VolatileAccess, "monotonic fence is a no-op");
+}
+
+static void TranslationCacheRestoresArtifactWithoutReEmission()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), "rustlyn-cache-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(tempRoot);
+    try
+    {
+        var cachePath = Path.Combine(tempRoot, "cache.json");
+        var firstOutput = Path.Combine(tempRoot, "first.dll");
+        var secondOutput = Path.Combine(tempRoot, "second.dll");
+
+        var module = LoweredIrLowerer.LowerLlvmIr(
+            "define i32 @id(i32 %x) {\nentry:\n  ret i32 %x\n}\n");
+
+        var cache = new TranslationCache(cachePath);
+        var hash = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=false;pdb=false");
+
+        // First run: miss, simulate emission by writing bytes, then record artifact.
+        Assert(!cache.TryRestoreArtifact(hash, firstOutput), "First run must miss the cache.");
+        var simulated = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00 };
+        File.WriteAllBytes(firstOutput, simulated);
+        cache.RecordArtifact(hash, firstOutput);
+        cache.Save();
+
+        // Second run: same hash should restore the exact bytes.
+        var cache2 = new TranslationCache(cachePath);
+        var hash2 = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=false;pdb=false");
+        Assert(hash == hash2, "Module hash must be deterministic.");
+        Assert(cache2.TryRestoreArtifact(hash2, secondOutput), "Second run must hit the cache.");
+
+        var restored = File.ReadAllBytes(secondOutput);
+        Assert(restored.SequenceEqual(simulated), "Restored bytes must equal the recorded bytes.");
+
+        // Different emit options must invalidate the cache.
+        var hashStrict = TranslationCache.ComputeModuleHash(module.Functions, emitOptionsKey: "strict=true;pdb=false");
+        Assert(hash != hashStrict, "Different emit options must produce different module hashes.");
+        Assert(!cache2.TryRestoreArtifact(hashStrict, secondOutput), "Strict-mode emit options must miss the cache.");
+    }
+    finally
+    {
+        try { Directory.Delete(tempRoot, recursive: true); } catch { }
+    }
+}
+
+static void MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? sdkTargets = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "dotnet", "backend", "src", "Rustlyn.Sdk", "Sdk", "Sdk.targets");
+        if (File.Exists(probe))
+        {
+            sdkTargets = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(sdkTargets is not null, "Sdk.targets not found by walking parent directories.");
+
+    var doc = new System.Xml.XmlDocument();
+    doc.Load(sdkTargets!);
+    var ns = new System.Xml.XmlNamespaceManager(doc.NameTable);
+    ns.AddNamespace("m", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+    var target = doc.SelectSingleNode("//m:Target[@Name='RustlynTranslate']", ns);
+    Assert(target is not null, "RustlynTranslate target not found.");
+    var inputs = target!.Attributes?["Inputs"]?.Value;
+    var outputs = target.Attributes?["Outputs"]?.Value;
+    Assert(!string.IsNullOrWhiteSpace(inputs), "RustlynTranslate target must declare Inputs for incremental builds.");
+    Assert(!string.IsNullOrWhiteSpace(outputs), "RustlynTranslate target must declare Outputs for incremental builds.");
+    Assert(inputs!.Contains("RustlynBitcodeInputs", StringComparison.Ordinal), "Inputs must reference RustlynBitcodeInputs item group.");
+    Assert(outputs!.Contains("RustlynOutputPath", StringComparison.Ordinal), "Outputs must reference RustlynOutputPath property.");
+
+    var itemGroup = doc.SelectSingleNode("//m:ItemGroup[m:RustlynBitcodeInputs]", ns);
+    Assert(itemGroup is not null, "Default RustlynBitcodeInputs ItemGroup must exist so projects without explicit inputs still get an up-to-date check.");
+}
+
+static void DotNetNewTemplatesAreShapedCorrectly()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? templatesDir = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "templates");
+        if (Directory.Exists(probe) && File.Exists(Path.Combine(probe, "Rustlyn.Templates.csproj")))
+        {
+            templatesDir = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(templatesDir is not null, "templates directory not found.");
+
+    foreach (var shortName in new[] { "rustlyn-classlib", "rustlyn-console" })
+    {
+        var tpl = Path.Combine(templatesDir!, shortName, ".template.config", "template.json");
+        Assert(File.Exists(tpl), $"template.json missing for {shortName}.");
+        var contents = File.ReadAllText(tpl);
+        Assert(contents.Contains($"\"shortName\": \"{shortName}\"", StringComparison.Ordinal),
+            $"{tpl} must declare shortName '{shortName}'.");
+        Assert(contents.Contains("\"identity\"", StringComparison.Ordinal),
+            $"{tpl} must declare an identity.");
+    }
+
+    Assert(File.Exists(Path.Combine(templatesDir!, "rustlyn-classlib", "src", "lib.rs")),
+        "classlib template missing src/lib.rs starter.");
+    Assert(File.Exists(Path.Combine(templatesDir!, "rustlyn-console", "src", "main.rs")),
+        "console template missing src/main.rs starter.");
+
+    var pkg = File.ReadAllText(Path.Combine(templatesDir!, "Rustlyn.Templates.csproj"));
+    Assert(pkg.Contains("<PackageType>Template</PackageType>", StringComparison.Ordinal),
+        "Rustlyn.Templates.csproj must declare PackageType=Template.");
+    Assert(pkg.Contains("rustlyn-classlib", StringComparison.Ordinal) &&
+           pkg.Contains("rustlyn-console", StringComparison.Ordinal),
+        "Rustlyn.Templates.csproj must include both template directories.");
+}
+
+static void BindingSurfaceMatchesDocumentedInventory()
+{
+    var assemblyDir = AppContext.BaseDirectory;
+    string? candidate = assemblyDir;
+    string? docPath = null;
+    for (var i = 0; i < 10 && candidate is not null; i++)
+    {
+        var probe = Path.Combine(candidate, "docs", "bindings-surface.md");
+        if (File.Exists(probe))
+        {
+            docPath = probe;
+            break;
+        }
+        candidate = Path.GetDirectoryName(candidate);
+    }
+    Assert(docPath is not null, "docs/bindings-surface.md not found.");
+
+    var doc = File.ReadAllText(docPath!);
+
+    var live = BindingSurface.CreateTinyBclSurface().Requirements
+        .Select(r => r.DisplayName)
+        .OrderBy(s => s, StringComparer.Ordinal)
+        .ToList();
+
+    // Pull every backtick-quoted token out of the doc; that is the canonical
+    // form of every signature line. Then keep only the ones that look like
+    // BCL signatures (contain a '.' or end in '[]') so explanatory backticks
+    // around words such as `CreateTinyBclSurface()` and `BindingSurface.cs`
+    // don't pollute the comparison.
+    var matches = System.Text.RegularExpressions.Regex.Matches(doc, "`([^`]+)`");
+    var documented = matches
+        .Select(m => m.Groups[1].Value)
+        .Where(s => s.StartsWith("System.", StringComparison.Ordinal) || s.StartsWith("Rustlyn.Interop.", StringComparison.Ordinal))
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(s => s, StringComparer.Ordinal)
+        .ToList();
+
+    var missingFromDoc = live.Except(documented, StringComparer.Ordinal).ToList();
+    var extraInDoc = documented.Except(live, StringComparer.Ordinal).ToList();
+
+    Assert(missingFromDoc.Count == 0,
+        $"Live BindingSurface has {missingFromDoc.Count} signatures missing from docs/bindings-surface.md: " +
+        string.Join("; ", missingFromDoc.Take(8)));
+    Assert(extraInDoc.Count == 0,
+        $"docs/bindings-surface.md documents {extraInDoc.Count} signatures that no longer exist in BindingSurface: " +
+        string.Join("; ", extraInDoc.Take(8)));
+}
+
+static void NuGetPackagerWritesValidNupkgArchive()
+{
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-nupkg-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    try
+    {
+        var fakeAsm = Path.Combine(tempDir, "demo_crate.dll");
+        File.WriteAllBytes(fakeAsm, new byte[] { 0x4d, 0x5a, 0x90, 0x00 }); // MZ header bytes are fine for archive test
+        var spec = NuGetPackager.CreatePackSpec("demo_crate", "1.2.3", fakeAsm);
+        var nupkgPath = Path.Combine(tempDir, $"{spec.PackageId}.{spec.Version}.nupkg");
+        NuGetPackager.WriteNupkg(spec, nupkgPath);
+
+        Assert(File.Exists(nupkgPath), "Expected .nupkg file to be created.");
+        using var fs = File.OpenRead(nupkgPath);
+        using var zip = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Read);
+        var entries = zip.Entries.Select(e => e.FullName).ToList();
+        Assert(entries.Any(e => e.EndsWith(".nuspec", StringComparison.Ordinal)), "Expected .nuspec entry inside .nupkg.");
+        Assert(entries.Contains("[Content_Types].xml"), "Expected [Content_Types].xml entry.");
+        Assert(entries.Contains("_rels/.rels"), "Expected _rels/.rels entry.");
+        Assert(entries.Any(e => e.StartsWith("lib/net10.0/", StringComparison.Ordinal) && e.EndsWith(".dll", StringComparison.Ordinal)),
+            "Expected lib/net10.0/<crate>.dll entry.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort */ } }
+    }
 }
 
 static void GeneratedBindingGeneratorMatchesFixture()

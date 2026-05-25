@@ -231,6 +231,12 @@ public static partial class LoweredIrLowerer
 
     private static LoweredInstruction ParseInstruction(string line)
     {
+        var earlyTyped = TryParseUnsupportedTyped(line);
+        if (earlyTyped is not null)
+        {
+            return earlyTyped;
+        }
+
         if (TryParseBinaryInstruction(line, out var binaryInstruction))
         {
             return binaryInstruction;
@@ -476,7 +482,86 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(cmpxchgMatch.Groups["newVal"].Value));
         }
 
+        // Typed detectors for known-unsupported constructs. We keep them as semantic records so
+        // the emitter can fail with structured diagnostics in strict mode (or stub bodies in
+        // permissive mode) instead of treating every unknown line as opaque raw text.
+        var typed = TryParseUnsupportedTyped(line);
+        if (typed is not null)
+        {
+            return typed;
+        }
+
         return new LoweredRawInstruction(line);
+    }
+
+    private static LoweredInstruction? TryParseUnsupportedTyped(string line)
+    {
+        var trimmed = line.TrimStart();
+
+        // Strip "<result> = " prefix if present, capturing the result name.
+        string? result = null;
+        var eqIndex = trimmed.IndexOf('=');
+        if (eqIndex > 0 && trimmed.StartsWith('%'))
+        {
+            result = NormalizeResultName(trimmed.Substring(0, eqIndex).Trim());
+            trimmed = trimmed.Substring(eqIndex + 1).TrimStart();
+        }
+
+        if (trimmed.StartsWith("invoke ", StringComparison.Ordinal))
+        {
+            // Capture normal/unwind labels for diagnostics, callee text in body.
+            string normalLabel = "?", unwindLabel = "?";
+            var toIdx = trimmed.IndexOf(" to label %", StringComparison.Ordinal);
+            if (toIdx >= 0)
+            {
+                var rest = trimmed.Substring(toIdx + " to label %".Length);
+                var space = rest.IndexOf(' ');
+                normalLabel = space > 0 ? rest.Substring(0, space) : rest;
+                var unwindIdx = rest.IndexOf("unwind label %", StringComparison.Ordinal);
+                if (unwindIdx >= 0)
+                {
+                    var u = rest.Substring(unwindIdx + "unwind label %".Length);
+                    var us = u.IndexOf(' ');
+                    unwindLabel = us > 0 ? u.Substring(0, us) : u;
+                }
+            }
+            return new LoweredInvokeInstruction(result, "void", trimmed, [], normalLabel, unwindLabel);
+        }
+
+        if (trimmed.StartsWith("landingpad ", StringComparison.Ordinal))
+        {
+            var isCleanup = trimmed.Contains("cleanup", StringComparison.Ordinal);
+            return new LoweredLandingPadInstruction(result, "i8*", trimmed, isCleanup);
+        }
+
+        if (trimmed.StartsWith("fence ", StringComparison.Ordinal))
+        {
+            var orderingText = trimmed.Substring("fence ".Length).Trim();
+            string? scope = null;
+            const string scopeMarker = "syncscope(";
+            var scopeIdx = orderingText.IndexOf(scopeMarker, StringComparison.Ordinal);
+            if (scopeIdx >= 0)
+            {
+                var afterScope = orderingText.Substring(scopeIdx + scopeMarker.Length);
+                var close = afterScope.IndexOf(')');
+                if (close > 0) { scope = afterScope.Substring(0, close); }
+            }
+            return new LoweredFenceInstruction(orderingText, scope);
+        }
+
+        // Volatile load: "load volatile <ty>, <ty>* <ptr>"
+        if (result is not null && trimmed.StartsWith("load volatile ", StringComparison.Ordinal))
+        {
+            return new LoweredVolatileLoadInstruction(result, "?", trimmed);
+        }
+
+        // Volatile store: "store volatile <ty> <val>, <ty>* <ptr>"
+        if (trimmed.StartsWith("store volatile ", StringComparison.Ordinal))
+        {
+            return new LoweredVolatileStoreInstruction("?", "?", trimmed);
+        }
+
+        return null;
     }
 
     private static List<LoweredArgument> ParseArguments(string argumentText)
@@ -1623,7 +1708,80 @@ public static partial class LoweredIrLowerer
 
         public LoweredBlock ToBlock()
         {
-            return new LoweredBlock(Name, _instructions);
+            return new LoweredBlock(Name, CoalesceSwitches(_instructions));
+        }
+
+        private static IReadOnlyList<LoweredInstruction> CoalesceSwitches(IReadOnlyList<LoweredInstruction> instructions)
+        {
+            // Detect the multi-line LLVM switch pattern that the text lowerer emits as raw lines:
+            //   switch <type> <value>, label %<default> [
+            //     <type> <case-value>, label %<target>
+            //     ...
+            //   ]
+            // and replace it with a single LoweredSwitchInstruction. This frees downstream tools
+            // from re-parsing the IR text and gives strict diagnostics structured switch metadata.
+            var headerRegex = new System.Text.RegularExpressions.Regex(
+                "^switch (?<type>i\\d+) (?<value>[^,]+), label %(?<defaultTarget>\"[^\"]+\"|[^\\s]+) \\[$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            var caseRegex = new System.Text.RegularExpressions.Regex(
+                "^(?<type>i\\d+) (?<value>-?\\d+), label %(?<target>\"[^\"]+\"|[^\\s]+)$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+            List<LoweredInstruction>? rewritten = null;
+            for (var i = 0; i < instructions.Count; i++)
+            {
+                if (instructions[i] is LoweredRawInstruction raw)
+                {
+                    var hdr = headerRegex.Match(raw.Text);
+                    if (hdr.Success)
+                    {
+                        // Scan forward for cases until "]".
+                        var cases = new List<LoweredSwitchCase>();
+                        var j = i + 1;
+                        var closing = -1;
+                        while (j < instructions.Count && instructions[j] is LoweredRawInstruction caseRaw)
+                        {
+                            if (string.Equals(caseRaw.Text, "]", StringComparison.Ordinal))
+                            {
+                                closing = j;
+                                break;
+                            }
+                            var cm = caseRegex.Match(caseRaw.Text);
+                            if (cm.Success)
+                            {
+                                cases.Add(new LoweredSwitchCase(
+                                    long.Parse(cm.Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture),
+                                    StripLabelQuotes(cm.Groups["target"].Value)));
+                                j++;
+                                continue;
+                            }
+                            break;
+                        }
+
+                        if (closing >= 0)
+                        {
+                            rewritten ??= new List<LoweredInstruction>(instructions.Take(i));
+                            rewritten.Add(new LoweredSwitchInstruction(
+                                hdr.Groups["type"].Value,
+                                hdr.Groups["value"].Value.Trim(),
+                                StripLabelQuotes(hdr.Groups["defaultTarget"].Value),
+                                cases));
+                            i = closing;
+                            continue;
+                        }
+                    }
+                }
+
+                rewritten?.Add(instructions[i]);
+            }
+
+            return rewritten ?? instructions;
+        }
+
+        private static string StripLabelQuotes(string raw)
+        {
+            var t = raw.Trim();
+            return t.Length >= 2 && t[0] == '"' && t[^1] == '"' ? t.Substring(1, t.Length - 2) : t;
         }
     }
 }

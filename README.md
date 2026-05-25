@@ -7,24 +7,23 @@ Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/e
 **What it does today:**
 
 - Translates Rust crates to runnable .NET assemblies via LLVM bitcode
-- Handles arithmetic, control flow, structs, closures, trait objects, atomics, cross-crate LTO
-- Supports complex enums, iterators, error propagation (`?`), async state machines, generic collections
-- Generates Rust bindings for .NET APIs (Console, File, Path, String, Environment)
-- Automated binding generation: scans any .NET assembly and produces type/method/event bindings
-- Emits Portable PDB debug info with source mapping back to `.rs` files
-- Packages translated crates as NuGet packages via `rustlyn pack`
-- Incremental translation with function-level caching (`--cache`)
-- Native AOT and trimming compatible
-- Provides an MSBuild SDK for `dotnet build` on `.rsproj` files
-- Bridges to Avalonia for desktop GUI from Rust
-- Cross-platform CI (Windows, Linux, macOS)
+- Handles a growing fixture-backed backend surface: arithmetic, control flow, structs, closures, trait objects, atomics, and cross-crate LTO
+- Carries focused samples for complex enums, iterators, error propagation (`?`), async-like state machines, and generic collections
+- Generates Rust bindings for a curated .NET API surface (Console, File, Path, String, Environment)
+- Includes a metadata-driven binding scanner/generator foothold for broader .NET APIs
+- Emits Portable PDB files today, with real Rust source mapping still tracked as production work
+- Provides a preview `rustlyn pack` flow that emits translated assemblies and package metadata
+- Tracks translation cache state with `--cache`; cache reuse is still roadmap work
+- Provides a preview MSBuild SDK for `dotnet build` on `.rsproj` files
+- Bridges to Avalonia through an explicit desktop GUI fixture
+- Builds on Windows, Linux, and macOS in CI, with the required smoke matrix still intentionally small
 
-See the [roadmap](docs/roadmap.md) for what's next.
+See the [support matrix](docs/support-matrix.md) for supported, preview, fixture-only, planned, and unsupported areas. See the [roadmap](docs/roadmap.md) for what's next.
 
 ## What you can do here today
 
 1. Translate a Rust crate into a managed .NET assembly via `rustlyn translate`.
-2. Package a translated crate as a NuGet package via `rustlyn pack`.
+2. Produce translated crate package artifacts via the preview `rustlyn pack` flow.
 3. Inspect or lower LLVM bitcode to see the intermediate representation.
 4. Generate bindings for any .NET assembly via `rustlyn-bindings scan/bindgen`.
 5. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
@@ -104,6 +103,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - [Revived design in this repo](docs/revived-design.md)
 - [SourceGear parity roadmap](docs/sourcegear-parity-roadmap.md)
 - [SourceGear fake-link decision](docs/sourcegear-fake-link-decision.md)
+- [Support matrix](docs/support-matrix.md)
 - [Deep reconstruction notes](docs/reconstruction-notes.md)
 - [Contributor and agent workflow](AGENTS.md)
 

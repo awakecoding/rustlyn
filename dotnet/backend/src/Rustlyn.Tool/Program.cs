@@ -71,11 +71,11 @@ if (TryParseLowerArguments(args, out var lowerArtifactPath, out var lowerLlvmRoo
     }
 }
 
-if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb))
+if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb, out var emitStrict))
 {
     try
     {
-        var emitOptions = new EmitOptions { EmitPdb = emitPdb };
+        var emitOptions = new EmitOptions { EmitPdb = emitPdb, StrictUnsupportedIr = emitStrict };
         LoweredAssemblyEmitter.EmitBitcode(emitArtifactPath, emitOutputPath, emitOptions, emitLlvmRoot);
         Console.WriteLine(Path.GetFullPath(emitOutputPath));
         if (emitPdb)
@@ -83,6 +83,11 @@ if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath
             Console.WriteLine(Path.GetFullPath(Path.ChangeExtension(emitOutputPath, ".pdb")));
         }
         return 0;
+    }
+    catch (UnsupportedIrException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 4;
     }
     catch (NotSupportedException ex)
     {
@@ -96,7 +101,7 @@ if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath
     }
 }
 
-if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot, out var translateCachePath))
+if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot, out var translateCachePath, out var translateStrict))
 {
     try
     {
@@ -121,10 +126,16 @@ if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputP
             cache.Save();
         }
 
-        LoweredAssemblyEmitter.EmitModule(loweredModule, translateOutputPath);
+        var translateEmitOptions = new EmitOptions { StrictUnsupportedIr = translateStrict };
+        LoweredAssemblyEmitter.EmitModule(loweredModule, translateOutputPath, translateEmitOptions);
         Console.WriteLine($"Bitcode: {Path.GetFullPath(bitcodePath)}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(translateOutputPath)}");
         return 0;
+    }
+    catch (UnsupportedIrException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 4;
     }
     catch (NotSupportedException ex)
     {
@@ -191,10 +202,15 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
         var nuspecPath = Path.Combine(packOutputDir, $"{spec.PackageId}.nuspec");
         File.WriteAllText(nuspecPath, nuspecContent);
 
+        // Produce a real .nupkg alongside the .nuspec.
+        var nupkgPath = Path.Combine(packOutputDir, $"{spec.PackageId}.{spec.Version}.nupkg");
+        NuGetPackager.WriteNupkg(spec, nupkgPath);
+
         Console.WriteLine($"Package ID: {spec.PackageId}");
         Console.WriteLine($"Version: {spec.Version}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(assemblyPath)}");
         Console.WriteLine($"Nuspec: {Path.GetFullPath(nuspecPath)}");
+        Console.WriteLine($"Nupkg: {Path.GetFullPath(nupkgPath)}");
         Console.WriteLine($"Files: {spec.Files.Count}");
         return 0;
     }
@@ -212,20 +228,21 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
 
 Console.Error.WriteLine("Usage: Rustlyn.Tool inspect <path-to-bc> [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool lower <path-to-bc> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--llvm-root <path>]");
+Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--strict] [--llvm-root <path>]");
+Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]   (types: i32, i64, u32, u64)");
 Console.Error.WriteLine("   or: Rustlyn.Tool pack <crate-path> --out <dir> [--version <semver>] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool diagnose [--llvm-root <path>]");
 return 1;
 
-static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath)
+static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath, out bool strict)
 {
     cratePath = string.Empty;
     outputPath = string.Empty;
     buildOptions = new RustBitcodeBuildOptions();
     llvmRoot = null;
     cachePath = null;
+    strict = false;
 
     if (args.Length < 4 || !string.Equals(args[0], "translate", StringComparison.OrdinalIgnoreCase))
     {
@@ -302,6 +319,12 @@ static bool TryParseTranslateArguments(string[] args, out string cratePath, out 
         {
             buildOptions = buildOptions with { BuildStdFeatures = args[index + 1] };
             index++;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--strict", StringComparison.OrdinalIgnoreCase))
+        {
+            strict = true;
             continue;
         }
 
@@ -385,12 +408,13 @@ static string GetInnermostExceptionMessage(Exception exception)
     return current.Message;
 }
 
-static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot, out bool emitPdb)
+static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot, out bool emitPdb, out bool strict)
 {
     artifactPath = string.Empty;
     outputPath = string.Empty;
     llvmRoot = null;
     emitPdb = false;
+    strict = false;
 
     if (args.Length < 4 || !string.Equals(args[0], "emit", StringComparison.OrdinalIgnoreCase))
     {
@@ -418,6 +442,12 @@ static bool TryParseEmitArguments(string[] args, out string artifactPath, out st
         if (string.Equals(args[index], "--pdb", StringComparison.OrdinalIgnoreCase))
         {
             emitPdb = true;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--strict", StringComparison.OrdinalIgnoreCase))
+        {
+            strict = true;
             continue;
         }
 

@@ -12,3 +12,6 @@ dotnet/**/*.lscache
 samples/**/target/
 samples/**/bin/
 samples/**/obj/
+
+templates/**/bin/
+templates/**/obj/
