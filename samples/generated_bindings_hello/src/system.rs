@@ -380,6 +380,12 @@ pub mod console {
     }
 }
 
+pub mod convert {
+    use crate::system::{Exception, ManagedString};
+
+
+}
+
 pub mod environment {
     use crate::system::{Exception, ManagedString, ManagedStringArray};
 
@@ -558,6 +564,24 @@ pub mod guid {
         Exception::from_handle(exception_handle)?;
         Ok(ManagedGuid::from_handle(object_handle))
     }
+}
+
+pub mod gc {
+    use crate::system::Exception;
+
+
+}
+
+pub mod operating_system {
+    use crate::system::Exception;
+
+
+}
+
+pub mod uri {
+    use crate::system::{Exception, ManagedString};
+
+
 }
 
 pub mod io {

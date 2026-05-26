@@ -2918,8 +2918,9 @@ static void StrictModeRejectsLandingPadWithStructuredMessage()
 
 static void StrictModeRejectsFenceWithStructuredMessage()
 {
-    var fence = new LoweredFenceInstruction("seq_cst", null);
-    AssertStrictModeRejects(fence, "fence", "fence_user");
+    // fence is now lowered to System.Threading.Thread.MemoryBarrier() as a conservative full barrier;
+    // it is no longer rejected in strict mode. This test is kept as a no-op placeholder so the test
+    // index stays stable for changelog tracking.
 }
 
 static void StrictModeRejectsVolatileLoadWithStructuredMessage()

@@ -1751,7 +1751,10 @@ public static class LoweredAssemblyEmitter
                 throw new NotSupportedException($"LLVM 'landingpad' is not yet supported (cleanup={landingPad.IsCleanup}) — see docs/support-matrix.md (panic-unwind).");
 
             case LoweredFenceInstruction fence:
-                throw new NotSupportedException($"LLVM 'fence {fence.Ordering}' is not yet supported — see docs/support-matrix.md (atomics).");
+                _ = fence;
+                encoder.OpCode(ILOpCode.Call);
+                encoder.Token(typeContext.ThreadMemoryBarrier);
+                break;
 
             case LoweredVolatileLoadInstruction volatileLoad:
                 throw new NotSupportedException($"LLVM volatile load is not yet supported (result %{volatileLoad.Result}) — see docs/support-matrix.md (memory model).");
@@ -3701,6 +3704,7 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle TrailingZeroCountU64 { get; }
         public MemberReferenceHandle ReverseEndianness32 { get; }
         public MemberReferenceHandle ReverseEndianness64 { get; }
+        public MemberReferenceHandle ThreadMemoryBarrier { get; }
         public MemberReferenceHandle MarshalAllocHGlobal { get; }
         public MemberReferenceHandle MarshalFreeHGlobal { get; }
         public MemberReferenceHandle MarshalCopy { get; }
@@ -3799,6 +3803,22 @@ public static class LoweredAssemblyEmitter
             TrailingZeroCountU64 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU64ToI32Sig(mb));
             ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
             ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+
+            // System.Threading.Thread.MemoryBarrier — used to lower LLVM fence as a full barrier.
+            // System.Threading.Thread is its own assembly in .NET (System.Runtime does not forward the type).
+            var systemThreadingThread = mb.AddAssemblyReference(
+                name: mb.GetOrAddString("System.Threading.Thread"),
+                version: new Version(10, 0, 0, 0),
+                culture: default,
+                publicKeyOrToken: mb.GetOrAddBlob(
+                    new byte[] { 0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A }),
+                flags: default,
+                hashValue: default);
+            var threadType = mb.AddTypeReference(
+                systemThreadingThread,
+                mb.GetOrAddString("System.Threading"),
+                mb.GetOrAddString("Thread"));
+            ThreadMemoryBarrier = AddStaticMethod(mb, threadType, "MemoryBarrier", EncodeVoidToVoidSig(mb));
 
             // System.Math (for libm intrinsics: sqrt, floor, ceil, etc.)
             var mathType = mb.AddTypeReference(
@@ -4503,6 +4523,14 @@ public static class LoweredAssemblyEmitter
             new BlobEncoder(blob).MethodSignature().Parameters(1, out var ret, out var parms);
             ret.Type().Int32();
             parms.AddParameter().Type().UInt32();
+            return mb.GetOrAddBlob(blob);
+        }
+
+        private static BlobHandle EncodeVoidToVoidSig(MetadataBuilder mb)
+        {
+            var blob = new BlobBuilder();
+            new BlobEncoder(blob).MethodSignature().Parameters(0, out var ret, out _);
+            ret.Void();
             return mb.GetOrAddBlob(blob);
         }
 
