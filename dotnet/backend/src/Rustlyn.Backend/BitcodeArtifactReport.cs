@@ -6,7 +6,8 @@ public sealed record BitcodeArtifactReport(
     string MagicBytes,
     bool LooksLikeLlvmBitcode,
     DateTimeOffset LastWriteTimeUtc,
-    LlvmModuleSummary? ModuleSummary);
+    LlvmModuleSummary? ModuleSummary,
+    string? ModuleSummaryError = null);
 
 public sealed record LlvmModuleSummary(
     string LlvmRoot,

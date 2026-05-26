@@ -26,24 +26,33 @@ public static class BitcodeArtifactInspector
             throw new InvalidDataException($"Expected at least {magicBuffer.Length} bytes in bitcode artifact '{fullPath}', but only read {bytesRead}.");
         }
 
+        var looksLikeBitcode = magicBuffer.AsSpan().SequenceEqual(LlvmBitcodeMagic);
+        LlvmModuleSummary? summary = null;
+        string? summaryError = null;
+        if (looksLikeBitcode)
+        {
+            (summary, summaryError) = TryReadModuleSummary(fullPath, llvmRoot);
+        }
+
         return new BitcodeArtifactReport(
             fullPath,
             fileInfo.Length,
             Convert.ToHexString(magicBuffer),
-            magicBuffer.AsSpan().SequenceEqual(LlvmBitcodeMagic),
+            looksLikeBitcode,
             fileInfo.LastWriteTimeUtc,
-            magicBuffer.AsSpan().SequenceEqual(LlvmBitcodeMagic) ? TryReadModuleSummary(fullPath, llvmRoot) : null);
+            summary,
+            summaryError);
     }
 
-    private static LlvmModuleSummary? TryReadModuleSummary(string artifactPath, string? llvmRoot)
+    private static (LlvmModuleSummary? Summary, string? Error) TryReadModuleSummary(string artifactPath, string? llvmRoot)
     {
         try
         {
-            return LlvmModuleReader.TryReadSummary(artifactPath, llvmRoot);
+            return (LlvmModuleReader.TryReadSummary(artifactPath, llvmRoot), null);
         }
-        catch (InvalidDataException)
+        catch (InvalidDataException ex)
         {
-            return null;
+            return (null, ex.Message);
         }
     }
 }

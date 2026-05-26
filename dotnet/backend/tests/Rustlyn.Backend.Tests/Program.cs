@@ -9383,7 +9383,7 @@ static void AddSampleBuildsWithBuildStdCore()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std core add.");
+    var moduleSummary = RequireModuleSummary(report, "build-std core add");
     Assert(moduleSummary.Functions.Count == 1, $"Expected build-std core add to contain one function, but found {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "add_i32"), "Expected build-std core add to contain add_i32.");
 
@@ -9417,7 +9417,7 @@ static void AllocOnlyProbeBuildsWithBuildStdAlloc()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std alloc probe.");
+    var moduleSummary = RequireModuleSummary(report, "build-std alloc probe");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "alloc_vec_capacity_score"), "Expected build-std alloc probe to contain alloc_vec_capacity_score.");
     Assert(moduleSummary.Functions.Any(static function => function.Name.Contains("rust_alloc", StringComparison.Ordinal)), "Expected build-std alloc probe to contain the Rust global allocator shim.");
 
@@ -9452,7 +9452,7 @@ static void StdFsBuildsWithBuildStdStd()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_fs.");
+    var moduleSummary = RequireModuleSummary(report, "build-std std_fs");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_fs_line_count"), "Expected build-std std_fs to contain std_fs_line_count.");
     Assert(moduleSummary.Globals.Count >= 3, $"Expected build-std std_fs to preserve path and panic globals, but found {moduleSummary.Globals.Count.ToString(CultureInfo.InvariantCulture)} globals.");
 
@@ -9489,7 +9489,7 @@ static void StdEnvBuildsWithBuildStdStd()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_env.");
+    var moduleSummary = RequireModuleSummary(report, "build-std std_env");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_env_probe"), "Expected build-std std_env to contain std_env_probe.");
     Assert(moduleSummary.Functions.Count >= 10, $"Expected LTO'd std_env to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
 
@@ -9524,7 +9524,7 @@ static void StdTimeBuildsWithBuildStdStd()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_time.");
+    var moduleSummary = RequireModuleSummary(report, "build-std std_time");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_time_probe"), "Expected build-std std_time to contain std_time_probe.");
     Assert(moduleSummary.Functions.Count >= 5, $"Expected LTO'd std_time to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
 
@@ -9558,7 +9558,7 @@ static void StdPathBuildsWithBuildStdStd()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_path.");
+    var moduleSummary = RequireModuleSummary(report, "build-std std_path");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_path_probe"), "Expected build-std std_path to contain std_path_probe.");
     Assert(moduleSummary.BasicBlockCount >= 10, $"Expected build-std std_path to contain multiple basic blocks for path operations, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
 
@@ -9589,7 +9589,7 @@ static void StdConsoleBuildsWithBuildStdStd()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for build-std std_console.");
+    var moduleSummary = RequireModuleSummary(report, "build-std std_console");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_console_probe"), "Expected build-std std_console to contain std_console_probe.");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "std_console_runtime_value_probe"), "Expected build-std std_console to contain std_console_runtime_value_probe.");
     Assert(moduleSummary.Functions.Count >= 5, $"Expected LTO'd std_console to contain merged std functions, but found only {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
@@ -9642,7 +9642,7 @@ static void DepHeavyCrosscrateCallsResolveThroughLto()
         });
 
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for dep_heavy.");
+    var moduleSummary = RequireModuleSummary(report, "dep_heavy");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "dep_heavy_probe"), "Expected dep_heavy to contain dep_heavy_probe.");
 
     // With LTO, dependency functions should be defined (not just declared)
@@ -9893,7 +9893,7 @@ static void BinTrivialSampleBuildsFromCargoManifest()
 {
     var (bitcodePath, llvmRoot) = BuildCargoBinarySampleBitcode("bin_trivial", "bin_trivial");
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for Cargo-built bin_trivial.");
+    var moduleSummary = RequireModuleSummary(report, "Cargo-built bin_trivial");
 
     Assert(moduleSummary.Functions.Any(static function => function.Name == "main"), "Expected Cargo-built bin_trivial to preserve a main entrypoint symbol.");
     Assert(moduleSummary.BasicBlockCount > 0, $"Expected Cargo-built bin_trivial to contain at least one basic block, but found {moduleSummary.BasicBlockCount.ToString(CultureInfo.InvariantCulture)}.");
@@ -13189,7 +13189,7 @@ static void CallChainCargoSummaryClassifiesAlias()
 {
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("call_chain");
     var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for Cargo-built call_chain.");
+    var moduleSummary = RequireModuleSummary(report, "Cargo-built call_chain");
 
     Assert(moduleSummary.Functions.Count == 1, $"Expected Cargo-built call_chain summary to contain one concrete function after optimization, but found {moduleSummary.Functions.Count.ToString(CultureInfo.InvariantCulture)}.");
     Assert(moduleSummary.Functions.Any(static function => function.Name == "add_one_i32"), "Expected Cargo-built call_chain summary to contain add_one_i32 as the concrete function.");
@@ -20294,6 +20294,34 @@ static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcodeWithOptions(
     return (bitcodePath, llvmRoot);
 }
 
+static LlvmModuleSummary RequireModuleSummary(BitcodeArtifactReport report, string sampleDescription)
+{
+    if (report.ModuleSummary is { } summary)
+    {
+        return summary;
+    }
+
+    if (!string.IsNullOrEmpty(report.ModuleSummaryError) && IsLlvmVersionSkewError(report.ModuleSummaryError))
+    {
+        throw new SkipTestException(
+            $"LLVM helper cannot read {sampleDescription} bitcode due to version skew with rustc's LLVM: {report.ModuleSummaryError}");
+    }
+
+    throw new InvalidOperationException(
+        $"Expected a module summary for {sampleDescription}." +
+        (string.IsNullOrEmpty(report.ModuleSummaryError) ? string.Empty : $" Reader error: {report.ModuleSummaryError}"));
+}
+
+static bool IsLlvmVersionSkewError(string message)
+{
+    // Helper links against LLVM 20; rustc currently emits LLVM 22 bitcode.
+    // Mismatched bitcode emits errors like "Unknown attribute kind (NNN)" or
+    // "Invalid record" with "Producer: 'LLVM<newer>' Reader: 'LLVM<older>'".
+    return message.Contains("Unknown attribute kind", StringComparison.Ordinal)
+        || (message.Contains("Producer:", StringComparison.Ordinal)
+            && message.Contains("Reader:", StringComparison.Ordinal));
+}
+
 static (string BitcodePath, string LlvmRoot) BuildCargoBinarySampleBitcode(string sampleName, string binaryTargetName)
 {
     var workspaceRoot = FindWorkspaceRoot();
@@ -20370,8 +20398,7 @@ static void AssertMultiFunctionSampleModuleSummary(
     var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     var report = BitcodeArtifactInspector.Inspect(sampleArtifactPath, llvmRoot);
 
-    Assert(report.ModuleSummary is not null, $"Expected a module summary for the {sampleName} sample.");
-    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException($"Expected a module summary for the {sampleName} sample.");
+    var moduleSummary = RequireModuleSummary(report, $"the {sampleName} sample");
     Assert(moduleSummary.Functions.Any(function => function.Name == functionName), $"Expected {functionName} to appear in the module summary.");
     Assert(moduleSummary.Functions.Count >= minimumFunctionCount, $"Expected at least {minimumFunctionCount.ToString(CultureInfo.InvariantCulture)} functions in the {sampleName} module summary.");
     foreach (var expectedFunctionName in expectedFunctionNames)
