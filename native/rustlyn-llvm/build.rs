@@ -16,7 +16,18 @@ fn main() {
     let lib_dir = run_llvm_config(&llvm_config, &["--libdir"]);
     println!("cargo:rustc-link-search=native={}", lib_dir.trim());
 
-    let libs = run_llvm_config(&llvm_config, &["--link-static", "--libs", "core", "bitreader", "analysis"]);
+    let libs = run_llvm_config(
+        &llvm_config,
+        &[
+            "--link-static",
+            "--libs",
+            "core",
+            "bitreader",
+            "bitwriter",
+            "analysis",
+            "passes",
+        ],
+    );
     emit_link_args(&libs, true);
 
     let system_libs = run_llvm_config(&llvm_config, &["--link-static", "--system-libs"]);

@@ -13,17 +13,18 @@ public static partial class LoweredIrLowerer
             ?? throw new InvalidOperationException("An LLVM toolchain root is required for lowering. Configure --llvm-root or RUSTLYN_LLVM_ROOT.");
 
         var fullArtifactPath = Path.GetFullPath(artifactPath);
+        var optimizedPath = RustlynLlvmOptimizer.MaybeOptimize(fullArtifactPath, toolchainRoot);
         var readerMode = GetLlvmReaderMode();
         if (readerMode != LlvmReaderMode.Text)
         {
-            var structuredModule = TryLowerBitcodeWithStructuredJson(fullArtifactPath, toolchainRoot, readerMode);
+            var structuredModule = TryLowerBitcodeWithStructuredJson(optimizedPath, toolchainRoot, readerMode);
             if (structuredModule is not null)
             {
                 return structuredModule;
             }
         }
 
-        var llvmIr = LlvmToolingDisassembler.ReadLlvmIr(fullArtifactPath, toolchainRoot);
+        var llvmIr = LlvmToolingDisassembler.ReadLlvmIr(optimizedPath, toolchainRoot);
         return LowerLlvmIr(llvmIr);
     }
 

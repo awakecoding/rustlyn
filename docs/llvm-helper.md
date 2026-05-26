@@ -80,3 +80,49 @@ It currently emits a conservative schema with globals, functions, parameters, bl
 - `auto` or unset: try structured helper lowering for supported simple modules, then fall back to text.
 - `json`: require `rustlyn-llvm lower-json`.
 - `text`: force the legacy textual IR path.
+
+## Optimization passes
+
+`rustlyn-llvm opt` runs LLVM's new pass manager (`LLVMRunPasses`) over a bitcode module. The default pipeline is intentionally narrow and aimed at debug bitcode:
+
+```powershell
+rustlyn-llvm opt input.bc --output input.opt.bc
+# default --passes mem2reg,sroa,simplifycfg
+
+# Stronger debug-friendly canonicalization:
+rustlyn-llvm opt input.bc --passes "mem2reg,sroa,early-cse,instcombine,simplifycfg" --output input.opt.bc
+
+# Inspect the optimized IR without writing a file:
+rustlyn-llvm opt input.bc --emit-llvm-ir --output -
+```
+
+The helper also accepts `--verify-each` to enable LLVM's per-pass verifier, and `--disable-verify` to skip the pre/post `LLVMVerifyModule` check.
+
+### What it is for
+
+- Best wins on debug bitcode (`-C opt-level=0`), where allocas dominate and `mem2reg`/`sroa` give the Rustlyn lowerer much cleaner IR.
+- Useful canonicalization (`simplifycfg`, `instcombine`, `early-cse`) for lowering experiments.
+
+### What it is not for
+
+- Release bitcode is already optimized by rustc; re-running heavy pipelines has limited upside and risks hiding patterns the lowerer relies on.
+- Optimization cannot recover Rust-level information (drop glue, niche layout, MIR semantics) — that is sidecar territory, not opt territory.
+- Don't default to `default<O2>`/`default<O3>` for Rustlyn; pick named, reviewed pipelines.
+
+### Driving opt from Rustlyn
+
+Setting `RUSTLYN_LLVM_OPT_PASSES` makes `LoweredIrLowerer.LowerBitcode` run the helper as an opt pre-pass before reading the module:
+
+```powershell
+$env:RUSTLYN_LLVM_OPT_PASSES = 'mem2reg,sroa,simplifycfg'
+dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- invoke .\artifacts\out\add\add.bc --method add_i32 --arg i32:2 --arg i32:3
+```
+
+`Rustlyn.Tool diagnose` reports the active pipeline under `llvm-opt-passes`. When the env var is unset, lowering reads the original bitcode unchanged. When `rustlyn-llvm.exe` is not available the pre-pass is silently skipped — the env var is a best-effort canonicalization hint, not a hard dependency.
+
+### Determinism caveats
+
+- Pin the helper + LLVM version: optimized output is reproducible only for the exact LLVM version that produced it.
+- The datalayout must remain stable between opt and lowering; the helper does not change triples.
+- `mem2reg`/`sroa` preserve `!dbg` metadata; avoid pipelines containing `strip-debug` if debug info matters.
+

@@ -684,6 +684,12 @@ static int RunDiagnose(string[] args)
         Console.WriteLine(string.IsNullOrWhiteSpace(readerMode)
             ? "auto (structured helper when supported, text fallback)"
             : readerMode);
+
+        Console.Write("llvm-opt-passes: ");
+        var optPasses = Environment.GetEnvironmentVariable("RUSTLYN_LLVM_OPT_PASSES");
+        Console.WriteLine(string.IsNullOrWhiteSpace(optPasses)
+            ? "off (set RUSTLYN_LLVM_OPT_PASSES, e.g. 'mem2reg,sroa,simplifycfg')"
+            : optPasses);
     }
     else
     {

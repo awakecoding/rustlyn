@@ -49,7 +49,23 @@ extern "C" {
     fn LLVMGetInstructionOpcode(instruction: LlvmValueRef) -> u32;
     fn LLVMGetNumOperands(value: LlvmValueRef) -> i32;
     fn LLVMGetOperand(value: LlvmValueRef, index: u32) -> LlvmValueRef;
+
+    fn LLVMWriteBitcodeToFile(module: LlvmModuleRef, path: *const c_char) -> i32;
+    fn LLVMCreatePassBuilderOptions() -> LlvmPassBuilderOptionsRef;
+    fn LLVMDisposePassBuilderOptions(options: LlvmPassBuilderOptionsRef);
+    fn LLVMPassBuilderOptionsSetVerifyEach(options: LlvmPassBuilderOptionsRef, verify_each: LlvmBool);
+    fn LLVMRunPasses(
+        module: LlvmModuleRef,
+        passes: *const c_char,
+        target_machine: *mut std::ffi::c_void,
+        options: LlvmPassBuilderOptionsRef,
+    ) -> LlvmErrorRef;
+    fn LLVMGetErrorMessage(err: LlvmErrorRef) -> *mut c_char;
+    fn LLVMDisposeErrorMessage(message: *mut c_char);
 }
+
+type LlvmPassBuilderOptionsRef = *mut std::ffi::c_void;
+type LlvmErrorRef = *mut std::ffi::c_void;
 
 fn main() {
     if let Err(err) = run(env::args().skip(1).collect()) {
@@ -75,6 +91,7 @@ fn run(args: Vec<String>) -> Result<(), Error> {
         "print-ir" => run_print_ir(&args[1..]),
         "inspect-json" => run_inspect_json(&args[1..]),
         "lower-json" => run_lower_json(&args[1..]),
+        "opt" => run_opt(&args[1..]),
         "-disable-verify" | "-S" | "-o" => run_compat_print_ir(&args),
         command => Err(Error::new(2, format!("unsupported rustlyn-llvm command '{command}'"))),
     }
@@ -265,6 +282,115 @@ fn lower_json(input: &Path, verify: bool) -> Result<(), Error> {
     Ok(())
 }
 
+fn run_opt(args: &[String]) -> Result<(), Error> {
+    const DEFAULT_PIPELINE: &str = "mem2reg,sroa,simplifycfg";
+
+    let mut input = None;
+    let mut output = PathOrStdout::Stdout;
+    let mut passes: Option<String> = None;
+    let mut verify = true;
+    let mut verify_each = false;
+    let mut emit_ir = false;
+    let mut index = 0;
+
+    while index < args.len() {
+        match args[index].as_str() {
+            "--disable-verify" | "-disable-verify" => {
+                verify = false;
+                index += 1;
+            }
+            "--verify-each" => {
+                verify_each = true;
+                index += 1;
+            }
+            "--emit-llvm-ir" | "-S" => {
+                emit_ir = true;
+                index += 1;
+            }
+            "--passes" | "-passes" => {
+                let value = args
+                    .get(index + 1)
+                    .ok_or_else(|| Error::new(2, "missing value for --passes"))?;
+                passes = Some(value.clone());
+                index += 2;
+            }
+            "--output" | "-o" => {
+                let value = args
+                    .get(index + 1)
+                    .ok_or_else(|| Error::new(2, "missing value for --output"))?;
+                output = PathOrStdout::from_arg(value);
+                index += 2;
+            }
+            value if value.starts_with('-') => {
+                return Err(Error::new(2, format!("unsupported opt option '{value}'")));
+            }
+            value => {
+                if input.replace(PathBuf::from(value)).is_some() {
+                    return Err(Error::new(2, "opt accepts exactly one input path"));
+                }
+                index += 1;
+            }
+        }
+    }
+
+    let input = input.ok_or_else(|| Error::new(2, "opt requires an input bitcode path"))?;
+    let passes = passes.unwrap_or_else(|| DEFAULT_PIPELINE.to_string());
+    if passes.trim().is_empty() {
+        return Err(Error::new(2, "--passes must be a non-empty pipeline string"));
+    }
+
+    if let PathOrStdout::Path(path) = &output {
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if ext.eq_ignore_ascii_case("ll") {
+                emit_ir = true;
+            }
+        }
+    }
+
+    if !input.is_file() {
+        return Err(Error::new(
+            3,
+            format!("input bitcode file was not found: {}", input.display()),
+        ));
+    }
+
+    let module = Module::parse(&input)?;
+    if verify {
+        module.verify()?;
+    }
+
+    module.run_passes(&passes, verify_each)?;
+
+    if verify {
+        module.verify()?;
+    }
+
+    match output {
+        PathOrStdout::Stdout => {
+            if emit_ir {
+                print!("{}", module.print_to_string()?);
+            } else {
+                return Err(Error::new(
+                    2,
+                    "opt to stdout requires --emit-llvm-ir (-S); bitcode cannot be safely written to stdout",
+                ));
+            }
+        }
+        PathOrStdout::Path(path) => {
+            if emit_ir {
+                let ir = module.print_to_string()?;
+                fs::write(&path, ir).map_err(|err| {
+                    Error::new(1, format!("failed to write '{}': {err}", path.display()))
+                })?;
+            } else {
+                module.write_bitcode(&path)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn print_version() {
     let (major, minor, patch) = llvm_version();
     println!(
@@ -280,6 +406,8 @@ fn print_diagnostics() {
     print_version();
     println!("build-llvm-version={}", option_env!("RUSTLYN_LLVM_VERSION").unwrap_or("unknown"));
     println!("linkage=static");
+    println!("opt-pass-manager=new (LLVMRunPasses)");
+    println!("opt-default-pipeline=mem2reg,sroa,simplifycfg");
 }
 
 fn llvm_version() -> (u32, u32, u32) {
@@ -328,6 +456,48 @@ impl Module {
             }
         }
 
+        Ok(())
+    }
+
+    fn run_passes(&self, passes: &str, verify_each: bool) -> Result<(), Error> {
+        let passes_c = CString::new(passes)
+            .map_err(|_| Error::new(2, "--passes contains an embedded NUL byte"))?;
+        unsafe {
+            let options = LLVMCreatePassBuilderOptions();
+            if options.is_null() {
+                return Err(Error::new(1, "LLVMCreatePassBuilderOptions returned null"));
+            }
+            LLVMPassBuilderOptionsSetVerifyEach(options, if verify_each { 1 } else { 0 });
+            let err = LLVMRunPasses(self.module, passes_c.as_ptr(), ptr::null_mut(), options);
+            LLVMDisposePassBuilderOptions(options);
+            if !err.is_null() {
+                let raw = LLVMGetErrorMessage(err);
+                let message = if raw.is_null() {
+                    "LLVMRunPasses failed".to_string()
+                } else {
+                    let text = CStr::from_ptr(raw).to_string_lossy().into_owned();
+                    LLVMDisposeErrorMessage(raw);
+                    text
+                };
+                return Err(Error::new(4, format!("opt pipeline failed: {message}")));
+            }
+        }
+        Ok(())
+    }
+
+    fn write_bitcode(&self, path: &Path) -> Result<(), Error> {
+        let path_str = path.to_str().ok_or_else(|| {
+            Error::new(3, format!("output path is not valid UTF-8: {}", path.display()))
+        })?;
+        let path_c = CString::new(path_str)
+            .map_err(|_| Error::new(3, "output path contains an embedded NUL byte"))?;
+        let rc = unsafe { LLVMWriteBitcodeToFile(self.module, path_c.as_ptr()) };
+        if rc != 0 {
+            return Err(Error::new(
+                1,
+                format!("LLVMWriteBitcodeToFile failed for '{}' (status {rc})", path.display()),
+            ));
+        }
         Ok(())
     }
 
