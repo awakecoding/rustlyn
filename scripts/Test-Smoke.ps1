@@ -1730,6 +1730,62 @@ function Invoke-SmokeCheck {
             throw "dotnet run emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
+        # Prefer invoking through Rustlyn.Tool when the argument shape is supported.
+        # This avoids loading the emitted .NET 10 assembly into the host pwsh process,
+        # which may run on an older .NET runtime (e.g. pwsh 7.4 on .NET 8) and reject
+        # the System.Runtime 10.0.0.0 reference. The in-process path below remains as
+        # a fallback for arg shapes the invoke tool does not yet support.
+        $invokeToolArgs = @()
+        $invokeToolEligible = $true
+        foreach ($candidate in $arguments) {
+            if ($candidate -is [int] -or $candidate -is [Int32]) {
+                $invokeToolArgs += "i32:$([int]$candidate)"
+            }
+            elseif ($candidate -is [long] -or $candidate -is [Int64]) {
+                $invokeToolArgs += "i64:$([long]$candidate)"
+            }
+            elseif ($candidate -is [uint] -or $candidate -is [UInt32]) {
+                $invokeToolArgs += "u32:$([uint]$candidate)"
+            }
+            elseif ($candidate -is [ulong] -or $candidate -is [UInt64]) {
+                $invokeToolArgs += "u64:$([ulong]$candidate)"
+            }
+            else {
+                $invokeToolEligible = $false
+                break
+            }
+        }
+
+        if ($invokeToolEligible) {
+            $invokeCli = @('run', '-c', $Configuration, '--project', '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj', '--', 'invoke', $ArtifactPath, '--method', $Check.Method)
+            foreach ($encoded in $invokeToolArgs) {
+                $invokeCli += '--arg'
+                $invokeCli += $encoded
+            }
+
+            $invokeOutput = & dotnet @invokeCli
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet run invoke failed for '$CurrentSample' with exit code $LASTEXITCODE"
+            }
+
+            $actualText = if ($invokeOutput -is [array]) { ($invokeOutput | Where-Object { $_ -ne $null } | Select-Object -Last 1) } else { $invokeOutput }
+            $actualText = "$actualText".Trim()
+            if ($Check.ContainsKey("ExpectedMinimum")) {
+                if ([Int64]$actualText -lt [Int64]$Check.ExpectedMinimum) {
+                    throw "Generated method '$($Check.Method)' returned '$actualText' for '$CurrentSample', expected at least '$($Check.ExpectedMinimum)'."
+                }
+            }
+            else {
+                $expectedText = "$($Check.Expected)".Trim()
+                if ($actualText -ne $expectedText) {
+                    throw "Generated method '$($Check.Method)' returned '$actualText' for '$CurrentSample', expected '$expectedText'."
+                }
+            }
+
+            Write-Host ("PASS {0} => {1}" -f $CurrentSample, $actualText)
+            return
+        }
+
         $loadContext = [System.Runtime.Loader.AssemblyLoadContext]::new("rustlyn-smoke-$CurrentSample-$([Guid]::NewGuid().ToString('N'))", $true)
         try {
             $assemblyBytes = [System.IO.File]::ReadAllBytes($emittedAssemblyPath)
