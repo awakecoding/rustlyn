@@ -7,6 +7,13 @@ namespace Rustlyn.Backend;
 public static partial class RuntimeBridgeHelpers
 {
     private const int RustFormatArgumentSize = 16;
+    private const long RustBorrowedCowDiscriminant = unchecked((long)0x8000_0000_0000_0000UL);
+    private const long RustOptionCowTagNoneDiscriminant = unchecked((long)0x8000_0000_0000_0001UL);
+    private const long SaphyrYamlValueDiscriminant = unchecked((long)0x8000_0000_0000_0001UL);
+    private const long SaphyrYamlSequenceDiscriminant = unchecked((long)0x8000_0000_0000_0002UL);
+    private const long SaphyrYamlMappingDiscriminant = unchecked((long)0x8000_0000_0000_0003UL);
+    private const long SaphyrYamlBadValueDiscriminant = unchecked((long)0x8000_0000_0000_0006UL);
+    private static IntPtr _saphyrNullScalarPointer;
 
     public static int CommandLineArgCount()
     {
@@ -119,6 +126,45 @@ public static partial class RuntimeBridgeHelpers
             : Marshal.ReAllocHGlobal(pointer, new IntPtr(newCapacity));
 
         Marshal.WriteInt64(vector, newCapacity);
+        Marshal.WriteIntPtr(pointerAddress, newPointer);
+    }
+
+    public static void RustRawVecGrowOne1(IntPtr self) => RustRawVecGrowOne(self, 1);
+    public static void RustRawVecGrowOne16(IntPtr self) => RustRawVecGrowOne(self, 16);
+    public static void RustRawVecGrowOne32(IntPtr self) => RustRawVecGrowOne(self, 32);
+    public static void RustRawVecGrowOne40(IntPtr self) => RustRawVecGrowOne(self, 40);
+    public static void RustRawVecGrowOne80(IntPtr self) => RustRawVecGrowOne(self, 80);
+    public static void RustRawVecGrowOne104(IntPtr self) => RustRawVecGrowOne(self, 104);
+    public static void RustRawVecGrowOne136(IntPtr self) => RustRawVecGrowOne(self, 136);
+
+    private static void RustRawVecGrowOne(IntPtr self, long elementSize)
+    {
+        if (self == IntPtr.Zero || elementSize <= 0)
+        {
+            throw new OutOfMemoryException("Invalid Rust RawVec grow_one request.");
+        }
+
+        var capacity = Marshal.ReadInt64(self);
+        var pointerAddress = IntPtr.Add(self, sizeof(long));
+        var pointer = Marshal.ReadIntPtr(pointerAddress);
+        var minimumCapacity = elementSize == 1 ? 8 : elementSize <= 1024 ? 4 : 1;
+        var doubledCapacity = capacity <= long.MaxValue / 2 ? capacity * 2 : long.MaxValue;
+        var newCapacity = Math.Max(Math.Max(capacity + 1, doubledCapacity), minimumCapacity);
+        var oldSize = checked(capacity * elementSize);
+        var newSize = checked(newCapacity * elementSize);
+        var newPointer = capacity == 0 || pointer == IntPtr.Zero || pointer.ToInt64() < 4096
+            ? Marshal.AllocHGlobal(new IntPtr(newSize))
+            : Marshal.ReAllocHGlobal(pointer, new IntPtr(newSize));
+
+        unsafe
+        {
+            if (newSize > oldSize)
+            {
+                new Span<byte>((byte*)newPointer + oldSize, checked((int)(newSize - oldSize))).Clear();
+            }
+        }
+
+        Marshal.WriteInt64(self, newCapacity);
         Marshal.WriteIntPtr(pointerAddress, newPointer);
     }
 
@@ -366,8 +412,7 @@ public static partial class RuntimeBridgeHelpers
 
     /// <summary>
     /// Bridge for Event::empty_scalar which returns an 88-byte sret Event.
-    /// This creates an Event with no anchor/tag and an empty scalar value.
-    /// We zero-fill the entire 88 bytes since the exact layout needs the correct discriminant.
+    /// Creates Event::Scalar("~".into(), ScalarStyle::Plain, 0, None).
     /// </summary>
     public static void EventEmptyScalar(IntPtr retbuf)
     {
@@ -375,15 +420,20 @@ public static partial class RuntimeBridgeHelpers
             return;
         unsafe
         {
-            // Zero-fill the entire struct - the discriminant for an empty scalar event
-            // Event layout varies, but zero-init is safe as a stub for now.
             new Span<byte>((void*)retbuf, 88).Clear();
+            var fields = (long*)retbuf;
+            fields[0] = RustBorrowedCowDiscriminant;
+            fields[1] = (long)GetSaphyrNullScalarPointer();
+            fields[2] = 1;
+            fields[3] = RustOptionCowTagNoneDiscriminant;
+            fields[9] = 0;
+            ((byte*)retbuf)[80] = 0; // ScalarStyle::Plain
         }
     }
 
     /// <summary>
     /// Bridge for Event::empty_scalar_with_anchor(anchor_id: usize, tag: &amp;Tag) -> Event (88 bytes sret).
-    /// We zero-fill and store the anchor_id at offset 0.
+    /// Creates Event::Scalar(Cow::default(), ScalarStyle::Plain, anchor_id, tag).
     /// </summary>
     public static void EventEmptyScalarWithAnchor(IntPtr retbuf, long anchorId, IntPtr tag)
     {
@@ -392,60 +442,39 @@ public static partial class RuntimeBridgeHelpers
         unsafe
         {
             new Span<byte>((void*)retbuf, 88).Clear();
-            // Store anchor_id at some offset - this is approximate
-            *(long*)retbuf = anchorId;
+            var fields = (long*)retbuf;
+            fields[0] = 0; // Cow<str>::Owned(String::new()) capacity
+            fields[1] = 1; // dangling non-null pointer
+            fields[2] = 0; // length
+            if (tag != IntPtr.Zero)
+            {
+                Buffer.MemoryCopy((void*)tag, (void*)((byte*)retbuf + 24), 48, 48);
+            }
+            else
+            {
+                fields[3] = RustOptionCowTagNoneDiscriminant;
+            }
+
+            fields[9] = anchorId;
+            ((byte*)retbuf)[80] = 0; // ScalarStyle::Plain
         }
     }
 
     /// <summary>
-    /// Bridge for Vec&lt;T,A&gt;::drop / RawVec&lt;T,A&gt;::drop.
-    /// Frees the backing allocation if capacity > 0.
-    /// Vec layout: { ptr, capacity, length } or RawVec: { capacity, ptr }
-    /// For simplicity, we just free the pointer if it's non-null and non-dangling.
+    /// Bridge for Vec&lt;T,A&gt;::drop.
+    /// No-op drop bridge. Managed invocations are short-lived, and ownership/layout varies across
+    /// monomorphizations; freeing guessed pointers can corrupt active parser state.
     /// </summary>
     public static void VecDrop(IntPtr vec)
     {
-        if (vec == IntPtr.Zero)
-            return;
-        unsafe
-        {
-            var fields = (long*)vec;
-            // Vec layout: fields[0]=ptr, fields[1]=cap, fields[2]=len (or cap, ptr, len)
-            // RawVec layout: fields[0]=cap, fields[1]=ptr
-            // We try to free the pointer field. For Vec<T> in Rust the layout is actually
-            // { buf: RawVec { ptr, cap }, len } = { ptr, cap, len }
-            var ptr = (IntPtr)fields[0];
-            var cap = fields[1];
-            if (ptr != IntPtr.Zero && ptr != (IntPtr)1 && cap > 0)
-            {
-                Marshal.FreeHGlobal(ptr);
-                fields[0] = 0;
-                fields[1] = 0;
-            }
-        }
     }
 
     /// <summary>
     /// Bridge for RawVec&lt;T,A&gt;::drop.
-    /// RawVec layout: { capacity(i64), ptr(i64) } = 16 bytes dereferenceable.
+    /// No-op drop bridge; see VecDrop.
     /// </summary>
     public static void RawVecDrop(IntPtr rawvec)
     {
-        if (rawvec == IntPtr.Zero)
-            return;
-        unsafe
-        {
-            var fields = (long*)rawvec;
-            // RawVec: { cap, ptr }
-            var cap = fields[0];
-            var ptr = (IntPtr)fields[1];
-            if (ptr != IntPtr.Zero && ptr != (IntPtr)1 && cap > 0)
-            {
-                Marshal.FreeHGlobal(ptr);
-                fields[0] = 0;
-                fields[1] = 0;
-            }
-        }
     }
 
     /// <summary>
@@ -501,7 +530,6 @@ public static partial class RuntimeBridgeHelpers
     /// Creates a Yaml node from a Cow&lt;str&gt; value and style metadata.
     /// sret(80 bytes), (ptr cow_value, i8 style, ptr metadata_or_null) -> void
     /// For our minimal implementation: create a Yaml::Value(Scalar::String(s)).
-    /// The Yaml enum layout is complex (80 bytes). We store a simplified representation.
     /// </summary>
     public static void YamlValueFromCowAndMetadata(IntPtr retbuf, IntPtr cowValue, byte style, IntPtr metadata)
     {
@@ -509,19 +537,34 @@ public static partial class RuntimeBridgeHelpers
             return;
         unsafe
         {
-            // Zero the output first
             new Span<byte>((void*)retbuf, 80).Clear();
-            // Copy the cow value data into the Yaml node
-            // Yaml enum: discriminant(8) + payload(72)
-            // For String variant: disc=some value, then payload contains the string data
-            // Since we don't know the exact discriminant for Yaml::Value(Scalar::String),
-            // we approximate by storing the Cow data. The saphyr code will interpret this.
+            var fields = (long*)retbuf;
+            fields[0] = SaphyrYamlValueDiscriminant;
             if (cowValue != IntPtr.Zero)
             {
-                // Copy the Cow (24 bytes for small Cow<str>) into the payload area
+                // Yaml::Value(Scalar::String(Cow<str>)) stores the Scalar payload at +8.
                 Buffer.MemoryCopy((void*)cowValue, (void*)((byte*)retbuf + 8), 72, 24);
             }
+            else
+            {
+                fields[1] = RustBorrowedCowDiscriminant;
+                fields[2] = 1;
+                fields[3] = 0;
+            }
         }
+    }
+
+    private static IntPtr GetSaphyrNullScalarPointer()
+    {
+        if (_saphyrNullScalarPointer != IntPtr.Zero)
+        {
+            return _saphyrNullScalarPointer;
+        }
+
+        var pointer = Marshal.AllocHGlobal(1);
+        Marshal.WriteByte(pointer, 0, (byte)'~');
+        _saphyrNullScalarPointer = pointer;
+        return pointer;
     }
 
     /// <summary>
@@ -534,6 +577,70 @@ public static partial class RuntimeBridgeHelpers
     {
         // Default: assume core schema for untagged values
         return true;
+    }
+
+    public static bool YamlIsSequence(IntPtr yaml)
+    {
+        return yaml != IntPtr.Zero && Marshal.ReadInt64(yaml) == SaphyrYamlSequenceDiscriminant;
+    }
+
+    public static bool YamlIsMapping(IntPtr yaml)
+    {
+        return yaml != IntPtr.Zero && Marshal.ReadInt64(yaml) == SaphyrYamlMappingDiscriminant;
+    }
+
+    public static bool YamlIsBadValue(IntPtr yaml)
+    {
+        return yaml != IntPtr.Zero && Marshal.ReadInt64(yaml) == SaphyrYamlBadValueDiscriminant;
+    }
+
+    public static IntPtr YamlSequenceMut(IntPtr yaml)
+    {
+        return YamlIsSequence(yaml) ? IntPtr.Add(yaml, sizeof(long)) : IntPtr.Zero;
+    }
+
+    public static IntPtr YamlMappingMut(IntPtr yaml)
+    {
+        return YamlIsMapping(yaml) ? IntPtr.Add(yaml, sizeof(long)) : IntPtr.Zero;
+    }
+
+    public static void YamlTake(IntPtr retbuf, IntPtr yaml)
+    {
+        if (retbuf == IntPtr.Zero)
+            return;
+
+        unsafe
+        {
+            if (yaml == IntPtr.Zero)
+            {
+                new Span<byte>((void*)retbuf, 80).Clear();
+                *(long*)retbuf = SaphyrYamlBadValueDiscriminant;
+                return;
+            }
+
+            Buffer.MemoryCopy((void*)yaml, (void*)retbuf, 80, 80);
+            new Span<byte>((void*)yaml, 80).Clear();
+            *(long*)yaml = SaphyrYamlBadValueDiscriminant;
+        }
+    }
+
+    public static void YamlIntoTagged(IntPtr retbuf, IntPtr yaml, IntPtr tag)
+    {
+        if (retbuf == IntPtr.Zero)
+            return;
+
+        unsafe
+        {
+            if (yaml != IntPtr.Zero)
+            {
+                Buffer.MemoryCopy((void*)yaml, (void*)retbuf, 80, 80);
+            }
+            else
+            {
+                new Span<byte>((void*)retbuf, 80).Clear();
+                *(long*)retbuf = SaphyrYamlBadValueDiscriminant;
+            }
+        }
     }
 
     /// <summary>

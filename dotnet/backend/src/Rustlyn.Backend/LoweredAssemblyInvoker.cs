@@ -22,10 +22,7 @@ public static class LoweredAssemblyInvoker
         }
         finally
         {
-            if (File.Exists(emittedAssemblyPath))
-            {
-                File.Delete(emittedAssemblyPath);
-            }
+            DeleteTemporaryAssembly(emittedAssemblyPath);
         }
     }
 
@@ -39,8 +36,7 @@ public static class LoweredAssemblyInvoker
         var loadContext = new AssemblyLoadContext($"rustlyn-invoke-{Guid.NewGuid():N}", isCollectible: true);
         try
         {
-            using var assemblyStream = new MemoryStream(File.ReadAllBytes(Path.GetFullPath(assemblyPath)));
-            var assembly = loadContext.LoadFromStream(assemblyStream);
+            var assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath));
             var generatedType = assembly.GetType(typeName)
                 ?? throw new InvalidOperationException($"Type '{typeName}' was not found in assembly '{assemblyPath}'.");
             var method = generatedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
@@ -63,6 +59,43 @@ public static class LoweredAssemblyInvoker
         finally
         {
             loadContext.Unload();
+        }
+    }
+
+    private static void DeleteTemporaryAssembly(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                File.Delete(path);
+                return;
+            }
+            catch (IOException)
+            {
+                if (attempt == 4)
+                {
+                    return;
+                }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                if (attempt == 4)
+                {
+                    return;
+                }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
         }
     }
 

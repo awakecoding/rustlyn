@@ -1274,7 +1274,12 @@ public static class LoweredAssemblyEmitter
                         encoder.LoadConstantI4(aggSize);
                         encoder.OpCode(ILOpCode.Conv_u);
                         encoder.OpCode(ILOpCode.Localloc);
+                        encoder.OpCode(ILOpCode.Dup);
                         encoder.StoreLocal(localIndices[call.Result]);
+                        encoder.LoadConstantI4(0);
+                        encoder.LoadConstantI4(aggSize);
+                        encoder.OpCode(ILOpCode.Conv_u);
+                        encoder.OpCode(ILOpCode.Initblk);
                         // Push buffer as hidden first arg
                         encoder.LoadLocal(localIndices[call.Result]);
                     }
@@ -1384,7 +1389,12 @@ public static class LoweredAssemblyEmitter
                     encoder.LoadConstantI4(allocSize);
                     encoder.OpCode(ILOpCode.Conv_u);
                     encoder.OpCode(ILOpCode.Localloc);
+                    encoder.OpCode(ILOpCode.Dup);
                     encoder.StoreLocal(localIndices[alloca.Result]);
+                    encoder.LoadConstantI4(0);
+                    encoder.LoadConstantI4(allocSize);
+                    encoder.OpCode(ILOpCode.Conv_u);
+                    encoder.OpCode(ILOpCode.Initblk);
                 }
                 // Otherwise: alloca maps to a local variable slot — no IL needed (SROA handles it)
                 break;
@@ -4297,6 +4307,48 @@ public static class LoweredAssemblyEmitter
                 return true;
             }
 
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17h92e69959d23c06f9", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_1", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17hef3c6a1f65af976d", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_16", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17hd6cd44ecfc976cc9", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_32", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17hd15a97ec5163449c", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_40", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17h4aad6aa1aff9907d", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_80", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17h219382c75df70895", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_104", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVec$LT$T$C$A$GT$8grow_one17ha2251d36aad74127", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_one_136", out handle))
+            {
+                return true;
+            }
+
             if (callee.Contains("Vec$LT$T$C$A$GT$", StringComparison.Ordinal)
                 && callee.Contains("7reserve", StringComparison.Ordinal)
                 && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_vec_reserve_bytes", out handle))
@@ -4474,9 +4526,47 @@ public static class LoweredAssemblyEmitter
                 return true;
             }
 
-            // Yaml::into_tagged — takes (sret_ptr, node_ptr, tag_ptr), returns void
-            // For now, let this fall through to unresolved (fills with zeros = Yaml::Null)
-            // TODO: proper bridge that wraps node with tag
+            if (callee.Contains("LoadableYamlNode$GT$11is_sequence", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_is_sequence", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$10is_mapping", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_is_mapping", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$11is_badvalue", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_is_badvalue", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$12sequence_mut", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_sequence_mut", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$11mapping_mut", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_mapping_mut", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$4take", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_take", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("LoadableYamlNode$GT$11into_tagged", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_into_tagged", out handle))
+            {
+                return true;
+            }
 
             // Box<T>::hash / OrderedFloat::hash
             if ((callee.Contains("Box$LT$T$C$A$GT$", StringComparison.Ordinal) || callee.Contains("OrderedFloat", StringComparison.Ordinal))
@@ -4838,6 +4928,13 @@ public static class LoweredAssemblyEmitter
             ("rustlyn_dotnet_math_min_i32", nameof(RuntimeBridgeHelpers.MathMinI32)),
             ("rustlyn_alloc_raw_vec_grow_amortized", nameof(RuntimeBridgeHelpers.RustRawVecGrowAmortized)),
             ("rustlyn_alloc_raw_vec_try_allocate_in", nameof(RuntimeBridgeHelpers.RustRawVecTryAllocateIn)),
+            ("rustlyn_alloc_raw_vec_grow_one_1", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne1)),
+            ("rustlyn_alloc_raw_vec_grow_one_16", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne16)),
+            ("rustlyn_alloc_raw_vec_grow_one_32", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne32)),
+            ("rustlyn_alloc_raw_vec_grow_one_40", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne40)),
+            ("rustlyn_alloc_raw_vec_grow_one_80", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne80)),
+            ("rustlyn_alloc_raw_vec_grow_one_104", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne104)),
+            ("rustlyn_alloc_raw_vec_grow_one_136", nameof(RuntimeBridgeHelpers.RustRawVecGrowOne136)),
             ("rustlyn_alloc_vec_reserve_bytes", nameof(RuntimeBridgeHelpers.RustVecReserveBytes)),
             ("memcmp", nameof(RuntimeBridgeHelpers.Memcmp)),
             ("llvm.ucmp.i8.i64", nameof(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64)),
@@ -4856,6 +4953,13 @@ public static class LoweredAssemblyEmitter
             ("rustlyn_saphyr_event_empty_scalar_with_anchor", nameof(RuntimeBridgeHelpers.EventEmptyScalarWithAnchor)),
             ("rustlyn_saphyr_yaml_value_from_cow_and_metadata", nameof(RuntimeBridgeHelpers.YamlValueFromCowAndMetadata)),
             ("rustlyn_saphyr_tag_is_yaml_core_schema", nameof(RuntimeBridgeHelpers.TagIsYamlCoreSchema)),
+            ("rustlyn_saphyr_yaml_is_sequence", nameof(RuntimeBridgeHelpers.YamlIsSequence)),
+            ("rustlyn_saphyr_yaml_is_mapping", nameof(RuntimeBridgeHelpers.YamlIsMapping)),
+            ("rustlyn_saphyr_yaml_is_badvalue", nameof(RuntimeBridgeHelpers.YamlIsBadValue)),
+            ("rustlyn_saphyr_yaml_sequence_mut", nameof(RuntimeBridgeHelpers.YamlSequenceMut)),
+            ("rustlyn_saphyr_yaml_mapping_mut", nameof(RuntimeBridgeHelpers.YamlMappingMut)),
+            ("rustlyn_saphyr_yaml_take", nameof(RuntimeBridgeHelpers.YamlTake)),
+            ("rustlyn_saphyr_yaml_into_tagged", nameof(RuntimeBridgeHelpers.YamlIntoTagged)),
             ("rustlyn_vec_drop", nameof(RuntimeBridgeHelpers.VecDrop)),
             ("rustlyn_raw_vec_drop", nameof(RuntimeBridgeHelpers.RawVecDrop)),
             ("rustlyn_slice_equal_same_length", nameof(RuntimeBridgeHelpers.SliceEqualSameLength)),
