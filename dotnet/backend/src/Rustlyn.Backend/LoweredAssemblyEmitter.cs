@@ -50,7 +50,9 @@ public static class LoweredAssemblyEmitter
         var assemblyName = Path.GetFileNameWithoutExtension(outputFullPath);
         var emittedFunctions = GetReachableFunctions(loweredModule.Functions, loweredModule.Globals);
         var consoleEntrypoint = TrySelectConsoleEntrypoint(emittedFunctions);
-        var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions);
+        var requiredPackageManifests = GetRequiredExternalPackageManifests(emittedFunctions, options);
+        var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions)
+            || requiredPackageManifests.Any(static manifest => string.Equals(manifest.PackageSurface?.PackageId, "Avalonia", StringComparison.Ordinal));
 
         // Emit PDB if requested
         PortablePdbResult? pdbResult = null;
@@ -78,7 +80,7 @@ public static class LoweredAssemblyEmitter
         if (consoleEntrypoint is not null)
         {
             WriteRuntimeConfig(outputFullPath);
-            CopyRuntimeSupportAssemblies(outputFullPath, requiresAvaloniaSupport);
+            CopyRuntimeSupportAssemblies(outputFullPath, requiredPackageManifests);
         }
     }
 
@@ -188,7 +190,47 @@ public static class LoweredAssemblyEmitter
         => functions.SelectMany(static function => function.Blocks)
             .SelectMany(static block => block.Instructions)
             .OfType<LoweredCallInstruction>()
-            .Any(static call => call.Callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal));
+            .Any(static call => call.Callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
+                || call.Callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal));
+
+    private static IReadOnlyList<BindingManifestDocument> GetRequiredExternalPackageManifests(IReadOnlyList<LoweredFunction> functions, EmitOptions options)
+    {
+        var callees = functions.SelectMany(static function => function.Blocks)
+            .SelectMany(static block => block.Instructions)
+            .OfType<LoweredCallInstruction>()
+            .Select(static call => call.Callee)
+            .ToHashSet(StringComparer.Ordinal);
+        var manifests = new List<BindingManifestDocument>();
+        foreach (var manifest in options.BindingManifests.Where(static manifest => manifest.PackageSurface is not null))
+        {
+            if (manifest.Bindings.Any(binding => callees.Contains(binding.Symbol)))
+            {
+                AddExternalPackageManifest(manifests, manifest);
+            }
+        }
+
+        if (callees.Any(static callee => callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
+                || callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal)))
+        {
+            AddExternalPackageManifest(manifests, ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest());
+        }
+
+        return manifests;
+    }
+
+    private static void AddExternalPackageManifest(List<BindingManifestDocument> manifests, BindingManifestDocument manifest)
+    {
+        var package = manifest.PackageSurface
+            ?? throw new InvalidOperationException("External package manifest is missing package metadata.");
+        if (manifests.Any(existing => string.Equals(existing.PackageSurface?.PackageId, package.PackageId, StringComparison.Ordinal)
+                && string.Equals(existing.PackageSurface?.PackageVersion, package.PackageVersion, StringComparison.Ordinal)
+                && string.Equals(existing.PackageSurface?.TargetFramework, package.TargetFramework, StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        manifests.Add(manifest);
+    }
 
     private static void WriteRuntimeConfig(string outputAssemblyPath)
     {
@@ -217,15 +259,15 @@ public static class LoweredAssemblyEmitter
         return Environment.Version.ToString();
     }
 
-    private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, bool requiresAvaloniaSupport)
+    private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, IReadOnlyList<BindingManifestDocument> packageManifests)
     {
         CopySupportAssembly(typeof(RuntimeBridgeHelpers).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(Rustlyn.Runtime.NumericRuntime).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(Rustlyn.Os.HostEnvironment).Assembly.Location, outputAssemblyPath);
         CopySupportAssembly(typeof(Rustlyn.Interop.ManagedInteropRuntime).Assembly.Location, outputAssemblyPath);
-        if (requiresAvaloniaSupport)
+        foreach (var manifest in packageManifests)
         {
-            CopyAvaloniaSupportAssemblies(typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.Location, outputAssemblyPath);
+            CopyExternalPackageRuntimeAssets(manifest, outputAssemblyPath);
         }
     }
 
@@ -244,30 +286,64 @@ public static class LoweredAssemblyEmitter
         File.Copy(supportAssemblyPath, destinationPath, overwrite: true);
     }
 
-    private static void CopyAvaloniaSupportAssemblies(string supportAssemblyPath, string outputAssemblyPath)
+    private static void CopyExternalPackageRuntimeAssets(BindingManifestDocument manifest, string outputAssemblyPath)
     {
-        CopySupportAssembly(supportAssemblyPath, outputAssemblyPath);
+        var package = manifest.PackageSurface
+            ?? throw new InvalidOperationException("External package manifest is missing package metadata.");
+        var sourceDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var assembly in package.Assemblies)
+        {
+            if (string.IsNullOrWhiteSpace(assembly.Path) || !File.Exists(assembly.Path))
+            {
+                continue;
+            }
 
-        var sourceDirectory = Path.GetDirectoryName(supportAssemblyPath);
+            CopySupportAssembly(assembly.Path, outputAssemblyPath);
+            var assemblyDirectory = Path.GetDirectoryName(assembly.Path);
+            if (!string.IsNullOrWhiteSpace(assemblyDirectory) && Directory.Exists(assemblyDirectory))
+            {
+                sourceDirectories.Add(assemblyDirectory);
+            }
+        }
+
+        foreach (var sourceDirectory in sourceDirectories)
+        {
+            CopyExternalPackageRuntimeAssets(sourceDirectory, outputAssemblyPath, package.RuntimeAssetPatterns);
+        }
+    }
+
+    private static void CopyExternalPackageRuntimeAssets(string sourceDirectory, string outputAssemblyPath, IReadOnlyList<string> runtimeAssetPatterns)
+    {
         var destinationDirectory = Path.GetDirectoryName(outputAssemblyPath)
             ?? throw new InvalidOperationException("Output directory could not be determined.");
-        if (string.IsNullOrWhiteSpace(sourceDirectory) || !Directory.Exists(sourceDirectory))
+        if (!Directory.Exists(sourceDirectory))
             return;
 
-        foreach (var filePath in Directory.GetFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly))
+        if (runtimeAssetPatterns.Contains("*.dll", StringComparer.Ordinal))
         {
-            var extension = Path.GetExtension(filePath);
-            if (extension is ".dll" or ".json")
+            foreach (var filePath in Directory.GetFiles(sourceDirectory, "*.dll", SearchOption.TopDirectoryOnly))
             {
                 CopySupportAssembly(filePath, outputAssemblyPath);
             }
         }
 
-        var runtimeAssetsDirectory = Path.Combine(sourceDirectory, "runtimes");
-        if (Directory.Exists(runtimeAssetsDirectory))
+        if (runtimeAssetPatterns.Contains("*.json", StringComparer.Ordinal))
         {
-            CopyDirectory(runtimeAssetsDirectory, Path.Combine(destinationDirectory, "runtimes"));
-            CopyCurrentRuntimeNativeAssets(runtimeAssetsDirectory, destinationDirectory);
+            foreach (var filePath in Directory.GetFiles(sourceDirectory, "*.json", SearchOption.TopDirectoryOnly))
+            {
+                CopySupportAssembly(filePath, outputAssemblyPath);
+            }
+        }
+
+        if (runtimeAssetPatterns.Any(static pattern => pattern.StartsWith("runtimes/", StringComparison.Ordinal)
+                || pattern.StartsWith("runtimes\\", StringComparison.Ordinal)))
+        {
+            var runtimeAssetsDirectory = Path.Combine(sourceDirectory, "runtimes");
+            if (Directory.Exists(runtimeAssetsDirectory))
+            {
+                CopyDirectory(runtimeAssetsDirectory, Path.Combine(destinationDirectory, "runtimes"));
+                CopyCurrentRuntimeNativeAssets(runtimeAssetsDirectory, destinationDirectory);
+            }
         }
     }
 
@@ -367,7 +443,7 @@ public static class LoweredAssemblyEmitter
             hashValue: default);
 
         // Pre-compute BCL type/member references
-        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef);
+        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef, emitOptions?.BindingManifests);
 
         // Type reference: System.Object (base type for our generated class)
         var systemObjectRef = metadataBuilder.AddTypeReference(
@@ -3656,7 +3732,11 @@ public static class LoweredAssemblyEmitter
         private readonly Dictionary<string, MemberReferenceHandle> _runtimeBridgeMap;
         private readonly HashSet<MemberReferenceHandle> _runtimeBridgeSretHandles;
 
-        public SrmTypeContext(MetadataBuilder mb, AssemblyReferenceHandle systemRuntime, AssemblyReferenceHandle systemInterop)
+        public SrmTypeContext(
+            MetadataBuilder mb,
+            AssemblyReferenceHandle systemRuntime,
+            AssemblyReferenceHandle systemInterop,
+            IReadOnlyList<BindingManifestDocument>? bindingManifests = null)
         {
             SystemRuntime = systemRuntime;
 
@@ -3863,23 +3943,10 @@ public static class LoweredAssemblyEmitter
 
             _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
             {
-                ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32")),
-                ["rustlyn_avalonia_window_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateWindow", EncodeBridgeMethodSig(mb, "i32")),
-                ["rustlyn_avalonia_stack_panel_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateStackPanel", EncodeBridgeMethodSig(mb, "i32")),
-                ["rustlyn_avalonia_text_block_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateTextBlock", EncodeBridgeMethodSig(mb, "i32")),
-                ["rustlyn_avalonia_button_new"] = AddStaticMethod(mb, avaloniaBridge, "CreateButton", EncodeBridgeMethodSig(mb, "i32")),
-                ["rustlyn_avalonia_window_set_title_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowTitleUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
-                ["rustlyn_avalonia_window_set_size"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowSize", EncodeBridgeMethodSig(mb, "void", "i32", "i32", "i32")),
-                ["rustlyn_avalonia_window_set_content"] = AddStaticMethod(mb, avaloniaBridge, "SetWindowContent", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
-                ["rustlyn_avalonia_stack_panel_set_spacing"] = AddStaticMethod(mb, avaloniaBridge, "SetStackPanelSpacing", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
-                ["rustlyn_avalonia_stack_panel_set_margin"] = AddStaticMethod(mb, avaloniaBridge, "SetStackPanelMargin", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
-                ["rustlyn_avalonia_stack_panel_add_child"] = AddStaticMethod(mb, avaloniaBridge, "AddStackPanelChild", EncodeBridgeMethodSig(mb, "void", "i32", "i32")),
-                ["rustlyn_avalonia_text_block_set_text_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetTextBlockTextUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
-                ["rustlyn_avalonia_button_set_content_utf8"] = AddStaticMethod(mb, avaloniaBridge, "SetButtonContentUtf8", EncodeBridgeMethodSig(mb, "void", "i32", "ptr", "i64")),
-                ["rustlyn_avalonia_button_set_on_click"] = AddStaticMethod(mb, avaloniaBridge, "SetButtonOnClick", EncodeBridgeMethodSig(mb, "void", "i32", "i32", "i32"))
+                ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
             };
 
-            _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, out _runtimeBridgeSretHandles);
+            _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
 
             // Build intrinsic lookup
             _intrinsicMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
@@ -4147,6 +4214,7 @@ public static class LoweredAssemblyEmitter
         private static Dictionary<string, MemberReferenceHandle> BuildRuntimeBridgeMap(
             MetadataBuilder mb,
             TypeReferenceHandle runtimeBridgeHelpers,
+            IReadOnlyList<BindingManifestDocument> bindingManifests,
             out HashSet<MemberReferenceHandle> sretHandles)
         {
             var methods = typeof(RuntimeBridgeHelpers)
@@ -4164,15 +4232,31 @@ public static class LoweredAssemblyEmitter
 
             var bridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal);
             sretHandles = [];
-            foreach (var binding in BindingSurface.CreateTinyBclSurface().ManagedGlueBindings)
+            var bindingManifest = BindingManifestDocument.FromSurface(BindingSurface.CreateTinyBclSurface());
+            foreach (var binding in bindingManifest.Bindings)
             {
-                if (!handles.TryGetValue(binding.RuntimeBridgeHelperMethodName, out var handle))
+                if (!handles.TryGetValue(binding.Helper, out var handle))
                 {
-                    throw new InvalidOperationException($"Generated binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.RuntimeBridgeHelperMethodName}'.");
+                    throw new InvalidOperationException($"Generated binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.Helper}'.");
                 }
 
                 bridgeMap[binding.Symbol] = handle;
-                if (RuntimeBridgeUsesSret(methods[binding.RuntimeBridgeHelperMethodName]))
+                if (RuntimeBridgeUsesSret(methods[binding.Helper]))
+                {
+                    sretHandles.Add(handle);
+                }
+            }
+
+            var avaloniaManifest = ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest();
+            foreach (var binding in avaloniaManifest.Bindings)
+            {
+                if (!handles.TryGetValue(binding.Helper, out var handle))
+                {
+                    throw new InvalidOperationException($"Generated Avalonia binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.Helper}'.");
+                }
+
+                bridgeMap[binding.Symbol] = handle;
+                if (RuntimeBridgeUsesSret(methods[binding.Helper]))
                 {
                     sretHandles.Add(handle);
                 }
@@ -4184,6 +4268,40 @@ public static class LoweredAssemblyEmitter
                 {
                     bridgeMap[symbol] = handle;
                     if (RuntimeBridgeUsesSret(methods[methodName]))
+                    {
+                        sretHandles.Add(handle);
+                    }
+                }
+            }
+
+            foreach (var alias in RustStdShimManifest.Aliases)
+            {
+                if (handles.TryGetValue(alias.HelperMethodName, out var handle))
+                {
+                    bridgeMap[alias.Symbol] = handle;
+                    if (RuntimeBridgeUsesSret(methods[alias.HelperMethodName]))
+                    {
+                        sretHandles.Add(handle);
+                    }
+                }
+            }
+
+            foreach (var manifest in bindingManifests)
+            {
+                foreach (var binding in manifest.Bindings)
+                {
+                    if (!handles.TryGetValue(binding.Helper, out var handle))
+                    {
+                        handle = AddStaticMethod(
+                            mb,
+                            runtimeBridgeHelpers,
+                            binding.Helper,
+                            EncodeManifestBindingSig(mb, binding));
+                        handles[binding.Helper] = handle;
+                    }
+
+                    bridgeMap[binding.Symbol] = handle;
+                    if (ManifestBindingUsesSret(binding))
                     {
                         sretHandles.Add(handle);
                     }
@@ -4202,6 +4320,31 @@ public static class LoweredAssemblyEmitter
 
             return bridgeMap;
         }
+
+        private static BlobHandle EncodeManifestBindingSig(MetadataBuilder mb, BindingManifestBinding binding)
+            => EncodeBridgeMethodSig(
+                mb,
+                ToBridgeSignatureType(binding.ReturnType),
+                binding.Parameters.Select(static parameter => ToBridgeSignatureType(parameter.Type)).ToArray());
+
+        private static string ToBridgeSignatureType(string managedGlueType)
+        {
+            return managedGlueType switch
+            {
+                "int" => "i32",
+                "long" => "i64",
+                "float" => "float",
+                "double" => "double",
+                "IntPtr" => "ptr",
+                "void" => "void",
+                _ => throw new NotSupportedException($"Managed glue type '{managedGlueType}' is not supported in runtime binding manifests.")
+            };
+        }
+
+        private static bool ManifestBindingUsesSret(BindingManifestBinding binding)
+            => string.Equals(binding.ReturnType, "void", StringComparison.Ordinal)
+                && binding.Parameters.Count > 0
+                && string.Equals(binding.Parameters[0].Type, "IntPtr", StringComparison.Ordinal);
 
         private static bool RuntimeBridgeUsesSret(MethodInfo method)
         {
@@ -4262,41 +4405,7 @@ public static class LoweredAssemblyEmitter
             ("rustlyn_dotnet_string_replace_utf8_len", nameof(RuntimeBridgeHelpers.Utf8StringReplaceLength)),
             ("rustlyn_dotnet_string_copy_replace_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8StringReplace)),
             ("rustlyn_dotnet_string_contains", nameof(RuntimeBridgeHelpers.Utf8StringContains)),
-            ("rustlyn_dotnet_string_index_of", nameof(RuntimeBridgeHelpers.Utf8StringIndexOf)),
-            ("rustlyn_std_pathbuf_to_owned", nameof(RuntimeBridgeHelpers.InitializeWtf8PathBuffer)),
-            ("rustlyn_std_path_file_name", nameof(RuntimeBridgeHelpers.StdPathFileName)),
-            ("rustlyn_std_path_file_stem", nameof(RuntimeBridgeHelpers.StdPathFileStem)),
-            ("rustlyn_std_path_extension", nameof(RuntimeBridgeHelpers.StdPathExtension)),
-            ("rustlyn_std_path_parent", nameof(RuntimeBridgeHelpers.StdPathParent)),
-            ("rustlyn_std_path_components", nameof(RuntimeBridgeHelpers.StdPathComponents)),
-            ("rustlyn_std_path_is_absolute", nameof(RuntimeBridgeHelpers.StdPathIsAbsolute)),
-            ("rustlyn_std_path_components_eq", nameof(RuntimeBridgeHelpers.StdPathComponentsEq)),
-            ("rustlyn_std_path_eq", nameof(RuntimeBridgeHelpers.StdPathEq)),
-            ("rustlyn_std_path_starts_with", nameof(RuntimeBridgeHelpers.StdPathStartsWith)),
-            ("rustlyn_std_path_ends_with", nameof(RuntimeBridgeHelpers.StdPathEndsWith)),
-            ("rustlyn_std_path_join", nameof(RuntimeBridgeHelpers.StdPathJoin)),
-            ("rustlyn_std_path_with_extension", nameof(RuntimeBridgeHelpers.StdPathWithExtension)),
-            ("rustlyn_std_path_with_file_name", nameof(RuntimeBridgeHelpers.StdPathWithFileName)),
-            ("_ZN4core4iter6traits8iterator8Iterator4fold17hbc92b954ca3f68c4E", nameof(RuntimeBridgeHelpers.StdPathComponentCount)),
-            ("rustlyn_std_pathbuf_push", nameof(RuntimeBridgeHelpers.AppendPathSegment)),
-            ("rustlyn_std_fs_read_to_string_inner", nameof(RuntimeBridgeHelpers.ReadFileToRustString)),
-            ("rustlyn_core_slice_memchr_aligned", nameof(RuntimeBridgeHelpers.MemchrAligned)),
-            ("rustlyn_std_io_print", nameof(RuntimeBridgeHelpers.StdIoPrint)),
-            ("rustlyn_std_io_eprint", nameof(RuntimeBridgeHelpers.StdIoEPrint)),
-            ("rustlyn_std_io_stdout", nameof(RuntimeBridgeHelpers.StdIoStdout)),
-            ("rustlyn_std_io_stdout_write_all", nameof(RuntimeBridgeHelpers.StdIoStdoutWriteAll)),
-            ("rustlyn_std_io_stderr_write_all", nameof(RuntimeBridgeHelpers.StdIoStderrWriteAll)),
-            ("rustlyn_std_io_stdout_flush", nameof(RuntimeBridgeHelpers.StdIoStdoutFlush)),
-            ("rustlyn_std_time_instant_now", nameof(RuntimeBridgeHelpers.StdTimeInstantNow)),
-            ("rustlyn_std_time_instant_elapsed", nameof(RuntimeBridgeHelpers.StdTimeInstantElapsed)),
-            ("rustlyn_std_env_current_dir", nameof(RuntimeBridgeHelpers.StdEnvCurrentDir)),
-            ("rustlyn_std_env_temp_dir", nameof(RuntimeBridgeHelpers.StdEnvTempDir)),
-            ("rustlyn_std_env_var", nameof(RuntimeBridgeHelpers.StdEnvVar)),
-            ("rustlyn_bindgen_system_string_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringLength)),
-            ("rustlyn_bindgen_system_string_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringUtf8Length)),
-            ("rustlyn_bindgen_system_string_array_len", nameof(RuntimeBridgeHelpers.BindgenSystemStringArrayLength)),
-            ("rustlyn_bindgen_system_exception_get_type_name_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemExceptionGetTypeNameUtf8Length)),
-            ("rustlyn_bindgen_system_exception_get_message_utf8_len", nameof(RuntimeBridgeHelpers.BindgenSystemExceptionGetMessageUtf8Length))
+            ("rustlyn_dotnet_string_index_of", nameof(RuntimeBridgeHelpers.Utf8StringIndexOf))
         ];
 
         private static BlobHandle EncodeReflectedMethodSig(MetadataBuilder mb, MethodInfo method)

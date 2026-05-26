@@ -1,12 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Layout;
 using Avalonia.Themes.Fluent;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices;
-using System.Text;
+using Rustlyn.Interop;
 
 namespace Rustlyn.AvaloniaSupport;
 
@@ -50,71 +48,23 @@ public static class AvaloniaBridge
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<RustAvaloniaApp>().UsePlatformDetect();
 
-    public static int CreateWindow()
-        => CurrentSession.Add(new Window());
-
-    public static int CreateStackPanel()
-        => CurrentSession.Add(new StackPanel { Orientation = Orientation.Vertical });
-
-    public static int CreateTextBlock()
-        => CurrentSession.Add(new TextBlock());
-
-    public static int CreateButton()
-        => CurrentSession.Add(new Button());
-
-    public static void SetWindowTitleUtf8(int windowHandle, IntPtr titlePointer, long titleLength)
+    public static IDisposable SubscribeButtonClick(Button button, int handlerId, int stateHandle)
     {
-        CurrentSession.Get<Window>(windowHandle).Title = ReadUtf8String(titlePointer, titleLength);
-    }
+        ArgumentNullException.ThrowIfNull(button);
 
-    public static void SetWindowSize(int windowHandle, int width, int height)
-    {
-        var window = CurrentSession.Get<Window>(windowHandle);
-        window.Width = width;
-        window.Height = height;
-    }
+        void Handler(object? sender, Avalonia.Interactivity.RoutedEventArgs args)
+            => InvokeRustClick(handlerId, stateHandle);
 
-    public static void SetWindowContent(int windowHandle, int contentHandle)
-    {
-        CurrentSession.Get<Window>(windowHandle).Content = CurrentSession.Get<Control>(contentHandle);
-    }
-
-    public static void SetStackPanelSpacing(int stackPanelHandle, int spacing)
-    {
-        CurrentSession.Get<StackPanel>(stackPanelHandle).Spacing = spacing;
-    }
-
-    public static void SetStackPanelMargin(int stackPanelHandle, int margin)
-    {
-        CurrentSession.Get<StackPanel>(stackPanelHandle).Margin = new Thickness(margin);
-    }
-
-    public static void AddStackPanelChild(int stackPanelHandle, int childHandle)
-    {
-        CurrentSession.Get<StackPanel>(stackPanelHandle).Children.Add(CurrentSession.Get<Control>(childHandle));
-    }
-
-    public static void SetTextBlockTextUtf8(int textBlockHandle, IntPtr textPointer, long textLength)
-    {
-        CurrentSession.Get<TextBlock>(textBlockHandle).Text = ReadUtf8String(textPointer, textLength);
-    }
-
-    public static void SetButtonContentUtf8(int buttonHandle, IntPtr contentPointer, long contentLength)
-    {
-        CurrentSession.Get<Button>(buttonHandle).Content = ReadUtf8String(contentPointer, contentLength);
-    }
-
-    public static void SetButtonOnClick(int buttonHandle, int handlerId, int stateHandle)
-    {
-        var button = CurrentSession.Get<Button>(buttonHandle);
-        CurrentSession.RegisterClick(buttonHandle, () => InvokeRustClick(handlerId, stateHandle));
-        button.Click += (_, _) => InvokeRustClick(handlerId, stateHandle);
+        CurrentSession.RegisterClick(stateHandle, () => InvokeRustClick(handlerId, stateHandle));
+        CurrentSession.SmokeTextBlockHandle = stateHandle;
+        button.Click += Handler;
+        return new AvaloniaEventSubscription(() => button.Click -= Handler);
     }
 
     internal static Window BuildMainWindowFromRust()
     {
         var windowHandle = InvokeRustBuildUi();
-        return CurrentSession.Get<Window>(windowHandle);
+        return ManagedInteropRuntime.GetObject<Window>(windowHandle);
     }
 
     private static int RunSmoke()
@@ -124,7 +74,7 @@ public static class AvaloniaBridge
             BuildAvaloniaApp().SetupWithoutStarting();
             _ = InvokeRustBuildUi();
 
-            var textBlock = CurrentSession.FindFirst<TextBlock>();
+            var textBlock = ManagedInteropRuntime.GetObject<TextBlock>(CurrentSession.SmokeTextBlockHandle);
             if (!string.Equals(textBlock.Text, InitialSmokeText, StringComparison.Ordinal))
             {
                 return SmokeFail($"Expected initial text '{InitialSmokeText}', but found '{textBlock.Text}'.");
@@ -210,52 +160,14 @@ public static class AvaloniaBridge
         }
     }
 
-    private static string ReadUtf8String(IntPtr pointer, long length)
-    {
-        if (length == 0)
-        {
-            return string.Empty;
-        }
-
-        var bytes = new byte[checked((int)length)];
-        Marshal.Copy(pointer, bytes, 0, bytes.Length);
-        return Encoding.UTF8.GetString(bytes);
-    }
-
     private static AvaloniaSession CurrentSession
         => currentSession ?? throw new InvalidOperationException("Avalonia bridge session has not been initialized.");
 
     private sealed class AvaloniaSession
     {
-        private readonly Dictionary<int, object> objects = new();
         private readonly Dictionary<int, Action> clickHandlers = new();
-        private int nextHandle = 1;
 
-        public int Add(object value)
-        {
-            var handle = nextHandle++;
-            objects.Add(handle, value);
-            return handle;
-        }
-
-        public T Get<T>(int handle)
-            where T : class
-        {
-            if (!objects.TryGetValue(handle, out var value))
-            {
-                throw new KeyNotFoundException($"Avalonia object handle {handle} was not found.");
-            }
-
-            return value as T
-                ?? throw new InvalidOperationException($"Avalonia object handle {handle} is '{value.GetType().FullName}', not '{typeof(T).FullName}'.");
-        }
-
-        public T FindFirst<T>()
-            where T : class
-        {
-            return objects.Values.OfType<T>().FirstOrDefault()
-                ?? throw new InvalidOperationException($"No Avalonia object of type '{typeof(T).FullName}' has been created.");
-        }
+        public int SmokeTextBlockHandle { get; set; }
 
         public void RegisterClick(int buttonHandle, Action handler)
         {
@@ -267,6 +179,17 @@ public static class AvaloniaBridge
             var handler = clickHandlers.OrderBy(static pair => pair.Key).Select(static pair => pair.Value).FirstOrDefault()
                 ?? throw new InvalidOperationException("No Avalonia button click handler has been registered.");
             handler();
+        }
+    }
+
+    private sealed class AvaloniaEventSubscription(Action unsubscribe) : IDisposable
+    {
+        private Action? unsubscribe = unsubscribe;
+
+        public void Dispose()
+        {
+            var action = Interlocked.Exchange(ref unsubscribe, null);
+            action?.Invoke();
         }
     }
 }

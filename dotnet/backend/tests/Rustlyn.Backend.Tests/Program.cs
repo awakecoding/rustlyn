@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -18,9 +20,11 @@ RunTest("ValidBitcodeMagicIsRecognized", ValidBitcodeMagicIsRecognized, failures
 RunTest("InvalidBitcodeMagicIsRejected", InvalidBitcodeMagicIsRejected, failures);
 RunTest("ManagedHandleStoreTracksObjects", ManagedHandleStoreTracksObjects, failures);
 RunTest("ManagedHandleStoreTracksExceptions", ManagedHandleStoreTracksExceptions, failures);
+RunTest("ManagedHandleStoreTracksTasks", ManagedHandleStoreTracksTasks, failures);
 RunTest("ManagedHandleStoreRejectsInvalidHandles", ManagedHandleStoreRejectsInvalidHandles, failures);
 RunTest("InteropUtf8RoundTripsStrings", InteropUtf8RoundTripsStrings, failures);
 RunTest("ManagedInteropRuntimeExposesExceptionText", ManagedInteropRuntimeExposesExceptionText, failures);
+RunTest("ManagedInteropRuntimeExposesTaskLifecycle", ManagedInteropRuntimeExposesTaskLifecycle, failures);
 RunTest("InteropHandleNullReleaseSafety", InteropHandleNullReleaseSafety, failures);
 RunTest("InteropHandleDoubleReleaseSafety", InteropHandleDoubleReleaseSafety, failures);
 RunTest("InteropUtf16RoundTripsStrings", InteropUtf16RoundTripsStrings, failures);
@@ -30,6 +34,8 @@ RunTest("GeneratedBindingPrototypeUsesInteropHandles", GeneratedBindingPrototype
 RunTest("GeneratedBindingGeneratorMatchesFixture", GeneratedBindingGeneratorMatchesFixture, failures);
 RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapTargetsRuntimeHelpers, failures);
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
+RunTest("GeneratedAvaloniaBindingsReplaceHandwrittenBridge", GeneratedAvaloniaBindingsReplaceHandwrittenBridge, failures);
+RunTest("GeneratedPowerShellCmdletPackMapsPowerShellSdk", GeneratedPowerShellCmdletPackMapsPowerShellSdk, failures);
 RunTest("GeneratedBindingManifestListsSurface", GeneratedBindingManifestListsSurface, failures);
 RunTest("GeneratedBindingJsonManifestListsSurface", GeneratedBindingJsonManifestListsSurface, failures);
 RunTest("GeneratedBindingPackWritesDeterministicArtifacts", GeneratedBindingPackWritesDeterministicArtifacts, failures);
@@ -57,6 +63,23 @@ RunTest("LowererPreservesVtablePointerRelocations", LowererPreservesVtablePointe
 RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
 RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScannerFindsInstanceAndNativeTypes, failures);
 RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
+RunTest("RuntimeReferenceAssemblyDiscoveryFindsLatestPacks", RuntimeReferenceAssemblyDiscoveryFindsLatestPacks, failures);
+RunTest("RuntimeReferenceSurfaceScanReportsCoverage", RuntimeReferenceSurfaceScanReportsCoverage, failures);
+RunTest("RuntimeSurfaceDiffReportsTypeAndMemberChanges", RuntimeSurfaceDiffReportsTypeAndMemberChanges, failures);
+RunTest("RuntimeProjectionPackWritesPerTfmArtifacts", RuntimeProjectionPackWritesPerTfmArtifacts, failures);
+RunTest("RuntimeProjectionPackFiltersNamespaceForNarrowPacks", RuntimeProjectionPackFiltersNamespaceForNarrowPacks, failures);
+RunTest("RuntimeTypeProjectionClassifierClassifiesCoreShapes", RuntimeTypeProjectionClassifierClassifiesCoreShapes, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesMathBindings", RuntimeCallableBindingCompilerGeneratesMathBindings, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesEnvironmentAndPathBindings", RuntimeCallableBindingCompilerGeneratesEnvironmentAndPathBindings, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesConvertAndUriBindings", RuntimeCallableBindingCompilerGeneratesConvertAndUriBindings, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesConsoleGcAndOperatingSystemBindings", RuntimeCallableBindingCompilerGeneratesConsoleGcAndOperatingSystemBindings, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesValueWrapperBindings", RuntimeCallableBindingCompilerGeneratesValueWrapperBindings, failures);
+RunTest("RuntimeCallableBindingCompilerGeneratesTaskFutureBindings", RuntimeCallableBindingCompilerGeneratesTaskFutureBindings, failures);
+RunTest("RuntimeCallableCoverageGateRatchetsPromotedNamespaces", RuntimeCallableCoverageGateRatchetsPromotedNamespaces, failures);
+RunTest("RuntimeProjectionPackWritesCallableGlueArtifacts", RuntimeProjectionPackWritesCallableGlueArtifacts, failures);
+RunTest("BackendLoadsRuntimeBindingManifestSymbols", BackendLoadsRuntimeBindingManifestSymbols, failures);
+RunTest("TaskFutureProjectionPolicyRecognizesTaskResults", TaskFutureProjectionPolicyRecognizesTaskResults, failures);
+RunTest("RuntimeSurfaceGateRequiresDiagnosedMembers", RuntimeSurfaceGateRequiresDiagnosedMembers, failures);
 RunTest("BindingSurfaceScannerCreatesStaticScalarBindings", BindingSurfaceScannerCreatesStaticScalarBindings, failures);
 RunTest("BindingSurfaceScannerCreatesStaticObjectHandleBindings", BindingSurfaceScannerCreatesStaticObjectHandleBindings, failures);
 RunTest("StrictModeRejectsRawInstruction", StrictModeRejectsRawInstruction, failures);
@@ -83,7 +106,9 @@ RunTest("TranslationCacheRestoresArtifactWithoutReEmission", TranslationCacheRes
 RunTest("MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs", MsBuildSdkTargetsDeclareIncrementalInputsAndOutputs, failures);
 RunTest("DotNetNewTemplatesAreShapedCorrectly", DotNetNewTemplatesAreShapedCorrectly, failures);
 RunTest("BindingSurfaceMatchesDocumentedInventory", BindingSurfaceMatchesDocumentedInventory, failures);
+RunTest("BindingGenerationPolicyGatesHandwrittenBridgeSymbols", BindingGenerationPolicyGatesHandwrittenBridgeSymbols, failures);
 RunTest("NuGetPackagerWritesValidNupkgArchive", NuGetPackagerWritesValidNupkgArchive, failures);
+RunOptionalTest("RuntimeProjectionPackWritesCallableArtifactsForInstalledTfms", RuntimeProjectionPackWritesCallableArtifactsForInstalledTfms, failures);
 RunOptionalTest("AddSampleProducesModuleSummary", AddSampleProducesModuleSummary, failures);
 RunOptionalTest("AndSampleProducesModuleSummary", AndSampleProducesModuleSummary, failures);
 RunOptionalTest("ShlSampleProducesModuleSummary", ShlSampleProducesModuleSummary, failures);
@@ -931,6 +956,22 @@ static void ManagedHandleStoreTracksExceptions()
     Assert(store.Release(handle), "Expected releasing an exception handle to succeed.");
 }
 
+static void ManagedHandleStoreTracksTasks()
+{
+    var store = new ManagedHandleStore();
+    var task = Task.FromResult(42);
+    var handle = store.AddTask(task);
+
+    Assert(!handle.IsNull, "Expected allocated task handle to be non-null.");
+    Assert(store.Snapshot == new ManagedHandleSnapshot(0, 0, 1), "Expected task-handle snapshot to report one task and no objects or exceptions.");
+    Assert(ReferenceEquals(store.GetTask(handle), task), "Expected task handle to resolve the original task instance.");
+    Assert(store.TryGetTask(handle, out var resolved) && ReferenceEquals(resolved, task), "Expected TryGetTask to resolve the original task instance.");
+    ExpectException<InvalidOperationException>(() => store.GetObject<Task>(handle.Value));
+    ExpectException<InvalidOperationException>(() => store.Release(new ManagedObjectHandle(handle.Value)));
+    Assert(store.Release(handle), "Expected releasing a task handle to succeed.");
+    Assert(store.Snapshot.TotalCount == 0, "Expected empty handle snapshot after task release.");
+}
+
 static void ManagedHandleStoreRejectsInvalidHandles()
 {
     var store = new ManagedHandleStore();
@@ -940,6 +981,7 @@ static void ManagedHandleStoreRejectsInvalidHandles()
     Assert(!store.TryGetObject<object>(new ManagedObjectHandle(42), out _), "Expected TryGetObject to return false for missing handles.");
     ExpectException<ArgumentNullException>(() => store.AddObject(null!));
     ExpectException<ArgumentNullException>(() => store.AddException(null!));
+    ExpectException<ArgumentNullException>(() => store.AddTask(null!));
 }
 
 static void InteropUtf8RoundTripsStrings()
@@ -1020,6 +1062,57 @@ static void ManagedInteropRuntimeExposesExceptionText()
     }
 }
 
+static void ManagedInteropRuntimeExposesTaskLifecycle()
+{
+    ManagedInteropRuntime.Clear();
+    try
+    {
+        var pendingSource = new TaskCompletionSource<int>();
+        var pendingHandle = ManagedInteropRuntime.AddTaskHandle(pendingSource.Task);
+        Assert(ManagedInteropRuntime.GetTaskStatus(pendingHandle) == (int)ManagedTaskStatus.Pending, "Expected incomplete task handles to report Pending.");
+        Assert(ManagedInteropRuntime.GetTaskExceptionHandle(pendingHandle) == 0, "Expected pending task handles to have no exception handle.");
+        ExpectException<InvalidOperationException>(() => ManagedInteropRuntime.GetTaskInt32Result(pendingHandle));
+
+        pendingSource.SetResult(42);
+        Assert(ManagedInteropRuntime.GetTaskStatus(pendingHandle) == (int)ManagedTaskStatus.Succeeded, "Expected completed task handles to report Succeeded.");
+        Assert(ManagedInteropRuntime.GetTaskInt32Result(pendingHandle) == 42, "Expected task result extraction to return the completed Int32 result.");
+
+        var stringHandle = ManagedInteropRuntime.AddTaskHandle(Task.FromResult("done"));
+        var resultObjectHandle = ManagedInteropRuntime.GetTaskObjectResultHandle(stringHandle);
+        Assert(ManagedInteropRuntime.GetObject<string>(resultObjectHandle) == "done", "Expected task object-result extraction to allocate an object handle for the result.");
+
+        var boolHandle = ManagedInteropRuntime.AddValueTaskHandle(new ValueTask<bool>(true));
+        Assert(ManagedInteropRuntime.GetTaskBooleanResult(boolHandle) == 1, "Expected ValueTask<T> handles to extract boolean results as integer ABI values.");
+
+        var faultedHandle = ManagedInteropRuntime.AddTaskHandle(Task.FromException<int>(new InvalidOperationException("task failed")));
+        Assert(ManagedInteropRuntime.GetTaskStatus(faultedHandle) == (int)ManagedTaskStatus.Faulted, "Expected faulted task handles to report Faulted.");
+        var exceptionHandle = ManagedInteropRuntime.GetTaskExceptionHandle(faultedHandle);
+        Assert(ManagedInteropRuntime.GetExceptionMessage(exceptionHandle) == "task failed", "Expected faulted task handles to expose the inner exception.");
+        ExpectException<InvalidOperationException>(() => ManagedInteropRuntime.GetTaskInt32Result(faultedHandle));
+
+        var canceledHandle = ManagedInteropRuntime.AddTaskHandle(Task.FromCanceled<int>(new CancellationToken(canceled: true)));
+        Assert(ManagedInteropRuntime.GetTaskStatus(canceledHandle) == (int)ManagedTaskStatus.Canceled, "Expected canceled task handles to report Canceled.");
+        var canceledExceptionHandle = ManagedInteropRuntime.GetTaskExceptionHandle(canceledHandle);
+        Assert(ManagedInteropRuntime.GetExceptionTypeName(canceledExceptionHandle).EndsWith("TaskCanceledException", StringComparison.Ordinal), "Expected canceled task handles to expose TaskCanceledException.");
+        ExpectException<TaskCanceledException>(() => ManagedInteropRuntime.GetTaskInt32Result(canceledHandle));
+
+        Assert(ManagedInteropRuntime.TaskHandleCount == 5, $"Expected five task handles before release, but found {ManagedInteropRuntime.TaskHandleCount.ToString(CultureInfo.InvariantCulture)}.");
+        Assert(ManagedInteropRuntime.ReleaseTask(pendingHandle), "Expected releasing a pending/completed task handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseTask(stringHandle), "Expected releasing string task handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseTask(boolHandle), "Expected releasing ValueTask handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseTask(faultedHandle), "Expected releasing faulted task handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseTask(canceledHandle), "Expected releasing canceled task handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseObject(resultObjectHandle), "Expected releasing task object-result handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseException(exceptionHandle), "Expected releasing task exception handle to succeed.");
+        Assert(ManagedInteropRuntime.ReleaseException(canceledExceptionHandle), "Expected releasing canceled task exception handle to succeed.");
+        Assert(ManagedInteropRuntime.HandleCount == 0, $"Expected no runtime handles after task lifecycle release, but found {ManagedInteropRuntime.HandleCount.ToString(CultureInfo.InvariantCulture)}.");
+    }
+    finally
+    {
+        ManagedInteropRuntime.Clear();
+    }
+}
+
 static void InteropHandleNullReleaseSafety()
 {
     var store = new ManagedHandleStore();
@@ -1027,14 +1120,17 @@ static void InteropHandleNullReleaseSafety()
     Assert(!store.Release(0), "Expected releasing null handle (0) to return false without throwing.");
     Assert(!store.Release(0, ManagedHandleKind.Object), "Expected releasing null handle (0) with Object kind to return false.");
     Assert(!store.Release(0, ManagedHandleKind.Exception), "Expected releasing null handle (0) with Exception kind to return false.");
+    Assert(!store.Release(0, ManagedHandleKind.Task), "Expected releasing null handle (0) with Task kind to return false.");
     Assert(!store.Release(new ManagedObjectHandle(0)), "Expected releasing null ManagedObjectHandle to return false.");
     Assert(!store.Release(new ManagedExceptionHandle(0)), "Expected releasing null ManagedExceptionHandle to return false.");
+    Assert(!store.Release(new ManagedTaskHandle(0)), "Expected releasing null ManagedTaskHandle to return false.");
 
     ManagedInteropRuntime.Clear();
     try
     {
         Assert(!ManagedInteropRuntime.ReleaseObject(0), "Expected ManagedInteropRuntime.ReleaseObject(0) to return false without throwing.");
         Assert(!ManagedInteropRuntime.ReleaseException(0), "Expected ManagedInteropRuntime.ReleaseException(0) to return false without throwing.");
+        Assert(!ManagedInteropRuntime.ReleaseTask(0), "Expected ManagedInteropRuntime.ReleaseTask(0) to return false without throwing.");
     }
     finally
     {
@@ -1665,6 +1761,905 @@ static void BindingSurfaceScannerReportsUnsupportedShapes()
     Assert(
         unsupportedShapes.Any(static shape => shape.GetProperty("memberName").GetString() == nameof(ScannerUnsupportedProbe.OpenStream)),
         "JSON manifest should preserve unsupported member names.");
+}
+
+static void RuntimeReferenceAssemblyDiscoveryFindsLatestPacks()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), $"rustlyn-ref-pack-discovery-{Guid.NewGuid():N}");
+    try
+    {
+        CreateFakeReferencePack(tempRoot, "8.0.1", "net8.0");
+        CreateFakeReferencePack(tempRoot, "8.0.3", "net8.0");
+        CreateFakeReferencePack(tempRoot, "9.0.0-preview.1", "net9.0");
+        CreateFakeReferencePack(tempRoot, "9.0.0", "net9.0");
+
+        var discovery = RuntimeReferenceAssemblyDiscovery.Discover(["net8.0", "net9.0", "net10.0"], tempRoot);
+
+        Assert(discovery.Packs.Count == 2, "Discovery should return only target frameworks backed by a reference pack.");
+        Assert(
+            discovery.Packs.Single(static pack => pack.TargetFramework == "net8.0").PackVersion == "8.0.3",
+            "Discovery should choose the highest patch version for a target framework.");
+        Assert(
+            discovery.Packs.Single(static pack => pack.TargetFramework == "net9.0").PackVersion == "9.0.0",
+            "Discovery should prefer stable package versions over previews for the same version.");
+        Assert(
+            discovery.MissingTargets.Single().TargetFramework == "net10.0",
+            "Discovery should report missing requested target frameworks.");
+        Assert(
+            discovery.Packs.All(static pack => pack.AssemblyPaths.Count == 1),
+            "Discovery should return deterministic assembly inventories for selected packs.");
+    }
+    finally
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        if (Directory.Exists(tempRoot))
+        {
+            try
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+}
+
+static void RuntimeReferenceSurfaceScanReportsCoverage()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), $"rustlyn-ref-pack-scan-{Guid.NewGuid():N}");
+    try
+    {
+        CreateFakeReferencePack(tempRoot, "8.0.1", "net8.0");
+        var discovery = RuntimeReferenceAssemblyDiscovery.Discover(["net8.0"], tempRoot);
+        var report = RuntimeReferenceSurfaceScanner.ScanPack(discovery.Packs.Single());
+
+        Assert(report.TargetFramework == "net8.0", "Runtime scan should preserve the target framework.");
+        Assert(report.AssemblyCount == 1, "Runtime scan should report the scanned assembly count.");
+        Assert(report.ExportedTypeCount > 0, "Runtime scan should count public types.");
+        Assert(report.ScannedTypeCount > 0, "Runtime scan should count concrete public types inspected by the binding scanner.");
+        Assert(report.PublicMethodCount > 0, "Runtime scan should count public methods.");
+        Assert(report.ProjectedMemberCount > 0, "Runtime scan should count currently projectable members.");
+        Assert(
+            report.UnsupportedShapes.Any(static shape =>
+                shape.DisplayName.Contains(nameof(RuntimeScanPublicProbe.OpenStream), StringComparison.Ordinal) &&
+                shape.Reason.Contains("return type 'System.IO.Stream' is unsupported", StringComparison.Ordinal)),
+            "Runtime scan should preserve unsupported-shape diagnostics from the binding scanner.");
+        Assert(
+            report.UnsupportedShapesByReason.Any(static reason => reason.Reason == "unsupported-return-type"),
+            "Runtime scan should summarize unsupported-shape taxonomy.");
+        var publicProbe = report.Types.Single(static type => type.FullName.EndsWith(nameof(RuntimeScanPublicProbe), StringComparison.Ordinal));
+        Assert(
+            publicProbe.Members.Any(static member =>
+                member.Name == nameof(RuntimeScanPublicProbe.Double) &&
+                member.ProjectionStatus == "projected"),
+            "Runtime scan should record projected member manifest entries.");
+        Assert(
+            publicProbe.Members.Any(static member =>
+                member.Name == nameof(RuntimeScanPublicProbe.OpenStream) &&
+                member.ProjectionStatus == "rejected" &&
+                member.UnsupportedReasonCode == "unsupported-return-type"),
+            "Runtime scan should record rejected member manifest entries with reason codes.");
+        Assert(
+            publicProbe.Members.Any(static member =>
+                member.Name == nameof(RuntimeScanPublicProbe.AsyncDouble) &&
+                member.ProjectionStatus == "deferred" &&
+                member.UnsupportedReasonCode == "task-future" &&
+                member.UnsupportedReason!.Contains("System.Int32", StringComparison.Ordinal)),
+            "Runtime scan should record Task-returning members as deferred future bridge candidates.");
+
+        var scanSet = new RuntimeSurfaceScanSet([report], []);
+        var text = RuntimeSurfaceReportFormatter.GenerateText(scanSet);
+        Assert(text.Contains("Target framework: net8.0", StringComparison.Ordinal), "Text report should include the target framework.");
+        Assert(text.Contains("Unsupported shape reasons:", StringComparison.Ordinal), "Text report should include unsupported-shape summaries.");
+
+        using var json = JsonDocument.Parse(RuntimeSurfaceReportFormatter.GenerateJson(scanSet));
+        Assert(
+            json.RootElement.GetProperty("reports")[0].GetProperty("targetFramework").GetString() == "net8.0",
+            "JSON report should serialize scan reports with stable property names.");
+
+        using var manifestJson = JsonDocument.Parse(RuntimeSurfaceReportFormatter.GenerateManifestJson(scanSet));
+        var manifestRoot = manifestJson.RootElement[0];
+        Assert(manifestRoot.GetProperty("formatVersion").GetInt32() == BindingManifestVersions.ManifestFormatVersion, "Runtime manifest should use the current manifest schema.");
+        Assert(manifestRoot.GetProperty("targetFramework").GetString() == "net8.0", "Runtime manifest should include the target framework.");
+        Assert(
+            manifestRoot.GetProperty("runtimeSurface").GetProperty("types").EnumerateArray().Any(static type =>
+                type.GetProperty("fullName").GetString()!.EndsWith(nameof(RuntimeScanPublicProbe), StringComparison.Ordinal)),
+            "Runtime manifest should include type/member inventory.");
+    }
+    finally
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        if (Directory.Exists(tempRoot))
+        {
+            try
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+}
+
+static void RuntimeSurfaceDiffReportsTypeAndMemberChanges()
+{
+    var before = CreateRuntimeDiffReport(
+        "net8.0",
+        CreateRuntimeDiffType(
+            "Stable",
+            CreateRuntimeDiffMember("Stable", "Existing", "projected"),
+            CreateRuntimeDiffMember("Stable", "StatusChanged", "rejected", "unsupported-return-type")),
+        CreateRuntimeDiffType(
+            "RemovedType",
+            CreateRuntimeDiffMember("RemovedType", "Removed", "projected")));
+    var after = CreateRuntimeDiffReport(
+        "net9.0",
+        CreateRuntimeDiffType(
+            "Stable",
+            CreateRuntimeDiffMember("Stable", "Existing", "projected"),
+            CreateRuntimeDiffMember("Stable", "Added", "projected"),
+            CreateRuntimeDiffMember("Stable", "StatusChanged", "projected")),
+        CreateRuntimeDiffType(
+            "AddedType",
+            CreateRuntimeDiffMember("AddedType", "Added", "projected")));
+    var scanSet = new RuntimeSurfaceScanSet([before, after], []);
+    var diff = RuntimeSurfaceDiffReporter.CreateDiffs(scanSet).Diffs.Single();
+
+    Assert(diff.FromTargetFramework == "net8.0" && diff.ToTargetFramework == "net9.0", "Diff should preserve TFM pair names.");
+    Assert(diff.AddedTypes.SequenceEqual(["Test.AddedType"]), "Diff should report added types.");
+    Assert(diff.RemovedTypes.SequenceEqual(["Test.RemovedType"]), "Diff should report removed types.");
+    Assert(diff.AddedMembers.Contains("Test.Stable.Added()", StringComparer.Ordinal), "Diff should report added members.");
+    Assert(diff.RemovedMembers.Contains("Test.RemovedType.Removed()", StringComparer.Ordinal), "Diff should report removed members.");
+    Assert(
+        diff.StatusChanges.Single().DisplayName == "Test.Stable.StatusChanged()" &&
+        diff.StatusChanges.Single().FromStatus == "rejected" &&
+        diff.StatusChanges.Single().ToStatus == "projected",
+        "Diff should report projection status changes.");
+
+    var text = RuntimeSurfaceReportFormatter.GenerateDiffText(scanSet);
+    Assert(text.Contains("Diff: net8.0 -> net9.0", StringComparison.Ordinal), "Diff text should include TFM pair heading.");
+    using var json = JsonDocument.Parse(RuntimeSurfaceReportFormatter.GenerateDiffJson(scanSet));
+    Assert(
+        json.RootElement.GetProperty("diffs")[0].GetProperty("addedTypes").EnumerateArray().Single().GetString() == "Test.AddedType",
+        "Diff JSON should include added type names.");
+}
+
+static void RuntimeProjectionPackWritesPerTfmArtifacts()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), $"rustlyn-runtime-pack-ref-{Guid.NewGuid():N}");
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-runtime-pack-out-{Guid.NewGuid():N}");
+    try
+    {
+        CreateFakeReferencePack(tempRoot, "8.0.1", "net8.0");
+        CreateFakeReferencePack(tempRoot, "9.0.1", "net9.0");
+        var scanSet = RuntimeReferenceSurfaceScanner.ScanInstalledPacks(["net8.0", "net9.0"], tempRoot, namespaceFilter: null);
+
+        RuntimeProjectionPackGenerator.WritePacks(scanSet, packDirectory);
+
+        foreach (var targetFramework in new[] { "net8.0", "net9.0" })
+        {
+            var targetDirectory = Path.Combine(packDirectory, targetFramework);
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManifestFileName)), $"Expected runtime pack manifest for {targetFramework}.");
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.RustSystemModuleFileName)), $"Expected runtime pack Rust system module for {targetFramework}.");
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManagedGlueFileName)), $"Expected runtime pack managed glue for {targetFramework}.");
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.CoverageTextFileName)), $"Expected runtime pack coverage text for {targetFramework}.");
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.CoverageJsonFileName)), $"Expected runtime pack coverage JSON for {targetFramework}.");
+            Assert(File.Exists(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.UnsupportedFileName)), $"Expected runtime pack unsupported diagnostics for {targetFramework}.");
+
+            using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManifestFileName)));
+            Assert(manifest.RootElement.GetProperty("targetFramework").GetString() == targetFramework, $"Expected runtime pack manifest to preserve {targetFramework}.");
+        }
+
+        Assert(File.Exists(Path.Combine(packDirectory, RuntimeProjectionPackGenerator.DiffTextFileName)), "Expected multi-TFM runtime pack to include a text diff.");
+        Assert(File.Exists(Path.Combine(packDirectory, RuntimeProjectionPackGenerator.DiffJsonFileName)), "Expected multi-TFM runtime pack to include a JSON diff.");
+
+        using var summary = JsonDocument.Parse(File.ReadAllText(Path.Combine(packDirectory, RuntimeProjectionPackGenerator.SummaryFileName)));
+        var root = summary.RootElement;
+        Assert(root.GetProperty("formatVersion").GetInt32() == BindingManifestVersions.PackFormatVersion, "Expected runtime pack summary format version.");
+        Assert(root.GetProperty("targets").GetArrayLength() == 2, "Expected runtime pack summary to include one target entry per TFM.");
+        Assert(root.GetProperty("artifacts").GetArrayLength() == 14, "Expected runtime pack summary to include per-TFM artifacts plus diff artifacts.");
+        foreach (var artifact in root.GetProperty("artifacts").EnumerateArray())
+        {
+            var relativePath = artifact.GetProperty("path").GetString()
+                ?? throw new InvalidOperationException("Runtime pack summary artifact path was null.");
+            var bytes = File.ReadAllBytes(Path.Combine(packDirectory, relativePath));
+            var expectedHash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            Assert(artifact.GetProperty("byteCount").GetInt32() == bytes.Length, $"Expected runtime pack byte count for {relativePath} to match file contents.");
+            Assert(artifact.GetProperty("sha256").GetString() == expectedHash, $"Expected runtime pack hash for {relativePath} to match file contents.");
+        }
+    }
+    finally
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        if (Directory.Exists(tempRoot))
+        {
+            try
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
+}
+
+static void RuntimeProjectionPackFiltersNamespaceForNarrowPacks()
+{
+    const string namespaceFilter = "Rustlyn.Backend.Tests.Projections";
+    var tempRoot = Path.Combine(Path.GetTempPath(), $"rustlyn-narrow-pack-ref-{Guid.NewGuid():N}");
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-narrow-pack-out-{Guid.NewGuid():N}");
+    try
+    {
+        CreateFakeReferencePack(tempRoot, "8.0.1", "net8.0");
+        var scanSet = RuntimeReferenceSurfaceScanner.ScanInstalledPacks(["net8.0"], tempRoot, namespaceFilter);
+        var report = scanSet.Reports.Single();
+
+        Assert(
+            report.Types.Any(static type => type.FullName == "Rustlyn.Backend.Tests.Projections.RuntimePackNamespaceProbe"),
+            "Expected namespace-filtered runtime scan to include the narrow projection fixture.");
+        var staticProbe = report.Types.Single(static type => type.FullName == "Rustlyn.Backend.Tests.Projections.RuntimePackStaticProbe");
+        Assert(staticProbe.Kind == "static-class" && staticProbe.Members.Any(static member => member.Name == "Add"), "Expected namespace-filtered runtime scan to include public static class members.");
+        Assert(
+            report.Types.All(static type => type.Namespace == namespaceFilter),
+            "Expected namespace-filtered runtime scan to exclude types outside the requested namespace.");
+
+        RuntimeProjectionPackGenerator.WritePacks(scanSet, packDirectory);
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(packDirectory, "net8.0", RuntimeProjectionPackGenerator.ManifestFileName)));
+        var runtimeTypes = manifest.RootElement.GetProperty("runtimeSurface").GetProperty("types").EnumerateArray().ToArray();
+        Assert(runtimeTypes.Length == report.Types.Count, "Expected narrow runtime pack manifest to match filtered scan type count.");
+        Assert(
+            runtimeTypes.Any(static type => type.GetProperty("fullName").GetString() == "Rustlyn.Backend.Tests.Projections.RuntimePackNamespaceProbe"),
+            "Expected narrow runtime pack manifest to include the namespace-filtered fixture type.");
+    }
+    finally
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        if (Directory.Exists(tempRoot))
+        {
+            try
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
+}
+
+static void RuntimeTypeProjectionClassifierClassifiesCoreShapes()
+{
+    var scalar = RuntimeTypeProjectionClassifier.Classify(typeof(int));
+    Assert(scalar.Kind == "scalar" && scalar.RustType == "i32" && scalar.AbiType == "int" && scalar.IsCurrentBindingSupported, "Expected Int32 to classify as a supported scalar.");
+
+    var manifestScalar = RuntimeTypeProjectionClassifier.Classify("System.Double");
+    Assert(manifestScalar.Kind == "scalar" && manifestScalar.RustType == "f64" && manifestScalar.AbiType == "double" && manifestScalar.IsCurrentBindingSupported, "Expected manifest type names to classify without runtime Type instances.");
+
+    var managedString = RuntimeTypeProjectionClassifier.Classify(typeof(string));
+    Assert(managedString.Kind == "string" && managedString.RustType == "ManagedString" && managedString.AbiType == "i32" && managedString.IsCurrentBindingSupported, "Expected string to classify as a supported managed handle.");
+
+    var array = RuntimeTypeProjectionClassifier.Classify(typeof(int[]));
+    Assert(array.Kind == "array" && array.Element?.Kind == "scalar" && array.IsCurrentBindingSupported, "Expected Int32[] to classify as a supported array.");
+
+    var enumProjection = RuntimeTypeProjectionClassifier.Classify(typeof(StringComparison));
+    Assert(enumProjection.Kind == "enum" && enumProjection.AbiType == "i32" && enumProjection.IsCurrentBindingSupported, "Expected int-backed enums to classify as supported enum projections.");
+
+    var future = RuntimeTypeProjectionClassifier.Classify(typeof(System.Threading.Tasks.Task<int>));
+    Assert(future.Kind == "future" && future.IsCurrentBindingSupported && future.RustType == "TaskFuture<i32>", "Expected Task<int> to classify as a supported future projection once the task handle bridge exists.");
+
+    var span = RuntimeTypeProjectionClassifier.Classify(typeof(Span<int>));
+    Assert(span.Kind == "unsupported" && !span.IsCurrentBindingSupported && span.UnsupportedReason!.Contains("by-ref-like", StringComparison.Ordinal), "Expected Span<T> to classify as unsupported by-ref-like type.");
+
+    var stream = RuntimeTypeProjectionClassifier.Classify(typeof(Stream));
+    Assert(stream.Kind == "object" && !stream.IsCurrentBindingSupported, "Expected arbitrary reference types to classify as object handles that are not emitted by the current binding policy.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesMathBindings()
+{
+    var mathType = CreateRuntimeCallableType(
+        "System.Math",
+        "static-class",
+        CreateRuntimeCallableMethod("System.Math", "Abs", "System.Int32", "System.Int32"),
+        CreateRuntimeCallableMethod("System.Math", "Abs", "System.Double", "System.Double"),
+        CreateRuntimeCallableMethod("System.Math", "Abs", "System.Decimal", "System.Decimal"),
+        CreateRuntimeCallableMethod("System.Math", "BigMul", "System.Int64", "System.Int32", "System.Int32"));
+    var mathFType = CreateRuntimeCallableType(
+        "System.MathF",
+        "static-class",
+        CreateRuntimeCallableMethod("System.MathF", "Abs", "System.Single", "System.Single"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, mathFType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    Assert(callableDocument.Bindings.Count == 4, "Expected runtime callable compiler to emit supported Math/MathF scalar overloads and skip decimal.");
+    var absInt = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_math_abs_i32");
+    Assert(absInt.Helper == "BindgenSystemMathAbsI32", "Expected Math.Abs(int) helper name to be derived from the runtime symbol.");
+    Assert(absInt.ManagedTarget == "global::System.Math.Abs(value)", "Expected Math.Abs(int) managed target to be generated from manifest metadata.");
+    Assert(
+        absInt.RustExternLines.Single() == "fn rustlyn_bindgen_system_math_abs_i32(value: i32, exception_out: *mut i32) -> i32;",
+        "Expected Math.Abs(int) Rust extern ABI to use scalar parameters plus exception-out pointer.");
+    Assert(
+        absInt.Wrappers.Single().Signature == "pub fn abs_i32(value: i32) -> Result<i32, Exception>",
+        "Expected overloaded Math.Abs wrapper to include a deterministic type suffix.");
+
+    var bigMul = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_math_big_mul_i32_i32");
+    Assert(
+        bigMul.Wrappers.Single().Signature == "pub fn big_mul(x: i32, y: i32) -> Result<i64, Exception>",
+        "Expected unique Math.BigMul wrapper to keep the plain snake-case method name.");
+
+    var absFloat = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_mathf_abs_f32");
+    Assert(absFloat.Wrappers.Single().Container == nameof(RustWrapperContainer.MathF), "Expected MathF bindings to route into the MathF Rust wrapper container.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub fn abs_i32(value: i32) -> Result<i32, Exception>", StringComparison.Ordinal), "Expected generated Rust module to contain runtime-compiled Math wrapper.");
+    Assert(rust.Contains("pub fn abs(value: f32) -> Result<f32, Exception>", StringComparison.Ordinal), "Expected generated Rust module to contain runtime-compiled MathF wrapper.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("public static int BindgenSystemMathAbsI32(int value, IntPtr exceptionOutPointer)", StringComparison.Ordinal), "Expected generated managed glue to contain runtime-compiled Math helper.");
+    Assert(glue.Contains("return global::System.Math.Abs(value);", StringComparison.Ordinal), "Expected generated managed glue to call the runtime API.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesEnvironmentAndPathBindings()
+{
+    var environmentType = CreateRuntimeCallableType(
+        "System.Environment",
+        "static-class",
+        CreateRuntimeCallableProperty("System.Environment", "CurrentDirectory", "System.String"),
+        CreateRuntimeCallableMethod("System.Environment", "GetCommandLineArgs", "System.String[]"),
+        CreateRuntimeCallableProperty("System.Environment", "ProcessorCount", "System.Int32"));
+    var directoryType = CreateRuntimeCallableType(
+        "System.IO.Directory",
+        "static-class",
+        CreateRuntimeCallableMethod("System.IO.Directory", "GetCurrentDirectory", "System.String"),
+        CreateRuntimeCallableMethod("System.IO.Directory", "GetFiles", "System.String[]", "System.String", "System.String"));
+    var fileType = CreateRuntimeCallableType(
+        "System.IO.File",
+        "static-class",
+        CreateRuntimeCallableMethod("System.IO.File", "ReadAllLines", "System.String[]", "System.String"));
+    var pathType = CreateRuntimeCallableType(
+        "System.IO.Path",
+        "static-class",
+        CreateRuntimeCallableMethod("System.IO.Path", "Combine", "System.String", "System.String", "System.String"),
+        CreateRuntimeCallableMethod("System.IO.Path", "HasExtension", "System.Boolean", "System.String"),
+        CreateRuntimeCallableMethod("System.IO.Path", "GetTempPath", "System.String"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", environmentType, directoryType, fileType, pathType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    var currentDirectory = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_environment_current_directory_void");
+    Assert(currentDirectory.ManagedResultKind == "object-handle", "Expected Environment.CurrentDirectory to return a managed string handle.");
+    Assert(currentDirectory.ManagedTarget == "global::System.Environment.CurrentDirectory", "Expected Environment.CurrentDirectory target to be property access.");
+    Assert(
+        currentDirectory.Wrappers.Single().Signature == "pub fn current_directory() -> Result<ManagedString, Exception>",
+        "Expected Environment.CurrentDirectory wrapper to return ManagedString.");
+
+    var args = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_environment_get_command_line_args_void");
+    Assert(
+        args.Wrappers.Single().Signature == "pub fn get_command_line_args() -> Result<ManagedStringArray, Exception>",
+        "Expected Environment.GetCommandLineArgs wrapper to return ManagedStringArray.");
+
+    var getFiles = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_io_directory_get_files_string_string");
+    Assert(
+        getFiles.ManagedTarget == "global::System.IO.Directory.GetFiles(ManagedInteropRuntime.GetObject<string>(xHandle), ManagedInteropRuntime.GetObject<string>(yHandle))",
+        "Expected Directory.GetFiles managed target to unwrap managed string handles.");
+    Assert(
+        getFiles.Wrappers.Single().Signature == "pub fn get_files(x: &ManagedString, y: &ManagedString) -> Result<ManagedStringArray, Exception>",
+        "Expected Directory.GetFiles wrapper to return ManagedStringArray.");
+
+    var readAllLines = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_io_file_read_all_lines_string");
+    Assert(
+        readAllLines.ManagedTarget == "global::System.IO.File.ReadAllLines(ManagedInteropRuntime.GetObject<string>(valueHandle))",
+        "Expected File.ReadAllLines managed target to unwrap managed string handles.");
+    Assert(
+        readAllLines.Wrappers.Single().Signature == "pub fn read_all_lines(value: &ManagedString) -> Result<ManagedStringArray, Exception>",
+        "Expected File.ReadAllLines wrapper to return ManagedStringArray.");
+
+    var combine = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_io_path_combine_string_string");
+    Assert(
+        combine.ManagedTarget == "global::System.IO.Path.Combine(ManagedInteropRuntime.GetObject<string>(xHandle), ManagedInteropRuntime.GetObject<string>(yHandle))",
+        "Expected Path.Combine managed target to unwrap managed string handles.");
+    Assert(
+        combine.Wrappers.Single().Signature == "pub fn combine(x: &ManagedString, y: &ManagedString) -> Result<ManagedString, Exception>",
+        "Expected Path.Combine wrapper to accept managed string handles and return a managed string.");
+    Assert(
+        combine.Wrappers.Single().CallArguments.SequenceEqual(["x.handle()", "y.handle()"]),
+        "Expected Path.Combine wrapper to pass object handles to the extern ABI.");
+
+    var hasExtension = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_io_path_has_extension_string");
+    Assert(hasExtension.ManagedResultKind == "boolean-as-int", "Expected Path.HasExtension bool return to use boolean-as-int managed result policy.");
+    Assert(
+        hasExtension.Wrappers.Single().Signature == "pub fn has_extension(value: &ManagedString) -> Result<bool, Exception>",
+        "Expected Path.HasExtension wrapper to return bool.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub fn current_directory() -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Environment wrapper.");
+    Assert(rust.Contains("pub fn get_files(x: &ManagedString, y: &ManagedString) -> Result<ManagedStringArray, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Directory wrapper.");
+    Assert(rust.Contains("pub fn read_all_lines(value: &ManagedString) -> Result<ManagedStringArray, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include File wrapper.");
+    Assert(rust.Contains("pub fn combine(x: &ManagedString, y: &ManagedString) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Path wrapper.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.Environment.CurrentDirectory);", StringComparison.Ordinal), "Expected generated glue to handle Environment string property.");
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.IO.Directory.GetFiles(ManagedInteropRuntime.GetObject<string>(xHandle), ManagedInteropRuntime.GetObject<string>(yHandle)));", StringComparison.Ordinal), "Expected generated glue to handle Directory string-array method.");
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.IO.File.ReadAllLines(ManagedInteropRuntime.GetObject<string>(valueHandle)));", StringComparison.Ordinal), "Expected generated glue to handle File string-array method.");
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.IO.Path.Combine(ManagedInteropRuntime.GetObject<string>(xHandle), ManagedInteropRuntime.GetObject<string>(yHandle)));", StringComparison.Ordinal), "Expected generated glue to handle Path string method.");
+    Assert(glue.Contains("return global::System.IO.Path.HasExtension(ManagedInteropRuntime.GetObject<string>(valueHandle))", StringComparison.Ordinal), "Expected generated glue to handle Path bool method.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesConvertAndUriBindings()
+{
+    var convertType = CreateRuntimeCallableType(
+        "System.Convert",
+        "static-class",
+        CreateRuntimeCallableMethod("System.Convert", "ToInt32", "System.Int32", "System.String"),
+        CreateRuntimeCallableMethod("System.Convert", "ToString", "System.String", "System.Int32"),
+        CreateRuntimeCallableMethod("System.Convert", "ToBoolean", "System.Boolean", "System.String"));
+    var uriType = CreateRuntimeCallableType(
+        "System.Uri",
+        "class",
+        CreateRuntimeCallableMethod("System.Uri", "EscapeDataString", "System.String", "System.String"),
+        CreateRuntimeCallableMethod("System.Uri", "IsWellFormedUriString", "System.Boolean", "System.String", "System.UriKind"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", convertType, uriType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    var toInt32 = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_convert_to_int32_string");
+    Assert(toInt32.Wrappers.Single().Container == nameof(RustWrapperContainer.Convert), "Expected Convert bindings to route into the Convert Rust wrapper container.");
+    Assert(
+        toInt32.ManagedTarget == "global::System.Convert.ToInt32(ManagedInteropRuntime.GetObject<string>(valueHandle))",
+        "Expected Convert.ToInt32(string) managed target to unwrap managed string handles.");
+    Assert(
+        toInt32.Wrappers.Single().Signature == "pub fn to_int32(value: &ManagedString) -> Result<i32, Exception>",
+        "Expected Convert.ToInt32(string) wrapper to accept a managed string handle.");
+
+    var toString = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_convert_to_string_i32");
+    Assert(
+        toString.Wrappers.Single().Signature == "pub fn to_string(value: i32) -> Result<ManagedString, Exception>",
+        "Expected Convert.ToString(int) wrapper to return a managed string.");
+
+    var toBoolean = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_convert_to_boolean_string");
+    Assert(toBoolean.ManagedResultKind == "boolean-as-int", "Expected Convert.ToBoolean(string) bool return to use boolean-as-int managed result policy.");
+
+    var escape = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_uri_escape_data_string_string");
+    Assert(escape.Wrappers.Single().Container == nameof(RustWrapperContainer.Uri), "Expected Uri bindings to route into the Uri Rust wrapper container.");
+    Assert(
+        escape.Wrappers.Single().Signature == "pub fn escape_data_string(value: &ManagedString) -> Result<ManagedString, Exception>",
+        "Expected Uri.EscapeDataString wrapper to accept and return managed string handles.");
+    Assert(
+        !callableDocument.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_system_uri_is_well_formed_uri_string_string_object"),
+        "Expected Uri members with unsupported enum metadata in string-only fixtures to remain deferred.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub mod convert", StringComparison.Ordinal), "Expected generated Rust module to include Convert module.");
+    Assert(rust.Contains("pub fn to_int32(value: &ManagedString) -> Result<i32, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Convert wrapper.");
+    Assert(rust.Contains("pub mod uri", StringComparison.Ordinal), "Expected generated Rust module to include Uri module.");
+    Assert(rust.Contains("pub fn escape_data_string(value: &ManagedString) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Uri wrapper.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("return global::System.Convert.ToInt32(ManagedInteropRuntime.GetObject<string>(valueHandle));", StringComparison.Ordinal), "Expected generated glue to call Convert.ToInt32.");
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.Uri.EscapeDataString(ManagedInteropRuntime.GetObject<string>(valueHandle)));", StringComparison.Ordinal), "Expected generated glue to call Uri.EscapeDataString.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesConsoleGcAndOperatingSystemBindings()
+{
+    var consoleType = CreateRuntimeCallableType(
+        "System.Console",
+        "static-class",
+        CreateRuntimeCallableMethod("System.Console", "WriteLine", "System.Void", "System.String"),
+        CreateRuntimeCallableMethod("System.Console", "ReadLine", "System.String"));
+    var gcType = CreateRuntimeCallableType(
+        "System.GC",
+        "static-class",
+        CreateRuntimeCallableMethod("System.GC", "Collect", "System.Void"),
+        CreateRuntimeCallableMethod("System.GC", "GetTotalMemory", "System.Int64", "System.Boolean"));
+    var operatingSystemType = CreateRuntimeCallableType(
+        "System.OperatingSystem",
+        "static-class",
+        CreateRuntimeCallableMethod("System.OperatingSystem", "IsWindows", "System.Boolean"),
+        CreateRuntimeCallableMethod("System.OperatingSystem", "IsBrowserVersionAtLeast", "System.Boolean", "System.Int32", "System.Int32", "System.Int32", "System.Int32"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", consoleType, gcType, operatingSystemType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    var writeLine = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_console_write_line_string");
+    Assert(writeLine.ManagedResultKind == "void-call", "Expected Console.WriteLine to use void-call managed result policy.");
+    Assert(writeLine.ReturnType == "int", "Expected void managed calls to return an exception status integer over the ABI.");
+    Assert(
+        writeLine.RustExternLines.Single() == "fn rustlyn_bindgen_system_console_write_line_string(value_handle: i32, exception_out: *mut i32) -> i32;",
+        "Expected Console.WriteLine Rust extern ABI to return an exception status integer.");
+    Assert(
+        writeLine.Wrappers.Single().Signature == "pub fn write_line(value: &ManagedString) -> Result<(), Exception>",
+        "Expected Console.WriteLine wrapper to return unit.");
+
+    var readLine = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_console_read_line_void");
+    Assert(readLine.Wrappers.Single().Container == nameof(RustWrapperContainer.Console), "Expected Console.ReadLine to route into the Console module.");
+    Assert(
+        readLine.Wrappers.Single().Signature == "pub fn read_line() -> Result<ManagedString, Exception>",
+        "Expected Console.ReadLine wrapper to return a managed string.");
+
+    var collect = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_gc_collect_void");
+    Assert(collect.Wrappers.Single().Container == nameof(RustWrapperContainer.Gc), "Expected GC bindings to route into the gc module.");
+    Assert(
+        collect.Wrappers.Single().Signature == "pub fn collect() -> Result<(), Exception>",
+        "Expected GC.Collect wrapper to return unit.");
+
+    var getTotalMemory = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_gc_get_total_memory_bool");
+    Assert(
+        getTotalMemory.ManagedTarget == "global::System.GC.GetTotalMemory(value != 0)",
+        "Expected bool parameters to be converted from ABI integers in managed glue.");
+    Assert(
+        getTotalMemory.Wrappers.Single().CallArguments.Single() == "if value { 1 } else { 0 }",
+        "Expected bool parameters to be converted into ABI integers in Rust wrappers.");
+
+    var isWindows = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_operatingsystem_is_windows_void");
+    Assert(isWindows.ManagedResultKind == "boolean-as-int", "Expected OperatingSystem.IsWindows bool return to use boolean-as-int policy.");
+    Assert(
+        isWindows.Wrappers.Single().Container == nameof(RustWrapperContainer.OperatingSystem),
+        "Expected OperatingSystem bindings to route into the operating_system module.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub fn write_line(value: &ManagedString) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Console.WriteLine wrapper.");
+    Assert(rust.Contains("pub mod gc", StringComparison.Ordinal), "Expected generated Rust module to include gc module.");
+    Assert(rust.Contains("pub fn get_total_memory(value: bool) -> Result<i64, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include bool-parameter GC wrapper.");
+    Assert(rust.Contains("pub mod operating_system", StringComparison.Ordinal), "Expected generated Rust module to include operating_system module.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("global::System.Console.WriteLine(ManagedInteropRuntime.GetObject<string>(valueHandle));", StringComparison.Ordinal), "Expected generated glue to call Console.WriteLine.");
+    Assert(glue.Contains("global::System.GC.GetTotalMemory(value != 0);", StringComparison.Ordinal), "Expected generated glue to call GC.GetTotalMemory with bool conversion.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesValueWrapperBindings()
+{
+    var guidType = CreateRuntimeCallableType(
+        "System.Guid",
+        "struct",
+        CreateRuntimeCallableMethod("System.Guid", "NewGuid", "System.Guid"),
+        CreateRuntimeCallableMethod("System.Guid", "Parse", "System.Guid", "System.String"));
+    var timeSpanType = CreateRuntimeCallableType(
+        "System.TimeSpan",
+        "struct",
+        CreateRuntimeCallableMethod("System.TimeSpan", "FromSeconds", "System.TimeSpan", "System.Double"),
+        CreateRuntimeCallableMethod("System.TimeSpan", "Compare", "System.Int32", "System.TimeSpan", "System.TimeSpan"));
+    var dateTimeOffsetType = CreateRuntimeCallableType(
+        "System.DateTimeOffset",
+        "struct",
+        CreateRuntimeCallableProperty("System.DateTimeOffset", "Now", "System.DateTimeOffset"),
+        CreateRuntimeCallableMethod("System.DateTimeOffset", "FromUnixTimeSeconds", "System.DateTimeOffset", "System.Int64"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", guidType, timeSpanType, dateTimeOffsetType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    var newGuid = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_guid_new_guid_void");
+    Assert(newGuid.ManagedResultKind == "object-handle", "Expected Guid.NewGuid to return a handle-backed value wrapper.");
+    Assert(
+        newGuid.Wrappers.Single().Signature == "pub fn new_guid() -> Result<ManagedGuid, Exception>",
+        "Expected Guid.NewGuid wrapper to return ManagedGuid.");
+
+    var parseGuid = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_guid_parse_string");
+    Assert(
+        parseGuid.ManagedTarget == "global::System.Guid.Parse(ManagedInteropRuntime.GetObject<string>(valueHandle))",
+        "Expected Guid.Parse managed target to unwrap managed string handles.");
+
+    var fromSeconds = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_timespan_from_seconds_f64");
+    Assert(
+        fromSeconds.Wrappers.Single().Signature == "pub fn from_seconds(value: f64) -> Result<ManagedTimeSpan, Exception>",
+        "Expected TimeSpan.FromSeconds wrapper to return ManagedTimeSpan.");
+
+    var compare = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_timespan_compare_time_span_time_span");
+    Assert(
+        compare.ManagedTarget == "global::System.TimeSpan.Compare(ManagedInteropRuntime.GetObject<global::System.TimeSpan>(xHandle), ManagedInteropRuntime.GetObject<global::System.TimeSpan>(yHandle))",
+        "Expected TimeSpan.Compare managed target to unwrap handle-backed value wrappers.");
+    Assert(
+        compare.Wrappers.Single().Signature == "pub fn compare(x: &ManagedTimeSpan, y: &ManagedTimeSpan) -> Result<i32, Exception>",
+        "Expected TimeSpan.Compare wrapper to accept handle-backed value wrappers.");
+
+    var now = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_datetimeoffset_now_void");
+    Assert(
+        now.Wrappers.Single().Signature == "pub fn now() -> Result<ManagedDateTimeOffset, Exception>",
+        "Expected DateTimeOffset.Now wrapper to return ManagedDateTimeOffset.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub fn new_guid() -> Result<ManagedGuid, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include Guid wrapper.");
+    Assert(rust.Contains("pub fn from_seconds(value: f64) -> Result<ManagedTimeSpan, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include TimeSpan wrapper.");
+    Assert(rust.Contains("pub fn now() -> Result<ManagedDateTimeOffset, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include DateTimeOffset wrapper.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.Guid.NewGuid());", StringComparison.Ordinal), "Expected generated glue to box Guid return values into object handles.");
+    Assert(glue.Contains("return ManagedInteropRuntime.AddObjectHandle(global::System.DateTimeOffset.Now);", StringComparison.Ordinal), "Expected generated glue to box DateTimeOffset properties into object handles.");
+}
+
+static void RuntimeCallableBindingCompilerGeneratesTaskFutureBindings()
+{
+    var taskType = CreateRuntimeCallableType(
+        "System.Threading.Tasks.Task",
+        "static-class",
+        CreateRuntimeCallableProperty("System.Threading.Tasks.Task", "CompletedTask", "System.Threading.Tasks.Task"),
+        CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "Delay", "System.Threading.Tasks.Task", "System.Int32"),
+        CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "FromRustlynInt32", "System.Threading.Tasks.Task<System.Int32>"),
+        CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "FromRustlynStream", "System.Threading.Tasks.Task<System.IO.Stream>"));
+    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", taskType));
+
+    var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
+
+    var completedTask = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_threading_tasks_task_completed_task_void");
+    Assert(completedTask.ManagedResultKind == "task-handle", "Expected Task.CompletedTask to return a task handle.");
+    Assert(
+        completedTask.Wrappers.Single().Signature == "pub fn completed_task() -> Result<TaskFuture<()>, Exception>",
+        "Expected Task.CompletedTask wrapper to return a void TaskFuture.");
+
+    var delay = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_threading_tasks_task_delay_i32");
+    Assert(delay.ManagedTarget == "global::System.Threading.Tasks.Task.Delay(value)", "Expected Task.Delay target to call the runtime API.");
+    Assert(
+        delay.Wrappers.Single().Signature == "pub fn delay(value: i32) -> Result<TaskFuture<()>, Exception>",
+        "Expected Task.Delay wrapper to return a void TaskFuture.");
+
+    var intFuture = callableDocument.Bindings.Single(static binding => binding.Symbol == "rustlyn_bindgen_system_threading_tasks_task_from_rustlyn_int32_void");
+    Assert(
+        intFuture.Wrappers.Single().Signature == "pub fn from_rustlyn_int32() -> Result<TaskFuture<i32>, Exception>",
+        "Expected Task<T> wrappers with supported scalar results to return typed TaskFuture<T>.");
+    Assert(
+        !callableDocument.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_system_threading_tasks_task_from_rustlyn_stream_void"),
+        "Expected Task<T> wrappers with unsupported object results to remain deferred.");
+
+    var rust = RustBindingGenerator.GenerateSystemModule(callableDocument);
+    Assert(rust.Contains("pub struct TaskFuture<T>", StringComparison.Ordinal), "Expected generated Rust module to include task future support.");
+    Assert(rust.Contains("fn rustlyn_bindgen_task_status(task_handle: i32) -> i32;", StringComparison.Ordinal), "Expected generated Rust module to include task status bridge extern.");
+    Assert(rust.Contains("pub fn try_complete(&self) -> Result<Option<i32>, Exception>", StringComparison.Ordinal), "Expected generated Rust module to include scalar future completion extraction.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(callableDocument);
+    Assert(glue.Contains("return ManagedInteropRuntime.AddTaskHandle(global::System.Threading.Tasks.Task.Delay(value));", StringComparison.Ordinal), "Expected generated managed glue to store task handles.");
+}
+
+static void RuntimeCallableCoverageGateRatchetsPromotedNamespaces()
+{
+    var mathType = CreateRuntimeCallableType(
+        "System.Math",
+        "static-class",
+        CreateRuntimeCallableMethod("System.Math", "Abs", "System.Int32", "System.Int32"));
+    var pathType = CreateRuntimeCallableType(
+        "System.IO.Path",
+        "static-class",
+        CreateRuntimeCallableMethod("System.IO.Path", "GetTempPath", "System.String"));
+    var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, pathType)));
+
+    var passing = RuntimeCallableCoverageGate.Evaluate(
+        document,
+        [
+            new RuntimeCallableCoverageRequirement("System", 1),
+            new RuntimeCallableCoverageRequirement("System.IO", 1)
+        ]);
+    Assert(passing.Passed, "Expected callable coverage gate to pass promoted namespace minimums.");
+    Assert(passing.Coverage.CallableBindingCount == 2, "Expected callable coverage to count generated binding records.");
+    Assert(passing.Coverage.Namespaces.Any(static ns => ns.Namespace == "System.IO" && ns.CallableBindingCount == 1), "Expected callable coverage to group bindings by managed namespace.");
+
+    var failing = RuntimeCallableCoverageGate.Evaluate(document, [new RuntimeCallableCoverageRequirement("System.IO", 2)]);
+    Assert(!failing.Passed, "Expected callable coverage gate to fail namespace regressions.");
+    Assert(failing.Diagnostics.Single().ActualCallableBindings == 1, "Expected callable coverage diagnostic to report actual binding count.");
+}
+
+static void RuntimeProjectionPackWritesCallableGlueArtifacts()
+{
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-callable-pack-out-{Guid.NewGuid():N}");
+    try
+    {
+        var mathType = CreateRuntimeCallableType(
+            "System.Math",
+            "static-class",
+            CreateRuntimeCallableMethod("System.Math", "Abs", "System.Int32", "System.Int32"));
+        var scanSet = new RuntimeSurfaceScanSet([CreateRuntimeDiffReport("net8.0", mathType)], []);
+
+        RuntimeProjectionPackGenerator.WritePacks(scanSet, packDirectory);
+
+        var targetDirectory = Path.Combine(packDirectory, "net8.0");
+        var manifestText = File.ReadAllText(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManifestFileName));
+        Assert(manifestText.Contains("\"symbol\": \"rustlyn_bindgen_system_math_abs_i32\"", StringComparison.Ordinal), "Expected runtime pack manifest to include callable Math binding records.");
+
+        var rust = File.ReadAllText(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.RustSystemModuleFileName));
+        Assert(rust.Contains("pub fn abs(value: i32) -> Result<i32, Exception>", StringComparison.Ordinal), "Expected runtime pack Rust artifact to include callable Math wrapper.");
+
+        var glue = File.ReadAllText(Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManagedGlueFileName));
+        Assert(glue.Contains("public static int BindgenSystemMathAbsI32(int value, IntPtr exceptionOutPointer)", StringComparison.Ordinal), "Expected runtime pack managed glue artifact to include callable Math helper.");
+
+        using var summary = JsonDocument.Parse(File.ReadAllText(Path.Combine(packDirectory, RuntimeProjectionPackGenerator.SummaryFileName)));
+        var artifactKinds = summary.RootElement.GetProperty("artifacts").EnumerateArray()
+            .Select(static artifact => artifact.GetProperty("kind").GetString())
+            .ToArray();
+        Assert(artifactKinds.Contains("runtime-rust-system-module"), "Expected runtime pack summary to include Rust system module artifact.");
+        Assert(artifactKinds.Contains("runtime-managed-glue"), "Expected runtime pack summary to include managed glue artifact.");
+        var target = summary.RootElement.GetProperty("targets").EnumerateArray().Single();
+        Assert(target.GetProperty("callableBindingCount").GetInt32() == 1, "Expected runtime pack summary to include callable binding count.");
+        Assert(
+            target.GetProperty("callableNamespaces").EnumerateArray().Any(static ns => ns.GetProperty("namespace").GetString() == "System"),
+            "Expected runtime pack summary to include callable namespace coverage.");
+    }
+    finally
+    {
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
+}
+
+static void RuntimeProjectionPackWritesCallableArtifactsForInstalledTfms()
+{
+    var discovery = RuntimeReferenceAssemblyDiscovery.Discover(RuntimeReferenceAssemblyDiscovery.DefaultTargetFrameworks);
+    if (discovery.MissingTargets.Count > 0)
+    {
+        throw new SkipTestException($"Reference packs are missing for: {string.Join(", ", discovery.MissingTargets.Select(static target => target.TargetFramework))}.");
+    }
+
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-installed-callable-pack-{Guid.NewGuid():N}");
+    try
+    {
+        var scanSet = RuntimeReferenceSurfaceScanner.ScanInstalledPacks(RuntimeReferenceAssemblyDiscovery.DefaultTargetFrameworks, dotnetRoot: null, namespaceFilter: "System");
+        RuntimeProjectionPackGenerator.WritePacks(scanSet, packDirectory);
+
+        foreach (var targetFramework in RuntimeReferenceAssemblyDiscovery.DefaultTargetFrameworks)
+        {
+            var targetDirectory = Path.Combine(packDirectory, targetFramework);
+            var manifestPath = Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManifestFileName);
+            var rustPath = Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.RustSystemModuleFileName);
+            var gluePath = Path.Combine(targetDirectory, RuntimeProjectionPackGenerator.ManagedGlueFileName);
+            Assert(File.Exists(manifestPath), $"Expected installed-pack callable manifest for {targetFramework}.");
+            Assert(File.Exists(rustPath), $"Expected installed-pack callable Rust artifact for {targetFramework}.");
+            Assert(File.Exists(gluePath), $"Expected installed-pack callable managed glue artifact for {targetFramework}.");
+            var manifestText = File.ReadAllText(manifestPath);
+            Assert(manifestText.Contains("rustlyn_bindgen_system_math_abs_i32", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Math binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_console_write_line_string", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Console binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_environment_current_directory_void", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Environment binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_convert_to_int32_string", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Convert binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_datetimeoffset_now_void", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.DateTimeOffset binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_gc_collect_void", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.GC binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_guid_new_guid_void", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Guid binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_timespan_from_seconds_f64", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.TimeSpan binding.");
+            Assert(manifestText.Contains("rustlyn_bindgen_system_uri_escape_data_string_string", StringComparison.Ordinal), $"Expected {targetFramework} manifest to include callable System.Uri binding.");
+        }
+
+        using var summary = JsonDocument.Parse(File.ReadAllText(Path.Combine(packDirectory, RuntimeProjectionPackGenerator.SummaryFileName)));
+        Assert(summary.RootElement.GetProperty("targets").GetArrayLength() == RuntimeReferenceAssemblyDiscovery.DefaultTargetFrameworks.Count, "Expected installed-pack callable smoke to include all requested TFMs.");
+        Assert(
+            summary.RootElement.GetProperty("targets").EnumerateArray().All(static target => target.GetProperty("callableBindingCount").GetInt32() > 0),
+            "Expected every installed-pack target to report callable binding coverage.");
+    }
+    finally
+    {
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
+}
+
+static void BackendLoadsRuntimeBindingManifestSymbols()
+{
+    var tempDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-runtime-symbol-map-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDirectory);
+    try
+    {
+        var mathType = CreateRuntimeCallableType(
+            "System.Math",
+            "static-class",
+            CreateRuntimeCallableMethod("System.Math", "Abs", "System.Int32", "System.Int32"));
+        var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType)));
+        var outputAssembly = Path.Combine(tempDirectory, "RuntimeBindingProbe.dll");
+        var module = new LoweredModule(
+            [
+                new LoweredFunction(
+                    "rustlyn_runtime_binding_probe",
+                    "i32",
+                    [],
+                    [
+                        new LoweredBlock(
+                            "entry",
+                            [
+                                new LoweredCallInstruction(
+                                    "%result",
+                                    "i32",
+                                    "rustlyn_bindgen_system_math_abs_i32",
+                                    [new LoweredArgument("i32", "-5"), new LoweredArgument("ptr", "0")]),
+                                new LoweredReturnInstruction("i32", "%result")
+                            ])
+                    ])
+            ],
+            Globals: []);
+
+        LoweredAssemblyEmitter.EmitModule(module, outputAssembly, new EmitOptions { BindingManifests = [document] });
+
+        using var stream = File.OpenRead(outputAssembly);
+        using var peReader = new PEReader(stream);
+        var reader = peReader.GetMetadataReader();
+        var memberReferenceNames = reader.MemberReferences
+            .Select(handle => reader.GetMemberReference(handle))
+            .Select(memberReference => reader.GetString(memberReference.Name))
+            .ToArray();
+        Assert(memberReferenceNames.Contains("BindgenSystemMathAbsI32"), "Expected backend symbol map to load runtime-generated binding helper from the manifest.");
+    }
+    finally
+    {
+        if (Directory.Exists(tempDirectory))
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+}
+
+static void TaskFutureProjectionPolicyRecognizesTaskResults()
+{
+    var voidTask = TaskFutureProjectionPolicy.AnalyzeReturnType(typeof(System.Threading.Tasks.Task));
+    Assert(voidTask.IsTaskLike && !voidTask.IsGeneric && voidTask.FutureKind == "future-void", "Expected Task to project as a void future candidate.");
+
+    var intTask = TaskFutureProjectionPolicy.AnalyzeReturnType(typeof(System.Threading.Tasks.Task<int>));
+    Assert(intTask.IsTaskLike && intTask.IsGeneric && intTask.ResultType == "System.Int32" && intTask.ResultTypeIsBindable, "Expected Task<int> to project as a bindable result future candidate.");
+
+    var manifestTask = TaskFutureProjectionPolicy.AnalyzeReturnType("System.Threading.Tasks.Task<System.Int32>");
+    Assert(manifestTask.IsTaskLike && manifestTask.IsGeneric && manifestTask.ResultType == "System.Int32" && manifestTask.ResultTypeIsBindable, "Expected manifest task type names to project as bindable result future candidates.");
+
+    var streamTask = TaskFutureProjectionPolicy.AnalyzeReturnType(typeof(System.Threading.Tasks.Task<Stream>));
+    Assert(streamTask.IsTaskLike && streamTask.ResultType == "System.IO.Stream" && !streamTask.ResultTypeIsBindable, "Expected Task<Stream> to preserve unsupported future result diagnostics.");
+
+    var scalar = TaskFutureProjectionPolicy.AnalyzeReturnType(typeof(int));
+    Assert(!scalar.IsTaskLike && scalar.FutureKind == "not-task", "Expected scalar returns not to be treated as future candidates.");
+}
+
+static void RuntimeSurfaceGateRequiresDiagnosedMembers()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), $"rustlyn-runtime-gate-{Guid.NewGuid():N}");
+    try
+    {
+        CreateFakeReferencePack(tempRoot, "8.0.1", "net8.0");
+        var passingScanSet = RuntimeReferenceSurfaceScanner.ScanInstalledPacks(["net8.0"], tempRoot, namespaceFilter: null);
+        var passingResult = RuntimeSurfaceGate.Evaluate(passingScanSet);
+
+        Assert(passingResult.Passed, RuntimeSurfaceGate.GenerateText(passingResult));
+
+        var missingScanSet = RuntimeReferenceSurfaceScanner.ScanInstalledPacks(["net8.0", "net10.0"], tempRoot, namespaceFilter: null);
+        var missingResult = RuntimeSurfaceGate.Evaluate(missingScanSet);
+        Assert(!missingResult.Passed, "Expected runtime gate to fail when a requested reference pack is missing.");
+        Assert(
+            missingResult.Diagnostics.Any(static diagnostic => diagnostic.Code == "missing-reference-pack"),
+            "Expected runtime gate to diagnose missing reference packs.");
+
+        var undiagnosedMember = CreateRuntimeDiffMember("Gate", "Undiagnosed", "deferred");
+        var undiagnosedScanSet = new RuntimeSurfaceScanSet([CreateRuntimeDiffReport("net8.0", CreateRuntimeDiffType("Gate", undiagnosedMember))], []);
+        var undiagnosedResult = RuntimeSurfaceGate.Evaluate(undiagnosedScanSet);
+        Assert(!undiagnosedResult.Passed, "Expected runtime gate to fail when a non-projected member lacks a reason code.");
+        Assert(
+            undiagnosedResult.Diagnostics.Any(static diagnostic => diagnostic.Code == "missing-member-diagnostic"),
+            "Expected runtime gate to diagnose deferred/rejected members without reason codes.");
+    }
+    finally
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        if (Directory.Exists(tempRoot))
+        {
+            try
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
 }
 
 static void BindingSurfaceScannerCreatesStaticScalarBindings()
@@ -2319,6 +3314,43 @@ static void BindingSurfaceMatchesDocumentedInventory()
         string.Join("; ", extraInDoc.Take(8)));
 }
 
+static void BindingGenerationPolicyGatesHandwrittenBridgeSymbols()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var policyPath = Path.Combine(workspaceRoot, "docs", "binding-generation-policy.md");
+    Assert(File.Exists(policyPath), "docs/binding-generation-policy.md not found.");
+
+    var policy = File.ReadAllText(policyPath);
+    foreach (var requiredClassification in new[]
+    {
+        "`generated-candidate`",
+        "`core-specialized`",
+        "`std-abi-specialized`",
+        "`runtime-specialized`",
+        "`framework-bootstrap`",
+        "`temporary-specialized`"
+    })
+    {
+        Assert(policy.Contains(requiredClassification, StringComparison.Ordinal), $"Binding generation policy must define {requiredClassification}.");
+    }
+
+    var emitterPath = Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.Backend", "LoweredAssemblyEmitter.cs");
+    var emitter = File.ReadAllText(emitterPath);
+    var aliasesStart = emitter.IndexOf("private static readonly (string Symbol, string MethodName)[] RuntimeBridgeAliases", StringComparison.Ordinal);
+    Assert(aliasesStart >= 0, "RuntimeBridgeAliases block was not found.");
+    var aliasesEnd = emitter.IndexOf("private static BlobHandle EncodeReflectedMethodSig", aliasesStart, StringComparison.Ordinal);
+    Assert(aliasesEnd > aliasesStart, "RuntimeBridgeAliases block end was not found.");
+    var aliasesBlock = emitter[aliasesStart..aliasesEnd];
+
+    Assert(!aliasesBlock.Contains("rustlyn_bindgen_", StringComparison.Ordinal), "Generated rustlyn_bindgen_* symbols must be resolved from binding manifests, not handwritten RuntimeBridgeAliases.");
+    Assert(!aliasesBlock.Contains("rustlyn_std_", StringComparison.Ordinal), "Rust std ABI shim symbols must be registered from RustStdShimManifest, not mixed into RuntimeBridgeAliases.");
+    var stdShimManifest = File.ReadAllText(Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.Backend", "RustStdShimManifest.cs"));
+    Assert(stdShimManifest.Contains("rustlyn_std_", StringComparison.Ordinal), "RustStdShimManifest must list Rust std ABI symbols.");
+    Assert(stdShimManifest.Contains("std-abi-specialized", StringComparison.Ordinal), "RustStdShimManifest entries must carry std ABI specialization classification.");
+    Assert(policy.Contains("Binding manifests should own `rustlyn_bindgen_*` symbol mapping.", StringComparison.Ordinal), "Policy must document why generated binding aliases stay out of RuntimeBridgeAliases.");
+}
+
 static void NuGetPackagerWritesValidNupkgArchive()
 {
     var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-nupkg-test-{Guid.NewGuid():N}");
@@ -2353,11 +3385,16 @@ static void GeneratedBindingGeneratorMatchesFixture()
         ?? throw new InvalidOperationException("Workspace root could not be determined.");
     var fixturePath = Path.Combine(workspaceRoot, "samples", "generated_bindings_hello", "src", "system.rs");
     var fixtureText = File.ReadAllText(fixturePath);
-    var generatedText = RustBindingGenerator.GenerateSystemModule(BindingSurface.CreateTinyBclSurface());
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var generatedText = RustBindingGenerator.GenerateSystemModule(surface);
+    var documentGeneratedText = RustBindingGenerator.GenerateSystemModule(BindingManifestDocument.FromSurface(surface));
 
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(fixtureText),
         "Expected generated System bindings to match the checked-in generated_bindings_hello fixture.");
+    Assert(
+        NormalizeLineEndings(documentGeneratedText) == NormalizeLineEndings(generatedText),
+        "Expected Rust binding generation to be driven by the normalized manifest document.");
 }
 
 static void GeneratedBindingGlueMapTargetsRuntimeHelpers()
@@ -2365,35 +3402,37 @@ static void GeneratedBindingGlueMapTargetsRuntimeHelpers()
     var surface = BindingSurface.CreateTinyBclSurface();
     var externSymbols = surface.Externs.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
     var glueSymbols = surface.ManagedGlueBindings.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
+    var manifest = BindingManifestDocument.FromSurface(surface);
+    var manifestSymbols = manifest.Bindings.Select(static binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
 
     Assert(externSymbols.SetEquals(glueSymbols), "Expected every generated extern to have exactly one managed glue binding.");
+    Assert(externSymbols.SetEquals(manifestSymbols), "Expected every generated extern to have exactly one normalized manifest binding.");
     Assert(surface.ManagedGlueBindings.Count == glueSymbols.Count, "Expected generated managed glue bindings to have unique symbols.");
+    Assert(manifest.Bindings.Count == manifestSymbols.Count, "Expected generated manifest bindings to have unique symbols.");
 
-    foreach (var binding in surface.ManagedGlueBindings)
+    foreach (var binding in manifest.Bindings)
     {
-        binding.Validate();
-
         var helperMethod = typeof(RuntimeBridgeHelpers).GetMethod(
-            binding.RuntimeBridgeHelperMethodName,
+            binding.Helper,
             BindingFlags.Public | BindingFlags.Static);
-        Assert(helperMethod is not null, $"Expected generated managed glue binding '{binding.Symbol}' to target an existing RuntimeBridgeHelpers method.");
-        var runtimeHelperMethod = helperMethod ?? throw new InvalidOperationException($"Generated managed glue binding '{binding.Symbol}' targets a missing RuntimeBridgeHelpers method.");
-        Assert(runtimeHelperMethod.ReturnType == ResolveManagedGlueParameterType(binding.ReturnType), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to return {binding.ReturnType}.");
+        Assert(helperMethod is not null, $"Expected generated manifest binding '{binding.Symbol}' to target an existing RuntimeBridgeHelpers method.");
+        var runtimeHelperMethod = helperMethod ?? throw new InvalidOperationException($"Generated manifest binding '{binding.Symbol}' targets a missing RuntimeBridgeHelpers method.");
+        Assert(runtimeHelperMethod.ReturnType == ResolveManagedGlueParameterType(binding.ReturnType), $"Expected generated managed glue helper '{binding.Helper}' to return {binding.ReturnType}.");
 
         var actualParameters = runtimeHelperMethod.GetParameters();
-        Assert(actualParameters.Length == binding.Parameters.Count, $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' to match the binding parameter count.");
+        Assert(actualParameters.Length == binding.Parameters.Count, $"Expected generated managed glue helper '{binding.Helper}' to match the binding parameter count.");
         for (var index = 0; index < binding.Parameters.Count; index++)
         {
             var expectedParameter = binding.Parameters[index];
             var actualParameter = actualParameters[index];
-            Assert(actualParameter.Name == expectedParameter.Name, $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' parameter {index.ToString(CultureInfo.InvariantCulture)} to be named '{expectedParameter.Name}'.");
-            Assert(actualParameter.ParameterType == ResolveManagedGlueParameterType(expectedParameter.TypeName), $"Expected generated managed glue helper '{binding.RuntimeBridgeHelperMethodName}' parameter '{expectedParameter.Name}' to have type '{expectedParameter.TypeName}'.");
+            Assert(actualParameter.Name == expectedParameter.Name, $"Expected generated managed glue helper '{binding.Helper}' parameter {index.ToString(CultureInfo.InvariantCulture)} to be named '{expectedParameter.Name}'.");
+            Assert(actualParameter.ParameterType == ResolveManagedGlueParameterType(expectedParameter.Type), $"Expected generated managed glue helper '{binding.Helper}' parameter '{expectedParameter.Name}' to have type '{expectedParameter.Type}'.");
         }
 
-        if (binding.Operation.ExceptionConvention == ManagedGlueExceptionConvention.WriteExceptionOut)
+        if (string.Equals(binding.Exception.Kind, "write-exception-out", StringComparison.Ordinal))
         {
             Assert(
-                binding.Parameters.Any(parameter => string.Equals(parameter.Name, binding.Operation.ExceptionOutParameterName, StringComparison.Ordinal)),
+                binding.Parameters.Any(parameter => string.Equals(parameter.Name, binding.Exception.OutParameter, StringComparison.Ordinal)),
                 $"Expected generated managed glue binding '{binding.Symbol}' to declare its exception-out parameter.");
         }
     }
@@ -2416,17 +3455,157 @@ static void GeneratedBindingManagedGlueBuildOutputMatchesGenerator()
     Assert(File.Exists(buildOutputPath), $"Expected generated managed binding glue build output '{buildOutputPath}' to exist.");
 
     var buildOutputText = File.ReadAllText(buildOutputPath);
-    var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingSurface.CreateTinyBclSurface());
+    var surface = BindingSurface.CreateTinyBclSurface();
+    var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface);
+    var documentGeneratedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface));
 
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(buildOutputText),
         $"Expected generated managed binding glue build output to match Rustlyn.Bindings. {DescribeFirstTextDifference(generatedText, buildOutputText)}");
+    Assert(
+        NormalizeLineEndings(documentGeneratedText) == NormalizeLineEndings(generatedText),
+        "Expected managed glue generation to be driven by the normalized manifest document.");
+}
+
+static void GeneratedAvaloniaBindingsReplaceHandwrittenBridge()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var fixturePath = Path.Combine(workspaceRoot, "samples", "avalonia_hello", "src", "avalonia.rs");
+    var fixtureText = File.ReadAllText(fixturePath);
+    var surface = ExternalPackageBindingSurfaces.CreateAvaloniaHelloSurface();
+    var document = ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest();
+    var generatedRust = AvaloniaRustBindingGenerator.GenerateHelloModule(document);
+
+    Assert(
+        NormalizeLineEndings(generatedRust) == NormalizeLineEndings(fixtureText),
+        "Expected generated Avalonia bindings to match samples/avalonia_hello/src/avalonia.rs.");
+    Assert(
+        document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_avalonia_controls_window_new")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_avalonia_controls_button_subscribe_click"),
+        "Expected Avalonia package manifest to own generated control and event symbols.");
+    Assert(
+        document.PackageSurface is { PackageId: "Avalonia", PackageVersion: "12.0.3" }
+            && document.PackageSurface.Assemblies.Any(static assembly => assembly.Name == "Avalonia.Controls"),
+        "Expected generated Avalonia manifest to carry external package identity and assembly metadata.");
+    var packageSurface = document.PackageSurface
+        ?? throw new InvalidOperationException("Expected generated Avalonia manifest to carry package metadata.");
+    Assert(
+        packageSurface.Assemblies.Where(static assembly => assembly.Role is "compile" or "bootstrap")
+            .All(static assembly => !string.IsNullOrWhiteSpace(assembly.Path) && File.Exists(assembly.Path)),
+        "Expected generated Avalonia package assembly metadata to include copyable assembly paths.");
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-avalonia-pack-{Guid.NewGuid():N}");
+    try
+    {
+        ExternalPackageProjectionPackGenerator.WriteAvaloniaHelloPack(packDirectory);
+        Assert(File.Exists(Path.Combine(packDirectory, "avalonia.rs")), "Expected external package pack to write generated Avalonia Rust module.");
+        Assert(File.Exists(Path.Combine(packDirectory, "RuntimeBridgeHelpers.AvaloniaBindings.g.cs")), "Expected external package pack to write generated Avalonia managed glue.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("package: Avalonia", StringComparison.Ordinal), "Expected external package pack summary to record package identity.");
+    }
+    finally
+    {
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
+
+    var buildOutputPath = GetBackendGeneratedAvaloniaBindingGluePath();
+    Assert(File.Exists(buildOutputPath), $"Expected generated Avalonia binding glue build output '{buildOutputPath}' to exist.");
+    var buildOutputText = File.ReadAllText(buildOutputPath);
+    var generatedGlue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(document);
+    Assert(
+        NormalizeLineEndings(generatedGlue) == NormalizeLineEndings(buildOutputText),
+        $"Expected generated Avalonia managed glue build output to match Rustlyn.Bindings. {DescribeFirstTextDifference(generatedGlue, buildOutputText)}");
+    Assert(
+        generatedGlue.Contains("new Avalonia.Controls.Window()", StringComparison.Ordinal)
+            && generatedGlue.Contains("ManagedInteropRuntime.GetObject<Avalonia.Controls.Window>(windowHandle).Title = InteropUtf8.ReadString(titlePointer, titleLength)", StringComparison.Ordinal),
+        "Expected generated Avalonia glue to call public Avalonia APIs directly.");
+
+    var emitter = File.ReadAllText(Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.Backend", "LoweredAssemblyEmitter.cs"));
+    var mapStart = emitter.IndexOf("_avaloniaBridgeMap = new Dictionary", StringComparison.Ordinal);
+    var mapEnd = emitter.IndexOf("_runtimeBridgeMap =", mapStart, StringComparison.Ordinal);
+    var bridgeMap = emitter[mapStart..mapEnd];
+    Assert(bridgeMap.Contains("rustlyn_avalonia_run_app", StringComparison.Ordinal), "Expected Avalonia bootstrap symbol to remain specialized.");
+    Assert(!bridgeMap.Contains("rustlyn_avalonia_window_new", StringComparison.Ordinal), "Expected Avalonia control construction to leave the handwritten bridge map.");
+    Assert(!bridgeMap.Contains("rustlyn_avalonia_text_block_set_text_utf8", StringComparison.Ordinal), "Expected Avalonia property setters to leave the handwritten bridge map.");
+
+    var bridge = File.ReadAllText(Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.AvaloniaSupport", "AvaloniaBridge.cs"));
+    Assert(!bridge.Contains("CreateWindow", StringComparison.Ordinal), "Expected AvaloniaBridge to stop owning generated Window construction.");
+    Assert(!bridge.Contains("SetTextBlockTextUtf8", StringComparison.Ordinal), "Expected AvaloniaBridge to stop owning generated TextBlock.Text setters.");
+    Assert(bridge.Contains("SubscribeButtonClick", StringComparison.Ordinal), "Expected AvaloniaBridge to retain bootstrap callback dispatch for generated Button.Click subscription.");
+
+    var sampleMain = File.ReadAllText(Path.Combine(workspaceRoot, "samples", "avalonia_hello", "src", "main.rs"));
+    Assert(!sampleMain.Contains("rustlyn_avalonia_window_", StringComparison.Ordinal), "Expected avalonia_hello to stop declaring handwritten Window externs.");
+    Assert(sampleMain.Contains("mod avalonia;", StringComparison.Ordinal), "Expected avalonia_hello to import the generated Avalonia projection module.");
+}
+
+static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
+{
+    var document = ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest();
+    var packageSurface = document.PackageSurface
+        ?? throw new InvalidOperationException("Expected generated PowerShell manifest to carry package metadata.");
+
+    Assert(
+        packageSurface is { PackageId: "Microsoft.PowerShell.SDK", PackageVersion: "7.5.0", TargetFramework: "net10.0" },
+        "Expected PowerShell package manifest to record the PowerShell SDK package identity.");
+    Assert(
+        packageSurface.Assemblies.Any(static assembly => assembly.Name == "System.Management.Automation" && assembly.Role == "compile"),
+        "Expected PowerShell package manifest to map System.Management.Automation as the compile assembly.");
+    Assert(
+        packageSurface.Assemblies.Any(static assembly => assembly.Name == "Rustlyn.PowerShellSupport" && assembly.Role == "bootstrap"),
+        "Expected PowerShell package manifest to reserve a bootstrap support assembly for generated cmdlet shims.");
+    Assert(
+        document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_should_process_string"),
+        "Expected PowerShell cmdlet manifest to own generated cmdlet context symbols.");
+
+    var rust = PowerShellRustBindingGenerator.GenerateCmdletModule(document);
+    Assert(rust.Contains("pub struct CmdletContext", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose a cmdlet context wrapper.");
+    Assert(rust.Contains("pub fn write_object_string(&self, value: &ManagedString) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose WriteObject.");
+    Assert(rust.Contains("pub fn should_process_string(&self, target: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose ShouldProcess.");
+
+    var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(document);
+    Assert(
+        glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess", StringComparison.Ordinal),
+        "Expected generated PowerShell glue to route through the cmdlet support bridge.");
+
+    var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-powershell-pack-{Guid.NewGuid():N}");
+    try
+    {
+        ExternalPackageProjectionPackGenerator.WritePowerShellCmdletPack(packDirectory);
+        Assert(File.Exists(Path.Combine(packDirectory, "powershell_cmdlet.rs")), "Expected PowerShell package pack to write generated Rust cmdlet module.");
+        Assert(File.Exists(Path.Combine(packDirectory, "RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs")), "Expected PowerShell package pack to write generated managed cmdlet glue.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("package: Microsoft.PowerShell.SDK", StringComparison.Ordinal), "Expected PowerShell package pack summary to record package identity.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "binding-manifest.json")).Contains("System.Management.Automation", StringComparison.Ordinal), "Expected PowerShell package manifest JSON to include mapped SDK assembly.");
+    }
+    finally
+    {
+        if (Directory.Exists(packDirectory))
+        {
+            Directory.Delete(packDirectory, recursive: true);
+        }
+    }
 }
 
 static void GeneratedBindingManifestListsSurface()
 {
     var surface = BindingSurface.CreateTinyBclSurface();
     var manifest = BindingManifestGenerator.GenerateText(surface);
+    var documentManifest = BindingManifestGenerator.GenerateText(BindingManifestDocument.FromSurface(surface));
+    Assert(manifest == documentManifest, "Expected text manifest generation to be driven by the normalized manifest document.");
+
+    Assert(
+        manifest.Contains($"manifest-schema: {BindingManifestVersions.ManifestFormatVersion.ToString(CultureInfo.InvariantCulture)}", StringComparison.Ordinal)
+            && manifest.Contains($"handle-abi: {BindingManifestVersions.HandleAbiVersion.ToString(CultureInfo.InvariantCulture)}", StringComparison.Ordinal)
+            && manifest.Contains($"symbol-schema: {BindingManifestVersions.SymbolSchemaVersion.ToString(CultureInfo.InvariantCulture)}", StringComparison.Ordinal),
+        "Expected text manifest to include versioned manifest, handle ABI, and symbol schema metadata.");
+    Assert(
+        manifest.Contains("projection-model: thin-projection-plus-optional-facade", StringComparison.Ordinal)
+            && manifest.Contains("error-model: result-by-default", StringComparison.Ordinal)
+            && manifest.Contains("async-model: task-future-via-task-handle-and-waker-bridge", StringComparison.Ordinal),
+        "Expected text manifest to include approved projection, error, and async model decisions.");
 
     foreach (var binding in surface.ManagedGlueBindings)
     {
@@ -2513,13 +3692,22 @@ static void GeneratedBindingJsonManifestListsSurface()
 {
     var surface = BindingSurface.CreateTinyBclSurface();
     var manifest = BindingManifestGenerator.GenerateJson(surface);
+    var documentManifest = BindingManifestGenerator.GenerateJson(BindingManifestDocument.FromSurface(surface));
     var repeatedManifest = BindingManifestGenerator.GenerateJson(surface);
 
+    Assert(manifest == documentManifest, "Expected JSON manifest generation to be driven by the normalized manifest document.");
     Assert(manifest == repeatedManifest, "Expected JSON manifest output to be deterministic.");
     using var document = JsonDocument.Parse(manifest);
     var root = document.RootElement;
-    Assert(root.GetProperty("formatVersion").GetInt32() == 1, "Expected JSON manifest format version.");
+    Assert(root.GetProperty("formatVersion").GetInt32() == BindingManifestVersions.ManifestFormatVersion, "Expected JSON manifest format version.");
     Assert(root.GetProperty("generatedBy").GetString() == "Rustlyn.Bindings", "Expected JSON manifest generator name.");
+    var compatibility = root.GetProperty("compatibility");
+    Assert(compatibility.GetProperty("handleAbiVersion").GetInt32() == BindingManifestVersions.HandleAbiVersion, "Expected JSON manifest to include handle ABI version.");
+    Assert(compatibility.GetProperty("symbolSchemaVersion").GetInt32() == BindingManifestVersions.SymbolSchemaVersion, "Expected JSON manifest to include symbol schema version.");
+    Assert(compatibility.GetProperty("projectionModel").GetString() == "thin-projection-plus-optional-facade", "Expected JSON manifest to include approved projection model.");
+    Assert(compatibility.GetProperty("errorModel").GetString() == "result-by-default", "Expected JSON manifest to include approved error model.");
+    Assert(compatibility.GetProperty("ownershipModel").GetString() == "explicit-owned-and-borrowed-handles", "Expected JSON manifest to include approved ownership model.");
+    Assert(compatibility.GetProperty("asyncModel").GetString() == "task-future-via-task-handle-and-waker-bridge", "Expected JSON manifest to include approved async model.");
     Assert(root.GetProperty("requirements").GetArrayLength() == surface.Requirements.Count, "Expected JSON manifest to list every requirement.");
     Assert(root.GetProperty("enumProjections").GetArrayLength() == surface.RustEnumProjections.Count, "Expected JSON manifest to list every enum projection.");
     Assert(root.GetProperty("bindings").GetArrayLength() == surface.ManagedGlueBindings.Count, "Expected JSON manifest to list every binding.");
@@ -2544,12 +3732,16 @@ static void GeneratedBindingJsonManifestListsSurface()
     var bindings = root.GetProperty("bindings").EnumerateArray().ToArray();
     var callbackBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rustlyn_bindgen_system_callback_apply_i32");
     Assert(callbackBinding.GetProperty("helper").GetString() == "BindgenSystemCallbackApplyI32", "Expected JSON manifest to include callback helper.");
+    Assert(callbackBinding.GetProperty("managedResultKind").GetString() == "int", "Expected JSON manifest to include managed result semantics.");
     Assert(callbackBinding.GetProperty("managedTarget").GetString() == "ManagedCallbackBridge.InvokeI32(i32CallbackPointer, value)", "Expected JSON manifest to include callback managed target.");
     Assert(callbackBinding.GetProperty("rustExtern").GetString() == "fn rustlyn_bindgen_system_callback_apply_i32(i32_callback_ptr: fn(i32) -> i32, value: i32, exception_out: *mut i32) -> i32;", "Expected JSON manifest to include callback Rust extern signature.");
     Assert(callbackBinding.GetProperty("parameters").EnumerateArray().First().GetProperty("rustAbiType").GetString() == "fn(i32) -> i32", "Expected JSON manifest to include callback Rust ABI metadata.");
     var callbackWrapper = callbackBinding.GetProperty("wrappers").EnumerateArray().Single();
     Assert(callbackWrapper.GetProperty("path").GetString() == "system::callback::apply_i32", "Expected JSON manifest to include callback wrapper path.");
     Assert(callbackWrapper.GetProperty("signature").GetString() == "pub fn apply_i32(callback: fn(i32) -> i32, value: i32) -> Result<i32, Exception>", "Expected JSON manifest to include callback wrapper signature.");
+    Assert(callbackWrapper.GetProperty("callArguments").EnumerateArray().Select(static argument => argument.GetString()).SequenceEqual(new[] { "callback", "value" }), "Expected JSON manifest to include wrapper call arguments.");
+    Assert(callbackWrapper.GetProperty("resultVariableName").GetString() == "result", "Expected JSON manifest to include wrapper result variable.");
+    Assert(callbackWrapper.GetProperty("order").GetInt32() >= 0, "Expected JSON manifest to include deterministic wrapper order.");
 
     var pairCallbackBinding = bindings.Single(binding => binding.GetProperty("symbol").GetString() == "rustlyn_bindgen_system_callback_apply_i32_i32");
     Assert(pairCallbackBinding.GetProperty("managedTarget").GetString() == "ManagedCallbackBridge.InvokeI32I32(i32I32CallbackPointer, left, right)", "Expected JSON manifest to include two-argument callback managed target.");
@@ -2654,9 +3846,12 @@ static void GeneratedBindingPackWritesDeterministicArtifacts()
 
         using var summary = JsonDocument.Parse(File.ReadAllText(Path.Combine(firstPackDirectory, BindingArtifactPackGenerator.SummaryFileName)));
         var root = summary.RootElement;
-        Assert(root.GetProperty("formatVersion").GetInt32() == 2, "Expected binding pack summary format version.");
+        Assert(root.GetProperty("formatVersion").GetInt32() == BindingManifestVersions.PackFormatVersion, "Expected binding pack summary format version.");
         Assert(root.GetProperty("generatedBy").GetString() == "Rustlyn.Bindings", "Expected binding pack summary generator name.");
         Assert(!string.IsNullOrWhiteSpace(root.GetProperty("generatorVersion").GetString()), "Expected binding pack summary to include a generator version.");
+        var compatibility = root.GetProperty("compatibility");
+        Assert(compatibility.GetProperty("handleAbiVersion").GetInt32() == BindingManifestVersions.HandleAbiVersion, "Expected binding pack summary to include handle ABI version.");
+        Assert(compatibility.GetProperty("symbolSchemaVersion").GetInt32() == BindingManifestVersions.SymbolSchemaVersion, "Expected binding pack summary to include symbol schema version.");
         Assert(root.GetProperty("managedAssemblies").GetArrayLength() > 0, "Expected binding pack summary to include managed assembly identities.");
         var ownershipRules = root.GetProperty("ownershipRules").EnumerateArray().ToArray();
         Assert(ownershipRules.Any(static rule =>
@@ -2717,6 +3912,14 @@ static string GetBackendGeneratedBindingGluePath()
         Path.GetFileName(targetFrameworkDirectory),
         "Generated",
         "RuntimeBridgeHelpers.Bindings.g.cs");
+}
+
+static string GetBackendGeneratedAvaloniaBindingGluePath()
+{
+    var bindingGluePath = GetBackendGeneratedBindingGluePath();
+    return Path.Combine(
+        Path.GetDirectoryName(bindingGluePath) ?? throw new InvalidOperationException("Generated binding glue directory could not be determined."),
+        "RuntimeBridgeHelpers.AvaloniaBindings.g.cs");
 }
 
 static string NormalizeLineEndings(string value)
@@ -8760,16 +9963,16 @@ static void AvaloniaHelloSampleBuildsFromCargoManifest()
         .ToHashSet(StringComparer.Ordinal);
     foreach (var expectedBridgeCall in new[]
              {
-                 "rustlyn_avalonia_window_new",
-                 "rustlyn_avalonia_stack_panel_new",
-                 "rustlyn_avalonia_text_block_new",
-                 "rustlyn_avalonia_button_new",
-                 "rustlyn_avalonia_window_set_title_utf8",
-                 "rustlyn_avalonia_text_block_set_text_utf8",
-                 "rustlyn_avalonia_button_set_content_utf8",
-                 "rustlyn_avalonia_button_set_on_click",
-                 "rustlyn_avalonia_stack_panel_add_child",
-                 "rustlyn_avalonia_window_set_content"
+                 "rustlyn_bindgen_avalonia_controls_window_new",
+                 "rustlyn_bindgen_avalonia_controls_stack_panel_new",
+                 "rustlyn_bindgen_avalonia_controls_text_block_new",
+                 "rustlyn_bindgen_avalonia_controls_button_new",
+                 "rustlyn_bindgen_avalonia_controls_window_set_title_utf8",
+                 "rustlyn_bindgen_avalonia_controls_text_block_set_text_utf8",
+                 "rustlyn_bindgen_avalonia_controls_button_set_content_utf8",
+                 "rustlyn_bindgen_avalonia_controls_button_subscribe_click",
+                 "rustlyn_bindgen_avalonia_controls_panel_children_add_control",
+                 "rustlyn_bindgen_avalonia_controls_window_set_content_control"
              })
     {
         Assert(buildUiBridgeCalls.Contains(expectedBridgeCall), $"Expected Cargo-built avalonia_build_ui to call {expectedBridgeCall}.");
@@ -8780,7 +9983,7 @@ static void AvaloniaHelloSampleBuildsFromCargoManifest()
         .OfType<LoweredCallInstruction>()
         .Select(static call => call.Callee)
         .ToHashSet(StringComparer.Ordinal);
-    Assert(onClickBridgeCalls.Contains("rustlyn_avalonia_text_block_set_text_utf8"), "Expected Cargo-built avalonia_on_click to update the TextBlock through rustlyn_avalonia_text_block_set_text_utf8.");
+    Assert(onClickBridgeCalls.Contains("rustlyn_bindgen_avalonia_controls_text_block_set_text_utf8"), "Expected Cargo-built avalonia_on_click to update the TextBlock through generated Avalonia TextBlock.Text binding.");
 }
 
 static void AvaloniaHelloSampleEmitsRunnableSmokeOutput()
@@ -19058,14 +20261,12 @@ static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcode(string samp
     }
 
     var cratePath = Path.Combine(workspaceRoot, "samples", sampleName);
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!Directory.Exists(cratePath) || !File.Exists(llvmOptPath))
+    if (!Directory.Exists(cratePath))
     {
-        throw new SkipTestException($"Cargo sample '{sampleName}' or llvm-prebuilt distro is not available yet.");
+        throw new SkipTestException($"Cargo sample '{sampleName}' is not available yet.");
     }
 
+    var llvmRoot = ResolveLlvmRootForTest();
     var bitcodePath = Path.Combine(Path.GetTempPath(), $"rustlyn-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
     RustBitcodeCompiler.BuildLibraryBitcode(cratePath, outputBitcodePath: bitcodePath);
     return (bitcodePath, llvmRoot);
@@ -19080,14 +20281,12 @@ static (string BitcodePath, string LlvmRoot) BuildCargoSampleBitcodeWithOptions(
     }
 
     var cratePath = Path.Combine(workspaceRoot, "samples", sampleName);
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!Directory.Exists(cratePath) || !File.Exists(llvmOptPath))
+    if (!Directory.Exists(cratePath))
     {
-        throw new SkipTestException($"Cargo sample '{sampleName}' or llvm-prebuilt distro is not available yet.");
+        throw new SkipTestException($"Cargo sample '{sampleName}' is not available yet.");
     }
 
+    var llvmRoot = ResolveLlvmRootForTest();
     var bitcodePath = Path.Combine(Path.GetTempPath(), $"rustlyn-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
     RustBitcodeCompiler.BuildBitcode(cratePath, options with { OutputBitcodePath = bitcodePath });
 
@@ -19103,17 +20302,55 @@ static (string BitcodePath, string LlvmRoot) BuildCargoBinarySampleBitcode(strin
     }
 
     var cratePath = Path.Combine(workspaceRoot, "samples", sampleName);
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!Directory.Exists(cratePath) || !File.Exists(llvmOptPath))
+    if (!Directory.Exists(cratePath))
     {
-        throw new SkipTestException($"Cargo binary sample '{sampleName}' or llvm-prebuilt distro is not available yet.");
+        throw new SkipTestException($"Cargo binary sample '{sampleName}' is not available yet.");
     }
 
+    var llvmRoot = ResolveLlvmRootForTest();
     var bitcodePath = Path.Combine(Path.GetTempPath(), $"rustlyn-cargo-{sampleName}-{Guid.NewGuid():N}.bc");
     RustBitcodeCompiler.BuildBinaryBitcode(cratePath, binaryTargetName, outputBitcodePath: bitcodePath);
     return (bitcodePath, llvmRoot);
+}
+
+static string ResolveLlvmRootForTest()
+{
+    try
+    {
+        var llvmRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(null)
+            ?? throw new SkipTestException("LLVM toolchain is not configured. Set RUSTLYN_LLVM_ROOT or install a toolchain under artifacts\\toolchains\\llvm.");
+        if (LlvmNativeLibraryLocator.TryGetToolPath(llvmRoot, "llvm-opt.exe") is null)
+        {
+            throw new SkipTestException($"LLVM toolchain '{llvmRoot}' does not contain llvm-opt/opt.");
+        }
+
+        return llvmRoot;
+    }
+    catch (FileNotFoundException ex)
+    {
+        throw new SkipTestException($"LLVM toolchain is not usable: {ex.Message}");
+    }
+    catch (DirectoryNotFoundException ex)
+    {
+        throw new SkipTestException($"LLVM toolchain is not usable: {ex.Message}");
+    }
+}
+
+static (string SampleArtifactPath, string LlvmRoot) ResolveSampleArtifactAndLlvmRoot(string sampleName)
+{
+    var workspaceRoot = FindWorkspaceRoot();
+    if (workspaceRoot is null)
+    {
+        throw new InvalidOperationException("Workspace root could not be determined.");
+    }
+
+    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
+    if (!File.Exists(sampleArtifactPath))
+    {
+        throw new SkipTestException($"Sample artifact is not available yet for '{sampleName}'.");
+    }
+
+    return (sampleArtifactPath, ResolveLlvmRootForTest());
 }
 
 static void AssertSingleFunctionSampleModuleSummary(string sampleName, string functionName)
@@ -19129,21 +20366,7 @@ static void AssertMultiFunctionSampleModuleSummary(
     IReadOnlyList<string>? expectedGlobalNames = null,
     int minimumGlobalCount = 0)
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     var report = BitcodeArtifactInspector.Inspect(sampleArtifactPath, llvmRoot);
 
     Assert(report.ModuleSummary is not null, $"Expected a module summary for the {sampleName} sample.");
@@ -19165,21 +20388,7 @@ static void AssertMultiFunctionSampleModuleSummary(
 
 static void AssertLoweredIrContains(string sampleName, IReadOnlyList<string> expectedFragments)
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     var loweredModule = LoweredIrLowerer.LowerBitcode(sampleArtifactPath, llvmRoot);
     var dump = LoweredIrLowerer.Dump(loweredModule);
 
@@ -19191,41 +20400,13 @@ static void AssertLoweredIrContains(string sampleName, IReadOnlyList<string> exp
 
 static LoweredModule LowerSample(string sampleName)
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     return LoweredIrLowerer.LowerBitcode(sampleArtifactPath, llvmRoot);
 }
 
 static void AssertEmissionResult(string sampleName, string methodName, object?[] arguments, object expectedResult)
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
     LoweredAssemblyEmitter.EmitBitcode(sampleArtifactPath, tempAssembly.Path, llvmRoot);
 
@@ -19250,21 +20431,7 @@ static void AssertEmissionResult(string sampleName, string methodName, object?[]
 
 static void AssertEmissionThrows<TException>(string sampleName, string methodName, object?[] arguments) where TException : Exception
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
     LoweredAssemblyEmitter.EmitBitcode(sampleArtifactPath, tempAssembly.Path, llvmRoot);
 
@@ -19297,42 +20464,14 @@ static void AssertEmissionThrows<TException>(string sampleName, string methodNam
 
 static void AssertInvocationResult(string sampleName, string methodName, IReadOnlyList<object?> arguments, object expectedResult)
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(sampleArtifactPath, methodName, arguments, llvmRoot);
     Assert(Equals(actualResult, expectedResult), $"Expected invoked method '{methodName}' to return '{expectedResult}', but got '{actualResult}'.");
 }
 
 static void AssertInvocationThrows<TException>(string sampleName, string methodName, IReadOnlyList<object?> arguments) where TException : Exception
 {
-    var workspaceRoot = FindWorkspaceRoot();
-    if (workspaceRoot is null)
-    {
-        throw new InvalidOperationException("Workspace root could not be determined.");
-    }
-
-    var sampleArtifactPath = Path.Combine(workspaceRoot, "artifacts", "out", sampleName, $"{sampleName}.bc");
-    var llvmRoot = Path.Combine(workspaceRoot, "artifacts", "toolchains", "llvm", "clang+llvm-20.1.8-x86_64-windows");
-    var llvmOptPath = Path.Combine(llvmRoot, "bin", "llvm-opt.exe");
-
-    if (!File.Exists(sampleArtifactPath) || !File.Exists(llvmOptPath))
-    {
-        throw new SkipTestException($"Sample artifact or llvm-prebuilt distro is not available yet for '{sampleName}'.");
-    }
-
+    var (sampleArtifactPath, llvmRoot) = ResolveSampleArtifactAndLlvmRoot(sampleName);
     try
     {
         LoweredAssemblyInvoker.InvokeBitcode(sampleArtifactPath, methodName, arguments, llvmRoot);
@@ -19455,6 +20594,204 @@ static void Assert(bool condition, string message)
     {
         throw new InvalidOperationException(message);
     }
+}
+
+static void CreateFakeReferencePack(string dotnetRoot, string packVersion, string targetFramework)
+{
+    var refDirectory = Path.Combine(
+        dotnetRoot,
+        "packs",
+        "Microsoft.NETCore.App.Ref",
+        packVersion,
+        "ref",
+        targetFramework);
+    Directory.CreateDirectory(refDirectory);
+
+    var sourceAssembly = Assembly.GetExecutingAssembly().Location;
+    var targetAssembly = Path.Combine(refDirectory, Path.GetFileName(sourceAssembly));
+    File.Copy(sourceAssembly, targetAssembly, overwrite: true);
+}
+
+static RuntimeSurfaceScanReport CreateRuntimeDiffReport(string targetFramework, params BindingManifestRuntimeType[] types)
+{
+    var memberCount = types.Sum(static type => type.Members.Count);
+    var identity = new BindingManifestAssemblyIdentity("Test.Assembly", "1.0.0.0", "", "");
+    return new RuntimeSurfaceScanReport(
+        targetFramework,
+        PackVersion: "1.0.0",
+        PackRoot: "",
+        RefDirectory: "",
+        Assemblies:
+        [
+            new RuntimeAssemblyScanReport(
+                "Test.Assembly",
+                identity,
+                AssemblyPath: "",
+                AssemblyCount: 1,
+                ExportedTypeCount: types.Length,
+                ScannedTypeCount: types.Length,
+                SkippedTypeCount: 0,
+                PublicMethodCount: memberCount,
+                PublicPropertyCount: 0,
+                PublicEventCount: 0,
+                PublicConstructorCount: 0,
+                ProjectedRequirementCount: memberCount,
+                ProjectedMemberCount: memberCount,
+                UnsupportedShapeCount: 0,
+                LoadDiagnostic: null,
+                Types: types)
+        ],
+        AssemblyCount: 1,
+        ExportedTypeCount: types.Length,
+        ScannedTypeCount: types.Length,
+        SkippedTypeCount: 0,
+        PublicMethodCount: memberCount,
+        PublicPropertyCount: 0,
+        PublicEventCount: 0,
+        PublicConstructorCount: 0,
+        ProjectedRequirementCount: memberCount,
+        ProjectedMemberCount: memberCount,
+        UnsupportedShapeCount: 0,
+        SkippedTypesByReason: new Dictionary<string, int>(StringComparer.Ordinal),
+        UnsupportedShapesByReason: [],
+        UnsupportedShapes: [],
+        Types: types);
+}
+
+static BindingManifestRuntimeType CreateRuntimeDiffType(string name, params BindingManifestRuntimeMember[] members)
+{
+    var fullName = $"Test.{name}";
+    return new BindingManifestRuntimeType(
+        new BindingManifestRuntimeTypeIdentity("Test.Assembly", fullName, MetadataToken: 0, GenericArity: 0),
+        Namespace: "Test",
+        Name: name,
+        FullName: fullName,
+        Kind: "class",
+        GenericArity: 0,
+        IsNested: false,
+        ProjectionStatus: "projected",
+        ProjectionPolicy: "test-policy",
+        UnsupportedReason: null,
+        Attributes: [],
+        Members: members);
+}
+
+static BindingManifestRuntimeType CreateRuntimeCallableType(
+    string fullName,
+    string kind,
+    params BindingManifestRuntimeMember[] members)
+{
+    var lastDot = fullName.LastIndexOf('.');
+    return new BindingManifestRuntimeType(
+        new BindingManifestRuntimeTypeIdentity("System.Runtime", fullName, MetadataToken: 0, GenericArity: 0),
+        Namespace: lastDot < 0 ? string.Empty : fullName[..lastDot],
+        Name: lastDot < 0 ? fullName : fullName[(lastDot + 1)..],
+        FullName: fullName,
+        Kind: kind,
+        GenericArity: 0,
+        IsNested: false,
+        ProjectionStatus: "projected",
+        ProjectionPolicy: "test-policy",
+        UnsupportedReason: null,
+        Attributes: [],
+        Members: members);
+}
+
+static BindingManifestRuntimeMember CreateRuntimeDiffMember(
+    string declaringType,
+    string name,
+    string status,
+    string? reasonCode = null)
+{
+    var fullDeclaringType = $"Test.{declaringType}";
+    return new BindingManifestRuntimeMember(
+        new BindingManifestRuntimeMemberIdentity(
+            fullDeclaringType,
+            name,
+            ManagedApiRequirementKind.Method.ToString(),
+            MetadataToken: 0,
+            SignatureKey: $"Method:{name}()"),
+        Kind: ManagedApiRequirementKind.Method.ToString(),
+        Name: name,
+        DisplayName: $"{fullDeclaringType}.{name}()",
+        Signature: $"{name}() -> System.Int32",
+        ProjectionStatus: status,
+        ProjectionPolicy: "test-policy",
+        UnsupportedReason: reasonCode is null ? null : $"test reason: {reasonCode}",
+        UnsupportedReasonCode: reasonCode,
+        IsStatic: true,
+        GenericArity: 0,
+        ReturnType: "System.Int32",
+        ReturnNullability: "unknown",
+        Parameters: [],
+        Attributes: []);
+}
+
+static BindingManifestRuntimeMember CreateRuntimeCallableMethod(
+    string declaringType,
+    string name,
+    string returnType,
+    params string[] parameterTypes)
+{
+    var parameters = parameterTypes
+        .Select(static (type, index) => new BindingManifestRuntimeParameter(
+            Name: $"arg{index.ToString(CultureInfo.InvariantCulture)}",
+            Position: index,
+            Type: type,
+            Nullability: "unknown",
+            IsOut: false,
+            IsOptional: false,
+            Attributes: []))
+        .ToArray();
+    return new BindingManifestRuntimeMember(
+        new BindingManifestRuntimeMemberIdentity(
+            declaringType,
+            name,
+            ManagedApiRequirementKind.Method.ToString(),
+            MetadataToken: Math.Abs(HashCode.Combine(declaringType, name, returnType, parameterTypes.Length)),
+            SignatureKey: $"Method:{name}({string.Join(", ", parameterTypes)})"),
+        Kind: ManagedApiRequirementKind.Method.ToString(),
+        Name: name,
+        DisplayName: $"{declaringType}.{name}({string.Join(", ", parameterTypes)})",
+        Signature: $"{name}({string.Join(", ", parameterTypes)}) -> {returnType}",
+        ProjectionStatus: "deferred",
+        ProjectionPolicy: "test-policy",
+        UnsupportedReason: "projection policy has not classified this member yet",
+        UnsupportedReasonCode: "unclassified-member",
+        IsStatic: true,
+        GenericArity: 0,
+        ReturnType: returnType,
+        ReturnNullability: "unknown",
+        Parameters: parameters,
+        Attributes: []);
+}
+
+static BindingManifestRuntimeMember CreateRuntimeCallableProperty(
+    string declaringType,
+    string name,
+    string propertyType)
+{
+    return new BindingManifestRuntimeMember(
+        new BindingManifestRuntimeMemberIdentity(
+            declaringType,
+            name,
+            ManagedApiRequirementKind.Property.ToString(),
+            MetadataToken: Math.Abs(HashCode.Combine(declaringType, name, propertyType)),
+            SignatureKey: $"Property:{name}()"),
+        Kind: ManagedApiRequirementKind.Property.ToString(),
+        Name: name,
+        DisplayName: $"{declaringType}.{name}",
+        Signature: $"{name}() -> {propertyType}",
+        ProjectionStatus: "deferred",
+        ProjectionPolicy: "test-policy",
+        UnsupportedReason: "projection policy has not classified this member yet",
+        UnsupportedReasonCode: "unclassified-member",
+        IsStatic: true,
+        GenericArity: 0,
+        ReturnType: propertyType,
+        ReturnNullability: "unknown",
+        Parameters: [],
+        Attributes: []);
 }
 
 static bool ContainsAdjacent(IReadOnlyList<string> values, string first, string second)
@@ -20113,6 +21450,20 @@ file sealed class ScannerOverloadCollisionProbe
 
     public int Collide(ScannerIntBackedEnum value)
         => (int)value;
+}
+
+public sealed class RuntimeScanPublicProbe
+{
+    public int Value => 5;
+
+    public int Double(int value)
+        => value * 2;
+
+    public System.Threading.Tasks.Task<int> AsyncDouble(int value)
+        => System.Threading.Tasks.Task.FromResult(value * 2);
+
+    public Stream OpenStream()
+        => Stream.Null;
 }
 
 file sealed class SkipTestException(string message) : Exception(message);

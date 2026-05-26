@@ -44,6 +44,9 @@ public abstract record ManagedGlueExpression
     public static ManagedGlueExpression Constructor(Type declaringType, IReadOnlyList<Type> parameterTypes, IReadOnlyList<ManagedGlueExpression> arguments)
         => new ManagedGlueConstructorExpression(declaringType, parameterTypes, arguments);
 
+    public static ManagedGlueExpression Raw(string code)
+        => new ManagedGlueRawExpression(code);
+
     public abstract string ToCode();
 
     public virtual void Validate()
@@ -266,6 +269,20 @@ public sealed record ManagedGlueConstructorExpression(
 
         var ctor = DeclaringType.GetConstructor(ParameterTypes.ToArray())
             ?? throw new InvalidOperationException($"Managed glue constructor '{ManagedGlueCode.TypeName(DeclaringType)}' could not be resolved.");
+    }
+}
+
+public sealed record ManagedGlueRawExpression(string Code) : ManagedGlueExpression
+{
+    public override string ToCode()
+        => Code;
+
+    public override void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Code))
+        {
+            throw new InvalidOperationException("Managed glue raw expression cannot be empty.");
+        }
     }
 }
 

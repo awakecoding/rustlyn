@@ -25,6 +25,7 @@ public sealed class ManagedHandleStore
             {
                 var objectCount = 0;
                 var exceptionCount = 0;
+                var taskCount = 0;
                 foreach (var entry in entries.Values)
                 {
                     if (entry.Kind == ManagedHandleKind.Object)
@@ -35,9 +36,13 @@ public sealed class ManagedHandleStore
                     {
                         exceptionCount++;
                     }
+                    else if (entry.Kind == ManagedHandleKind.Task)
+                    {
+                        taskCount++;
+                    }
                 }
 
-                return new ManagedHandleSnapshot(objectCount, exceptionCount);
+                return new ManagedHandleSnapshot(objectCount, exceptionCount, taskCount);
             }
         }
     }
@@ -47,6 +52,9 @@ public sealed class ManagedHandleStore
 
     public ManagedExceptionHandle AddException(Exception exception)
         => new(Add(exception, ManagedHandleKind.Exception));
+
+    public ManagedTaskHandle AddTask(Task task)
+        => new(Add(task, ManagedHandleKind.Task));
 
     public T GetObject<T>(ManagedObjectHandle handle)
         => GetObject<T>(handle.Value);
@@ -60,17 +68,29 @@ public sealed class ManagedHandleStore
     public Exception GetException(int handle)
         => Get<Exception>(handle, ManagedHandleKind.Exception);
 
+    public Task GetTask(ManagedTaskHandle handle)
+        => GetTask(handle.Value);
+
+    public Task GetTask(int handle)
+        => Get<Task>(handle, ManagedHandleKind.Task);
+
     public bool TryGetObject<T>(ManagedObjectHandle handle, out T? value)
         => TryGet(handle.Value, ManagedHandleKind.Object, out value);
 
     public bool TryGetException(ManagedExceptionHandle handle, out Exception? value)
         => TryGet(handle.Value, ManagedHandleKind.Exception, out value);
 
+    public bool TryGetTask(ManagedTaskHandle handle, out Task? value)
+        => TryGet(handle.Value, ManagedHandleKind.Task, out value);
+
     public bool Release(ManagedObjectHandle handle)
         => Release(handle.Value, ManagedHandleKind.Object);
 
     public bool Release(ManagedExceptionHandle handle)
         => Release(handle.Value, ManagedHandleKind.Exception);
+
+    public bool Release(ManagedTaskHandle handle)
+        => Release(handle.Value, ManagedHandleKind.Task);
 
     public bool Release(int handle)
     {
@@ -174,7 +194,7 @@ public sealed class ManagedHandleStore
     private sealed record HandleEntry(object Value, ManagedHandleKind Kind);
 }
 
-public sealed record ManagedHandleSnapshot(int ObjectCount, int ExceptionCount)
+public sealed record ManagedHandleSnapshot(int ObjectCount, int ExceptionCount, int TaskCount = 0)
 {
-    public int TotalCount => ObjectCount + ExceptionCount;
+    public int TotalCount => ObjectCount + ExceptionCount + TaskCount;
 }

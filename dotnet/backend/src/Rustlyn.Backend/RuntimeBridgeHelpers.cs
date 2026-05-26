@@ -762,6 +762,51 @@ public static partial class RuntimeBridgeHelpers
         return 0;
     }
 
+    public static int BindgenTaskStatus(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskStatus(taskHandle);
+    }
+
+    public static int BindgenTaskExceptionHandle(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskExceptionHandle(taskHandle);
+    }
+
+    public static int BindgenTaskRelease(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.ReleaseTask(taskHandle) ? 1 : 0;
+    }
+
+    public static int BindgenTaskGetI32Result(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskInt32Result(taskHandle);
+    }
+
+    public static long BindgenTaskGetI64Result(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskInt64Result(taskHandle);
+    }
+
+    public static float BindgenTaskGetF32Result(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskSingleResult(taskHandle);
+    }
+
+    public static double BindgenTaskGetF64Result(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskDoubleResult(taskHandle);
+    }
+
+    public static int BindgenTaskGetBoolResult(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskBooleanResult(taskHandle);
+    }
+
+    public static int BindgenTaskGetObjectResultHandle(int taskHandle)
+    {
+        return Rustlyn.Interop.ManagedInteropRuntime.GetTaskObjectResultHandle(taskHandle);
+    }
+
     private static void WriteExceptionOut(IntPtr exceptionOutPointer, int exceptionHandle)
     {
         if (exceptionOutPointer == IntPtr.Zero)

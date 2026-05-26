@@ -70,7 +70,7 @@ if (TryParseLowerArguments(args, out var lowerArtifactPath, out var lowerLlvmRoo
         return 1;
     }
 }
-
+
 if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb, out var emitStrict))
 {
     try
@@ -639,9 +639,9 @@ static int RunDiagnose(string[] args)
 
         var binPath = LlvmNativeLibraryLocator.GetBinPath(resolvedLlvmRoot);
 
-        var optPath = Path.Combine(binPath, OperatingSystem.IsWindows() ? "llvm-opt.exe" : "llvm-opt");
+        var optPath = LlvmNativeLibraryLocator.TryGetToolPath(resolvedLlvmRoot, "llvm-opt.exe");
         Console.Write("llvm-opt: ");
-        if (File.Exists(optPath))
+        if (optPath is not null)
         {
             Console.WriteLine("found");
         }

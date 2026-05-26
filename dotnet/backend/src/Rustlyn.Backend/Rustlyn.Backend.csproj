@@ -11,11 +11,14 @@
     <PropertyGroup>
       <GeneratedBindingGlueDirectory>$(IntermediateOutputPath)Generated\</GeneratedBindingGlueDirectory>
       <GeneratedBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.Bindings.g.cs</GeneratedBindingGlueFile>
+      <GeneratedAvaloniaBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.AvaloniaBindings.g.cs</GeneratedAvaloniaBindingGlueFile>
     </PropertyGroup>
     <MakeDir Directories="$(GeneratedBindingGlueDirectory)" />
     <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- managed-glue --out &quot;$(GeneratedBindingGlueFile)&quot;" />
+    <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- avalonia-managed-glue --out &quot;$(GeneratedAvaloniaBindingGlueFile)&quot;" />
     <ItemGroup>
       <Compile Include="$(GeneratedBindingGlueFile)" Link="RuntimeBridgeHelpers.Bindings.g.cs" Visible="false" />
+      <Compile Include="$(GeneratedAvaloniaBindingGlueFile)" Link="RuntimeBridgeHelpers.AvaloniaBindings.g.cs" Visible="false" />
     </ItemGroup>
   </Target>
 

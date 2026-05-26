@@ -29,13 +29,14 @@ public static class BindingArtifactPackGenerator
 
         var outputFullPath = Path.GetFullPath(outputDirectory);
         Directory.CreateDirectory(outputFullPath);
+        var manifest = BindingManifestDocument.FromSurface(surface);
 
         var artifacts = new[]
         {
-            new ArtifactContent(RustModuleFileName, "rust-module", RustBindingGenerator.GenerateSystemModule(surface)),
-            new ArtifactContent(ManagedGlueFileName, "managed-glue", ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface)),
-            new ArtifactContent(TextManifestFileName, "text-manifest", BindingManifestGenerator.GenerateText(surface)),
-            new ArtifactContent(JsonManifestFileName, "json-manifest", BindingManifestGenerator.GenerateJson(surface))
+            new ArtifactContent(RustModuleFileName, "rust-module", RustBindingGenerator.GenerateSystemModule(manifest)),
+            new ArtifactContent(ManagedGlueFileName, "managed-glue", ManagedGlueGenerator.GenerateRuntimeBridgePartial(manifest)),
+            new ArtifactContent(TextManifestFileName, "text-manifest", BindingManifestGenerator.GenerateText(manifest)),
+            new ArtifactContent(JsonManifestFileName, "json-manifest", BindingManifestGenerator.GenerateJson(manifest))
         };
 
         foreach (var artifact in artifacts)
@@ -43,37 +44,34 @@ public static class BindingArtifactPackGenerator
             File.WriteAllText(Path.Combine(outputFullPath, artifact.Path), artifact.Content, Utf8NoBom);
         }
 
-        var summary = CreateSummary(surface, artifacts);
+        var summary = CreateSummary(manifest, artifacts);
         File.WriteAllText(Path.Combine(outputFullPath, SummaryFileName), summary, Utf8NoBom);
     }
 
     public static string GenerateSummary(BindingSurface surface)
     {
         ArgumentNullException.ThrowIfNull(surface);
+        var manifest = BindingManifestDocument.FromSurface(surface);
         var artifacts = new[]
         {
-            new ArtifactContent(RustModuleFileName, "rust-module", RustBindingGenerator.GenerateSystemModule(surface)),
-            new ArtifactContent(ManagedGlueFileName, "managed-glue", ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface)),
-            new ArtifactContent(TextManifestFileName, "text-manifest", BindingManifestGenerator.GenerateText(surface)),
-            new ArtifactContent(JsonManifestFileName, "json-manifest", BindingManifestGenerator.GenerateJson(surface))
+            new ArtifactContent(RustModuleFileName, "rust-module", RustBindingGenerator.GenerateSystemModule(manifest)),
+            new ArtifactContent(ManagedGlueFileName, "managed-glue", ManagedGlueGenerator.GenerateRuntimeBridgePartial(manifest)),
+            new ArtifactContent(TextManifestFileName, "text-manifest", BindingManifestGenerator.GenerateText(manifest)),
+            new ArtifactContent(JsonManifestFileName, "json-manifest", BindingManifestGenerator.GenerateJson(manifest))
         };
-        return CreateSummary(surface, artifacts);
+        return CreateSummary(manifest, artifacts);
     }
 
-    private static string CreateSummary(BindingSurface surface, IReadOnlyList<ArtifactContent> artifacts)
+    private static string CreateSummary(BindingManifestDocument manifest, IReadOnlyList<ArtifactContent> artifacts)
     {
         var document = new ArtifactSummary(
-            FormatVersion: 2,
+            FormatVersion: BindingManifestVersions.PackFormatVersion,
             GeneratedBy: "Rustlyn.Bindings",
             GeneratorVersion: typeof(BindingArtifactPackGenerator).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                 ?? typeof(BindingArtifactPackGenerator).Assembly.GetName().Version?.ToString()
                 ?? "unknown",
-            ManagedAssemblies: surface.Requirements
-                .Select(static requirement => ArtifactAssemblyIdentity.From(requirement.Type.Assembly.GetName()))
-                .Distinct()
-                .OrderBy(static assembly => assembly.Name, StringComparer.Ordinal)
-                .ThenBy(static assembly => assembly.Version, StringComparer.Ordinal)
-                .ToArray(),
+            Compatibility: manifest.Compatibility,
+            ManagedAssemblies: manifest.ManagedAssemblies,
             OwnershipRules:
             [
                 new ArtifactOwnershipRule(
@@ -110,28 +108,10 @@ public static class BindingArtifactPackGenerator
         int FormatVersion,
         string GeneratedBy,
         string GeneratorVersion,
-        IReadOnlyList<ArtifactAssemblyIdentity> ManagedAssemblies,
+        BindingManifestCompatibility Compatibility,
+        IReadOnlyList<BindingManifestAssemblyIdentity> ManagedAssemblies,
         IReadOnlyList<ArtifactOwnershipRule> OwnershipRules,
         IReadOnlyList<ArtifactHash> Artifacts);
-
-    private sealed record ArtifactAssemblyIdentity(
-        string Name,
-        string? Version,
-        string? CultureName,
-        string PublicKeyToken)
-    {
-        public static ArtifactAssemblyIdentity From(AssemblyName assemblyName)
-        {
-            var publicKeyToken = assemblyName.GetPublicKeyToken();
-            return new ArtifactAssemblyIdentity(
-                assemblyName.Name ?? string.Empty,
-                assemblyName.Version?.ToString(),
-                assemblyName.CultureName,
-                publicKeyToken is { Length: > 0 }
-                    ? Convert.ToHexString(publicKeyToken).ToLowerInvariant()
-                    : string.Empty);
-        }
-    }
 
     private sealed record ArtifactOwnershipRule(string Name, string Rule);
 
