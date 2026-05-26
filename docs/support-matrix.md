@@ -36,7 +36,7 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | Area | Status | Evidence | First-class gap |
 | --- | --- | --- | --- |
 | `no_std` arithmetic/control samples | Supported | `samples/add` and primitive fixtures | Maintain as regression seed. |
-| `core`/`alloc`/`std` build-std rungs | Preview | build-std samples and MSBuild build-std script | Expand `std` compatibility beyond targeted fixtures. |
+| `core`/`alloc`/`std` build-std rungs | Preview | build-std samples and MSBuild build-std script | Expand `std` compatibility beyond targeted fixtures. Tests require nightly Rust + `rust-src` component (install via `rustup toolchain install nightly` and `rustup component add rust-src --toolchain nightly`). They are also skipped automatically when the bundled LLVM helper (currently LLVM 20) cannot read bitcode emitted by a newer rustc LLVM (see `docs/llvm-helper.md`). |
 | Enums, `Option`, `Result`, match | Preview | enum and option/result samples | Register all advanced samples in main test/smoke loops and formalize niche/discriminant layout. |
 | `?` error propagation | Fixture-only | `samples/error_propagation` exists | Promote into required tests and add panic/unwind/drop edge cases. |
 | Iterators and closures | Fixture-only | iterator/closure samples | Add move/ref capture, drop-sensitive captures, and more adapter chains. |
