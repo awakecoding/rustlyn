@@ -19,11 +19,10 @@ internal static class LlvmToolingDisassembler
 
     private static string ReadOptimizedLlvmIr(string artifactPath, string toolchainRoot)
     {
-        var llvmOptPath = LlvmNativeLibraryLocator.GetToolPath(toolchainRoot, "llvm-opt.exe");
+        var irTool = LlvmNativeLibraryLocator.GetIrToolPath(toolchainRoot);
         var processStartInfo = new ProcessStartInfo
         {
-            FileName = llvmOptPath,
-            Arguments = $"-disable-verify -S \"{artifactPath}\" -o -",
+            FileName = irTool.Path,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -31,8 +30,25 @@ internal static class LlvmToolingDisassembler
             WorkingDirectory = Directory.GetCurrentDirectory()
         };
 
+        if (irTool.Kind == LlvmIrToolKind.RustlynLlvm)
+        {
+            processStartInfo.ArgumentList.Add("print-ir");
+            processStartInfo.ArgumentList.Add(artifactPath);
+            processStartInfo.ArgumentList.Add("--disable-verify");
+            processStartInfo.ArgumentList.Add("--output");
+            processStartInfo.ArgumentList.Add("-");
+        }
+        else
+        {
+            processStartInfo.ArgumentList.Add("-disable-verify");
+            processStartInfo.ArgumentList.Add("-S");
+            processStartInfo.ArgumentList.Add(artifactPath);
+            processStartInfo.ArgumentList.Add("-o");
+            processStartInfo.ArgumentList.Add("-");
+        }
+
         using var process = Process.Start(processStartInfo)
-            ?? throw new InvalidOperationException($"Failed to start LLVM tool '{llvmOptPath}'.");
+            ?? throw new InvalidOperationException($"Failed to start LLVM tool '{irTool.Path}'.");
 
         var standardOutput = process.StandardOutput.ReadToEnd();
         var standardError = process.StandardError.ReadToEnd();
@@ -41,7 +57,7 @@ internal static class LlvmToolingDisassembler
         if (process.ExitCode != 0)
         {
             var message = string.IsNullOrWhiteSpace(standardError)
-                ? $"llvm-opt.exe failed with exit code {process.ExitCode}."
+                ? $"{Path.GetFileName(irTool.Path)} failed with exit code {process.ExitCode}."
                 : standardError.Trim();
             throw new InvalidDataException(message);
         }

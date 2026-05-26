@@ -39,6 +39,14 @@ Download the LLVM prebuilt used by the scripts:
 .\scripts\Get-LlvmPrebuilt.ps1
 ```
 
+Rustlyn can also use the statically linked Rustlyn LLVM helper when built from an LLVM development subset:
+
+```powershell
+.\scripts\Build-RustlynLlvmHelper.ps1 -LlvmDevRoot D:\opt\llvm-subsets\llvm-dev
+```
+
+At runtime, `RUSTLYN_LLVM_ROOT` should point at a root containing `bin\rustlyn-llvm.exe` or directly at a directory containing `rustlyn-llvm.exe`. A legacy LLVM tools root containing `bin\llvm-opt.exe` is still accepted as a fallback.
+
 Build a sample crate to `.bc`:
 
 ```powershell

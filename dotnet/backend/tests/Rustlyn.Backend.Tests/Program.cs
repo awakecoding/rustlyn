@@ -20319,9 +20319,9 @@ static string ResolveLlvmRootForTest()
     {
         var llvmRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(null)
             ?? throw new SkipTestException("LLVM toolchain is not configured. Set RUSTLYN_LLVM_ROOT or install a toolchain under artifacts\\toolchains\\llvm.");
-        if (LlvmNativeLibraryLocator.TryGetToolPath(llvmRoot, "llvm-opt.exe") is null)
+        if (LlvmNativeLibraryLocator.TryGetIrToolPath(llvmRoot) is null)
         {
-            throw new SkipTestException($"LLVM toolchain '{llvmRoot}' does not contain llvm-opt/opt.");
+            throw new SkipTestException($"LLVM toolchain '{llvmRoot}' does not contain rustlyn-llvm or llvm-opt/opt.");
         }
 
         return llvmRoot;

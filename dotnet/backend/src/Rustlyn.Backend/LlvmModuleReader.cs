@@ -14,6 +14,12 @@ internal static class LlvmModuleReader
             return null;
         }
 
+        var irTool = LlvmNativeLibraryLocator.TryGetIrToolPath(toolchainRoot);
+        if (irTool?.Kind == LlvmIrToolKind.RustlynLlvm)
+        {
+            return RustlynLlvmModuleReader.ReadSummary(artifactPath, toolchainRoot, irTool.Path);
+        }
+
         var configuredRoot = LlvmNativeLibraryLocator.TryConfigure(toolchainRoot);
         return configuredRoot is not null
             ? ReadWithInterop(artifactPath, configuredRoot)

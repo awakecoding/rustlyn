@@ -639,16 +639,32 @@ static int RunDiagnose(string[] args)
 
         var binPath = LlvmNativeLibraryLocator.GetBinPath(resolvedLlvmRoot);
 
-        var optPath = LlvmNativeLibraryLocator.TryGetToolPath(resolvedLlvmRoot, "llvm-opt.exe");
-        Console.Write("llvm-opt: ");
-        if (optPath is not null)
+        var rustlynLlvmPath = LlvmNativeLibraryLocator.TryGetToolPath(resolvedLlvmRoot, "rustlyn-llvm.exe");
+        Console.Write("rustlyn-llvm: ");
+        if (rustlynLlvmPath is not null)
         {
             Console.WriteLine("found");
         }
         else
         {
-            Console.WriteLine("NOT FOUND");
-            allGood = false;
+            Console.WriteLine("not found (legacy llvm-opt fallback will be used if available)");
+        }
+
+        var optPath = LlvmNativeLibraryLocator.TryGetToolPath(resolvedLlvmRoot, "llvm-opt.exe");
+        Console.Write("llvm-opt: ");
+        if (optPath is not null)
+        {
+            Console.WriteLine(rustlynLlvmPath is null
+                ? "found (legacy fallback; install rustlyn-llvm for structured JSON)"
+                : "found (legacy fallback)");
+        }
+        else
+        {
+            Console.WriteLine(rustlynLlvmPath is null ? "NOT FOUND" : "not found");
+            if (rustlynLlvmPath is null)
+            {
+                allGood = false;
+            }
         }
 
         var libLlvmName = OperatingSystem.IsWindows() ? "libLLVM.dll" : "libLLVM.so";
@@ -660,8 +676,14 @@ static int RunDiagnose(string[] args)
         }
         else
         {
-            Console.WriteLine("NOT FOUND (bitcode disassembly unavailable)");
+            Console.WriteLine("not found (optional LLVMSharp direct reader unavailable)");
         }
+
+        Console.Write("llvm-reader: ");
+        var readerMode = Environment.GetEnvironmentVariable("RUSTLYN_LLVM_READER");
+        Console.WriteLine(string.IsNullOrWhiteSpace(readerMode)
+            ? "auto (structured helper when supported, text fallback)"
+            : readerMode);
     }
     else
     {

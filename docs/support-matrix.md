@@ -17,7 +17,8 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | Area | Status | Evidence | First-class gap |
 | --- | --- | --- | --- |
 | LLVM bitcode inspection | Supported | `Rustlyn.Tool inspect`, `BitcodeArtifactInspector`, smoke scripts | Broader structured output and diagnostics. |
-| LLVM text lowering | Preview | `LoweredIrLowerer.cs` and many lowered-shape tests | Replace regex/text parsing with semantic LLVM traversal that preserves datalayout, attributes, metadata, volatile/orderings, address spaces, and exception constructs. |
+| LLVM tool dependency | Preview | `LlvmNativeLibraryLocator`, `rustlyn-llvm` helper, `llvm-opt` legacy fallback | Finish helper packaging and keep shrinking the fallback-only surface. |
+| LLVM lowering boundary | Preview | `rustlyn-llvm lower-json`, `RUSTLYN_LLVM_READER`, text fallback, and many lowered-shape tests | Replace instruction text parsing with semantic LLVM traversal that preserves datalayout, attributes, metadata, volatile/orderings, address spaces, and exception constructs. |
 | Arithmetic, comparisons, branches, phi, loops | Supported | Primitive samples and backend regression harness | Keep as the fast baseline while unsupported fallbacks are removed. |
 | Switch lowering | Preview | Raw switch lowering path and `switch_control` fixture | Model switch as a typed lowered instruction instead of a raw-instruction special case. |
 | Structs, arrays, tuples, aggregate returns | Preview | Focused aggregate samples | Add a datalayout-driven layout/ABI engine and remove packing/sret heuristics. |
@@ -98,4 +99,3 @@ Layout work routes through `TypeLayoutService`. It answers size/alignment for `i
 | Panic = unwind | Planned | Requires landingpad/invoke modeling, exception regions, and drop-on-unwind glue. |
 | Drop on early return | Preview | Works for fixtures that do not also need unwinding. |
 | Threading / `Mutex` / channels | Planned | Not validated by samples; treat as unsupported until coverage exists. |
-

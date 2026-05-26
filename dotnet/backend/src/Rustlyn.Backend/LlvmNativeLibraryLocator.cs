@@ -3,6 +3,8 @@ namespace Rustlyn.Backend;
 public static class LlvmNativeLibraryLocator
 {
     private const string LlvmRootEnvironmentVariable = "RUSTLYN_LLVM_ROOT";
+    private const string RustlynLlvmToolName = "rustlyn-llvm.exe";
+    private const string LlvmOptToolName = "llvm-opt.exe";
     private static readonly Lock Sync = new();
     private static string? s_configuredRoot;
 
@@ -70,6 +72,33 @@ public static class LlvmNativeLibraryLocator
         return toolPath;
     }
 
+    public static LlvmIrTool GetIrToolPath(string toolchainRoot)
+    {
+        var tool = TryGetIrToolPath(toolchainRoot);
+        if (tool is null)
+        {
+            throw new FileNotFoundException(
+                "Configured LLVM toolchain does not contain rustlyn-llvm or llvm-opt/opt.",
+                Path.Combine(GetBinPath(toolchainRoot), RustlynLlvmToolName));
+        }
+
+        return tool;
+    }
+
+    public static LlvmIrTool? TryGetIrToolPath(string toolchainRoot)
+    {
+        var rustlynLlvmPath = TryGetToolPath(toolchainRoot, RustlynLlvmToolName);
+        if (rustlynLlvmPath is not null)
+        {
+            return new LlvmIrTool(rustlynLlvmPath, LlvmIrToolKind.RustlynLlvm);
+        }
+
+        var llvmOptPath = TryGetToolPath(toolchainRoot, LlvmOptToolName);
+        return llvmOptPath is null
+            ? null
+            : new LlvmIrTool(llvmOptPath, LlvmIrToolKind.LlvmOpt);
+    }
+
     public static string? TryGetToolPath(string toolchainRoot, string toolName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(toolchainRoot);
@@ -123,7 +152,7 @@ public static class LlvmNativeLibraryLocator
             .OrderByDescending(static path => Path.GetFileName(path).StartsWith("clang+llvm-", StringComparison.OrdinalIgnoreCase))
             .ThenByDescending(static path => Directory.GetLastWriteTimeUtc(path))
             .ToArray();
-        return candidates.FirstOrDefault(static path => TryGetToolPath(path, "llvm-opt.exe") is not null);
+        return candidates.FirstOrDefault(static path => TryGetIrToolPath(path) is not null);
     }
 
     private static IEnumerable<string> GetToolNameCandidates(string toolName)
@@ -187,4 +216,12 @@ public static class LlvmNativeLibraryLocator
 
         Environment.SetEnvironmentVariable("PATH", updatedPath);
     }
+}
+
+public sealed record LlvmIrTool(string Path, LlvmIrToolKind Kind);
+
+public enum LlvmIrToolKind
+{
+    RustlynLlvm,
+    LlvmOpt
 }
