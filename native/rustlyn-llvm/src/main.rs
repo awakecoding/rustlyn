@@ -561,6 +561,8 @@ impl Module {
         push_json_property(&mut json, 2, "sourcePath", &input.display().to_string(), true);
         push_globals_json(&mut json, self.module);
         json.push_str(",\n");
+        push_aliases_json(&mut json, self.module);
+        json.push_str(",\n");
         push_lower_functions_json(&mut json, self.module);
         json.push_str("\n  }\n");
         json.push_str("}\n");

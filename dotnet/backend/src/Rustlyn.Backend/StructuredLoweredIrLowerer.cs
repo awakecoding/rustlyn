@@ -23,7 +23,7 @@ public static partial class LoweredIrLowerer
         try
         {
             var structuredModule = RustlynLlvmLowerJsonReader.ReadModule(artifactPath, irTool.Path);
-            if (readerMode == LlvmReaderMode.Auto && structuredModule.Globals.Count > 0)
+            if (readerMode == LlvmReaderMode.Auto && !IsSafeForStructuredLowering(structuredModule))
             {
                 return null;
             }
@@ -34,6 +34,46 @@ public static partial class LoweredIrLowerer
         {
             return null;
         }
+    }
+
+    // Opcodes that the structured lowerer can safely handle by re-using the per-instruction text parser.
+    // Anything that depends on multi-line context (alloca/store/load chains, switch tables, phi merges,
+    // gep field offsets, lifetime intrinsics, indirect calls, atomics, vector ops) is excluded; in auto
+    // mode the lowerer falls back to the text reader for those modules. Widen this set only after
+    // verifying the structured path produces identical results to the text path for the new opcode.
+    private static readonly HashSet<string> SafeStructuredOpcodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "add", "sub", "mul",
+        "sdiv", "udiv", "srem", "urem",
+        "and", "or", "xor",
+        "shl", "lshr", "ashr",
+        "icmp",
+        "zext", "sext", "trunc",
+        "ret",
+    };
+
+    private static bool IsSafeForStructuredLowering(RustlynLlvmLowerJsonModule module)
+    {
+        if (module.Globals.Count > 0 || module.Aliases.Count > 0)
+        {
+            return false;
+        }
+
+        foreach (var function in module.Functions)
+        {
+            foreach (var block in function.Blocks)
+            {
+                foreach (var instruction in block.Instructions)
+                {
+                    if (!SafeStructuredOpcodes.Contains(instruction.Opcode))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private static LoweredModule LowerStructuredJson(RustlynLlvmLowerJsonModule module)

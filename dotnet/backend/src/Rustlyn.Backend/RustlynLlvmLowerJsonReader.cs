@@ -21,7 +21,26 @@ internal static class RustlynLlvmLowerJsonReader
         return new RustlynLlvmLowerJsonModule(
             module.GetProperty("sourcePath").GetString() ?? string.Empty,
             ReadGlobals(module.GetProperty("globals")),
+            ReadAliases(module),
             ReadFunctions(module.GetProperty("functions")));
+    }
+
+    private static IReadOnlyList<RustlynLlvmLowerJsonAlias> ReadAliases(JsonElement module)
+    {
+        var result = new List<RustlynLlvmLowerJsonAlias>();
+        if (!module.TryGetProperty("aliases", out var aliases))
+        {
+            return result;
+        }
+
+        foreach (var alias in aliases.EnumerateArray())
+        {
+            var name = alias.TryGetProperty("name", out var n) ? n.GetString() ?? string.Empty : string.Empty;
+            var aliasee = alias.TryGetProperty("aliasee", out var a) ? a.GetString() ?? string.Empty : string.Empty;
+            result.Add(new RustlynLlvmLowerJsonAlias(name, aliasee));
+        }
+
+        return result;
     }
 
     private static string RunLowerJson(string artifactPath, string helperPath)
@@ -141,7 +160,10 @@ internal static class RustlynLlvmLowerJsonReader
 internal sealed record RustlynLlvmLowerJsonModule(
     string SourcePath,
     IReadOnlyList<RustlynLlvmLowerJsonGlobal> Globals,
+    IReadOnlyList<RustlynLlvmLowerJsonAlias> Aliases,
     IReadOnlyList<RustlynLlvmLowerJsonFunction> Functions);
+
+internal sealed record RustlynLlvmLowerJsonAlias(string Name, string Aliasee);
 
 internal sealed record RustlynLlvmLowerJsonGlobal(
     string Name);
