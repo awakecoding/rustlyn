@@ -8,5 +8,12 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+    <ProjectReference Include="..\Rustlyn.AvaloniaSupport\Rustlyn.AvaloniaSupport.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.0" />
   </ItemGroup>
 </Project>

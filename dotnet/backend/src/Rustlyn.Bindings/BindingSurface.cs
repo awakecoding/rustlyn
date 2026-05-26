@@ -26,6 +26,8 @@ public sealed record BindingSurface(
             new StaticObjectHandleMethodBindingRequest(typeof(Directory), nameof(Directory.GetFiles), [typeof(string), typeof(string)], RustWrapperContainer.IoDirectory));
         var fileReadAllLinesBinding = BindingSurfaceScanner.CreateStaticObjectHandleMethodBinding(
             new StaticObjectHandleMethodBindingRequest(typeof(File), nameof(File.ReadAllLines), [typeof(string)], RustWrapperContainer.IoFile));
+        var arrayHandleBindings = CreateArrayHandleBindings();
+        var stringUtf8AdapterBindings = CreateManagedStringUtf8AdapterBindings();
 
         return new BindingSurface(
             [
@@ -61,14 +63,7 @@ public sealed record BindingSurface(
                 ManagedApiRequirement.Method("System.String.Replace(string, string)", typeof(string), nameof(string.Replace), [typeof(string), typeof(string)]),
                 ManagedApiRequirement.Property("System.String.Length", typeof(string), nameof(string.Length)),
                 ManagedApiRequirement.ForType("System.String", typeof(string)),
-                ManagedApiRequirement.ForType("System.String[]", typeof(string[])),
-                ManagedApiRequirement.Method("Rustlyn.Interop.ManagedInteropRuntime.CreateStringArray(string, string, string)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateStringArray), [typeof(string), typeof(string), typeof(string)]),
-                ManagedApiRequirement.ForType("System.Int32[]", typeof(int[])),
-                ManagedApiRequirement.Method("Rustlyn.Interop.ManagedInteropRuntime.CreateInt32Array(int, int, int)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateInt32Array), [typeof(int), typeof(int), typeof(int)]),
-                ManagedApiRequirement.Method("Rustlyn.Interop.ManagedInteropRuntime.CopyInt32Array(int[], IntPtr, long)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyInt32Array), [typeof(int[]), typeof(IntPtr), typeof(long)]),
-                ManagedApiRequirement.ForType("System.Byte[]", typeof(byte[])),
-                ManagedApiRequirement.Method("Rustlyn.Interop.ManagedInteropRuntime.CreateByteArray(int, int, int)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CreateByteArray), [typeof(int), typeof(int), typeof(int)]),
-                ManagedApiRequirement.Method("Rustlyn.Interop.ManagedInteropRuntime.CopyByteArray(byte[], IntPtr, long)", typeof(ManagedInteropRuntime), nameof(ManagedInteropRuntime.CopyByteArray), [typeof(byte[]), typeof(IntPtr), typeof(long)]),
+                .. arrayHandleBindings.Requirements,
                 ManagedApiRequirement.Method("System.TimeSpan.FromMilliseconds(double)", typeof(TimeSpan), nameof(TimeSpan.FromMilliseconds), [typeof(double)]),
                 ManagedApiRequirement.Property("System.TimeSpan.Ticks", typeof(TimeSpan), nameof(TimeSpan.Ticks)),
                 ManagedApiRequirement.Property("System.TimeSpan.TotalMilliseconds", typeof(TimeSpan), nameof(TimeSpan.TotalMilliseconds)),
@@ -209,30 +204,14 @@ public sealed record BindingSurface(
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.BooleanAsInt(
                         StaticMethod(typeof(Path), nameof(Path.IsPathRooted), [typeof(string)], [ManagedObject(typeof(string), "pathHandle")])))),
                 .. scalarMathBindings.Select(static binding => binding.ManagedGlueBinding),
-                Glue(
-                    "rustlyn_bindgen_system_string_from_utf8",
-                    "BindgenSystemStringFromUtf8",
-                    [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        Utf8String("valuePointer", "valueLength")))),
+                .. stringUtf8AdapterBindings.InputManagedGlueBindings,
                 Glue(
                     "rustlyn_bindgen_system_string_len",
                     "BindgenSystemStringLength",
                     [I32("stringHandle"), Pointer("exceptionOutPointer")],
                     ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
                         InstanceProperty(ManagedObject(typeof(string), "stringHandle"), typeof(string), nameof(string.Length))))),
-                Glue(
-                    "rustlyn_bindgen_system_string_utf8_len",
-                    "BindgenSystemStringUtf8Length",
-                    [I32("stringHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.Utf8ByteCount(ManagedObject(typeof(string), "stringHandle"))))),
-                Glue(
-                    "rustlyn_bindgen_system_string_copy_utf8",
-                    "BindgenSystemStringCopyUtf8",
-                    [I32("stringHandle"), Pointer("destinationPointer"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.Utf8Copy(ManagedObject(typeof(string), "stringHandle"), "destinationPointer", "destinationCapacity")))),
+                .. stringUtf8AdapterBindings.OutputManagedGlueBindings,
                 Glue(
                     "rustlyn_bindgen_system_string_contains_utf8",
                     "BindgenSystemStringContainsUtf8",
@@ -321,92 +300,7 @@ public sealed record BindingSurface(
                             nameof(string.Replace),
                             [typeof(string), typeof(string)],
                             [ManagedObject(typeof(string), "oldValueHandle"), ManagedObject(typeof(string), "newValueHandle")])))),
-                Glue(
-                    "rustlyn_bindgen_system_string_array_len",
-                    "BindgenSystemStringArrayLength",
-                    [I32("arrayHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.ArrayLength(ManagedObject(typeof(string[]), "arrayHandle"))))),
-                Glue(
-                    "rustlyn_bindgen_system_string_array_get",
-                    "BindgenSystemStringArrayGet",
-                    [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        ManagedGlueExpression.ArrayElement(ManagedObject(typeof(string[]), "arrayHandle"), "index")))),
-                Glue(
-                    "rustlyn_bindgen_system_string_array_from_strings",
-                    "BindgenSystemStringArrayFromStrings",
-                    [I32("firstHandle"), I32("secondHandle"), I32("thirdHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        StaticMethod(
-                            typeof(ManagedInteropRuntime),
-                            nameof(ManagedInteropRuntime.CreateStringArray),
-                            [typeof(string), typeof(string), typeof(string)],
-                            [ManagedObject(typeof(string), "firstHandle"), ManagedObject(typeof(string), "secondHandle"), ManagedObject(typeof(string), "thirdHandle")])))),
-                Glue(
-                    "rustlyn_bindgen_system_int_array_from_i32_triplet",
-                    "BindgenSystemIntArrayFromI32Triplet",
-                    [I32("first"), I32("second"), I32("third"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        StaticMethod(
-                            typeof(ManagedInteropRuntime),
-                            nameof(ManagedInteropRuntime.CreateInt32Array),
-                            [typeof(int), typeof(int), typeof(int)],
-                            [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")])))),
-                Glue(
-                    "rustlyn_bindgen_system_int_array_len",
-                    "BindgenSystemIntArrayLength",
-                    [I32("arrayHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.ArrayLength(ManagedObject(typeof(int[]), "arrayHandle"))))),
-                Glue(
-                    "rustlyn_bindgen_system_int_array_get",
-                    "BindgenSystemIntArrayGet",
-                    [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.ArrayElement(ManagedObject(typeof(int[]), "arrayHandle"), "index")))),
-                Glue(
-                    "rustlyn_bindgen_system_int_array_copy",
-                    "BindgenSystemIntArrayCopy",
-                    [I32("arrayHandle"), Pointer("destinationPointer", "*mut i32"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        StaticMethod(
-                            typeof(ManagedInteropRuntime),
-                            nameof(ManagedInteropRuntime.CopyInt32Array),
-                            [typeof(int[]), typeof(IntPtr), typeof(long)],
-                            [ManagedObject(typeof(int[]), "arrayHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))),
-                Glue(
-                    "rustlyn_bindgen_system_byte_array_from_u8_triplet",
-                    "BindgenSystemByteArrayFromU8Triplet",
-                    [I32("first"), I32("second"), I32("third"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
-                        StaticMethod(
-                            typeof(ManagedInteropRuntime),
-                            nameof(ManagedInteropRuntime.CreateByteArray),
-                            [typeof(int), typeof(int), typeof(int)],
-                            [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")])))),
-                Glue(
-                    "rustlyn_bindgen_system_byte_array_len",
-                    "BindgenSystemByteArrayLength",
-                    [I32("arrayHandle"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.ArrayLength(ManagedObject(typeof(byte[]), "arrayHandle"))))),
-                Glue(
-                    "rustlyn_bindgen_system_byte_array_get",
-                    "BindgenSystemByteArrayGet",
-                    [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        ManagedGlueExpression.ArrayElement(ManagedObject(typeof(byte[]), "arrayHandle"), "index")))),
-                Glue(
-                    "rustlyn_bindgen_system_byte_array_copy",
-                    "BindgenSystemByteArrayCopy",
-                    [I32("arrayHandle"), Pointer("destinationPointer", "*mut u8"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
-                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
-                        StaticMethod(
-                            typeof(ManagedInteropRuntime),
-                            nameof(ManagedInteropRuntime.CopyByteArray),
-                            [typeof(byte[]), typeof(IntPtr), typeof(long)],
-                            [ManagedObject(typeof(byte[]), "arrayHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))),
+                .. arrayHandleBindings.ManagedGlueBindings,
                 Glue(
                     "rustlyn_bindgen_system_time_span_from_milliseconds_f64",
                     "BindgenSystemTimeSpanFromMillisecondsF64",
@@ -726,13 +620,7 @@ public sealed record BindingSurface(
                     ["path.handle()"],
                     "value",
                     RustWrapperResult.BooleanAsInt()),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedString,
-                    "pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception>",
-                    "rustlyn_bindgen_system_string_from_utf8",
-                    ["value_ptr", "value_len"],
-                    "object_handle",
-                    RustWrapperResult.ObjectHandle("Self")),
+                .. stringUtf8AdapterBindings.InputRustWrapperMethods,
                 new RustWrapperMethod(
                     RustWrapperContainer.ManagedString,
                     "pub fn len(&self) -> Result<i32, Exception>",
@@ -740,20 +628,7 @@ public sealed record BindingSurface(
                     ["self.handle"],
                     "length",
                     RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedString,
-                    "pub fn utf8_len(&self) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_string_utf8_len",
-                    ["self.handle"],
-                    "length",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedString,
-                    "pub fn copy_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_string_copy_utf8",
-                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
-                    "written",
-                    RustWrapperResult.Scalar("i32")),
+                .. stringUtf8AdapterBindings.OutputRustWrapperMethods,
                 new RustWrapperMethod(
                     RustWrapperContainer.ManagedString,
                     "pub fn contains_utf8_parts(&self, needle_ptr: *const u8, needle_len: i64) -> Result<bool, Exception>",
@@ -852,104 +727,7 @@ public sealed record BindingSurface(
                     ["self.handle"],
                     "unused",
                     RustWrapperResult.Void()),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedStringArray,
-                    "pub fn from_strings(first: &ManagedString, second: &ManagedString, third: &ManagedString) -> Result<Self, Exception>",
-                    "rustlyn_bindgen_system_string_array_from_strings",
-                    ["first.handle()", "second.handle()", "third.handle()"],
-                    "object_handle",
-                    RustWrapperResult.ObjectHandle("Self")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedStringArray,
-                    "pub fn len(&self) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_string_array_len",
-                    ["self.handle"],
-                    "length",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedStringArray,
-                    "pub fn get(&self, index: i32) -> Result<ManagedString, Exception>",
-                    "rustlyn_bindgen_system_string_array_get",
-                    ["self.handle", "index"],
-                    "object_handle",
-                    RustWrapperResult.ObjectHandle("ManagedString")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedStringArray,
-                    "pub fn release(self) -> Result<(), Exception>",
-                    "rustlyn_bindgen_system_object_release",
-                    ["self.handle"],
-                    "unused",
-                    RustWrapperResult.Void()),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedIntArray,
-                    "pub fn from_i32_triplet(first: i32, second: i32, third: i32) -> Result<Self, Exception>",
-                    "rustlyn_bindgen_system_int_array_from_i32_triplet",
-                    ["first", "second", "third"],
-                    "object_handle",
-                    RustWrapperResult.ObjectHandle("Self")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedIntArray,
-                    "pub fn len(&self) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_int_array_len",
-                    ["self.handle"],
-                    "length",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedIntArray,
-                    "pub fn get(&self, index: i32) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_int_array_get",
-                    ["self.handle", "index"],
-                    "value",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedIntArray,
-                    "pub fn copy_into(&self, buffer: &mut [i32]) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_int_array_copy",
-                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
-                    "written",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedIntArray,
-                    "pub fn release(self) -> Result<(), Exception>",
-                    "rustlyn_bindgen_system_object_release",
-                    ["self.handle"],
-                    "unused",
-                    RustWrapperResult.Void()),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedByteArray,
-                    "pub fn from_u8_triplet(first: u8, second: u8, third: u8) -> Result<Self, Exception>",
-                    "rustlyn_bindgen_system_byte_array_from_u8_triplet",
-                    ["first as i32", "second as i32", "third as i32"],
-                    "object_handle",
-                    RustWrapperResult.ObjectHandle("Self")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedByteArray,
-                    "pub fn len(&self) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_byte_array_len",
-                    ["self.handle"],
-                    "length",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedByteArray,
-                    "pub fn get(&self, index: i32) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_byte_array_get",
-                    ["self.handle", "index"],
-                    "value",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedByteArray,
-                    "pub fn copy_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>",
-                    "rustlyn_bindgen_system_byte_array_copy",
-                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
-                    "written",
-                    RustWrapperResult.Scalar("i32")),
-                new RustWrapperMethod(
-                    RustWrapperContainer.ManagedByteArray,
-                    "pub fn release(self) -> Result<(), Exception>",
-                    "rustlyn_bindgen_system_object_release",
-                    ["self.handle"],
-                    "unused",
-                    RustWrapperResult.Void()),
+                .. arrayHandleBindings.RustWrapperMethods,
                 new RustWrapperMethod(
                     RustWrapperContainer.TimeSpan,
                     "pub fn from_milliseconds(value: f64) -> Result<ManagedTimeSpan, Exception>",
@@ -1041,6 +819,295 @@ public sealed record BindingSurface(
             ]);
     }
 
+    private static ArrayHandleBindingSet CreateArrayHandleBindings()
+        => CreateArrayHandleBindings(
+        [
+            new ArrayHandleProjection(
+                "System.String[]",
+                typeof(string[]),
+                typeof(string),
+                RustWrapperContainer.ManagedStringArray,
+                "rustlyn_bindgen_system_string_array",
+                "BindgenSystemStringArray",
+                "from_strings",
+                "pub fn from_strings(first: &ManagedString, second: &ManagedString, third: &ManagedString) -> Result<Self, Exception>",
+                ["first.handle()", "second.handle()", "third.handle()"],
+                [I32("firstHandle"), I32("secondHandle"), I32("thirdHandle")],
+                [ManagedObject(typeof(string), "firstHandle"), ManagedObject(typeof(string), "secondHandle"), ManagedObject(typeof(string), "thirdHandle")],
+                nameof(ManagedInteropRuntime.CreateStringArray),
+                [typeof(string), typeof(string), typeof(string)],
+                "pub fn get(&self, index: i32) -> Result<ManagedString, Exception>",
+                RustWrapperResult.ObjectHandle("ManagedString"),
+                "object_handle",
+                CreateGlueAfterAccessors: true),
+            new ArrayHandleProjection(
+                "System.Int32[]",
+                typeof(int[]),
+                typeof(int),
+                RustWrapperContainer.ManagedIntArray,
+                "rustlyn_bindgen_system_int_array",
+                "BindgenSystemIntArray",
+                "from_i32_triplet",
+                "pub fn from_i32_triplet(first: i32, second: i32, third: i32) -> Result<Self, Exception>",
+                ["first", "second", "third"],
+                [I32("first"), I32("second"), I32("third")],
+                [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")],
+                nameof(ManagedInteropRuntime.CreateInt32Array),
+                [typeof(int), typeof(int), typeof(int)],
+                "pub fn get(&self, index: i32) -> Result<i32, Exception>",
+                RustWrapperResult.Scalar("i32"),
+                "value",
+                "CopyInt32Array",
+                nameof(ManagedInteropRuntime.CopyInt32Array),
+                "*mut i32",
+                "pub fn copy_into(&self, buffer: &mut [i32]) -> Result<i32, Exception>"),
+            new ArrayHandleProjection(
+                "System.Byte[]",
+                typeof(byte[]),
+                typeof(byte),
+                RustWrapperContainer.ManagedByteArray,
+                "rustlyn_bindgen_system_byte_array",
+                "BindgenSystemByteArray",
+                "from_u8_triplet",
+                "pub fn from_u8_triplet(first: u8, second: u8, third: u8) -> Result<Self, Exception>",
+                ["first as i32", "second as i32", "third as i32"],
+                [I32("first"), I32("second"), I32("third")],
+                [ManagedGlueExpression.Parameter("first"), ManagedGlueExpression.Parameter("second"), ManagedGlueExpression.Parameter("third")],
+                nameof(ManagedInteropRuntime.CreateByteArray),
+                [typeof(int), typeof(int), typeof(int)],
+                "pub fn get(&self, index: i32) -> Result<i32, Exception>",
+                RustWrapperResult.Scalar("i32"),
+                "value",
+                "CopyByteArray",
+                nameof(ManagedInteropRuntime.CopyByteArray),
+                "*mut u8",
+                "pub fn copy_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>")
+        ]);
+
+    private static ArrayHandleBindingSet CreateArrayHandleBindings(IReadOnlyList<ArrayHandleProjection> projections)
+    {
+        var requirements = new List<ManagedApiRequirement>();
+        var managedGlueBindings = new List<ManagedGlueBinding>();
+        var rustWrapperMethods = new List<RustWrapperMethod>();
+        foreach (var projection in projections)
+        {
+            requirements.Add(ManagedApiRequirement.ForType(projection.DisplayName, projection.ArrayType));
+            requirements.Add(ManagedApiRequirement.Method(
+                $"Rustlyn.Interop.ManagedInteropRuntime.{projection.CreateMethodName}({FormatParameterTypes(projection.CreateParameterTypes)})",
+                typeof(ManagedInteropRuntime),
+                projection.CreateMethodName,
+                projection.CreateParameterTypes));
+            if (projection.CopyMethodName is not null)
+            {
+                requirements.Add(ManagedApiRequirement.Method(
+                    $"Rustlyn.Interop.ManagedInteropRuntime.{projection.CopyMethodName}({FormatParameterTypes([projection.ArrayType, typeof(IntPtr), typeof(long)])})",
+                    typeof(ManagedInteropRuntime),
+                    projection.CopyMethodName,
+                    [projection.ArrayType, typeof(IntPtr), typeof(long)]));
+            }
+
+            if (!projection.CreateGlueAfterAccessors)
+            {
+                AddArrayCreateGlueBinding(projection, managedGlueBindings);
+            }
+
+            if (!projection.CreateWrapperAfterAccessors)
+            {
+                AddArrayCreateWrapper(projection, rustWrapperMethods);
+            }
+
+            var lenSymbol = projection.BaseSymbol + "_len";
+            managedGlueBindings.Add(Glue(
+                lenSymbol,
+                projection.HelperPrefix + "Length",
+                [I32("arrayHandle"), Pointer("exceptionOutPointer")],
+                ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                    ManagedGlueExpression.ArrayLength(ManagedObject(projection.ArrayType, "arrayHandle"))))));
+            rustWrapperMethods.Add(new RustWrapperMethod(
+                projection.Container,
+                "pub fn len(&self) -> Result<i32, Exception>",
+                lenSymbol,
+                ["self.handle"],
+                "length",
+                RustWrapperResult.Scalar("i32")));
+
+            var getSymbol = projection.BaseSymbol + "_get";
+            var getElement = ManagedGlueExpression.ArrayElement(ManagedObject(projection.ArrayType, "arrayHandle"), "index");
+            managedGlueBindings.Add(Glue(
+                getSymbol,
+                projection.HelperPrefix + "Get",
+                [I32("arrayHandle"), I32("index"), Pointer("exceptionOutPointer")],
+                ManagedGlueOperation.WriteExceptionOut(
+                    "exceptionOutPointer",
+                    projection.GetResult.Kind == RustWrapperResultKind.ObjectHandle
+                        ? ManagedGlueResult.ObjectHandle(getElement)
+                        : ManagedGlueResult.Int(getElement))));
+            rustWrapperMethods.Add(new RustWrapperMethod(
+                projection.Container,
+                projection.GetWrapperSignature,
+                getSymbol,
+                ["self.handle", "index"],
+                projection.GetResultVariableName,
+                projection.GetResult));
+
+            if (projection.CreateGlueAfterAccessors)
+            {
+                AddArrayCreateGlueBinding(projection, managedGlueBindings);
+            }
+
+            if (projection.CreateWrapperAfterAccessors)
+            {
+                AddArrayCreateWrapper(projection, rustWrapperMethods);
+            }
+
+            if (projection.CopyMethodName is not null && projection.CopyRustAbiType is not null && projection.CopyWrapperSignature is not null)
+            {
+                var copySymbol = projection.BaseSymbol + "_copy";
+                managedGlueBindings.Add(Glue(
+                    copySymbol,
+                    projection.HelperPrefix + "Copy",
+                    [I32("arrayHandle"), Pointer("destinationPointer", projection.CopyRustAbiType), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        StaticMethod(
+                            typeof(ManagedInteropRuntime),
+                            projection.CopyMethodName,
+                            [projection.ArrayType, typeof(IntPtr), typeof(long)],
+                            [ManagedObject(projection.ArrayType, "arrayHandle"), ManagedGlueExpression.Parameter("destinationPointer"), ManagedGlueExpression.Parameter("destinationCapacity")])))));
+                rustWrapperMethods.Add(new RustWrapperMethod(
+                    projection.Container,
+                    projection.CopyWrapperSignature,
+                    copySymbol,
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32")));
+            }
+
+            rustWrapperMethods.Add(new RustWrapperMethod(
+                projection.Container,
+                "pub fn release(self) -> Result<(), Exception>",
+                "rustlyn_bindgen_system_object_release",
+                ["self.handle"],
+                "unused",
+                RustWrapperResult.Void()));
+        }
+
+        return new ArrayHandleBindingSet(requirements, managedGlueBindings, rustWrapperMethods);
+    }
+
+    private static void AddArrayCreateGlueBinding(
+        ArrayHandleProjection projection,
+        ICollection<ManagedGlueBinding> managedGlueBindings)
+    {
+        var createSymbol = projection.BaseSymbol + CreateSymbolSuffix(projection.CreateWrapperName);
+        managedGlueBindings.Add(Glue(
+            createSymbol,
+            projection.HelperPrefix + CreateHelperSuffix(projection.CreateWrapperName),
+            [.. projection.CreateParameters, Pointer("exceptionOutPointer")],
+            ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                StaticMethod(typeof(ManagedInteropRuntime), projection.CreateMethodName, projection.CreateParameterTypes, projection.CreateArguments)))));
+    }
+
+    private static void AddArrayCreateWrapper(
+        ArrayHandleProjection projection,
+        ICollection<RustWrapperMethod> rustWrapperMethods)
+    {
+        rustWrapperMethods.Add(new RustWrapperMethod(
+            projection.Container,
+            projection.CreateWrapperSignature,
+            projection.BaseSymbol + CreateSymbolSuffix(projection.CreateWrapperName),
+            projection.CreateWrapperArguments,
+            "object_handle",
+            RustWrapperResult.ObjectHandle("Self")));
+    }
+
+    private static string CreateSymbolSuffix(string wrapperName)
+        => wrapperName switch
+        {
+            "from_strings" => "_from_strings",
+            "from_i32_triplet" => "_from_i32_triplet",
+            "from_u8_triplet" => "_from_u8_triplet",
+            _ => $"_{wrapperName}"
+        };
+
+    private static string CreateHelperSuffix(string wrapperName)
+        => string.Concat(wrapperName.Split('_').Select(static part => char.ToUpperInvariant(part[0]) + part[1..]));
+
+    private static string FormatParameterTypes(IReadOnlyList<Type> parameterTypes)
+        => string.Join(", ", parameterTypes.Select(FormatParameterType));
+
+    private static string FormatParameterType(Type type)
+    {
+        if (type.IsArray)
+        {
+            var elementType = type.GetElementType()
+                ?? throw new InvalidOperationException($"Array type '{type}' does not expose an element type.");
+            return FormatParameterType(elementType) + "[]";
+        }
+
+        return type switch
+        {
+            _ when type == typeof(string) => "string",
+            _ when type == typeof(int) => "int",
+            _ when type == typeof(byte) => "byte",
+            _ when type == typeof(long) => "long",
+            _ when type == typeof(IntPtr) => "IntPtr",
+            _ => type.Name
+        };
+    }
+
+    private static Utf8AdapterBindingSet CreateManagedStringUtf8AdapterBindings()
+    {
+        var receiver = ManagedObject(typeof(string), "stringHandle");
+        return new Utf8AdapterBindingSet(
+            [
+                Glue(
+                    "rustlyn_bindgen_system_string_from_utf8",
+                    "BindgenSystemStringFromUtf8",
+                    [Pointer("valuePointer"), I64("valueLength"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.ObjectHandle(
+                        Utf8String("valuePointer", "valueLength"))))
+            ],
+            [
+                Glue(
+                    "rustlyn_bindgen_system_string_utf8_len",
+                    "BindgenSystemStringUtf8Length",
+                    [I32("stringHandle"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.Utf8ByteCount(receiver)))),
+                Glue(
+                    "rustlyn_bindgen_system_string_copy_utf8",
+                    "BindgenSystemStringCopyUtf8",
+                    [I32("stringHandle"), Pointer("destinationPointer"), I64("destinationCapacity"), Pointer("exceptionOutPointer")],
+                    ManagedGlueOperation.WriteExceptionOut("exceptionOutPointer", ManagedGlueResult.Int(
+                        ManagedGlueExpression.Utf8Copy(receiver, "destinationPointer", "destinationCapacity"))))
+            ],
+            [
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception>",
+                    "rustlyn_bindgen_system_string_from_utf8",
+                    ["value_ptr", "value_len"],
+                    "object_handle",
+                    RustWrapperResult.ObjectHandle("Self"))
+            ],
+            [
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn utf8_len(&self) -> Result<i32, Exception>",
+                    "rustlyn_bindgen_system_string_utf8_len",
+                    ["self.handle"],
+                    "length",
+                    RustWrapperResult.Scalar("i32")),
+                new RustWrapperMethod(
+                    RustWrapperContainer.ManagedString,
+                    "pub fn copy_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Exception>",
+                    "rustlyn_bindgen_system_string_copy_utf8",
+                    ["self.handle", "buffer.as_mut_ptr()", "buffer.len() as i64"],
+                    "written",
+                    RustWrapperResult.Scalar("i32"))
+            ]);
+    }
+
     private static ManagedGlueBinding Glue(string symbol, string helperMethodName, IReadOnlyList<ManagedGlueParameter> parameters, ManagedGlueOperation operation)
         => new(symbol, helperMethodName, parameters, operation);
 
@@ -1083,6 +1150,41 @@ public sealed record BindingSurface(
     private static ManagedGlueExpression InstanceProperty(ManagedGlueExpression instance, Type declaringType, string propertyName)
         => ManagedGlueExpression.InstanceProperty(instance, declaringType, propertyName);
 }
+
+internal sealed record ArrayHandleBindingSet(
+    IReadOnlyList<ManagedApiRequirement> Requirements,
+    IReadOnlyList<ManagedGlueBinding> ManagedGlueBindings,
+    IReadOnlyList<RustWrapperMethod> RustWrapperMethods);
+
+internal sealed record ArrayHandleProjection(
+    string DisplayName,
+    Type ArrayType,
+    Type ElementType,
+    RustWrapperContainer Container,
+    string BaseSymbol,
+    string HelperPrefix,
+    string CreateWrapperName,
+    string CreateWrapperSignature,
+    IReadOnlyList<string> CreateWrapperArguments,
+    IReadOnlyList<ManagedGlueParameter> CreateParameters,
+    IReadOnlyList<ManagedGlueExpression> CreateArguments,
+    string CreateMethodName,
+    IReadOnlyList<Type> CreateParameterTypes,
+    string GetWrapperSignature,
+    RustWrapperResult GetResult,
+    string GetResultVariableName,
+    string? CopyRequirementName = null,
+    string? CopyMethodName = null,
+    string? CopyRustAbiType = null,
+    string? CopyWrapperSignature = null,
+    bool CreateGlueAfterAccessors = false,
+    bool CreateWrapperAfterAccessors = false);
+
+internal sealed record Utf8AdapterBindingSet(
+    IReadOnlyList<ManagedGlueBinding> InputManagedGlueBindings,
+    IReadOnlyList<ManagedGlueBinding> OutputManagedGlueBindings,
+    IReadOnlyList<RustWrapperMethod> InputRustWrapperMethods,
+    IReadOnlyList<RustWrapperMethod> OutputRustWrapperMethods);
 
 public sealed record ManagedApiRequirement(string DisplayName, Type Type, ManagedApiRequirementKind Kind, string? MemberName, IReadOnlyList<Type> ParameterTypes)
 {
@@ -1300,13 +1402,16 @@ public enum RustWrapperContainer
 {
     Callback,
     Console,
+    Convert,
     Environment,
     Exception,
     Math,
     MathF,
     TimeSpan,
     DateTimeOffset,
+    Gc,
     Guid,
+    Task,
     IoDirectory,
     IoFile,
     IoPath,
@@ -1316,7 +1421,9 @@ public enum RustWrapperContainer
     ManagedByteArray,
     ManagedTimeSpan,
     ManagedDateTimeOffset,
-    ManagedGuid
+    ManagedGuid,
+    OperatingSystem,
+    Uri
 }
 
 public sealed record RustWrapperResult(RustWrapperResultKind Kind, string? RustType)
@@ -1342,6 +1449,7 @@ public enum RustWrapperResultKind
     Boolean,
     BooleanAsInt,
     ObjectHandle,
+    Future,
     Scalar,
     Void
 }

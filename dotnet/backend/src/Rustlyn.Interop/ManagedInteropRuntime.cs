@@ -10,6 +10,8 @@ public static class ManagedInteropRuntime
 
     public static int ExceptionHandleCount => Store.Snapshot.ExceptionCount;
 
+    public static int TaskHandleCount => Store.Snapshot.TaskCount;
+
     public static ManagedHandleSnapshot SnapshotHandles()
         => Store.Snapshot;
 
@@ -25,6 +27,18 @@ public static class ManagedInteropRuntime
     public static int AddExceptionHandle(Exception exception)
         => AddException(exception).Value;
 
+    public static ManagedTaskHandle AddTask(Task task)
+        => Store.AddTask(task);
+
+    public static int AddTaskHandle(Task task)
+        => AddTask(task).Value;
+
+    public static int AddValueTaskHandle(ValueTask task)
+        => AddTaskHandle(task.AsTask());
+
+    public static int AddValueTaskHandle<T>(ValueTask<T> task)
+        => AddTaskHandle(task.AsTask());
+
     public static T GetObject<T>(ManagedObjectHandle handle)
         => Store.GetObject<T>(handle);
 
@@ -37,6 +51,12 @@ public static class ManagedInteropRuntime
     public static Exception GetException(int handle)
         => Store.GetException(handle);
 
+    public static Task GetTask(ManagedTaskHandle handle)
+        => Store.GetTask(handle);
+
+    public static Task GetTask(int handle)
+        => Store.GetTask(handle);
+
     public static bool ReleaseObject(ManagedObjectHandle handle)
         => Store.Release(handle);
 
@@ -48,6 +68,53 @@ public static class ManagedInteropRuntime
 
     public static bool ReleaseException(int handle)
         => Store.Release(handle, ManagedHandleKind.Exception);
+
+    public static bool ReleaseTask(ManagedTaskHandle handle)
+        => Store.Release(handle);
+
+    public static bool ReleaseTask(int handle)
+        => Store.Release(handle, ManagedHandleKind.Task);
+
+    public static ManagedTaskStatus GetTaskStatus(ManagedTaskHandle handle)
+        => GetTaskStatus(Store.GetTask(handle));
+
+    public static int GetTaskStatus(int handle)
+        => (int)GetTaskStatus(new ManagedTaskHandle(handle));
+
+    public static int GetTaskExceptionHandle(int handle)
+    {
+        var task = Store.GetTask(handle);
+        return GetTaskStatus(task) switch
+        {
+            ManagedTaskStatus.Faulted => AddExceptionHandle(GetTaskFailureException(task)),
+            ManagedTaskStatus.Canceled => AddExceptionHandle(new TaskCanceledException(task)),
+            _ => 0
+        };
+    }
+
+    public static void EnsureTaskSucceeded(int handle)
+        => EnsureTaskSucceeded(Store.GetTask(handle));
+
+    public static int GetTaskInt32Result(int handle)
+        => GetTaskResult<int>(Store.GetTask(handle));
+
+    public static long GetTaskInt64Result(int handle)
+        => GetTaskResult<long>(Store.GetTask(handle));
+
+    public static float GetTaskSingleResult(int handle)
+        => GetTaskResult<float>(Store.GetTask(handle));
+
+    public static double GetTaskDoubleResult(int handle)
+        => GetTaskResult<double>(Store.GetTask(handle));
+
+    public static int GetTaskBooleanResult(int handle)
+        => GetTaskResult<bool>(Store.GetTask(handle)) ? 1 : 0;
+
+    public static int GetTaskObjectResultHandle(int handle)
+    {
+        var result = GetTaskResultObject(Store.GetTask(handle));
+        return result is null ? 0 : AddObjectHandle(result);
+    }
 
     public static string GetExceptionTypeName(ManagedExceptionHandle handle)
     {
@@ -147,4 +214,73 @@ public static class ManagedInteropRuntime
 
     public static void Clear()
         => Store.Clear();
+
+    private static ManagedTaskStatus GetTaskStatus(Task task)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+        if (!task.IsCompleted)
+        {
+            return ManagedTaskStatus.Pending;
+        }
+
+        if (task.IsCanceled)
+        {
+            return ManagedTaskStatus.Canceled;
+        }
+
+        return task.IsFaulted ? ManagedTaskStatus.Faulted : ManagedTaskStatus.Succeeded;
+    }
+
+    private static void EnsureTaskSucceeded(Task task)
+    {
+        switch (GetTaskStatus(task))
+        {
+            case ManagedTaskStatus.Succeeded:
+                return;
+            case ManagedTaskStatus.Pending:
+                throw new InvalidOperationException("Task result cannot be extracted before the task is complete.");
+            case ManagedTaskStatus.Canceled:
+                throw new TaskCanceledException(task);
+            case ManagedTaskStatus.Faulted:
+                throw GetTaskFailureException(task);
+            default:
+                throw new InvalidOperationException($"Task status '{task.Status}' is not supported.");
+        }
+    }
+
+    private static T GetTaskResult<T>(Task task)
+    {
+        EnsureTaskSucceeded(task);
+        return task is Task<T> typedTask
+            ? typedTask.Result
+            : throw new InvalidOperationException($"Task handle stores '{task.GetType().FullName}', not 'System.Threading.Tasks.Task<{typeof(T).FullName}>'.");
+    }
+
+    private static object? GetTaskResultObject(Task task)
+    {
+        EnsureTaskSucceeded(task);
+        return task switch
+        {
+            Task<string> stringTask => stringTask.Result,
+            Task<string[]> stringArrayTask => stringArrayTask.Result,
+            Task<int[]> intArrayTask => intArrayTask.Result,
+            Task<byte[]> byteArrayTask => byteArrayTask.Result,
+            _ => throw new InvalidOperationException($"Task handle stores '{task.GetType().FullName}', not a supported object-result task type.")
+        };
+    }
+
+    private static Exception GetTaskFailureException(Task task)
+    {
+        if (task.Exception?.InnerException is { } innerException)
+        {
+            return innerException;
+        }
+
+        if (task.Exception is { } aggregateException)
+        {
+            return aggregateException;
+        }
+
+        return new InvalidOperationException("Task faulted without an exception.");
+    }
 }

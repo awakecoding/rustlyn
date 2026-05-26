@@ -17,6 +17,13 @@ public sealed record EmitOptions
     /// Use this for production translation; keep it off for exploratory/fixture work.
     /// </summary>
     public bool StrictUnsupportedIr { get; init; }
+
+    /// <summary>
+    /// Additional binding manifests whose generated symbols should be mapped to runtime bridge helpers.
+    /// The generated helper implementations must be supplied by the runtime support assembly used to run
+    /// the emitted program.
+    /// </summary>
+    public System.Collections.Generic.IReadOnlyList<Rustlyn.Bindings.BindingManifestDocument> BindingManifests { get; init; } = [];
 }
 
 /// <summary>

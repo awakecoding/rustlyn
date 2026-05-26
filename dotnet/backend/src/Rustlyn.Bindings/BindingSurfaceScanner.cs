@@ -769,29 +769,7 @@ public static class BindingSurfaceScanner
     /// Supported: string, int, long, float, double, bool, void, IntPtr, arrays of bindable types, enums with int backing.
     /// </summary>
     public static bool IsTypeBindable(Type type)
-    {
-        if (type == typeof(string)) return true;
-        if (type == typeof(int)) return true;
-        if (type == typeof(long)) return true;
-        if (type == typeof(float)) return true;
-        if (type == typeof(double)) return true;
-        if (type == typeof(bool)) return true;
-        if (type == typeof(void)) return true;
-        if (type == typeof(IntPtr)) return true;
-        if (type.IsArray)
-        {
-            if (!type.IsSZArray)
-            {
-                return false;
-            }
-
-            var elementType = type.GetElementType();
-            return elementType is not null && IsTypeBindable(elementType);
-        }
-
-        if (type.IsEnum && Enum.GetUnderlyingType(type) == typeof(int)) return true;
-        return false;
-    }
+        => RuntimeTypeProjectionClassifier.Classify(type).IsCurrentBindingSupported;
 
     private static bool AllParametersBindable(ParameterInfo[] parameters)
     {
@@ -800,7 +778,7 @@ public static class BindingSurfaceScanner
 
     private static bool IsReturnTypeBindable(Type returnType)
     {
-        if (returnType == typeof(void)) return true;
+        if (IsVoidType(returnType)) return true;
         return IsTypeBindable(returnType);
     }
 
@@ -857,52 +835,8 @@ public static class BindingSurfaceScanner
 
     private static string? GetUnsupportedTypeReason(Type type)
     {
-        if (IsTypeBindable(type))
-        {
-            return null;
-        }
-
-        if (type.IsByRef)
-        {
-            return "by-reference types are not supported";
-        }
-
-        if (type.IsArray)
-        {
-            if (!type.IsSZArray)
-            {
-                return $"array rank {type.GetArrayRank().ToString(System.Globalization.CultureInfo.InvariantCulture)} is not supported";
-            }
-
-            var elementType = type.GetElementType();
-            var elementReason = elementType is null ? "array element type could not be resolved" : GetUnsupportedTypeReason(elementType);
-            return elementReason is null
-                ? null
-                : $"array element type '{FormatDiagnosticTypeName(elementType!)}' is unsupported: {elementReason}";
-        }
-
-        if (typeof(Delegate).IsAssignableFrom(type))
-        {
-            return "delegate types are not supported; use explicit callback ABI metadata";
-        }
-
-        if (type.ContainsGenericParameters)
-        {
-            return "generic or open types are not supported";
-        }
-
-        if (type.IsGenericType)
-        {
-            var genericArguments = string.Join(", ", type.GetGenericArguments().Select(FormatDiagnosticTypeName));
-            return $"generic constructed types are not supported; generic arguments: {genericArguments}";
-        }
-
-        if (type.IsEnum)
-        {
-            return $"enum backing type '{FormatDiagnosticTypeName(Enum.GetUnderlyingType(type))}' is not supported";
-        }
-
-        return "type is not in the bindable scalar, string, pointer, enum, or array set";
+        var projection = RuntimeTypeProjectionClassifier.Classify(type);
+        return projection.IsCurrentBindingSupported ? null : projection.UnsupportedReason;
     }
 
     private static string FormatMethodDisplayName(Type type, string methodName, Type[] paramTypes)
@@ -917,14 +851,14 @@ public static class BindingSurfaceScanner
 
     private static string FormatTypeName(Type type)
     {
-        if (type == typeof(string)) return "string";
-        if (type == typeof(int)) return "int";
-        if (type == typeof(long)) return "long";
-        if (type == typeof(float)) return "float";
-        if (type == typeof(double)) return "double";
-        if (type == typeof(bool)) return "bool";
-        if (type == typeof(void)) return "void";
-        if (type == typeof(IntPtr)) return "IntPtr";
+        if (IsStringType(type)) return "string";
+        if (IsInt32Type(type)) return "int";
+        if (IsInt64Type(type)) return "long";
+        if (IsSingleType(type)) return "float";
+        if (IsDoubleType(type)) return "double";
+        if (IsBooleanType(type)) return "bool";
+        if (IsVoidType(type)) return "void";
+        if (IsIntPtrType(type)) return "IntPtr";
         if (type.IsArray)
         {
             var elementType = type.GetElementType()
@@ -938,20 +872,65 @@ public static class BindingSurfaceScanner
     private static string FormatDiagnosticTypeName(Type type)
         => type.FullName?.Replace('+', '.') ?? type.Name;
 
+    private static bool IsKnownType(Type type, string fullName)
+        => string.Equals(type.FullName, fullName, StringComparison.Ordinal);
+
+    private static bool IsStringType(Type type) => IsKnownType(type, "System.String");
+
+    private static bool IsInt32Type(Type type) => IsKnownType(type, "System.Int32");
+
+    private static bool IsInt64Type(Type type) => IsKnownType(type, "System.Int64");
+
+    private static bool IsSingleType(Type type) => IsKnownType(type, "System.Single");
+
+    private static bool IsDoubleType(Type type) => IsKnownType(type, "System.Double");
+
+    private static bool IsBooleanType(Type type) => IsKnownType(type, "System.Boolean");
+
+    private static bool IsByteType(Type type) => IsKnownType(type, "System.Byte");
+
+    private static bool IsVoidType(Type type) => IsKnownType(type, "System.Void");
+
+    private static bool IsIntPtrType(Type type) => IsKnownType(type, "System.IntPtr");
+
+    private static bool IsArrayOfType(Type type, Func<Type, bool> elementPredicate)
+    {
+        if (!type.IsSZArray)
+        {
+            return false;
+        }
+
+        var elementType = type.GetElementType();
+        return elementType is not null && elementPredicate(elementType);
+    }
+
+    private static bool IsDelegateType(Type type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (IsKnownType(current, "System.Delegate") || IsKnownType(current, "System.MulticastDelegate"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool IsScalarBindingType(Type type)
     {
-        return type == typeof(int)
-            || type == typeof(long)
-            || type == typeof(float)
-            || type == typeof(double);
+        return IsInt32Type(type)
+            || IsInt64Type(type)
+            || IsSingleType(type)
+            || IsDoubleType(type);
     }
 
     private static bool IsObjectHandleBindingType(Type type)
     {
-        return type == typeof(string)
-            || type == typeof(string[])
-            || type == typeof(int[])
-            || type == typeof(byte[]);
+        return IsStringType(type)
+            || IsArrayOfType(type, IsStringType)
+            || IsArrayOfType(type, IsInt32Type)
+            || IsArrayOfType(type, IsByteType);
     }
 
     private static string[] CreateStableParameterNames(int parameterCount)
@@ -996,22 +975,22 @@ public static class BindingSurfaceScanner
 
     private static ManagedGlueResult CreateScalarResult(Type returnType, ManagedGlueExpression valueExpression)
     {
-        if (returnType == typeof(int))
+        if (IsInt32Type(returnType))
         {
             return ManagedGlueResult.Int(valueExpression);
         }
 
-        if (returnType == typeof(long))
+        if (IsInt64Type(returnType))
         {
             return ManagedGlueResult.Long(valueExpression);
         }
 
-        if (returnType == typeof(float))
+        if (IsSingleType(returnType))
         {
             return ManagedGlueResult.Float(valueExpression);
         }
 
-        if (returnType == typeof(double))
+        if (IsDoubleType(returnType))
         {
             return ManagedGlueResult.Double(valueExpression);
         }
@@ -1021,22 +1000,22 @@ public static class BindingSurfaceScanner
 
     private static string ToManagedGlueTypeName(Type type)
     {
-        if (type == typeof(int))
+        if (IsInt32Type(type))
         {
             return "int";
         }
 
-        if (type == typeof(long))
+        if (IsInt64Type(type))
         {
             return "long";
         }
 
-        if (type == typeof(float))
+        if (IsSingleType(type))
         {
             return "float";
         }
 
-        if (type == typeof(double))
+        if (IsDoubleType(type))
         {
             return "double";
         }
@@ -1046,22 +1025,22 @@ public static class BindingSurfaceScanner
 
     private static string ToRustTypeName(Type type)
     {
-        if (type == typeof(int))
+        if (IsInt32Type(type))
         {
             return "i32";
         }
 
-        if (type == typeof(long))
+        if (IsInt64Type(type))
         {
             return "i64";
         }
 
-        if (type == typeof(float))
+        if (IsSingleType(type))
         {
             return "f32";
         }
 
-        if (type == typeof(double))
+        if (IsDoubleType(type))
         {
             return "f64";
         }
@@ -1071,22 +1050,22 @@ public static class BindingSurfaceScanner
 
     private static string ToRustObjectHandleTypeName(Type type)
     {
-        if (type == typeof(string))
+        if (IsStringType(type))
         {
             return "ManagedString";
         }
 
-        if (type == typeof(string[]))
+        if (IsArrayOfType(type, IsStringType))
         {
             return "ManagedStringArray";
         }
 
-        if (type == typeof(int[]))
+        if (IsArrayOfType(type, IsInt32Type))
         {
             return "ManagedIntArray";
         }
 
-        if (type == typeof(byte[]))
+        if (IsArrayOfType(type, IsByteType))
         {
             return "ManagedByteArray";
         }
@@ -1097,8 +1076,8 @@ public static class BindingSurfaceScanner
 
     private static string ToSymbolTypeSuffix(Type type)
     {
-        if (type == typeof(string)) return "string";
-        if (type == typeof(bool)) return "bool";
+        if (IsStringType(type)) return "string";
+        if (IsBooleanType(type)) return "bool";
         if (type.IsArray)
         {
             var elementType = type.GetElementType()
@@ -1117,14 +1096,14 @@ public static class BindingSurfaceScanner
 
     private static string ToProjectedRustTypeKey(Type type)
     {
-        if (type == typeof(string)) return "ManagedString";
-        if (type == typeof(int)) return "i32";
-        if (type == typeof(long)) return "i64";
-        if (type == typeof(float)) return "f32";
-        if (type == typeof(double)) return "f64";
-        if (type == typeof(bool)) return "bool";
-        if (type == typeof(IntPtr)) return "ptr";
-        if (type.IsEnum && Enum.GetUnderlyingType(type) == typeof(int)) return "i32";
+        if (IsStringType(type)) return "ManagedString";
+        if (IsInt32Type(type)) return "i32";
+        if (IsInt64Type(type)) return "i64";
+        if (IsSingleType(type)) return "f32";
+        if (IsDoubleType(type)) return "f64";
+        if (IsBooleanType(type)) return "bool";
+        if (IsIntPtrType(type)) return "ptr";
+        if (type.IsEnum && IsInt32Type(Enum.GetUnderlyingType(type))) return "i32";
         if (type.IsSZArray)
         {
             var elementType = type.GetElementType()
@@ -1167,7 +1146,7 @@ public static class BindingSurfaceScanner
     {
         ArgumentNullException.ThrowIfNull(delegateType);
 
-        if (!typeof(Delegate).IsAssignableFrom(delegateType))
+        if (!IsDelegateType(delegateType))
         {
             throw new ArgumentException($"Type '{delegateType}' is not a delegate type.", nameof(delegateType));
         }
@@ -1185,14 +1164,14 @@ public static class BindingSurfaceScanner
         {
             if (!IsScalarBindingType(param.ParameterType) && !IsObjectHandleBindingType(param.ParameterType))
             {
-                if (param.ParameterType != typeof(void))
+                if (!IsVoidType(param.ParameterType))
                 {
                     unsupportedParams.Add($"parameter '{param.Name}' has unsupported type '{FormatDiagnosticTypeName(param.ParameterType)}'");
                 }
             }
         }
 
-        if (returnType != typeof(void) && !IsScalarBindingType(returnType) && !IsObjectHandleBindingType(returnType))
+        if (!IsVoidType(returnType) && !IsScalarBindingType(returnType) && !IsObjectHandleBindingType(returnType))
         {
             unsupportedParams.Add($"return type '{FormatDiagnosticTypeName(returnType)}' is unsupported");
         }
@@ -1210,7 +1189,7 @@ public static class BindingSurfaceScanner
 
         // Build the Rust callback signature: fn(param_types) -> return_type
         var rustParams = paramTypes.Select(t => IsScalarBindingType(t) ? ToRustTypeName(t) : "i32");
-        var rustReturn = returnType == typeof(void)
+        var rustReturn = IsVoidType(returnType)
             ? "()"
             : IsScalarBindingType(returnType) ? ToRustTypeName(returnType) : "i32";
         var rustSignature = $"fn({string.Join(", ", rustParams)}) -> {rustReturn}";

@@ -1,24 +1,9 @@
 #![no_main]
 
+mod avalonia;
+
 unsafe extern "C" {
     fn rustlyn_avalonia_run_app() -> i32;
-    fn rustlyn_avalonia_window_new() -> i32;
-    fn rustlyn_avalonia_stack_panel_new() -> i32;
-    fn rustlyn_avalonia_text_block_new() -> i32;
-    fn rustlyn_avalonia_button_new() -> i32;
-    fn rustlyn_avalonia_window_set_title_utf8(window: i32, title_ptr: *const u8, title_len: i64);
-    fn rustlyn_avalonia_window_set_size(window: i32, width: i32, height: i32);
-    fn rustlyn_avalonia_window_set_content(window: i32, content: i32);
-    fn rustlyn_avalonia_stack_panel_set_spacing(stack_panel: i32, spacing: i32);
-    fn rustlyn_avalonia_stack_panel_set_margin(stack_panel: i32, margin: i32);
-    fn rustlyn_avalonia_stack_panel_add_child(stack_panel: i32, child: i32);
-    fn rustlyn_avalonia_text_block_set_text_utf8(
-        text_block: i32,
-        text_ptr: *const u8,
-        text_len: i64,
-    );
-    fn rustlyn_avalonia_button_set_content_utf8(button: i32, content_ptr: *const u8, content_len: i64);
-    fn rustlyn_avalonia_button_set_on_click(button: i32, handler_id: i32, state_handle: i32);
 }
 
 #[unsafe(no_mangle)]
@@ -28,40 +13,43 @@ pub extern "C" fn main() -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn avalonia_build_ui() -> i32 {
-    let window = unsafe { rustlyn_avalonia_window_new() };
-    let stack = unsafe { rustlyn_avalonia_stack_panel_new() };
-    let text = unsafe { rustlyn_avalonia_text_block_new() };
-    let button = unsafe { rustlyn_avalonia_button_new() };
+    let window = expect(avalonia::Window::new());
+    let stack = expect(avalonia::StackPanel::new());
+    let text = expect(avalonia::TextBlock::new());
+    let button = expect(avalonia::Button::new());
 
     let title = b"rustlyn Avalonia Hello";
-    unsafe { rustlyn_avalonia_window_set_title_utf8(window, title.as_ptr(), title.len() as i64) };
-    unsafe { rustlyn_avalonia_window_set_size(window, 640, 360) };
-    unsafe { rustlyn_avalonia_stack_panel_set_margin(stack, 24) };
-    unsafe { rustlyn_avalonia_stack_panel_set_spacing(stack, 12) };
+    expect(window.set_title_utf8_parts(title.as_ptr(), title.len() as i64));
+    expect(window.set_size(640.0, 360.0));
+    let margin = expect(avalonia::Thickness::new(24.0));
+    expect(stack.set_margin(&margin));
+    expect(stack.set_spacing(12.0));
 
     let initial_text = b"hello world";
-    unsafe { rustlyn_avalonia_text_block_set_text_utf8(text, initial_text.as_ptr(), initial_text.len() as i64) };
+    expect(text.set_text_utf8_parts(initial_text.as_ptr(), initial_text.len() as i64));
     let button_text = b"Click me";
-    unsafe { rustlyn_avalonia_button_set_content_utf8(button, button_text.as_ptr(), button_text.len() as i64) };
-    unsafe { rustlyn_avalonia_button_set_on_click(button, 1, text) };
+    expect(button.set_content_utf8_parts(button_text.as_ptr(), button_text.len() as i64));
+    let _subscription = expect(button.subscribe_click(1, &text));
 
-    unsafe { rustlyn_avalonia_stack_panel_add_child(stack, text) };
-    unsafe { rustlyn_avalonia_stack_panel_add_child(stack, button) };
-    unsafe { rustlyn_avalonia_window_set_content(window, stack) };
+    expect(stack.add_child(&text));
+    expect(stack.add_child(&button));
+    expect(window.set_content(&stack));
 
-    window
+    window.into_handle()
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn avalonia_on_click(handler_id: i32, state_handle: i32) {
     if handler_id == 1 {
         let clicked_text = b"hello world from Rust click";
-        unsafe {
-            rustlyn_avalonia_text_block_set_text_utf8(
-                state_handle,
-                clicked_text.as_ptr(),
-                clicked_text.len() as i64,
-            )
-        };
+        let text = unsafe { avalonia::TextBlock::from_borrowed_handle(state_handle) };
+        let _ = text.set_text_utf8_parts(clicked_text.as_ptr(), clicked_text.len() as i64);
+    }
+}
+
+fn expect<T>(result: Result<T, avalonia::Exception>) -> T {
+    match result {
+        Ok(value) => value,
+        Err(_) => unsafe { core::hint::unreachable_unchecked() },
     }
 }
