@@ -5,6 +5,7 @@ namespace Rustlyn.Backend;
 internal static class RustlynLlvmOptimizer
 {
     private const string OptPassesEnvVar = "RUSTLYN_LLVM_OPT_PASSES";
+    private const string OptBestEffortEnvVar = "RUSTLYN_LLVM_OPT_BEST_EFFORT";
 
     public static string? GetConfiguredPasses()
     {
@@ -59,8 +60,23 @@ internal static class RustlynLlvmOptimizer
 
         if (process.ExitCode != 0 || !File.Exists(outputPath))
         {
-            throw new InvalidDataException(
-                $"rustlyn-llvm opt failed (exit {process.ExitCode}) for passes '{passes}':{Environment.NewLine}{stderr}");
+            var message =
+                $"rustlyn-llvm opt failed (exit {process.ExitCode}) for passes '{passes}':{Environment.NewLine}{stderr}";
+
+            // Best-effort mode: warn and return the original bitcode unchanged so callers can still lower.
+            // This is useful when the helper's bundled LLVM is older than rustc's (version skew on bitcode
+            // attributes / intrinsic signatures), which is otherwise a hard failure even though the original
+            // bitcode is perfectly readable by the lowerer.
+            var bestEffort = Environment.GetEnvironmentVariable(OptBestEffortEnvVar);
+            if (!string.IsNullOrWhiteSpace(bestEffort) && bestEffort != "0")
+            {
+                Console.Error.WriteLine("warning: " + message);
+                Console.Error.WriteLine("warning: continuing with unoptimized bitcode (RUSTLYN_LLVM_OPT_BEST_EFFORT)");
+                try { File.Delete(outputPath); } catch { }
+                return bitcodePath;
+            }
+
+            throw new InvalidDataException(message);
         }
 
         return outputPath;

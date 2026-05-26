@@ -120,6 +120,20 @@ dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- in
 
 `Rustlyn.Tool diagnose` reports the active pipeline under `llvm-opt-passes`. When the env var is unset, lowering reads the original bitcode unchanged. When `rustlyn-llvm.exe` is not available the pre-pass is silently skipped — the env var is a best-effort canonicalization hint, not a hard dependency.
 
+### LLVM version skew (important)
+
+`rustlyn-llvm opt` requires the helper's bundled LLVM to be **>= rustc's bundled LLVM**. Recent rustc versions (1.95+) ship LLVM 22; if the helper is built against LLVM 20, opt will fail with errors like:
+
+```
+error: Unknown attribute kind (105) (Producer: 'LLVM22.1.2-rust-1.95.0-stable' Reader: 'LLVM 20.1.8')
+immarg operand has non-immediate parameter
+  call void @llvm.lifetime.start.p0(ptr nonnull %r)
+```
+
+These are not Rustlyn bugs — newer rustc bitcode embeds attributes and intrinsic signatures that the older LLVM C API cannot parse. The lowerer itself can still read these modules via its text path; only the opt pre-pass fails.
+
+To keep the env var on across mixed-LLVM environments, set `RUSTLYN_LLVM_OPT_BEST_EFFORT=1`. Rustlyn will then emit a warning when opt fails and continue lowering the original unoptimized bitcode instead of aborting.
+
 ### Determinism caveats
 
 - Pin the helper + LLVM version: optimized output is reproducible only for the exact LLVM version that produced it.
