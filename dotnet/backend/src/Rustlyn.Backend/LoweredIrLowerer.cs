@@ -298,6 +298,40 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(freezeMatch.Groups["value"].Value));
         }
 
+        var bitcastMatch = BitcastInstructionRegex().Match(line);
+        if (bitcastMatch.Success)
+        {
+            return new LoweredBitcastInstruction(
+                NormalizeResultName(bitcastMatch.Groups["result"].Value),
+                NormalizeType(bitcastMatch.Groups["fromType"].Value),
+                NormalizeValue(bitcastMatch.Groups["value"].Value),
+                NormalizeType(bitcastMatch.Groups["toType"].Value));
+        }
+
+        var insertElementMatch = InsertElementInstructionRegex().Match(line);
+        if (insertElementMatch.Success)
+        {
+            return new LoweredInsertElementInstruction(
+                NormalizeResultName(insertElementMatch.Groups["result"].Value),
+                NormalizeType(insertElementMatch.Groups["vectorType"].Value),
+                NormalizeValue(insertElementMatch.Groups["base"].Value),
+                NormalizeType(insertElementMatch.Groups["elementType"].Value),
+                NormalizeValue(insertElementMatch.Groups["value"].Value),
+                int.Parse(insertElementMatch.Groups["index"].Value, System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var shuffleVectorMatch = ShuffleVectorInstructionRegex().Match(line);
+        if (shuffleVectorMatch.Success)
+        {
+            return new LoweredShuffleVectorInstruction(
+                NormalizeResultName(shuffleVectorMatch.Groups["result"].Value),
+                NormalizeType(shuffleVectorMatch.Groups["vectorType"].Value),
+                NormalizeValue(shuffleVectorMatch.Groups["first"].Value),
+                NormalizeValue(shuffleVectorMatch.Groups["second"].Value),
+                NormalizeType(shuffleVectorMatch.Groups["maskType"].Value),
+                NormalizeValue(shuffleVectorMatch.Groups["mask"].Value));
+        }
+
         var floatConvertMatch = FloatConvertInstructionRegex().Match(line);
         if (floatConvertMatch.Success)
         {
@@ -1089,6 +1123,9 @@ public static partial class LoweredIrLowerer
             LoweredPtrToIntInstruction p2i => $"{p2i.Result} = ptrtoint ptr {p2i.Value} to {p2i.ToType}",
             LoweredIntToPtrInstruction i2p => $"{i2p.Result} = inttoptr to ptr {i2p.Value}",
             LoweredFreezeInstruction freeze => $"{freeze.Result} = freeze {freeze.Type} {freeze.Value}",
+            LoweredBitcastInstruction bitcast => $"{bitcast.Result} = bitcast {bitcast.FromType} {bitcast.Value} to {bitcast.ToType}",
+            LoweredInsertElementInstruction insert => $"{insert.Result} = insertelement {insert.VectorType} {insert.Base}, {insert.ElementType} {insert.Value}, {insert.Index}",
+            LoweredShuffleVectorInstruction shuffle => $"{shuffle.Result} = shufflevector {shuffle.VectorType} {shuffle.First}, {shuffle.VectorType} {shuffle.Second}, {shuffle.MaskType} {shuffle.Mask}",
             LoweredSelectInstruction select => $"{select.Result} = select i1 {select.Condition}, {select.ValueType} {select.TrueValue}, {select.ValueType} {select.FalseValue}",
             LoweredPhiInstruction phi => $"{phi.Result} = phi {phi.Type} {FormatPhiIncoming(phi.Incoming)}",
             LoweredUnreachableInstruction => "unreachable",
@@ -1097,6 +1134,7 @@ public static partial class LoweredIrLowerer
             LoweredInsertValueInstruction iv => $"{iv.Result} = insertvalue {iv.AggregateType} {iv.Base}, {iv.Value}, {iv.Index}",
             LoweredAtomicRmwInstruction rmw => $"{rmw.Result} = atomicrmw {rmw.Operation} ptr {rmw.Pointer}, {rmw.ValueType} {rmw.Value}",
             LoweredCmpxchgInstruction cx => $"{cx.Result} = cmpxchg ptr {cx.Pointer}, {cx.ValueType} {cx.CompareValue}, {cx.ValueType} {cx.NewValue}",
+            LoweredSwitchInstruction sw => $"switch {sw.ValueType} {sw.Value}, default {sw.DefaultLabel}, cases {sw.Cases.Count}",
             LoweredRawInstruction raw => raw.Text,
             _ => throw new InvalidOperationException($"Unsupported lowered instruction type: {instruction.GetType().Name}")
         };
@@ -1370,6 +1408,7 @@ public static partial class LoweredIrLowerer
             or "allocalign"
             or "byref"
             or "captures"
+            or "dead_on_return"
             or "dead_on_unwind"
             or "immarg"
             or "inalloca"
@@ -1561,14 +1600,30 @@ public static partial class LoweredIrLowerer
             return false;
         }
 
-        var bytes = ParseConstantByteArray(match.Groups["bytes"].Value).ToList();
+        var bytes = new List<byte>();
         var relocations = new List<LoweredGlobalPointerRelocation>();
         var initializer = match.Groups["initializer"].Value;
         foreach (Match fieldMatch in PointerRelocationFieldRegex().Matches(initializer))
         {
             if (fieldMatch.Groups["bytes"].Success)
             {
-                bytes.AddRange(ParseConstantByteArray(fieldMatch.Groups["bytes"].Value));
+                var expectedSize = int.Parse(fieldMatch.Groups["size"].Value);
+                var fieldBytes = ParseConstantByteArray(fieldMatch.Groups["bytes"].Value);
+                if (fieldBytes.Count > expectedSize)
+                {
+                    bytes.AddRange(fieldBytes.Take(expectedSize));
+                }
+                else
+                {
+                    bytes.AddRange(fieldBytes);
+                    bytes.AddRange(new byte[expectedSize - fieldBytes.Count]);
+                }
+                continue;
+            }
+
+            if (fieldMatch.Groups["zero"].Success)
+            {
+                bytes.AddRange(new byte[int.Parse(fieldMatch.Groups["size"].Value)]);
                 continue;
             }
 
@@ -1581,7 +1636,7 @@ public static partial class LoweredIrLowerer
             }
         }
 
-        if (relocations.Count == 0)
+        if (bytes.Count == 0)
         {
             return false;
         }
@@ -1602,7 +1657,7 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+<\\{.*\\}>\\s+<\\{\\s*(?<initializer>.*)\\s*\\}>(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex PointerRelocationGlobalRegex();
 
-    [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[\\d+\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+(?:c\"(?<bytes>[^\"]*)\"|(?<zero>zeroinitializer|undef))", RegexOptions.CultureInvariant)]
     private static partial Regex PointerRelocationFieldRegex();
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
@@ -1641,6 +1696,15 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*freeze\\s+(?<type><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex FreezeInstructionRegex();
 
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*bitcast\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex BitcastInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*insertelement\\s+(?<vectorType><[^>]+>)\\s+(?<base>[^,]+),\\s+(?<elementType><[^>]+>|[^\\s]+)\\s+(?<value>[^,]+),\\s+i\\d+\\s+(?<index>\\d+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex InsertElementInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*shufflevector\\s+(?<vectorType><[^>]+>)\\s+(?<first>[^,]+),\\s+<[^>]+>\\s+(?<second>[^,]+),\\s+(?<maskType><[^>]+>)\\s+(?<mask>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ShuffleVectorInstructionRegex();
+
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*(?:fptosi|fptoui|sitofp|uitofp|fpext|fptrunc)(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex FloatConvertInstructionRegex();
 
@@ -1665,10 +1729,10 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^br\\s+label\\s+%(?<target>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex UnconditionalBranchInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType><\\{.*\\}>|\\{.*\\}|[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GetElementPointerInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType><\\{.*\\}>|\\{.*\\}|[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex DynamicGetElementPointerInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>[^,]+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
@@ -1726,6 +1790,9 @@ public static partial class LoweredIrLowerer
             var caseRegex = new System.Text.RegularExpressions.Regex(
                 "^(?<type>i\\d+) (?<value>-?\\d+), label %(?<target>\"[^\"]+\"|[^\\s]+)$",
                 System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+            var closingRegex = new System.Text.RegularExpressions.Regex(
+                "^\\](?:,\\s*!.*)?$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
             List<LoweredInstruction>? rewritten = null;
             for (var i = 0; i < instructions.Count; i++)
@@ -1741,7 +1808,7 @@ public static partial class LoweredIrLowerer
                         var closing = -1;
                         while (j < instructions.Count && instructions[j] is LoweredRawInstruction caseRaw)
                         {
-                            if (string.Equals(caseRaw.Text, "]", StringComparison.Ordinal))
+                            if (closingRegex.IsMatch(caseRaw.Text))
                             {
                                 closing = j;
                                 break;

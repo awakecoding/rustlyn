@@ -116,6 +116,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - `samples/string_vec_ops/`: `Vec<T>` operations with no_std + alloc
 - `samples/async_state_machine/`: poll coroutines, cooperative scheduler, retry-with-backoff
 - `samples/generic_collections/`: monomorphized FixedStack, RingBuffer, Pair, generic search
+- `samples/yaml_saphyr/`: first real YAML ecosystem crate fixture using `saphyr`
 - `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, path, and string method/property APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks

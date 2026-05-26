@@ -58,8 +58,10 @@ RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgu
 RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLeadingPlus, failures);
 RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
 RunTest("LowererStripsTrailingMetadataFromSelectValues", LowererStripsTrailingMetadataFromSelectValues, failures);
+RunTest("LowererParsesDeadOnReturnPointerParameters", LowererParsesDeadOnReturnPointerParameters, failures);
 RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
 RunTest("LowererPreservesVtablePointerRelocations", LowererPreservesVtablePointerRelocations, failures);
+RunTest("LowererPreservesAggregateConstantWithUndefPadding", LowererPreservesAggregateConstantWithUndefPadding, failures);
 RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
 RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScannerFindsInstanceAndNativeTypes, failures);
 RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
@@ -89,11 +91,21 @@ RunTest("StrictModeRejectsInvokeWithStructuredMessage", StrictModeRejectsInvokeW
 RunTest("StrictModeRejectsLandingPadWithStructuredMessage", StrictModeRejectsLandingPadWithStructuredMessage, failures);
 RunTest("StrictModeRejectsFenceWithStructuredMessage", StrictModeRejectsFenceWithStructuredMessage, failures);
 RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsVolatileLoadWithStructuredMessage, failures);
+RunTest("StrictModeClassifiesRawBackendGaps", StrictModeClassifiesRawBackendGaps, failures);
 RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
 RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
 RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
 RunTest("LowererCoalescesSwitchIntoTypedInstruction", LowererCoalescesSwitchIntoTypedInstruction, failures);
 RunTest("LowererCoalescesSwitchWithMultipleCases", LowererCoalescesSwitchWithMultipleCases, failures);
+RunTest("LowererCoalescesSwitchWithTrailingMetadata", LowererCoalescesSwitchWithTrailingMetadata, failures);
+RunTest("LowererParsesVectorElementShuffleAndBitcast", LowererParsesVectorElementShuffleAndBitcast, failures);
+RunTest("StrictModeEmitsVectorMaskPackingIdiom", StrictModeEmitsVectorMaskPackingIdiom, failures);
+RunTest("LowererParsesDynamicAggregateGepWithQuotedFieldNames", LowererParsesDynamicAggregateGepWithQuotedFieldNames, failures);
+RunTest("RuntimeBridgeRawVecGrowAmortizedAllocatesAndGrows", RuntimeBridgeRawVecGrowAmortizedAllocatesAndGrows, failures);
+RunTest("RuntimeBridgeRawVecTryAllocateInReturnsRustSuccessLayout", RuntimeBridgeRawVecTryAllocateInReturnsRustSuccessLayout, failures);
+RunTest("RuntimeBridgeVecReserveBytesAllocatesAndPreservesLength", RuntimeBridgeVecReserveBytesAllocatesAndPreservesLength, failures);
+RunTest("RuntimeBridgeMemcmpMatchesCLexicographicResult", RuntimeBridgeMemcmpMatchesCLexicographicResult, failures);
+RunTest("RuntimeBridgeUnsignedCompareMatchesLlvmOrdering", RuntimeBridgeUnsignedCompareMatchesLlvmOrdering, failures);
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
@@ -555,6 +567,8 @@ RunOptionalTest("PairI64SampleInvokesViaBackend", PairI64SampleInvokesViaBackend
 RunOptionalTest("AddSampleBuildsFromCargoManifest", AddSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("BinTrivialSampleBuildsFromCargoManifest", BinTrivialSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("BinTrivialSampleEmitsRunnableConsoleAssembly", BinTrivialSampleEmitsRunnableConsoleAssembly, failures);
+RunOptionalTest("YamlSaphyrSampleTranslatesToManagedAssembly", YamlSaphyrSampleTranslatesToManagedAssembly, failures);
+RunOptionalTest("YamlSaphyrStrictModeEmitsManagedAssembly", YamlSaphyrStrictModeEmitsManagedAssembly, failures);
 RunOptionalTest("AvaloniaHelloSampleBuildsFromCargoManifest", AvaloniaHelloSampleBuildsFromCargoManifest, failures);
 RunOptionalTest("AvaloniaHelloSampleEmitsRunnableSmokeOutput", AvaloniaHelloSampleEmitsRunnableSmokeOutput, failures);
 RunOptionalTest("DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput", DotnetRuntimeArgsSampleEmitsRunnableConsoleOutput, failures);
@@ -2747,6 +2761,7 @@ static void StrictModeRejectsRawInstruction()
             threw = true;
             Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
             Assert(ex.Functions[0].Name == "unsupported_raw", "Expected unsupported function name to propagate.");
+            Assert(ex.Functions[0].Category == "llvm-raw", "Expected raw unsupported instruction to use the llvm-raw category.");
             Assert(ex.Functions[0].Reason.Contains("unsupported raw LLVM instruction", StringComparison.Ordinal), "Expected diagnostic to mention the raw instruction.");
             Assert(ex.Functions[0].Reason.Contains("addrspacecast", StringComparison.Ordinal), "Expected diagnostic to echo offending instruction text.");
         }
@@ -2893,6 +2908,7 @@ static void AssertStrictModeRejects(LoweredInstruction unsupported, string expec
         {
             threw = true;
             Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in strict diagnostic.");
+            Assert(!string.IsNullOrWhiteSpace(ex.Functions[0].Category), "Expected strict diagnostic to include a stable unsupported category.");
             Assert(ex.Functions[0].Reason.Contains(expectedReasonSubstring, StringComparison.Ordinal),
                 $"Expected diagnostic to contain '{expectedReasonSubstring}', got '{ex.Functions[0].Reason}'.");
         }
@@ -2926,6 +2942,48 @@ static void StrictModeRejectsVolatileLoadWithStructuredMessage()
 {
     var vl = new LoweredVolatileLoadInstruction("r", "i32", "load volatile i32, i32* %p");
     AssertStrictModeRejects(vl, "volatile load", "volatile_loader");
+}
+
+static void StrictModeClassifiesRawBackendGaps()
+{
+    AssertRawInstructionCategory("switch i64 %_0, label %bb9 [", "llvm-switch", "raw_switch");
+    AssertRawInstructionCategory("%12 = insertelement <16 x i8> poison, i8 %9, i64 0", "llvm-vector", "raw_vector");
+    AssertRawInstructionCategory("%6 = bitcast <16 x i1> %5 to i16", "llvm-vector", "raw_vector_mask");
+    AssertRawInstructionCategory("%3 = getelementptr inbounds { %String, %String }, ptr %_13, i64 %_18", "llvm-aggregate-gep", "raw_gep");
+}
+
+static void AssertRawInstructionCategory(string rawText, string expectedCategory, string functionName)
+{
+    var block = new LoweredBlock("entry", new LoweredInstruction[]
+    {
+        new LoweredRawInstruction(rawText),
+        new LoweredReturnInstruction("i32", "0"),
+    });
+    var function = new LoweredFunction(functionName, "i32", Array.Empty<LoweredParameter>(), new[] { block });
+    var module = new LoweredModule(new[] { function }, Array.Empty<LoweredGlobal>());
+    var outPath = Path.Combine(Path.GetTempPath(), $"rustlyn-category-{Guid.NewGuid():N}.dll");
+
+    try
+    {
+        try
+        {
+            LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+            throw new InvalidOperationException("Expected strict mode to reject the raw instruction.");
+        }
+        catch (UnsupportedIrException ex)
+        {
+            Assert(ex.Functions.Count == 1, "Expected exactly one unsupported function in raw category diagnostic.");
+            Assert(ex.Functions[0].Category == expectedCategory,
+                $"Expected unsupported category '{expectedCategory}', got '{ex.Functions[0].Category}'.");
+        }
+    }
+    finally
+    {
+        if (File.Exists(outPath))
+        {
+            File.Delete(outPath);
+        }
+    }
 }
 
 static void LowererProducesTypedInvokeRecord()
@@ -3079,6 +3137,193 @@ static void LowererCoalescesSwitchWithMultipleCases()
     Assert(sw is not null && sw.Cases.Count == 4, "Expected 4 coalesced cases.");
     Assert(sw!.Cases[0].Value == -1L, $"Expected first case value -1, got {sw.Cases[0].Value}.");
     Assert(sw.Cases[3].Target == "meaning", $"Expected last case target 'meaning', got '{sw.Cases[3].Target}'.");
+}
+
+static void LowererCoalescesSwitchWithTrailingMetadata()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @profiled(i8 %v) {\n" +
+        "entry:\n" +
+        "  switch i8 %v, label %default.unreachable [\n" +
+        "    i8 20, label %twenty\n" +
+        "    i8 21, label %twenty_one\n" +
+        "  ], !prof !84\n" +
+        "twenty:\n  ret i32 20\n" +
+        "twenty_one:\n  ret i32 21\n" +
+        "default.unreachable:\n  unreachable\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null, "Expected profiled switch to coalesce into LoweredSwitchInstruction.");
+    Assert(sw!.ValueType == "i8", $"Expected ValueType 'i8', got '{sw.ValueType}'.");
+    Assert(sw.DefaultLabel == "default.unreachable", $"Expected default 'default.unreachable', got '{sw.DefaultLabel}'.");
+    Assert(sw.Cases.Count == 2, $"Expected 2 cases, got {sw.Cases.Count}.");
+    Assert(sw.Cases[1].Value == 21 && sw.Cases[1].Target == "twenty_one", "Profiled switch case mismatch.");
+}
+
+static void LowererParsesVectorElementShuffleAndBitcast()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i16 @mask(i8 %v) {\n" +
+        "entry:\n" +
+        "  %seed = insertelement <16 x i8> poison, i8 %v, i64 0\n" +
+        "  %splat = shufflevector <16 x i8> %seed, <16 x i8> poison, <16 x i32> zeroinitializer\n" +
+        "  %cmp = icmp eq <16 x i8> %splat, zeroinitializer\n" +
+        "  %mask = bitcast <16 x i1> %cmp to i16\n" +
+        "  ret i16 %mask\n" +
+        "}\n");
+    var instructions = module.Functions[0].Blocks[0].Instructions;
+    Assert(instructions.OfType<LoweredInsertElementInstruction>().Any(static instr => instr.VectorType == "<16 x i8>" && instr.Index == 0),
+        "Expected insertelement to lower into a typed vector element instruction.");
+    Assert(instructions.OfType<LoweredShuffleVectorInstruction>().Any(static instr => instr.MaskType == "<16 x i32>" && instr.Mask == "zeroinitializer"),
+        "Expected shufflevector to lower into a typed vector shuffle instruction.");
+    Assert(instructions.OfType<LoweredCompareInstruction>().Any(static instr => instr.Type == "<16 x i8>"),
+        "Expected vector icmp to retain its vector input type.");
+    Assert(instructions.OfType<LoweredBitcastInstruction>().Any(static instr => instr.FromType == "<16 x i1>" && instr.ToType == "i16"),
+        "Expected vector mask bitcast to lower into a typed bitcast instruction.");
+}
+
+static void StrictModeEmitsVectorMaskPackingIdiom()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i16 @mask(i8 %v) {\n" +
+        "entry:\n" +
+        "  %seed = insertelement <16 x i8> poison, i8 %v, i64 0\n" +
+        "  %splat = shufflevector <16 x i8> %seed, <16 x i8> poison, <16 x i32> zeroinitializer\n" +
+        "  %cmp = icmp eq <16 x i8> %splat, zeroinitializer\n" +
+        "  %mask = bitcast <16 x i1> %cmp to i16\n" +
+        "  ret i16 %mask\n" +
+        "}\n");
+    var outputAssembly = Path.Combine(Path.GetTempPath(), $"rustlyn-vector-mask-{Guid.NewGuid():N}.dll");
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outputAssembly, new EmitOptions { StrictUnsupportedIr = true });
+        Assert(File.Exists(outputAssembly), "Expected vector mask packing idiom to emit in strict mode.");
+    }
+    finally
+    {
+        if (File.Exists(outputAssembly))
+        {
+            File.Delete(outputAssembly);
+        }
+    }
+}
+
+static void LowererParsesDynamicAggregateGepWithQuotedFieldNames()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define ptr @gep(ptr %base, i64 %idx) {\n" +
+        "entry:\n" +
+        "  %p = getelementptr inbounds { %\"alloc::borrow::Cow<'_, str>\", i64 }, ptr %base, i64 %idx\n" +
+        "  ret ptr %p\n" +
+        "}\n");
+    var gep = module.Functions[0].Blocks[0].Instructions.OfType<LoweredGetElementPointerInstruction>().SingleOrDefault();
+    Assert(gep is not null, "Expected dynamic aggregate GEP to lower into a typed GEP instruction.");
+    Assert(gep!.ElementType == "{ %\"alloc::borrow::Cow<'_, str>\", i64 }", $"Unexpected aggregate element type: {gep.ElementType}.");
+    Assert(gep.IndexVariable == "idx", $"Expected dynamic GEP index variable 'idx', got '{gep.IndexVariable}'.");
+}
+
+static void RuntimeBridgeRawVecGrowAmortizedAllocatesAndGrows()
+{
+    var rawVec = Marshal.AllocHGlobal(IntPtr.Size * 2);
+    var retbuf = Marshal.AllocHGlobal(sizeof(long) * 2);
+    try
+    {
+        Marshal.WriteInt64(rawVec, 0);
+        Marshal.WriteIntPtr(IntPtr.Add(rawVec, IntPtr.Size), IntPtr.Zero);
+
+        RuntimeBridgeHelpers.RustRawVecGrowAmortized(retbuf, rawVec, 0, 1, 8, 16);
+        var firstPointer = Marshal.ReadIntPtr(IntPtr.Add(rawVec, IntPtr.Size));
+        Assert(Marshal.ReadInt64(retbuf) == -9223372036854775807L, "RawVec grow should write Rust's success sentinel.");
+        Assert(Marshal.ReadInt64(rawVec) >= 4, "RawVec grow should apply Rust's minimum non-zero capacity.");
+        Assert(firstPointer != IntPtr.Zero, "RawVec grow should allocate storage.");
+
+        var firstCapacity = Marshal.ReadInt64(rawVec);
+        RuntimeBridgeHelpers.RustRawVecGrowAmortized(retbuf, rawVec, firstCapacity, 1, 8, 16);
+        Assert(Marshal.ReadInt64(rawVec) >= firstCapacity * 2, "RawVec grow should double existing capacity.");
+    }
+    finally
+    {
+        var pointer = Marshal.ReadIntPtr(IntPtr.Add(rawVec, IntPtr.Size));
+        if (pointer != IntPtr.Zero)
+            Marshal.FreeHGlobal(pointer);
+        Marshal.FreeHGlobal(retbuf);
+        Marshal.FreeHGlobal(rawVec);
+    }
+}
+
+static void RuntimeBridgeRawVecTryAllocateInReturnsRustSuccessLayout()
+{
+    var retbuf = Marshal.AllocHGlobal(sizeof(long) * 3);
+    try
+    {
+        Marshal.WriteIntPtr(IntPtr.Add(retbuf, sizeof(long) * 2), IntPtr.Zero);
+        RuntimeBridgeHelpers.RustRawVecTryAllocateIn(retbuf, 4, 1, 8, 2);
+
+        Assert(Marshal.ReadInt64(retbuf) == 0, "RawVec try_allocate_in should write the Rust success discriminant.");
+        Assert(Marshal.ReadInt64(IntPtr.Add(retbuf, sizeof(long))) == 4, "RawVec try_allocate_in should preserve requested capacity.");
+        var pointer = Marshal.ReadIntPtr(IntPtr.Add(retbuf, sizeof(long) * 2));
+        Assert(pointer != IntPtr.Zero, "RawVec try_allocate_in should allocate non-zero capacity storage.");
+        for (var offset = 0; offset < 8; offset++)
+            Assert(Marshal.ReadByte(pointer, offset) == 0, "RawVec try_allocate_in should zero storage when requested.");
+    }
+    finally
+    {
+        var pointer = Marshal.ReadIntPtr(IntPtr.Add(retbuf, sizeof(long) * 2));
+        if (pointer != IntPtr.Zero && pointer.ToInt64() > 4096)
+            Marshal.FreeHGlobal(pointer);
+        Marshal.FreeHGlobal(retbuf);
+    }
+}
+
+static void RuntimeBridgeVecReserveBytesAllocatesAndPreservesLength()
+{
+    var vector = Marshal.AllocHGlobal(sizeof(long) * 3);
+    try
+    {
+        Marshal.WriteInt64(vector, 0);
+        Marshal.WriteIntPtr(IntPtr.Add(vector, sizeof(long)), IntPtr.Zero);
+        Marshal.WriteInt64(IntPtr.Add(vector, sizeof(long) * 2), 3);
+
+        RuntimeBridgeHelpers.RustVecReserveBytes(vector, 1);
+
+        Assert(Marshal.ReadInt64(vector) >= 4, "Vec reserve should allocate enough byte capacity for len + additional.");
+        Assert(Marshal.ReadIntPtr(IntPtr.Add(vector, sizeof(long))) != IntPtr.Zero, "Vec reserve should allocate byte storage.");
+        Assert(Marshal.ReadInt64(IntPtr.Add(vector, sizeof(long) * 2)) == 3, "Vec reserve must not change length.");
+    }
+    finally
+    {
+        var pointer = Marshal.ReadIntPtr(IntPtr.Add(vector, sizeof(long)));
+        if (pointer != IntPtr.Zero)
+            Marshal.FreeHGlobal(pointer);
+        Marshal.FreeHGlobal(vector);
+    }
+}
+
+static void RuntimeBridgeMemcmpMatchesCLexicographicResult()
+{
+    var left = Marshal.AllocHGlobal(3);
+    var right = Marshal.AllocHGlobal(3);
+    try
+    {
+        Marshal.Copy(new byte[] { 1, 2, 4 }, 0, left, 3);
+        Marshal.Copy(new byte[] { 1, 2, 3 }, 0, right, 3);
+        Assert(RuntimeBridgeHelpers.Memcmp(left, right, 2) == 0, "Expected equal prefix to compare as zero.");
+        Assert(RuntimeBridgeHelpers.Memcmp(left, right, 3) > 0, "Expected first larger differing byte to produce a positive result.");
+        Assert(RuntimeBridgeHelpers.Memcmp(right, left, 3) < 0, "Expected first smaller differing byte to produce a negative result.");
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(right);
+        Marshal.FreeHGlobal(left);
+    }
+}
+
+static void RuntimeBridgeUnsignedCompareMatchesLlvmOrdering()
+{
+    Assert(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64(1, 2) == -1, "Expected smaller unsigned value to return -1.");
+    Assert(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64(2, 1) == 1, "Expected larger unsigned value to return 1.");
+    Assert(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64(2, 2) == 0, "Expected equal unsigned values to return 0.");
+    Assert(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64(ulong.MaxValue, 0) == 1, "Expected unsigned ordering to treat ulong.MaxValue as larger than zero.");
 }
 
 static void NicheLayoutPolicyHandlesPointersAndNonZero()
@@ -9656,6 +9901,53 @@ static void DepHeavyCrosscrateCallsResolveThroughLto()
     Assert(Equals(actualResult, 166), $"Expected dep_heavy_probe to return 166 (fib(10)+collatz(27)), but got '{actualResult}'.");
 }
 
+static void YamlSaphyrSampleTranslatesToManagedAssembly()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("yaml_saphyr");
+    var report = BitcodeArtifactInspector.Inspect(bitcodePath, llvmRoot);
+    var moduleSummary = report.ModuleSummary ?? throw new InvalidOperationException("Expected a module summary for yaml_saphyr.");
+
+    Assert(moduleSummary.Functions.Any(static function => function.Name == "yaml_saphyr_score"),
+        "Expected yaml_saphyr to contain the exported YAML scoring probe.");
+    Assert(moduleSummary.Functions.Any(static function => function.Name.Contains("saphyr", StringComparison.Ordinal)),
+        "Expected yaml_saphyr bitcode to contain merged saphyr parser functions.");
+
+    var outputAssembly = Path.Combine(Path.GetTempPath(), $"rustlyn-yaml-saphyr-{Guid.NewGuid():N}.dll");
+    try
+    {
+        var module = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+        LoweredAssemblyEmitter.EmitModule(module, outputAssembly, new EmitOptions { StrictUnsupportedIr = false });
+        Assert(File.Exists(outputAssembly), "Expected yaml_saphyr to emit a managed assembly in permissive exploratory mode.");
+    }
+    finally
+    {
+        if (File.Exists(outputAssembly))
+        {
+            File.Delete(outputAssembly);
+        }
+    }
+}
+
+static void YamlSaphyrStrictModeEmitsManagedAssembly()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("yaml_saphyr");
+    var outputAssembly = Path.Combine(Path.GetTempPath(), $"rustlyn-yaml-saphyr-strict-{Guid.NewGuid():N}.dll");
+
+    try
+    {
+        var module = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+        LoweredAssemblyEmitter.EmitModule(module, outputAssembly, new EmitOptions { StrictUnsupportedIr = true });
+        Assert(File.Exists(outputAssembly), "Expected yaml_saphyr to emit a managed assembly in strict mode.");
+    }
+    finally
+    {
+        if (File.Exists(outputAssembly))
+        {
+            File.Delete(outputAssembly);
+        }
+    }
+}
+
 static void FloatArithProbeReturnsExpectedResult()
 {
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("float_arith");
@@ -11505,8 +11797,8 @@ static void SumXorU8VectorizedSampleBuildsFromCargoManifest()
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built sum_xor_u8_vectorized to include a vector.main.loop.iter.check block.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
         "Expected Cargo-built sum_xor_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built sum_xor_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSwitchInstruction>().Any(static sw => sw.ValueType == "i32"),
+        "Expected Cargo-built sum_xor_u8_vectorized to preserve the typed switch dispatch in vector.ph.");
     Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<16 x i8>" && phi.Incoming.Count == 7),
         "Expected Cargo-built sum_xor_u8_vectorized to preserve the seven-way <16 x i8> phi merge in middle.block.");
     Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<16 x i8>" && binary.Operation == "add"),
@@ -11551,8 +11843,8 @@ static void SumXorI8VectorizedSampleBuildsFromCargoManifest()
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built sum_xor_i8_vectorized to include a vector.main.loop.iter.check block.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
         "Expected Cargo-built sum_xor_i8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built sum_xor_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSwitchInstruction>().Any(static sw => sw.ValueType == "i32"),
+        "Expected Cargo-built sum_xor_i8_vectorized to preserve the typed switch dispatch in vector.ph.");
     Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "<8 x i8>" && phi.Incoming.Count == 7),
         "Expected Cargo-built sum_xor_i8_vectorized to preserve the seven-way <8 x i8> phi merge in middle.block.");
     Assert(middleBlock.Instructions.OfType<LoweredBinaryInstruction>().Any(static binary => binary.Type == "<8 x i8>" && binary.Operation == "add"),
@@ -11886,8 +12178,8 @@ static void OrFoldU8VectorizedSampleBuildsFromCargoManifest()
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built or_fold_u8_vectorized to include a vector.main.loop.iter.check block.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
         "Expected Cargo-built or_fold_u8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built or_fold_u8_vectorized to preserve the raw switch dispatch in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSwitchInstruction>().Any(static sw => sw.ValueType == "i32"),
+        "Expected Cargo-built or_fold_u8_vectorized to preserve the typed switch dispatch in vector.ph.");
     Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Incoming.Count == 4),
         "Expected Cargo-built or_fold_u8_vectorized to preserve the four-way scalar main-loop merge in middle.block.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
@@ -11931,8 +12223,8 @@ static void OrFoldI8VectorizedSampleBuildsFromCargoManifest()
     Assert(function.Blocks.Any(static block => block.Name == "vector.main.loop.iter.check"), "Expected Cargo-built or_fold_i8_vectorized to include a vector.main.loop.iter.check block.");
     Assert(vectorPhBlock.Instructions.OfType<LoweredCallInstruction>().Any(static call => call.Callee == "llvm.fshl.i32"),
         "Expected Cargo-built or_fold_i8_vectorized to preserve the llvm.fshl.i32 preheader intrinsic.");
-    Assert(vectorPhBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i32 ", StringComparison.Ordinal)),
-        "Expected Cargo-built or_fold_i8_vectorized to preserve the raw switch dispatch in vector.ph.");
+    Assert(vectorPhBlock.Instructions.OfType<LoweredSwitchInstruction>().Any(static sw => sw.ValueType == "i32"),
+        "Expected Cargo-built or_fold_i8_vectorized to preserve the typed switch dispatch in vector.ph.");
     Assert(middleBlock.Instructions.OfType<LoweredPhiInstruction>().Any(static phi => phi.Type == "i8" && phi.Incoming.Count == 4),
         "Expected Cargo-built or_fold_i8_vectorized to preserve the four-way scalar main-loop merge in middle.block.");
     Assert(epilogPhiBlock.Instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.Contains("<i8 poison, i8 0, i8 0, i8 0>", StringComparison.Ordinal)),
@@ -20940,6 +21232,24 @@ start:
     Assert(instruction.FalseValue == "b", $"Expected select false value metadata to be stripped, got '{instruction.FalseValue}'.");
 }
 
+static void LowererParsesDeadOnReturnPointerParameters()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define void @probe(ptr noalias %self, ptr dead_on_return noalias noundef readonly align 8 captures(address) dereferenceable(88) %ev) {
+start:
+  %0 = load i64, ptr %ev, align 8
+  ret void
+}
+""");
+
+    var parameters = module.Functions.Single().Parameters;
+    Assert(parameters[0].Name == "self", $"Expected first parameter to be named self, got '{parameters[0].Name}'.");
+    Assert(parameters[1].Name == "ev", $"Expected dead_on_return parameter to be named ev, got '{parameters[1].Name}'.");
+
+    var load = module.Functions.Single().Blocks.Single().Instructions.OfType<LoweredLoadInstruction>().Single();
+    Assert(load.Source == "ev", $"Expected load source to remain ev, got '{load.Source}'.");
+}
+
 static void LowererPreservesVtablePointerRelocations()
 {
     var module = LoweredIrLowerer.LowerLlvmIr("""
@@ -20968,6 +21278,21 @@ start:
     var descriptorRelocation = descriptor.PointerRelocations.Single();
     Assert(descriptorRelocation.Offset == 0, $"Expected fmt descriptor relocation at offset 0, got {descriptorRelocation.Offset.ToString(CultureInfo.InvariantCulture)}.");
     Assert(descriptorRelocation.Target == "message", $"Expected fmt descriptor relocation to target message, got '{descriptorRelocation.Target}'.");
+}
+
+static void LowererPreservesAggregateConstantWithUndefPadding()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@event_sentinel = private unnamed_addr constant <{ [8 x i8], [80 x i8] }> <{ [8 x i8] c"\0B\00\00\00\00\00\00\80", [80 x i8] undef }>, align 8
+""");
+
+    var global = module.Globals.Single();
+    Assert(global.Name == "event_sentinel", $"Expected event sentinel global, got '{global.Name}'.");
+    Assert(global.InitializerBytes.Count == 88, $"Expected aggregate bytes to include undef padding, got {global.InitializerBytes.Count.ToString(CultureInfo.InvariantCulture)} bytes.");
+    Assert(global.InitializerBytes[0] == 0x0B, "Expected aggregate constant payload to preserve byte initializer.");
+    Assert(global.InitializerBytes[7] == 0x80, "Expected aggregate constant payload to preserve high discriminant byte.");
+    Assert(global.InitializerBytes.Skip(8).All(static b => b == 0), "Expected undef padding to lower as deterministic zero bytes.");
+    Assert(global.PointerRelocations.Count == 0, "Expected no pointer relocations for pure byte aggregate constant.");
 }
 
 static void RuntimeSplitFacadeForwardsNumericHelpers()

@@ -19,7 +19,7 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | LLVM bitcode inspection | Supported | `Rustlyn.Tool inspect`, `BitcodeArtifactInspector`, smoke scripts | Broader structured output and diagnostics. |
 | LLVM text lowering | Preview | `LoweredIrLowerer.cs` and many lowered-shape tests | Replace regex/text parsing with semantic LLVM traversal that preserves datalayout, attributes, metadata, volatile/orderings, address spaces, and exception constructs. |
 | Arithmetic, comparisons, branches, phi, loops | Supported | Primitive samples and backend regression harness | Keep as the fast baseline while unsupported fallbacks are removed. |
-| Switch lowering | Preview | Raw switch lowering path and `switch_control` fixture | Model switch as a typed lowered instruction instead of a raw-instruction special case. |
+| Switch lowering | Preview | Typed `LoweredSwitchInstruction`, profiled-switch regression tests, and `switch_control` fixture | Replace compare-and-branch IL expansion with denser jump-table emission where profitable. |
 | Structs, arrays, tuples, aggregate returns | Preview | Focused aggregate samples | Add a datalayout-driven layout/ABI engine and remove packing/sret heuristics. |
 | Function pointers and indirect calls | Preview | Function-pointer samples | Formalize calli signatures, closure/vtable ABI, and unresolved-call diagnostics. |
 | Atomics | Fixture-only | `atomicrmw`/`cmpxchg` lowering paths and atomics samples | Implement LLVM ordering/fence/volatile semantics with `Interlocked`/`Volatile` or fail clearly. |
@@ -43,7 +43,7 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | Async state machines | Fixture-only | `samples/async_state_machine` is a manual state-machine fixture | Add real `async fn`, `Future::poll`, `Pin`, wakers, and executor boundaries. |
 | `Vec`/`String` ownership and drop | Fixture-only | `samples/string_vec_ops` exists | Stabilize allocator/drop/runtime behavior and register fixture coverage. |
 | Threads, mutexes, channels, TLS | Planned | No required regression coverage | Add std concurrency fixtures after atomics/orderings are real. |
-| Common ecosystem crates | Planned | `dep_heavy` proves a cross-crate workload | Add workspace/features/build-script/common-crate tiers subject to dependency policy. |
+| Common ecosystem crates | Planned | `dep_heavy` proves a cross-crate workload; `samples/yaml_saphyr` proves a real crates.io YAML parser can be dependency-merged and emitted in strict mode | Add workspace/features/build-script/common-crate tiers subject to dependency policy. Saphyr strict emission now covers profiled switches, hashbrown vector mask idioms, variable-index aggregate GEP parsing, and the first RawVec growth bridge; runnable execution still needs deeper enum/pointer-layout stabilization. |
 
 ## .NET integration and runtime
 
@@ -98,4 +98,3 @@ Layout work routes through `TypeLayoutService`. It answers size/alignment for `i
 | Panic = unwind | Planned | Requires landingpad/invoke modeling, exception regions, and drop-on-unwind glue. |
 | Drop on early return | Preview | Works for fixtures that do not also need unwinding. |
 | Threading / `Mutex` / channels | Planned | Not validated by samples; treat as unsupported until coverage exists. |
-

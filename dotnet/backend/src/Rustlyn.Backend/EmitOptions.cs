@@ -51,6 +51,12 @@ public sealed class UnsupportedIrException : System.Exception
         {
             builder.Append("  ");
             builder.Append(function.Name);
+            if (!string.IsNullOrWhiteSpace(function.Category))
+            {
+                builder.Append(" [");
+                builder.Append(function.Category);
+                builder.Append(']');
+            }
             builder.Append(": ");
             builder.AppendLine(function.Reason);
         }
@@ -58,4 +64,4 @@ public sealed class UnsupportedIrException : System.Exception
     }
 }
 
-public sealed record UnsupportedIrFunction(string Name, string Reason);
+public sealed record UnsupportedIrFunction(string Name, string Reason, string Category);

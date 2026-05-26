@@ -555,7 +555,11 @@ public static class LoweredAssemblyEmitter
             {
                 if (strict)
                 {
-                    throw new UnsupportedIrException(skippedFunctions.ConvertAll(f => new UnsupportedIrFunction(f.Name, f.Reason)));
+                    throw new UnsupportedIrException(skippedFunctions.ConvertAll(static f =>
+                        new UnsupportedIrFunction(
+                            f.Name,
+                            f.Reason,
+                            UnsupportedIrDiagnosticClassifier.Classify(f.Reason))));
                 }
 
                 Console.Error.WriteLine($"Warning: {skippedFunctions.Count} function(s) stubbed due to unsupported IR:");
@@ -1075,6 +1079,11 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredCompareInstruction cmp:
+                if (TryEmitVectorCompareInstruction(encoder, cmp, typeContext, paramIndices, localIndices, fieldHandles))
+                {
+                    break;
+                }
+
                 EmitLoadValue(encoder, cmp.Left, paramIndices, localIndices, fieldHandles);
                 EmitSignedNarrowNormalization(encoder, cmp.Type, cmp.Predicate);
                 EmitLoadValue(encoder, cmp.Right, paramIndices, localIndices, fieldHandles);
@@ -1164,6 +1173,24 @@ public static class LoweredAssemblyEmitter
             case LoweredFreezeInstruction freeze:
                 EmitLoadValue(encoder, freeze.Value, paramIndices, localIndices, fieldHandles, methodHandles);
                 encoder.StoreLocal(localIndices[freeze.Result]);
+                break;
+
+            case LoweredBitcastInstruction bitcast:
+                if (!TryEmitBitcastInstruction(encoder, bitcast, typeContext, paramIndices, localIndices, fieldHandles))
+                {
+                    throw new NotSupportedException($"LLVM bitcast from {bitcast.FromType} to {bitcast.ToType} is not yet supported.");
+                }
+                break;
+
+            case LoweredInsertElementInstruction insertElement:
+                EmitInsertElementInstruction(encoder, insertElement, typeContext, paramIndices, localIndices, fieldHandles);
+                break;
+
+            case LoweredShuffleVectorInstruction shuffleVector:
+                if (!TryEmitShuffleVectorInstruction(encoder, shuffleVector, typeContext, paramIndices, localIndices, fieldHandles))
+                {
+                    throw new NotSupportedException($"LLVM shufflevector with mask '{shuffleVector.Mask}' is not yet supported.");
+                }
                 break;
 
             case LoweredCallInstruction call:
@@ -1363,6 +1390,11 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredStoreInstruction store:
+                if (TryParseVectorType(store.Type, out _, out _) && TryEmitVectorStore(encoder, store, paramIndices, localIndices, fieldHandles, methodHandles))
+                {
+                    break;
+                }
+
                 // Handle vector constant stores (e.g., store <4 x i32> <i32 0, i32 0, i32 5, i32 7> -> ptr)
                 if (store.Type.StartsWith('<') && store.Value.StartsWith('<') && TryParseVectorConstant(store.Value, out var vecElements))
                 {
@@ -1441,6 +1473,9 @@ public static class LoweredAssemblyEmitter
                         // Load from a GEP element slot (SROA)
                         encoder.LoadLocal(gepLoadIdx);
                         encoder.StoreLocal(localIndices[load.Result]);
+                    }
+                    else if (TryParseVectorType(load.Type, out _, out _) && TryEmitVectorLoad(encoder, load, typeContext, paramIndices, localIndices, fieldHandles, methodHandles))
+                    {
                     }
                     else if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
                     {
@@ -2051,6 +2086,209 @@ public static class LoweredAssemblyEmitter
                 encoder.OpCode(ILOpCode.Conv_u2);
                 break;
         }
+    }
+
+    private static bool TryEmitVectorCompareInstruction(InstructionEncoder encoder, LoweredCompareInstruction compare, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(compare.Type, out var count, out var elementType))
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, "i1"));
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            EmitLoadVectorElement(encoder, compare.Left, compare.Type, index, paramIndices, localIndices, fieldHandles);
+            EmitSignedNarrowNormalization(encoder, elementType, compare.Predicate);
+            EmitLoadVectorElement(encoder, compare.Right, compare.Type, index, paramIndices, localIndices, fieldHandles);
+            EmitSignedNarrowNormalization(encoder, elementType, compare.Predicate);
+            EmitCompare(encoder, compare.Predicate);
+            EmitStoreVectorElement(encoder, "i1");
+        }
+
+        encoder.StoreLocal(localIndices[compare.Result]);
+        return true;
+    }
+
+    private static void EmitInsertElementInstruction(InstructionEncoder encoder, LoweredInsertElementInstruction insert, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(insert.VectorType, out var count, out var elementType))
+        {
+            encoder.LoadConstantI4(0);
+            encoder.StoreLocal(localIndices[insert.Result]);
+            return;
+        }
+
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            if (index == insert.Index)
+            {
+                EmitLoadValue(encoder, insert.Value, paramIndices, localIndices, fieldHandles);
+                EmitTruncateToVectorElement(encoder, elementType);
+            }
+            else
+            {
+                EmitLoadVectorElement(encoder, insert.Base, insert.VectorType, index, paramIndices, localIndices, fieldHandles);
+            }
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        encoder.StoreLocal(localIndices[insert.Result]);
+    }
+
+    private static bool TryEmitShuffleVectorInstruction(InstructionEncoder encoder, LoweredShuffleVectorInstruction shuffle, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(shuffle.VectorType, out var inputCount, out var elementType)
+            || !TryParseVectorType(shuffle.MaskType, out var outputCount, out _))
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(outputCount);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+        for (var index = 0; index < outputCount; index++)
+        {
+            if (!TryGetShuffleMaskIndex(shuffle.Mask, index, out var sourceIndex))
+            {
+                return false;
+            }
+
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            if (sourceIndex < inputCount)
+            {
+                EmitLoadVectorElement(encoder, shuffle.First, shuffle.VectorType, sourceIndex, paramIndices, localIndices, fieldHandles);
+            }
+            else
+            {
+                EmitLoadVectorElement(encoder, shuffle.Second, shuffle.VectorType, sourceIndex - inputCount, paramIndices, localIndices, fieldHandles);
+            }
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        encoder.StoreLocal(localIndices[shuffle.Result]);
+        return true;
+    }
+
+    private static bool TryEmitBitcastInstruction(InstructionEncoder encoder, LoweredBitcastInstruction bitcast, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (string.Equals(bitcast.FromType, bitcast.ToType, StringComparison.Ordinal))
+        {
+            EmitLoadValue(encoder, bitcast.Value, paramIndices, localIndices, fieldHandles);
+            encoder.StoreLocal(localIndices[bitcast.Result]);
+            return true;
+        }
+
+        if (TryParseVectorType(bitcast.FromType, out var fromCount, out var fromElement)
+            && TryGetIntegerBitWidth(bitcast.ToType, out var toWidth)
+            && string.Equals(fromElement, "i1", StringComparison.Ordinal)
+            && toWidth >= fromCount)
+        {
+            encoder.LoadConstantI4(0);
+            for (var index = 0; index < fromCount; index++)
+            {
+                EmitLoadVectorElement(encoder, bitcast.Value, bitcast.FromType, index, paramIndices, localIndices, fieldHandles);
+                encoder.LoadConstantI4(1 << index);
+                encoder.OpCode(ILOpCode.Mul);
+                encoder.OpCode(ILOpCode.Or);
+            }
+            encoder.StoreLocal(localIndices[bitcast.Result]);
+            return true;
+        }
+
+        if (string.Equals(bitcast.FromType, "<16 x i8>", StringComparison.Ordinal)
+            && string.Equals(bitcast.ToType, "<2 x i64>", StringComparison.Ordinal))
+        {
+            encoder.LoadConstantI4(2);
+            encoder.OpCode(ILOpCode.Newarr);
+            encoder.Token(GetVectorElementTypeReference(typeContext, "i64"));
+            for (var lane = 0; lane < 2; lane++)
+            {
+                encoder.OpCode(ILOpCode.Dup);
+                encoder.LoadConstantI4(lane);
+                encoder.LoadConstantI8(0);
+                for (var byteIndex = 0; byteIndex < 8; byteIndex++)
+                {
+                    EmitLoadVectorElement(encoder, bitcast.Value, bitcast.FromType, (lane * 8) + byteIndex, paramIndices, localIndices, fieldHandles);
+                    encoder.LoadConstantI4(255);
+                    encoder.OpCode(ILOpCode.And);
+                    encoder.OpCode(ILOpCode.Conv_u8);
+                    if (byteIndex > 0)
+                    {
+                        encoder.LoadConstantI4(byteIndex * 8);
+                        encoder.OpCode(ILOpCode.Shl);
+                    }
+                    encoder.OpCode(ILOpCode.Or);
+                }
+                EmitStoreVectorElement(encoder, "i64");
+            }
+            encoder.StoreLocal(localIndices[bitcast.Result]);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryEmitVectorLoad(InstructionEncoder encoder, LoweredLoadInstruction load, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles)
+    {
+        if (!TryParseVectorType(load.Type, out var count, out var elementType))
+        {
+            return false;
+        }
+
+        var elementSize = GetFieldSize(elementType);
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            EmitLoadAddress(encoder, load.Source, paramIndices, localIndices, fieldHandles, methodHandles);
+            if (index > 0)
+            {
+                encoder.LoadConstantI4(index * elementSize);
+                encoder.OpCode(ILOpCode.Add);
+            }
+            EmitIndirectLoad(encoder, elementType);
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        encoder.StoreLocal(localIndices[load.Result]);
+        return true;
+    }
+
+    private static bool TryEmitVectorStore(InstructionEncoder encoder, LoweredStoreInstruction store, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles)
+    {
+        if (!TryParseVectorType(store.Type, out var count, out var elementType))
+        {
+            return false;
+        }
+
+        var elementSize = GetFieldSize(elementType);
+        for (var index = 0; index < count; index++)
+        {
+            EmitLoadAddress(encoder, store.Destination, paramIndices, localIndices, fieldHandles, methodHandles);
+            if (index > 0)
+            {
+                encoder.LoadConstantI4(index * elementSize);
+                encoder.OpCode(ILOpCode.Add);
+            }
+            EmitLoadVectorElement(encoder, store.Value, store.Type, index, paramIndices, localIndices, fieldHandles);
+            EmitIndirectStore(encoder, elementType);
+        }
+
+        return true;
     }
 
     private static bool TryEmitVectorBinaryInstruction(InstructionEncoder encoder, LoweredBinaryInstruction binary, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
@@ -2836,6 +3074,9 @@ public static class LoweredAssemblyEmitter
         LoweredPtrToIntInstruction p => p.Result,
         LoweredIntToPtrInstruction i => i.Result,
         LoweredFreezeInstruction f => f.Result,
+        LoweredBitcastInstruction b => b.Result,
+        LoweredInsertElementInstruction ie => ie.Result,
+        LoweredShuffleVectorInstruction sv => sv.Result,
         LoweredLoadInstruction l => l.Result,
         LoweredAllocaInstruction a => a.Result,
         LoweredGetElementPointerInstruction g => g.Result,
@@ -2854,11 +3095,14 @@ public static class LoweredAssemblyEmitter
         LoweredPtrToIntInstruction p => p.ToType,
         LoweredIntToPtrInstruction => "ptr",
         LoweredFreezeInstruction f => f.Type,
+        LoweredBitcastInstruction b => b.ToType,
+        LoweredInsertElementInstruction ie => ie.VectorType,
+        LoweredShuffleVectorInstruction sv => InferShuffleVectorType(sv),
         LoweredLoadInstruction l => l.Type,
         LoweredAllocaInstruction => "ptr",
         LoweredPhiInstruction p => InferPhiType(p.Type),
         LoweredBinaryInstruction b => b.Type,
-        LoweredCompareInstruction => "i32",
+        LoweredCompareInstruction c => TryParseVectorType(c.Type, out var compareCount, out _) ? $"<{compareCount} x i1>" : "i32",
         LoweredSelectInstruction s => s.ValueType,
         LoweredTruncateInstruction t => t.ToType,
         LoweredCallInstruction c => IsAggregateType(c.ReturnType) ? "i64" : c.ReturnType,
@@ -2988,6 +3232,32 @@ public static class LoweredAssemblyEmitter
         return TryParseVectorType(vectorType, out _, out var elementType)
             ? elementType
             : "i32";
+    }
+
+    private static string InferShuffleVectorType(LoweredShuffleVectorInstruction shuffle)
+    {
+        return TryParseVectorType(shuffle.VectorType, out _, out var elementType)
+               && TryParseVectorType(shuffle.MaskType, out var count, out _)
+            ? $"<{count} x {elementType}>"
+            : shuffle.VectorType;
+    }
+
+    private static bool TryGetShuffleMaskIndex(string mask, int outputIndex, out int sourceIndex)
+    {
+        sourceIndex = 0;
+        if (string.Equals(mask, "zeroinitializer", StringComparison.Ordinal)
+            || string.Equals(mask, "poison", StringComparison.Ordinal)
+            || string.Equals(mask, "undef", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!TryParseVectorConstant(mask, out var elements) || outputIndex >= elements.Length)
+        {
+            return false;
+        }
+
+        return int.TryParse(elements[outputIndex], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out sourceIndex);
     }
 
     private static bool TryParseVectorType(string vectorType, out int count, out string elementType)
@@ -4013,6 +4283,209 @@ public static class LoweredAssemblyEmitter
                 return true;
             }
 
+            if (callee.Contains("RawVecInner", StringComparison.Ordinal)
+                && callee.Contains("grow_amortized", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_grow_amortized", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("RawVecInner", StringComparison.Ordinal)
+                && callee.Contains("try_allocate_in", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_raw_vec_try_allocate_in", out handle))
+            {
+                return true;
+            }
+
+            if (callee.Contains("Vec$LT$T$C$A$GT$", StringComparison.Ordinal)
+                && callee.Contains("7reserve", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_vec_reserve_bytes", out handle))
+            {
+                return true;
+            }
+
+            // str::starts_with<char> monomorphization
+            if (callee.Contains("impl$u20$str$GT$11starts_with", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_core_str_starts_with_char", out handle))
+            {
+                return true;
+            }
+
+            // str::ends_with<char> monomorphization
+            if (callee.Contains("impl$u20$str$GT$9ends_with", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_core_str_ends_with_char", out handle))
+            {
+                return true;
+            }
+
+            // swap_nonoverlapping_chunks
+            if (callee.Contains("swap_nonoverlapping_chunks", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_core_ptr_swap_nonoverlapping_chunks", out handle))
+            {
+                return true;
+            }
+
+            // core::str::count::do_count_chars
+            if (callee.Contains("3str5count14do_count_chars", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_core_str_do_count_chars", out handle))
+            {
+                return true;
+            }
+
+            // core::str::count::char_count_general_case
+            if (callee.Contains("3str5count23char_count_general_case", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_core_str_char_count_general_case", out handle))
+            {
+                return true;
+            }
+
+            // Cow<str>::deref returning {ptr, i64} (the 24-byte Cow variant)
+            if (callee.Contains("Cow$LT$B$GT$", StringComparison.Ordinal)
+                && callee.Contains("Deref$GT$5deref", StringComparison.Ordinal)
+                && callee.Contains("hc3dd6b6198c46a26", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_cow_str_deref", out handle))
+            {
+                return true;
+            }
+
+            // Cow<B>::deref returning ptr (the 48-byte Cow variant)
+            if (callee.Contains("Cow$LT$B$GT$", StringComparison.Ordinal)
+                && callee.Contains("Deref$GT$5deref", StringComparison.Ordinal)
+                && callee.Contains("haf21d018b912faa4", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_cow_bytes_deref", out handle))
+            {
+                return true;
+            }
+
+            // Cow<B>::default
+            if (callee.Contains("Cow$LT$B$GT$", StringComparison.Ordinal)
+                && callee.Contains("Default$GT$7default", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_cow_default", out handle))
+            {
+                return true;
+            }
+
+            // Cow<B>::clone
+            if (callee.Contains("Cow$LT$B$GT$", StringComparison.Ordinal)
+                && callee.Contains("Clone$GT$5clone", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_cow_clone", out handle))
+            {
+                return true;
+            }
+
+            // ScanError::new_str
+            if (callee.Contains("ScanError7new_str", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_scan_error_new_str", out handle))
+            {
+                return true;
+            }
+
+            // Event::empty_scalar (no params other than sret)
+            if (callee.Contains("Event12empty_scalar", StringComparison.Ordinal)
+                && !callee.Contains("with_anchor", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_event_empty_scalar", out handle))
+            {
+                return true;
+            }
+
+            // Event::empty_scalar_with_anchor
+            if (callee.Contains("Event24empty_scalar_with_anchor", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_event_empty_scalar_with_anchor", out handle))
+            {
+                return true;
+            }
+
+            // Yaml::value_from_cow_and_metadata
+            if (callee.Contains("Yaml27value_from_cow_and_metadata", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_yaml_value_from_cow_and_metadata", out handle))
+            {
+                return true;
+            }
+
+            // Tag::is_yaml_core_schema
+            if (callee.Contains("Tag19is_yaml_core_schema", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_saphyr_tag_is_yaml_core_schema", out handle))
+            {
+                return true;
+            }
+
+            // Vec<T,A>::drop
+            if (callee.Contains("Vec$LT$T$C$A$GT$", StringComparison.Ordinal)
+                && callee.Contains("Drop$GT$4drop", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_vec_drop", out handle))
+            {
+                return true;
+            }
+
+            // RawVec<T,A>::drop
+            if (callee.Contains("RawVec$LT$T$C$A$GT$", StringComparison.Ordinal)
+                && callee.Contains("Drop$GT$4drop", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_raw_vec_drop", out handle))
+            {
+                return true;
+            }
+
+            // SlicePartialEq::equal_same_length
+            if (callee.Contains("SlicePartialEq", StringComparison.Ordinal)
+                && callee.Contains("equal_same_length", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_slice_equal_same_length", out handle))
+            {
+                return true;
+            }
+
+            // std::thread::local::LocalKey<T>::with (hash random seed)
+            if (callee.Contains("LocalKey$LT$T$GT$4with", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_thread_local_hash_keys", out handle))
+            {
+                return true;
+            }
+
+            // Hash random seed TLS initialization — returns ptr, need a different bridge
+            // RUST_STD_INTERNAL_VAL3tls() -> ptr: returns TLS storage pointer
+            if (callee.Contains("RUST_STD_INTERNAL_VAL3tls", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_tls_storage_slot", out handle))
+            {
+                return true;
+            }
+
+            // thread_local native lazy Storage get_or_init_slow(ptr, ptr) -> ptr
+            if (callee.Contains("Storage$LT$T$C$D$GT$16get_or_init_slow", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_tls_get_or_init_slow", out handle))
+            {
+                return true;
+            }
+
+            // alloc::fmt::format::format_inner
+            if (callee.Contains("alloc3fmt6format12format_inner", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_fmt_format_inner", out handle))
+            {
+                return true;
+            }
+            if (callee.Contains("5alloc3fmt6format12format_inner", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_alloc_fmt_format_inner", out handle))
+            {
+                return true;
+            }
+
+            // Zip iterator new
+            if (callee.Contains("ZipImpl$LT$A$C$B$GT$$GT$3new", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_zip_iter_new", out handle))
+            {
+                return true;
+            }
+
+            // Yaml::into_tagged — takes (sret_ptr, node_ptr, tag_ptr), returns void
+            // For now, let this fall through to unresolved (fills with zeros = Yaml::Null)
+            // TODO: proper bridge that wraps node with tag
+
+            // Box<T>::hash / OrderedFloat::hash
+            if ((callee.Contains("Box$LT$T$C$A$GT$", StringComparison.Ordinal) || callee.Contains("OrderedFloat", StringComparison.Ordinal))
+                && callee.Contains("Hash$GT$4hash", StringComparison.Ordinal)
+                && _runtimeBridgeMap.TryGetValue("rustlyn_hash_no_op", out handle))
+            {
+                return true;
+            }
+
             if (callee.Contains("core..wtf8..Wtf8", StringComparison.Ordinal)
                 && callee.Contains("8to_owned", StringComparison.Ordinal)
                 && _runtimeBridgeMap.TryGetValue("rustlyn_std_pathbuf_to_owned", out handle))
@@ -4363,6 +4836,35 @@ public static class LoweredAssemblyEmitter
             ("rustlyn_dotnet_bitops_popcount_u32", nameof(RuntimeBridgeHelpers.PopCountU32)),
             ("rustlyn_dotnet_math_max_i32", nameof(RuntimeBridgeHelpers.MathMaxI32)),
             ("rustlyn_dotnet_math_min_i32", nameof(RuntimeBridgeHelpers.MathMinI32)),
+            ("rustlyn_alloc_raw_vec_grow_amortized", nameof(RuntimeBridgeHelpers.RustRawVecGrowAmortized)),
+            ("rustlyn_alloc_raw_vec_try_allocate_in", nameof(RuntimeBridgeHelpers.RustRawVecTryAllocateIn)),
+            ("rustlyn_alloc_vec_reserve_bytes", nameof(RuntimeBridgeHelpers.RustVecReserveBytes)),
+            ("memcmp", nameof(RuntimeBridgeHelpers.Memcmp)),
+            ("llvm.ucmp.i8.i64", nameof(RuntimeBridgeHelpers.LlvmUnsignedCompareI8I64)),
+            ("rustlyn_core_str_starts_with_char", nameof(RuntimeBridgeHelpers.CoreStrStartsWithChar)),
+            ("rustlyn_core_str_ends_with_char", nameof(RuntimeBridgeHelpers.CoreStrEndsWithChar)),
+            ("rustlyn_core_ptr_swap_nonoverlapping_chunks", nameof(RuntimeBridgeHelpers.SwapNonoverlappingChunks)),
+            ("rustlyn_core_slice_memchr_aligned", nameof(RuntimeBridgeHelpers.CoreSliceMemchrAligned)),
+            ("rustlyn_core_str_do_count_chars", nameof(RuntimeBridgeHelpers.CoreStrDoCountChars)),
+            ("rustlyn_core_str_char_count_general_case", nameof(RuntimeBridgeHelpers.CoreStrCharCountGeneralCase)),
+            ("rustlyn_cow_str_deref", nameof(RuntimeBridgeHelpers.CowStrDeref)),
+            ("rustlyn_cow_default", nameof(RuntimeBridgeHelpers.CowDefault)),
+            ("rustlyn_cow_bytes_deref", nameof(RuntimeBridgeHelpers.CowBytesDeref)),
+            ("rustlyn_cow_clone", nameof(RuntimeBridgeHelpers.CowClone)),
+            ("rustlyn_saphyr_scan_error_new_str", nameof(RuntimeBridgeHelpers.ScanErrorNewStr)),
+            ("rustlyn_saphyr_event_empty_scalar", nameof(RuntimeBridgeHelpers.EventEmptyScalar)),
+            ("rustlyn_saphyr_event_empty_scalar_with_anchor", nameof(RuntimeBridgeHelpers.EventEmptyScalarWithAnchor)),
+            ("rustlyn_saphyr_yaml_value_from_cow_and_metadata", nameof(RuntimeBridgeHelpers.YamlValueFromCowAndMetadata)),
+            ("rustlyn_saphyr_tag_is_yaml_core_schema", nameof(RuntimeBridgeHelpers.TagIsYamlCoreSchema)),
+            ("rustlyn_vec_drop", nameof(RuntimeBridgeHelpers.VecDrop)),
+            ("rustlyn_raw_vec_drop", nameof(RuntimeBridgeHelpers.RawVecDrop)),
+            ("rustlyn_slice_equal_same_length", nameof(RuntimeBridgeHelpers.SliceEqualSameLength)),
+            ("rustlyn_thread_local_hash_keys", nameof(RuntimeBridgeHelpers.ThreadLocalHashKeys)),
+            ("rustlyn_tls_storage_slot", nameof(RuntimeBridgeHelpers.TlsStorageSlot)),
+            ("rustlyn_tls_get_or_init_slow", nameof(RuntimeBridgeHelpers.TlsGetOrInitSlow)),
+            ("rustlyn_alloc_fmt_format_inner", nameof(RuntimeBridgeHelpers.FormatInner)),
+            ("rustlyn_zip_iter_new", nameof(RuntimeBridgeHelpers.ZipIterNew)),
+            ("rustlyn_hash_no_op", nameof(RuntimeBridgeHelpers.HashNoOp)),
             ("rustlyn_dotnet_command_line_arg_count", nameof(RuntimeBridgeHelpers.CommandLineArgCount)),
             ("rustlyn_dotnet_command_line_arg_utf8_len", nameof(RuntimeBridgeHelpers.Utf8CommandLineArgLength)),
             ("rustlyn_dotnet_copy_command_line_arg_utf8", nameof(RuntimeBridgeHelpers.CopyUtf8CommandLineArg)),
@@ -4451,6 +4953,8 @@ public static class LoweredAssemblyEmitter
                 encoder.Single();
             else if (type == typeof(double))
                 encoder.Double();
+            else if (type == typeof(bool))
+                encoder.Boolean();
             else if (type == typeof(nint) || type == typeof(IntPtr))
                 encoder.IntPtr();
             else if (type == typeof(string))

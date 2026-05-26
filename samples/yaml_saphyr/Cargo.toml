@@ -1,0 +1,16 @@
+[package]
+name = "yaml_saphyr"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+saphyr = { version = "0.0.6", default-features = false }
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"

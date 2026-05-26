@@ -128,6 +128,28 @@ public sealed record LoweredFreezeInstruction(
     string Type,
     string Value) : LoweredInstruction;
 
+public sealed record LoweredBitcastInstruction(
+    string Result,
+    string FromType,
+    string Value,
+    string ToType) : LoweredInstruction;
+
+public sealed record LoweredInsertElementInstruction(
+    string Result,
+    string VectorType,
+    string Base,
+    string ElementType,
+    string Value,
+    int Index) : LoweredInstruction;
+
+public sealed record LoweredShuffleVectorInstruction(
+    string Result,
+    string VectorType,
+    string First,
+    string Second,
+    string MaskType,
+    string Mask) : LoweredInstruction;
+
 public sealed record LoweredSelectInstruction(
     string Result,
     string Condition,
