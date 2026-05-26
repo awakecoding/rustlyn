@@ -10,7 +10,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            llvm_asset: clang+llvm-20.1.8-x86_64-windows.tar.xz
+          - os: ubuntu-latest
+            llvm_asset: clang+llvm-20.1.8-x86_64-ubuntu-24.04.tar.xz
+          - os: macos-latest
+            llvm_asset: clang+llvm-20.1.8-aarch64-macos.tar.xz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +26,29 @@ jobs:
         with:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
+
+      - name: Install prebuilt LLVM 20.1.8
+        shell: pwsh
+        run: |
+          $asset = '${{ matrix.llvm_asset }}'
+          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2025.3.0/$asset"
+          $stage = Join-Path $env:RUNNER_TEMP 'llvm'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          $archive = Join-Path $stage $asset
+          Write-Host "Downloading $url"
+          curl -fsSL -o $archive $url
+          tar -xJf $archive -C $stage
+          $root = Get-ChildItem -Path $stage -Directory | Where-Object { $_.Name -like 'clang+llvm-*' } | Select-Object -First 1
+          if (-not $root) { throw "LLVM root not found after extracting $archive" }
+          $resolved = $root.FullName
+          Write-Host "RUSTLYN_LLVM_ROOT=$resolved"
+          "RUSTLYN_LLVM_ROOT=$resolved" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          # Sanity check
+          if ($IsWindows) {
+            Test-Path (Join-Path $resolved 'bin\llvm-config.exe') | ForEach-Object { Write-Host "llvm-config.exe present: $_" }
+          } else {
+            Test-Path (Join-Path $resolved 'bin/llvm-config') | ForEach-Object { Write-Host "llvm-config present: $_" }
+          }
 
       - name: Build backend
         run: |
