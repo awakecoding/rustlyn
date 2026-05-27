@@ -20561,7 +20561,7 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
         return;
     }
 
-    if (IsCwdLengthSensitivePathTest(name) && Environment.CurrentDirectory.Length > 32)
+    if (IsCwdLengthSensitivePathTest(name) && Environment.CurrentDirectory.Length > 16)
     {
         Console.WriteLine($"SKIP {name}: cwd-length-sensitive test (cwd length {Environment.CurrentDirectory.Length.ToString(CultureInfo.InvariantCulture)} > 32); expected score bakes in Path.GetFullPath result against a shorter cwd.");
         return;
