@@ -574,6 +574,14 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"
     }
+    marked_yaml = @{
+        Method = "marked_yaml_serde_parse_fails_coerce_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     trait_object_probe = @{
         Method = "trait_object_score"
         Arguments = @(0)
@@ -2062,7 +2070,7 @@ try {
         $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $ToolDll
     }
     else {
-        dotnet build -c $Configuration $toolProject
+        dotnet build -c $Configuration $toolProject -p:UseSharedCompilation=false
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet build failed with exit code $LASTEXITCODE"
         }

@@ -32,6 +32,7 @@ public static partial class LoweredIrLowerer
     {
         var functions = new List<LoweredFunction>();
         var globals = new List<LoweredGlobal>();
+        var namedTypes = new Dictionary<string, string>(StringComparer.Ordinal);
         string? currentFunctionName = null;
         string? currentReturnType = null;
         string? currentReturnExtension = null;
@@ -49,6 +50,13 @@ public static partial class LoweredIrLowerer
 
             if (currentFunctionName is null)
             {
+                var namedTypeMatch = NamedTypeDefinitionRegex().Match(line);
+                if (namedTypeMatch.Success)
+                {
+                    namedTypes[namedTypeMatch.Groups["name"].Value] = namedTypeMatch.Groups["type"].Value.Trim();
+                    continue;
+                }
+
                 var aliasMatch = FunctionAliasRegex().Match(line);
                 if (aliasMatch.Success)
                 {
@@ -59,6 +67,12 @@ public static partial class LoweredIrLowerer
                 if (TryParsePointerRelocationGlobal(line, out var relocationGlobal))
                 {
                     globals.Add(relocationGlobal);
+                    continue;
+                }
+
+                if (TryParseScalarPointerRelocationGlobal(line, out var scalarRelocationGlobal))
+                {
+                    globals.Add(scalarRelocationGlobal);
                     continue;
                 }
 
@@ -104,6 +118,26 @@ public static partial class LoweredIrLowerer
                     globals.Add(new LoweredGlobal(
                         zeroInitScalarMatch.Groups["name"].Value,
                         new byte[byteSize]));
+                    continue;
+                }
+
+                var scalarGlobalMatch = ScalarIntegerGlobalRegex().Match(line);
+                if (scalarGlobalMatch.Success)
+                {
+                    var bits = int.Parse(scalarGlobalMatch.Groups["bits"].Value);
+                    var scalarBytes = ParseScalarIntegerBytes(bits, scalarGlobalMatch.Groups["value"].Value);
+                    if (scalarBytes is not null)
+                    {
+                        globals.Add(new LoweredGlobal(
+                            scalarGlobalMatch.Groups["name"].Value,
+                            scalarBytes));
+                        continue;
+                    }
+                }
+
+                if (TryParseZeroableAggregateGlobal(line, out var zeroableAggregateGlobal))
+                {
+                    globals.Add(zeroableAggregateGlobal);
                     continue;
                 }
 
@@ -154,7 +188,7 @@ public static partial class LoweredIrLowerer
             currentBlock.Add(ParseInstruction(line));
         }
 
-        return new LoweredModule(functions, globals);
+        return new LoweredModule(functions, globals, namedTypes);
     }
 
     public static string Dump(LoweredModule module)
@@ -284,6 +318,16 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(signExtendMatch.Groups["value"].Value));
         }
 
+        var bitcastMatch = BitcastInstructionRegex().Match(line);
+        if (bitcastMatch.Success)
+        {
+            return new LoweredBitcastInstruction(
+                NormalizeResultName(bitcastMatch.Groups["result"].Value),
+                NormalizeType(bitcastMatch.Groups["fromType"].Value),
+                NormalizeType(bitcastMatch.Groups["toType"].Value),
+                NormalizeValue(bitcastMatch.Groups["value"].Value));
+        }
+
         var ptrToIntMatch = PtrToIntInstructionRegex().Match(line);
         if (ptrToIntMatch.Success)
         {
@@ -399,7 +443,7 @@ public static partial class LoweredIrLowerer
         {
             return new LoweredGetElementPointerInstruction(
                 NormalizeResultName(getElementPointerMatch.Groups["result"].Value),
-                NormalizeType(getElementPointerMatch.Groups["elementType"].Value),
+                getElementPointerMatch.Groups["elementType"].Value.Trim(),
                 NormalizeValue(getElementPointerMatch.Groups["base"].Value),
                 int.Parse(getElementPointerMatch.Groups["index"].Value));
         }
@@ -409,7 +453,7 @@ public static partial class LoweredIrLowerer
         {
             return new LoweredGetElementPointerInstruction(
                 NormalizeResultName(dynamicGepMatch.Groups["result"].Value),
-                NormalizeType(dynamicGepMatch.Groups["elementType"].Value),
+                dynamicGepMatch.Groups["elementType"].Value.Trim(),
                 NormalizeValue(dynamicGepMatch.Groups["base"].Value),
                 0,
                 NormalizeValue(dynamicGepMatch.Groups["indexVar"].Value));
@@ -440,6 +484,20 @@ public static partial class LoweredIrLowerer
             return new LoweredAllocaInstruction(
                 NormalizeResultName(allocaMatch.Groups["result"].Value),
                 NormalizeType(allocaMatch.Groups["type"].Value));
+        }
+
+        var globalElementStoreMatch = GlobalElementStoreInstructionRegex().Match(line);
+        if (globalElementStoreMatch.Success)
+        {
+            return new LoweredStoreInstruction(
+                NormalizeType(globalElementStoreMatch.Groups["type"].Value),
+                NormalizeValue(globalElementStoreMatch.Groups["value"].Value),
+                $"{NormalizeValue(globalElementStoreMatch.Groups["destination"].Value)}[{globalElementStoreMatch.Groups["index"].Value}]");
+        }
+
+        if (TryParseStoreInstruction(line, out var storeInstruction))
+        {
+            return storeInstruction;
         }
 
         var storeMatch = StoreInstructionRegex().Match(line);
@@ -481,6 +539,17 @@ public static partial class LoweredIrLowerer
                 NormalizeValue(atomicRmwMatch.Groups["ptr"].Value),
                 atomicRmwMatch.Groups["valType"].Value.Trim(),
                 NormalizeValue(atomicRmwMatch.Groups["val"].Value));
+        }
+
+        var globalElementCmpxchgMatch = GlobalElementCmpxchgInstructionRegex().Match(line);
+        if (globalElementCmpxchgMatch.Success)
+        {
+            return new LoweredCmpxchgInstruction(
+                NormalizeResultName(globalElementCmpxchgMatch.Groups["result"].Value),
+                $"{NormalizeValue(globalElementCmpxchgMatch.Groups["ptr"].Value)}[{globalElementCmpxchgMatch.Groups["index"].Value}]",
+                globalElementCmpxchgMatch.Groups["valType"].Value.Trim(),
+                NormalizeValue(globalElementCmpxchgMatch.Groups["cmpVal"].Value),
+                NormalizeValue(globalElementCmpxchgMatch.Groups["newVal"].Value));
         }
 
         var cmpxchgMatch = CmpxchgInstructionRegex().Match(line);
@@ -561,9 +630,18 @@ public static partial class LoweredIrLowerer
             return new LoweredFenceInstruction(orderingText, scope);
         }
 
-        // Volatile load: "load volatile <ty>, <ty>* <ptr>"
+        // Volatile load: "%r = load volatile <ty>, ptr <ptr>"
         if (result is not null && trimmed.StartsWith("load volatile ", StringComparison.Ordinal))
         {
+            var volatileLoadMatch = VolatileLoadInstructionRegex().Match(trimmed);
+            if (volatileLoadMatch.Success)
+            {
+                return new LoweredVolatileLoadInstruction(
+                    result,
+                    NormalizeType(volatileLoadMatch.Groups["type"].Value),
+                    NormalizeValue(volatileLoadMatch.Groups["source"].Value));
+            }
+
             return new LoweredVolatileLoadInstruction(result, "?", trimmed);
         }
 
@@ -731,6 +809,73 @@ public static partial class LoweredIrLowerer
     private static bool IsSupportedBinaryOperation(string operation)
     {
         return operation is "add" or "sub" or "mul" or "sdiv" or "udiv" or "srem" or "urem" or "fadd" or "fsub" or "fmul" or "fdiv" or "frem" or "and" or "or" or "xor" or "shl" or "lshr" or "ashr";
+    }
+
+    private static bool TryParseStoreInstruction(string line, out LoweredStoreInstruction instruction)
+    {
+        instruction = default!;
+        var trimmed = line.Trim();
+        if (!trimmed.StartsWith("store ", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var remainder = trimmed["store ".Length..].TrimStart();
+        if (remainder.StartsWith("atomic ", StringComparison.Ordinal))
+        {
+            remainder = remainder["atomic ".Length..].TrimStart();
+        }
+
+        if (!TryReadTypePrefix(remainder, out var type, out var valueAndDestination))
+        {
+            return false;
+        }
+
+        var valueSeparator = FindTopLevelComma(valueAndDestination);
+        if (valueSeparator < 0)
+        {
+            return false;
+        }
+
+        var value = valueAndDestination[..valueSeparator].Trim();
+        var destinationSegment = valueAndDestination[(valueSeparator + 1)..].TrimStart();
+        if (!destinationSegment.StartsWith("ptr ", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var destination = ReadPointerOperand(destinationSegment["ptr ".Length..]);
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            return false;
+        }
+
+        instruction = new LoweredStoreInstruction(
+            NormalizeType(type),
+            NormalizeValue(StripTrailingInstructionMetadata(value)),
+            NormalizeValue(StripTrailingInstructionMetadata(destination)));
+        return true;
+    }
+
+    private static string ReadPointerOperand(string text)
+    {
+        var trimmed = text.TrimStart();
+        var commaIndex = FindTopLevelComma(trimmed);
+        var operand = commaIndex >= 0 ? trimmed[..commaIndex].TrimEnd() : trimmed;
+
+        if (operand.StartsWith("getelementptr", StringComparison.Ordinal)
+            || operand.StartsWith("inttoptr", StringComparison.Ordinal)
+            || operand.StartsWith("bitcast", StringComparison.Ordinal)
+            || operand.StartsWith("addrspacecast", StringComparison.Ordinal))
+        {
+            var openParenIndex = operand.IndexOf('(');
+            if (openParenIndex >= 0 && TryFindMatchingParenthesis(operand, openParenIndex, out var closeParenIndex))
+            {
+                return operand[..(closeParenIndex + 1)].TrimEnd();
+            }
+        }
+
+        return ReadTopLevelToken(operand).Trim();
     }
 
     private static bool TryParseCallInstruction(string line, out LoweredCallInstruction instruction)
@@ -1090,6 +1235,7 @@ public static partial class LoweredIrLowerer
             LoweredCallInstruction call => $"{call.Result} = call {call.ReturnType} {call.Callee}({FormatArguments(call.Arguments)})",
             LoweredReturnInstruction ret => $"ret {ret.Type} {ret.Value}",
             LoweredCompareInstruction compare => $"{compare.Result} = icmp {compare.Predicate} {compare.Type} {compare.Left}, {compare.Right}",
+            LoweredBitcastInstruction bitcast => $"{bitcast.Result} = bitcast {bitcast.FromType} {bitcast.Value} to {bitcast.ToType}",
             LoweredConditionalBranchInstruction branch => $"br {branch.Condition} -> {branch.TrueTarget}, {branch.FalseTarget}",
             LoweredJumpInstruction jump => $"br -> {jump.Target}",
             LoweredLoadInstruction load => $"{load.Result} = load {load.Type} {load.Source}",
@@ -1109,14 +1255,45 @@ public static partial class LoweredIrLowerer
             LoweredInsertValueInstruction iv => $"{iv.Result} = insertvalue {iv.AggregateType} {iv.Base}, {iv.Value}, {iv.Index}",
             LoweredAtomicRmwInstruction rmw => $"{rmw.Result} = atomicrmw {rmw.Operation} ptr {rmw.Pointer}, {rmw.ValueType} {rmw.Value}",
             LoweredCmpxchgInstruction cx => $"{cx.Result} = cmpxchg ptr {cx.Pointer}, {cx.ValueType} {cx.CompareValue}, {cx.ValueType} {cx.NewValue}",
+            LoweredInvokeInstruction invoke => FormatInvoke(invoke),
+            LoweredLandingPadInstruction landingPad => FormatLandingPad(landingPad),
+            LoweredFenceInstruction fence => $"fence {fence.Ordering}",
+            LoweredVolatileLoadInstruction load => $"{load.Result} = load volatile {load.ValueType} {load.Pointer}",
+            LoweredVolatileStoreInstruction store => $"store volatile {store.ValueType} {store.Value} -> {store.Pointer}",
+            LoweredSwitchInstruction sw => $"switch {sw.ValueType} {sw.Value} -> {sw.DefaultLabel} [{FormatSwitchCases(sw.Cases)}]",
             LoweredRawInstruction raw => raw.Text,
             _ => throw new InvalidOperationException($"Unsupported lowered instruction type: {instruction.GetType().Name}")
         };
     }
 
+    private static string FormatInvoke(LoweredInvokeInstruction invoke)
+    {
+        if (invoke.ReturnType == "void"
+            && invoke.Arguments.Count == 0
+            && invoke.Callee.StartsWith("invoke ", StringComparison.Ordinal))
+        {
+            return invoke.Result is null ? invoke.Callee : $"{invoke.Result} = {invoke.Callee}";
+        }
+
+        var prefix = invoke.Result is null ? "invoke" : $"{invoke.Result} = invoke";
+        return $"{prefix} {invoke.ReturnType} {invoke.Callee}({FormatArguments(invoke.Arguments)}) to {invoke.NormalLabel} unwind {invoke.UnwindLabel}";
+    }
+
+    private static string FormatLandingPad(LoweredLandingPadInstruction landingPad)
+    {
+        var prefix = landingPad.Result is null ? "landingpad" : $"{landingPad.Result} = landingpad";
+        var cleanup = landingPad.IsCleanup ? " cleanup" : string.Empty;
+        return $"{prefix} {landingPad.ResultType}{cleanup} {landingPad.ClausesText}".TrimEnd();
+    }
+
     private static string FormatArguments(IReadOnlyList<LoweredArgument> arguments)
     {
         return string.Join(", ", arguments.Select(argument => $"{argument.Type} {argument.Value}"));
+    }
+
+    private static string FormatSwitchCases(IReadOnlyList<LoweredSwitchCase> cases)
+    {
+        return string.Join(", ", cases.Select(@case => $"{@case.Value}: {@case.Target}"));
     }
 
     private static string FormatPhiIncoming(IReadOnlyList<LoweredPhiIncoming> incoming)
@@ -1382,6 +1559,7 @@ public static partial class LoweredIrLowerer
             or "allocalign"
             or "byref"
             or "captures"
+            or "dead_on_return"
             or "dead_on_unwind"
             or "immarg"
             or "inalloca"
@@ -1563,6 +1741,62 @@ public static partial class LoweredIrLowerer
         return bytes.Count > 0 ? bytes : null;
     }
 
+    private static List<byte>? ParseScalarIntegerBytes(int bitWidth, string valueText)
+    {
+        if (bitWidth is not (8 or 16 or 32 or 64))
+        {
+            return null;
+        }
+
+        var byteWidth = bitWidth / 8;
+        var value = long.Parse(valueText);
+        var bytes = new List<byte>(byteWidth);
+        for (var i = 0; i < byteWidth; i++)
+        {
+            bytes.Add((byte)(value & 0xFF));
+            value >>= 8;
+        }
+        return bytes;
+    }
+
+    private static bool TryParseZeroableAggregateGlobal(string line, out LoweredGlobal global)
+    {
+        global = null!;
+
+        var match = ZeroableAggregateGlobalRegex().Match(line);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var initializer = match.Groups["initializer"].Value;
+        if (initializer.Contains("ptr", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var bytes = new List<byte>();
+        foreach (Match fieldMatch in ZeroableAggregateFieldRegex().Matches(initializer))
+        {
+            if (fieldMatch.Groups["bytes"].Success)
+            {
+                bytes.AddRange(ParseConstantByteArray(fieldMatch.Groups["bytes"].Value));
+                continue;
+            }
+
+            var size = int.Parse(fieldMatch.Groups["size"].Value);
+            bytes.AddRange(new byte[size]);
+        }
+
+        if (bytes.Count == 0)
+        {
+            return false;
+        }
+
+        global = new LoweredGlobal(match.Groups["name"].Value, bytes);
+        return true;
+    }
+
     private static bool TryParsePointerRelocationGlobal(string line, out LoweredGlobal global)
     {
         global = null!;
@@ -1581,6 +1815,12 @@ public static partial class LoweredIrLowerer
             if (fieldMatch.Groups["bytes"].Success)
             {
                 bytes.AddRange(ParseConstantByteArray(fieldMatch.Groups["bytes"].Value));
+                continue;
+            }
+
+            if (fieldMatch.Groups["zero"].Success)
+            {
+                bytes.AddRange(new byte[int.Parse(fieldMatch.Groups["size"].Value)]);
                 continue;
             }
 
@@ -1605,8 +1845,28 @@ public static partial class LoweredIrLowerer
         return true;
     }
 
+    private static bool TryParseScalarPointerRelocationGlobal(string line, out LoweredGlobal global)
+    {
+        global = null!;
+
+        var match = ScalarPointerRelocationGlobalRegex().Match(line);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        global = new LoweredGlobal(
+            match.Groups["name"].Value,
+            new byte[IntPtr.Size],
+            [new LoweredGlobalPointerRelocation(0, NormalizeFunctionName(match.Groups["target"].Value))]);
+        return true;
+    }
+
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:[^=]+\\s+)?alias\\s+(?<returnType>[^\\s(]+)\\s*\\((?<parameters>[^)]*)\\),\\s+ptr\\s+@(?<target>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex FunctionAliasRegex();
+
+    [GeneratedRegex("^(?<name>%[^\\s=]+)\\s*=\\s*type\\s+(?<type>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex NamedTypeDefinitionRegex();
 
     [GeneratedRegex("<[^>]+>|\\{[^}]+\\}|\\[[^\\]]+\\]|ptr(?:\\s+addrspace\\(\\d+\\))?|i\\d+|float|double|void", RegexOptions.CultureInvariant)]
     private static partial Regex CoreTypeRegex();
@@ -1614,7 +1874,10 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+<\\{.*\\}>\\s+<\\{\\s*(?<initializer>.*)\\s*\\}>(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex PointerRelocationGlobalRegex();
 
-    [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[\\d+\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,]+)(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ScalarPointerRelocationGlobalRegex();
+
+    [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+(?:(?<zero>zeroinitializer|undef)|c\"(?<bytes>[^\"]*)\")", RegexOptions.CultureInvariant)]
     private static partial Regex PointerRelocationFieldRegex();
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
@@ -1628,6 +1891,15 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+(?<type>i(?<bits>\\d+))\\s+(?:0|zeroinitializer)(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ZeroInitScalarGlobalRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+i(?<bits>\\d+)\\s+(?<value>-?\\d+)(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ScalarIntegerGlobalRegex();
+
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+<\\{[^>]+\\}>\\s+<\\{\\s*(?<initializer>.*)\\s*\\}>(?:,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex ZeroableAggregateGlobalRegex();
+
+    [GeneratedRegex("\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+(?:(?<zero>zeroinitializer|undef)|c\"(?<bytes>[^\"]*)\")", RegexOptions.CultureInvariant)]
+    private static partial Regex ZeroableAggregateFieldRegex();
 
     [GeneratedRegex("^(?<name>\"[^\"]+\"|[0-9]+|[A-Za-z$._][-A-Za-z$._0-9]*):", RegexOptions.CultureInvariant)]
     private static partial Regex BasicBlockRegex();
@@ -1643,6 +1915,9 @@ public static partial class LoweredIrLowerer
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*sext(?:\\s+[^\\s]+)*\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex SignExtendInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*bitcast\\s+(?<fromType><[^>]+>|[^\\s]+)\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType><[^>]+>|[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex BitcastInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*ptrtoint\\s+ptr\\s+(?<value>[^\\s]+)\\s+to\\s+(?<toType>[^\\s,]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex PtrToIntInstructionRegex();
@@ -1677,23 +1952,29 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^br\\s+label\\s+%(?<target>[^,\\s]+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex UnconditionalBranchInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>.+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GetElementPointerInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>[^,]+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>.+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex DynamicGetElementPointerInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>[^,]+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?:atomic\\s+)?(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>.+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GlobalElementLoadInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?:atomic\\s+)?(?<type>[^,]+),\\s+ptr\\s+(?<source>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex LoadInstructionRegex();
+
+    [GeneratedRegex("^load\\s+volatile\\s+(?<type>[^,]+),\\s+ptr\\s+(?<source>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex VolatileLoadInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*alloca\\s+(?<type>[^,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex AllocaInstructionRegex();
 
     [GeneratedRegex("^store\\s+(?:atomic\\s+)?(?<type><[^>]+>|[^\\s]+)\\s+(?<value><[^>]+>|[^,]+),\\s+ptr\\s+(?<destination>[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex StoreInstructionRegex();
+
+    [GeneratedRegex("^store\\s+(?:atomic\\s+)?(?<type><[^>]+>|[^\\s]+)\\s+(?<value><[^>]+>|[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>.+),\\s+ptr\\s+@(?<destination>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex GlobalElementStoreInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*extractvalue\\s+(?<aggType>\\{[^}]+\\})\\s+(?<source>[^,]+),\\s*(?<index>\\d+)(?:\\s*,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ExtractValueInstructionRegex();
@@ -1704,8 +1985,11 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*atomicrmw\\s+(?<op>\\w+)\\s+ptr\\s+(?<ptr>[^,]+),\\s*(?<valType>\\w+)\\s+(?<val>[^\\s,]+)", RegexOptions.CultureInvariant)]
     private static partial Regex AtomicRmwInstructionRegex();
 
-    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*cmpxchg\\s+ptr\\s+(?<ptr>[^,]+),\\s*(?<valType>\\w+)\\s+(?<cmpVal>[^,]+),\\s*\\w+\\s+(?<newVal>[^\\s,]+)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*cmpxchg(?:\\s+weak)?\\s+ptr\\s+(?<ptr>[^,]+),\\s*(?<valType>\\w+)\\s+(?<cmpVal>[^,]+),\\s*\\w+\\s+(?<newVal>[^\\s,]+)", RegexOptions.CultureInvariant)]
     private static partial Regex CmpxchgInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*cmpxchg(?:\\s+weak)?\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>.+),\\s+ptr\\s+@(?<ptr>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\),\\s*(?<valType>\\w+)\\s+(?<cmpVal>[^,]+),\\s*\\w+\\s+(?<newVal>[^\\s,]+)", RegexOptions.CultureInvariant)]
+    private static partial Regex GlobalElementCmpxchgInstructionRegex();
 
     private sealed class LoweredBlockBuilder(string name)
     {
@@ -1729,7 +2013,7 @@ public static partial class LoweredIrLowerer
             //   switch <type> <value>, label %<default> [
             //     <type> <case-value>, label %<target>
             //     ...
-            //   ]
+            //   ], !prof !metadata
             // and replace it with a single LoweredSwitchInstruction. This frees downstream tools
             // from re-parsing the IR text and gives strict diagnostics structured switch metadata.
             var headerRegex = new System.Text.RegularExpressions.Regex(
@@ -1753,7 +2037,7 @@ public static partial class LoweredIrLowerer
                         var closing = -1;
                         while (j < instructions.Count && instructions[j] is LoweredRawInstruction caseRaw)
                         {
-                            if (string.Equals(caseRaw.Text, "]", StringComparison.Ordinal))
+                            if (IsSwitchClosingLine(caseRaw.Text))
                             {
                                 closing = j;
                                 break;
@@ -1788,6 +2072,13 @@ public static partial class LoweredIrLowerer
             }
 
             return rewritten ?? instructions;
+        }
+
+        private static bool IsSwitchClosingLine(string text)
+        {
+            var trimmed = text.Trim();
+            return string.Equals(trimmed, "]", StringComparison.Ordinal)
+                || trimmed.StartsWith("],", StringComparison.Ordinal);
         }
 
         private static string StripLabelQuotes(string raw)

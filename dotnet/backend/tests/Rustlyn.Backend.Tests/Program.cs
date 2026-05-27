@@ -13,6 +13,7 @@ using Rustlyn.Interop;
 
 var failures = new List<string>();
 var requestedTests = args.Length == 0 ? null : args.ToHashSet(StringComparer.Ordinal);
+var markedYamlManagedAssembly = ((AssemblyLoadContext LoadContext, Assembly Assembly)?)null;
 
 RunTest("MissingFileThrows", MissingFileThrows, failures);
 RunTest("ShortFileThrows", ShortFileThrows, failures);
@@ -58,8 +59,10 @@ RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgu
 RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLeadingPlus, failures);
 RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
 RunTest("LowererStripsTrailingMetadataFromSelectValues", LowererStripsTrailingMetadataFromSelectValues, failures);
+RunTest("LowererStripsAtomicStoreOrderingFromDestination", LowererStripsAtomicStoreOrderingFromDestination, failures);
 RunTest("RustBitcodeBuildStdArgumentsAvoidFakeLinker", RustBitcodeBuildStdArgumentsAvoidFakeLinker, failures);
 RunTest("LowererPreservesVtablePointerRelocations", LowererPreservesVtablePointerRelocations, failures);
+RunTest("LowererPreservesPointerRelocationZeroTail", LowererPreservesPointerRelocationZeroTail, failures);
 RunTest("BindingSurfaceScannerFindsPathMethods", BindingSurfaceScannerFindsPathMethods, failures);
 RunTest("BindingSurfaceScannerFindsInstanceAndNativeTypes", BindingSurfaceScannerFindsInstanceAndNativeTypes, failures);
 RunTest("BindingSurfaceScannerReportsUnsupportedShapes", BindingSurfaceScannerReportsUnsupportedShapes, failures);
@@ -88,12 +91,34 @@ RunTest("PermissiveModeStubsRawInstruction", PermissiveModeStubsRawInstruction, 
 RunTest("StrictModeRejectsInvokeWithStructuredMessage", StrictModeRejectsInvokeWithStructuredMessage, failures);
 RunTest("StrictModeRejectsLandingPadWithStructuredMessage", StrictModeRejectsLandingPadWithStructuredMessage, failures);
 RunTest("StrictModeRejectsFenceWithStructuredMessage", StrictModeRejectsFenceWithStructuredMessage, failures);
-RunTest("StrictModeRejectsVolatileLoadWithStructuredMessage", StrictModeRejectsVolatileLoadWithStructuredMessage, failures);
+RunTest("StrictModeAllowsVolatileLoad", StrictModeAllowsVolatileLoad, failures);
+RunTest("ThreadLocalAddressIntrinsicReturnsGlobalAddress", ThreadLocalAddressIntrinsicReturnsGlobalAddress, failures);
 RunTest("LowererProducesTypedInvokeRecord", LowererProducesTypedInvokeRecord, failures);
+RunTest("LowererDumpPreservesUnsupportedInvokeText", LowererDumpPreservesUnsupportedInvokeText, failures);
 RunTest("LowererProducesTypedLandingPadRecord", LowererProducesTypedLandingPadRecord, failures);
 RunTest("LowererProducesTypedFenceRecord", LowererProducesTypedFenceRecord, failures);
+RunTest("LowererProducesTypedVolatileLoadRecord", LowererProducesTypedVolatileLoadRecord, failures);
+RunTest("LowererStripsDeadOnReturnParameterAttribute", LowererStripsDeadOnReturnParameterAttribute, failures);
+RunTest("LowererDumpFormatsTypedSwitch", LowererDumpFormatsTypedSwitch, failures);
 RunTest("LowererCoalescesSwitchIntoTypedInstruction", LowererCoalescesSwitchIntoTypedInstruction, failures);
 RunTest("LowererCoalescesSwitchWithMultipleCases", LowererCoalescesSwitchWithMultipleCases, failures);
+RunTest("SwitchWithTrailingMetadataExecutes", SwitchWithTrailingMetadataExecutes, failures);
+RunTest("GepSretArgumentKeepsRootAllocaAddressable", GepSretArgumentKeepsRootAllocaAddressable, failures);
+RunTest("AggregateDynamicGepUsesMemoryStride", AggregateDynamicGepUsesMemoryStride, failures);
+RunTest("NamedTypeDynamicGepUsesDefinitionStride", NamedTypeDynamicGepUsesDefinitionStride, failures);
+RunTest("NarrowIntegerEqualityIsBitwise", NarrowIntegerEqualityIsBitwise, failures);
+RunTest("StoreIntToPtrConstantPreservesValue", StoreIntToPtrConstantPreservesValue, failures);
+RunTest("StoreGlobalPointerPreservesAddress", StoreGlobalPointerPreservesAddress, failures);
+RunTest("StoreInlineGlobalElementPointerPreservesAddress", StoreInlineGlobalElementPointerPreservesAddress, failures);
+RunTest("GlobalElementCmpxchgStoreAndLoadExecutes", GlobalElementCmpxchgStoreAndLoadExecutes, failures);
+RunTest("TrailingZeroCountI16Executes", TrailingZeroCountI16Executes, failures);
+RunTest("VectorControlByteMaskExecutes", VectorControlByteMaskExecutes, failures);
+RunTest("VectorEqualityMaskExecutes", VectorEqualityMaskExecutes, failures);
+RunTest("VectorMaskAndExecutes", VectorMaskAndExecutes, failures);
+RunTest("VectorSignedLessThanMaskExecutes", VectorSignedLessThanMaskExecutes, failures);
+RunTest("RustReallocPreservesBytesExecutes", RustReallocPreservesBytesExecutes, failures);
+RunTest("MemcmpComparesBytesExecutes", MemcmpComparesBytesExecutes, failures);
+RunTest("ScalarPointerGlobalRelocationExecutes", ScalarPointerGlobalRelocationExecutes, failures);
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
 RunTest("TypeLayoutReturnsUnknownForAggregates", TypeLayoutReturnsUnknownForAggregates, failures);
@@ -833,6 +858,15 @@ RunOptionalTest("StdTimeBuildsWithBuildStdStd", StdTimeBuildsWithBuildStdStd, fa
 RunOptionalTest("StdPathBuildsWithBuildStdStd", StdPathBuildsWithBuildStdStd, failures);
 RunOptionalTest("StdConsoleBuildsWithBuildStdStd", StdConsoleBuildsWithBuildStdStd, failures);
 RunOptionalTest("DepHeavyCrosscrateCallsResolveThroughLto", DepHeavyCrosscrateCallsResolveThroughLto, failures);
+RunOptionalTest("MarkedYamlCharacterOffsetWorks", MarkedYamlCharacterOffsetWorks, failures);
+RunOptionalTest("MarkedYamlSerdeReadEverything", MarkedYamlSerdeReadEverything, failures);
+RunOptionalTest("MarkedYamlSerdeErgonomics", MarkedYamlSerdeErgonomics, failures);
+RunOptionalTest("MarkedYamlSerdeParseFails", MarkedYamlSerdeParseFails, failures);
+RunOptionalTest("MarkedYamlSerdeParseFailsCoerce", MarkedYamlSerdeParseFailsCoerce, failures);
+RunOptionalTest("MarkedYamlSerdeEmptyScalarMap", MarkedYamlSerdeEmptyScalarMap, failures);
+RunOptionalTest("MarkedYamlSerdeEmptyScalarSeq", MarkedYamlSerdeEmptyScalarSeq, failures);
+RunOptionalTest("MarkedYamlSerdeEmptyScalarUnit", MarkedYamlSerdeEmptyScalarUnit, failures);
+RunOptionalTest("MarkedYamlSerdeEmptyScalarStructWithDefault", MarkedYamlSerdeEmptyScalarStructWithDefault, failures);
 RunOptionalTest("FloatArithProbeReturnsExpectedResult", FloatArithProbeReturnsExpectedResult, failures);
 RunOptionalTest("FnPtrProbeReturnsExpectedResult", FnPtrProbeReturnsExpectedResult, failures);
 RunOptionalTest("StructReturnProbeReturnsExpectedResult", StructReturnProbeReturnsExpectedResult, failures);
@@ -2923,10 +2957,884 @@ static void StrictModeRejectsFenceWithStructuredMessage()
     // index stays stable for changelog tracking.
 }
 
-static void StrictModeRejectsVolatileLoadWithStructuredMessage()
+static void StrictModeAllowsVolatileLoad()
 {
-    var vl = new LoweredVolatileLoadInstruction("r", "i32", "load volatile i32, i32* %p");
-    AssertStrictModeRejects(vl, "volatile load", "volatile_loader");
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @volatile_loader() {
+entry:
+  %p = alloca i32
+  store i32 42, ptr %p
+  %r = load volatile i32, ptr %p, align 4
+  ret i32 %r
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-volatile-load-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "volatile_load.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-volatile-load-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("volatile_loader", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain volatile_loader.");
+        var actual = method.Invoke(null, []);
+        Assert(Equals(actual, 42), $"Expected volatile load to return 42, got {actual}.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void ThreadLocalAddressIntrinsicReturnsGlobalAddress()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@TLS = thread_local global i32 7, align 4
+
+declare ptr @llvm.threadlocal.address.p0(ptr)
+
+define i32 @threadlocal_address_load() {
+entry:
+  %p = call ptr @llvm.threadlocal.address.p0(ptr @TLS)
+  %v = load i32, ptr %p, align 4
+  ret i32 %v
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-threadlocal-address-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "threadlocal_address.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-threadlocal-address-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("threadlocal_address_load", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain threadlocal_address_load.");
+        object? actual;
+        try
+        {
+            actual = method.Invoke(null, []);
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw new InvalidOperationException($"{ex.InnerException.GetType().Name}: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}", ex.InnerException);
+        }
+        Assert(Equals(actual, 7), $"Expected threadlocal address load to return 7, got {actual}.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void SwitchWithTrailingMetadataExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @switch_metadata(i8 %v) {
+entry:
+  switch i8 %v, label %default [
+    i8 1, label %one
+    i8 2, label %two
+  ], !prof !0
+
+one:
+  ret i32 11
+
+two:
+  ret i32 22
+
+default:
+  ret i32 33
+}
+
+!0 = !{!"branch_weights", i32 1, i32 2, i32 3}
+""");
+
+    var sw = module.Functions.Single().Blocks.Single(block => block.Name == "entry").Instructions.OfType<LoweredSwitchInstruction>().SingleOrDefault();
+    Assert(sw is not null, "Expected switch with trailing metadata to lower into a typed switch instruction.");
+    var typedSwitch = sw ?? throw new InvalidOperationException("Expected switch with trailing metadata to lower into a typed switch instruction.");
+    Assert(typedSwitch.Cases.Count == 2 && typedSwitch.Cases[1].Value == 2 && typedSwitch.Cases[1].Target == "two", "Expected switch metadata to be ignored after the closing bracket.");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-switch-metadata-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "switch_metadata.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-switch-metadata-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("switch_metadata", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain switch_metadata.");
+
+        Assert(Equals(method.Invoke(null, [(byte)1]), 11), "Expected metadata switch case 1 to return 11.");
+        Assert(Equals(method.Invoke(null, [(byte)2]), 22), "Expected metadata switch case 2 to return 22.");
+        Assert(Equals(method.Invoke(null, [(byte)7]), 33), "Expected metadata switch default to return 33.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void GepSretArgumentKeepsRootAllocaAddressable()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define void @fill(ptr noalias sret([8 x i8]) align 8 %out) {
+entry:
+  store i64 99, ptr %out, align 8
+  ret void
+}
+
+define i64 @gep_sret_call() {
+entry:
+  %buf = alloca [16 x i8], align 8
+  %slot = getelementptr inbounds i8, ptr %buf, i64 8
+  call void @fill(ptr noalias sret([8 x i8]) align 8 %slot)
+  %v = load i64, ptr %slot, align 8
+  ret i64 %v
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-gep-sret-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "gep_sret.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-gep-sret-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("gep_sret_call", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain gep_sret_call.");
+
+        Assert(Equals(method.Invoke(null, []), 99L), "Expected GEP sret call to write through the derived alloca address.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void LowererStripsDeadOnReturnParameterAttribute()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i64 @load_marker(ptr dead_on_return noalias noundef readonly align 8 %marker) {
+entry:
+  %v = load i64, ptr %marker, align 8
+  ret i64 %v
+}
+""");
+
+    var parameter = module.Functions.Single().Parameters.Single();
+    Assert(parameter.Name == "marker", $"Expected dead_on_return to be stripped from parameter attributes, got '{parameter.Name}'.");
+}
+
+static void AggregateDynamicGepUsesMemoryStride()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i64 @aggregate_gep_stride(i64 %idx) {
+entry:
+  %buf = alloca [160 x i8], align 8
+  %slot = getelementptr inbounds nuw { { i8, [55 x i8] }, { i64, i64, i64 } }, ptr %buf, i64 %idx
+  %slot_int = ptrtoint ptr %slot to i64
+  %base_int = ptrtoint ptr %buf to i64
+  %result = sub i64 %slot_int, %base_int
+  ret i64 %result
+}
+""");
+
+    var entry = module.Functions.Single().Blocks.Single(block => block.Name == "entry");
+    Assert(!entry.Instructions.OfType<LoweredRawInstruction>().Any(instruction => instruction.Text.Contains("getelementptr inbounds nuw {", StringComparison.Ordinal)),
+        "Expected aggregate dynamic GEP to lower into a typed GEP instruction.");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-aggregate-gep-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "aggregate_gep.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-aggregate-gep-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("aggregate_gep_stride", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain aggregate_gep_stride.");
+
+        var actual = method.Invoke(null, [1L]);
+        Assert(Equals(actual, 80L), $"Expected aggregate dynamic GEP to use the full nested aggregate memory stride, got {actual}.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void NamedTypeDynamicGepUsesDefinitionStride()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+%Pair = type { i64, [2 x i64] }
+
+declare void @llvm.memset.p0.i64(ptr, i8, i64, i1)
+
+define i64 @named_type_gep_stride() {
+entry:
+  %buf = alloca [72 x i8], align 8
+  call void @llvm.memset.p0.i64(ptr %buf, i8 0, i64 72, i1 false)
+  %slot = getelementptr inbounds %Pair, ptr %buf, i64 2
+  store i64 44, ptr %slot, align 8
+  %expected = getelementptr inbounds i8, ptr %buf, i64 48
+  %actual = load i64, ptr %expected, align 8
+  ret i64 %actual
+}
+""");
+
+    Assert(module.NamedTypes.TryGetValue("%Pair", out var pairDefinition) && pairDefinition == "{ i64, [2 x i64] }",
+        "Expected the lowerer to preserve named LLVM type definitions for layout-sensitive GEPs.");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-named-gep-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "named_gep.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-named-gep-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("named_type_gep_stride", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain named_type_gep_stride.");
+
+        var actual = method.Invoke(null, []);
+        Assert(Equals(actual, 44L), $"Expected named-type dynamic GEP to step by the named struct size, got {actual}.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void NarrowIntegerEqualityIsBitwise()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @narrow_eq() {
+entry:
+  %slot = alloca i8, align 1
+  store i8 -1, ptr %slot, align 1
+  %v = load i8, ptr %slot, align 1
+  %cmp = icmp eq i8 %v, -1
+  %result = zext i1 %cmp to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-narrow-eq-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "narrow_eq.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-narrow-eq-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("narrow_eq", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain narrow_eq.");
+
+        Assert(Equals(method.Invoke(null, []), 1), "Expected i8 equality to compare bit patterns after truncating both operands.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void StoreIntToPtrConstantPreservesValue()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i64 @inttoptr_store() {
+entry:
+  %slot = alloca ptr, align 8
+  store ptr inttoptr (i64 8 to ptr), ptr %slot, align 8
+  %value = load ptr, ptr %slot, align 8
+  %result = ptrtoint ptr %value to i64
+  ret i64 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-inttoptr-store-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "inttoptr_store.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-inttoptr-store-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("inttoptr_store", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain inttoptr_store.");
+
+        Assert(Equals(method.Invoke(null, []), 8L), "Expected stored inttoptr constant to round-trip through pointer memory.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void StoreGlobalPointerPreservesAddress()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@bytes = private unnamed_addr constant [2 x i8] c"k1"
+
+define i32 @store_global_pointer() {
+entry:
+  %slot = alloca ptr, align 8
+  store ptr @bytes, ptr %slot, align 8
+  %value = load ptr, ptr %slot, align 8
+  %first = load i8, ptr %value, align 1
+  %result = zext i8 %first to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-global-ptr-store-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "global_ptr_store.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-global-ptr-store-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("store_global_pointer", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain store_global_pointer.");
+
+        Assert(Equals(method.Invoke(null, []), 107), "Expected storing ptr @global to preserve the global data address.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void StoreInlineGlobalElementPointerPreservesAddress()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@bytes = private unnamed_addr constant [2 x i8] c"k1"
+
+define i32 @store_inline_global_element_pointer() {
+entry:
+  %slot = alloca ptr, align 8
+  store ptr getelementptr inbounds nuw (i8, ptr @bytes, i64 1), ptr %slot, align 8
+  %value = load ptr, ptr %slot, align 8
+  %first = load i8, ptr %value, align 1
+  %result = zext i8 %first to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-inline-global-ptr-store-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "inline_global_ptr_store.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-inline-global-ptr-store-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("store_inline_global_element_pointer", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain store_inline_global_element_pointer.");
+
+        Assert(Equals(method.Invoke(null, []), 49), "Expected storing ptr getelementptr(... @global, 1) to preserve the global element address.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void GlobalElementCmpxchgStoreAndLoadExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@GLOBAL_STORAGE = internal global <{ [33 x i8], [7 x i8] }> <{ [33 x i8] zeroinitializer, [7 x i8] undef }>, align 8
+
+define i32 @global_element_cmpxchg() {
+entry:
+  %cx = cmpxchg weak ptr getelementptr inbounds nuw (i8, ptr @GLOBAL_STORAGE, i64 32), i8 0, i8 1 acquire acquire, align 1
+  %ok = extractvalue { i8, i1 } %cx, 1
+  br i1 %ok, label %init, label %fail
+
+init:
+  store i64 7, ptr @GLOBAL_STORAGE, align 8
+  store i64 42, ptr getelementptr inbounds nuw (i8, ptr @GLOBAL_STORAGE, i64 8), align 8
+  store atomic i8 2, ptr getelementptr inbounds nuw (i8, ptr @GLOBAL_STORAGE, i64 32) release, align 1
+  %state = load atomic i8, ptr getelementptr inbounds nuw (i8, ptr @GLOBAL_STORAGE, i64 32) acquire, align 1
+  %root = load i64, ptr @GLOBAL_STORAGE, align 8
+  %word = load i64, ptr getelementptr inbounds nuw (i8, ptr @GLOBAL_STORAGE, i64 8), align 8
+  %state32 = zext i8 %state to i32
+  %root32 = trunc i64 %root to i32
+  %word32 = trunc i64 %word to i32
+  %partial = add i32 %state32, %root32
+  %result = add i32 %partial, %word32
+  ret i32 %result
+
+fail:
+  ret i32 -1
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-global-cmpxchg-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "global_cmpxchg.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-global-cmpxchg-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("global_element_cmpxchg", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain global_element_cmpxchg.");
+
+        Assert(Equals(method.Invoke(null, []), 51), "Expected global element cmpxchg, store, and load to use byte-offset addresses.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void TrailingZeroCountI16Executes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+declare i16 @llvm.cttz.i16(i16, i1 immarg)
+
+define i32 @cttz_i16_probe() {
+entry:
+  %zeros = call range(i16 0, 17) i16 @llvm.cttz.i16(i16 40, i1 true)
+  %result = zext i16 %zeros to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-cttz-i16-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "cttz_i16.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-cttz-i16-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("cttz_i16_probe", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain cttz_i16_probe.");
+
+        Assert(Equals(method.Invoke(null, []), 3), "Expected llvm.cttz.i16(40) to return 3.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void VectorControlByteMaskExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @control_mask() {
+entry:
+  %buf = alloca [16 x i8], align 16
+  store <16 x i8> <i8 -128, i8 -1, i8 0, i8 1, i8 127, i8 -2, i8 5, i8 -5, i8 10, i8 -10, i8 0, i8 -1, i8 1, i8 2, i8 3, i8 -128>, ptr %buf, align 16
+  %v = load <16 x i8>, ptr %buf, align 16
+  %cmp = icmp sgt <16 x i8> %v, splat (i8 -1)
+  %mask = bitcast <16 x i1> %cmp to i16
+  %result = zext i16 %mask to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-vector-mask-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "vector_mask.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-vector-mask-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("control_mask", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain control_mask.");
+
+        try
+        {
+            Assert(Equals(method.Invoke(null, []), 30044), "Expected vector control-byte comparison to return mask 30044.");
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw new InvalidOperationException($"{ex.InnerException.GetType().Name}: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}", ex.InnerException);
+        }
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void VectorEqualityMaskExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @equality_mask(i8 %needle) {
+entry:
+  %buf = alloca [16 x i8], align 16
+  store <16 x i8> <i8 1, i8 2, i8 -1, i8 2, i8 7, i8 -1, i8 2, i8 0, i8 8, i8 9, i8 -1, i8 2, i8 5, i8 6, i8 -1, i8 2>, ptr %buf, align 16
+  %v = load <16 x i8>, ptr %buf, align 16
+  %insert = insertelement <16 x i8> poison, i8 %needle, i64 0
+  %splat = shufflevector <16 x i8> %insert, <16 x i8> poison, <16 x i32> zeroinitializer
+  %cmp = icmp eq <16 x i8> %v, %splat
+  %mask = bitcast <16 x i1> %cmp to i16
+  %empty_cmp = icmp eq <16 x i8> %v, splat (i8 -1)
+  %empty_mask = bitcast <16 x i1> %empty_cmp to i16
+  %mask32 = zext i16 %mask to i32
+  %empty32 = zext i16 %empty_mask to i32
+  %shifted = shl i32 %empty32, 16
+  %result = or i32 %shifted, %mask32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-vector-eq-mask-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "vector_eq_mask.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-vector-eq-mask-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("equality_mask", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain equality_mask.");
+
+        Assert(Equals(method.Invoke(null, [(byte)2]), 1_143_244_874), "Expected vector equality masks for splat variable and splat -1 comparisons.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void VectorMaskAndExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @vector_mask_and() {
+entry:
+  %left_buf = alloca [16 x i8], align 16
+  %right_buf = alloca [16 x i8], align 16
+  store <16 x i8> <i8 1, i8 2, i8 1, i8 3, i8 4, i8 5, i8 6, i8 7, i8 8, i8 9, i8 10, i8 11, i8 12, i8 13, i8 14, i8 15>, ptr %left_buf, align 16
+  store <16 x i8> <i8 1, i8 1, i8 4, i8 3, i8 1, i8 5, i8 6, i8 7, i8 8, i8 9, i8 10, i8 11, i8 12, i8 13, i8 14, i8 15>, ptr %right_buf, align 16
+  %left = load <16 x i8>, ptr %left_buf, align 16
+  %right = load <16 x i8>, ptr %right_buf, align 16
+  %left_cmp = icmp eq <16 x i8> %left, splat (i8 1)
+  %right_cmp = icmp eq <16 x i8> %right, splat (i8 1)
+  %combined = and <16 x i1> %left_cmp, %right_cmp
+  %mask = bitcast <16 x i1> %combined to i16
+  %result = zext i16 %mask to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-vector-mask-and-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "vector_mask_and.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-vector-mask-and-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("vector_mask_and", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain vector_mask_and.");
+
+        Assert(Equals(method.Invoke(null, []), 1), "Expected vector i1 mask and to preserve only the shared bit.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void VectorSignedLessThanMaskExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define i32 @negative_mask() {
+entry:
+  %buf = alloca [16 x i8], align 16
+  store <16 x i8> <i8 -128, i8 -1, i8 0, i8 1, i8 127, i8 -2, i8 5, i8 -5, i8 10, i8 -10, i8 0, i8 -1, i8 1, i8 2, i8 3, i8 -128>, ptr %buf, align 16
+  %v = load <16 x i8>, ptr %buf, align 16
+  %cmp = icmp slt <16 x i8> %v, zeroinitializer
+  %mask = bitcast <16 x i1> %cmp to i16
+  %result = zext i16 %mask to i32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-vector-slt-mask-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "vector_slt_mask.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-vector-slt-mask-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("negative_mask", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain negative_mask.");
+
+        Assert(Equals(method.Invoke(null, []), 35491), "Expected vector signed less-than comparison to return negative-byte mask 35491.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void RustReallocPreservesBytesExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+declare ptr @_RNvCsdhXEOyz6BCi_7___rustc12___rust_alloc(i64, i64)
+declare ptr @_RNvCsdhXEOyz6BCi_7___rustc14___rust_realloc(ptr, i64, i64, i64)
+declare void @_RNvCsdhXEOyz6BCi_7___rustc14___rust_dealloc(ptr, i64, i64)
+
+define i32 @rust_realloc_probe() {
+entry:
+  %p = call ptr @_RNvCsdhXEOyz6BCi_7___rustc12___rust_alloc(i64 4, i64 1)
+  store i8 7, ptr %p, align 1
+  %p1 = getelementptr inbounds i8, ptr %p, i64 1
+  store i8 9, ptr %p1, align 1
+  %q = call ptr @_RNvCsdhXEOyz6BCi_7___rustc14___rust_realloc(ptr %p, i64 4, i64 1, i64 8)
+  %a = load i8, ptr %q, align 1
+  %q1 = getelementptr inbounds i8, ptr %q, i64 1
+  %b = load i8, ptr %q1, align 1
+  call void @_RNvCsdhXEOyz6BCi_7___rustc14___rust_dealloc(ptr %q, i64 8, i64 1)
+  %a32 = zext i8 %a to i32
+  %b32 = zext i8 %b to i32
+  %shifted = shl i32 %a32, 8
+  %result = or i32 %shifted, %b32
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-realloc-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "rust_realloc.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-realloc-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("rust_realloc_probe", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain rust_realloc_probe.");
+
+        Assert(Equals(method.Invoke(null, []), 1801), "Expected Rust realloc shim to preserve bytes while growing allocation.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void MemcmpComparesBytesExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+declare i32 @memcmp(ptr, ptr, i64)
+
+define i32 @memcmp_probe() {
+entry:
+  %a = alloca [3 x i8], align 1
+  %b = alloca [3 x i8], align 1
+  store i8 97, ptr %a, align 1
+  %a1 = getelementptr inbounds i8, ptr %a, i64 1
+  store i8 98, ptr %a1, align 1
+  %a2 = getelementptr inbounds i8, ptr %a, i64 2
+  store i8 99, ptr %a2, align 1
+  store i8 97, ptr %b, align 1
+  %b1 = getelementptr inbounds i8, ptr %b, i64 1
+  store i8 98, ptr %b1, align 1
+  %b2 = getelementptr inbounds i8, ptr %b, i64 2
+  store i8 100, ptr %b2, align 1
+  %ab = call i32 @memcmp(ptr %a, ptr %b, i64 range(i64 0, -9223372036854775808) 3)
+  %aa = call i32 @memcmp(ptr %a, ptr %a, i64 3)
+  %ba = call i32 @memcmp(ptr %b, ptr %a, i64 3)
+  %ab_lt = icmp slt i32 %ab, 0
+  %aa_eq = icmp eq i32 %aa, 0
+  %ba_gt = icmp sgt i32 %ba, 0
+  %s1 = zext i1 %ab_lt to i32
+  %s2 = select i1 %aa_eq, i32 2, i32 0
+  %s4 = select i1 %ba_gt, i32 4, i32 0
+  %tmp = or i32 %s1, %s2
+  %result = or i32 %tmp, %s4
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-memcmp-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "memcmp.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-memcmp-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("memcmp_probe", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain memcmp_probe.");
+
+        Assert(Equals(method.Invoke(null, []), 7), "Expected memcmp helper to distinguish less-than, equality, and greater-than byte comparisons.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
+static void ScalarPointerGlobalRelocationExecutes()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@fnptr = private unnamed_addr constant ptr @target, align 8
+
+define internal i32 @target(ptr %ignored) {
+entry:
+  ret i32 42
+}
+
+define internal i32 @with_key(ptr %key) {
+entry:
+  %f = load ptr, ptr %key, align 8
+  %result = call i32 %f(ptr null)
+  ret i32 %result
+}
+
+define i32 @scalar_pointer_global_probe() {
+entry:
+  %result = call i32 @with_key(ptr @fnptr)
+  ret i32 %result
+}
+""");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-scalar-ptr-global-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "scalar_ptr_global.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-scalar-ptr-global-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("scalar_pointer_global_probe", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain scalar_pointer_global_probe.");
+
+        Assert(Equals(method.Invoke(null, []), 42), "Expected scalar pointer global relocation to store a callable function pointer.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
 }
 
 static void LowererProducesTypedInvokeRecord()
@@ -2946,6 +3854,23 @@ static void LowererProducesTypedInvokeRecord()
     Assert(invokeInstr is not null, "Expected lowered invoke to materialize as LoweredInvokeInstruction.");
     Assert(invokeInstr!.NormalLabel == "normal", $"Expected normal label 'normal', got '{invokeInstr.NormalLabel}'.");
     Assert(invokeInstr.UnwindLabel == "cleanup", $"Expected unwind label 'cleanup', got '{invokeInstr.UnwindLabel}'.");
+}
+
+static void LowererDumpPreservesUnsupportedInvokeText()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @example() {\n" +
+        "entry:\n" +
+        "  %x = invoke i32 @callee() to label %normal unwind label %cleanup\n" +
+        "normal:\n" +
+        "  ret i32 %x\n" +
+        "cleanup:\n" +
+        "  ret i32 1\n" +
+        "}\n");
+
+    var dump = LoweredIrLowerer.Dump(module);
+    Assert(dump.Contains("x = invoke i32 @callee() to label %normal unwind label %cleanup", StringComparison.Ordinal),
+        $"Expected lowered dump to preserve unsupported invoke text, got:{Environment.NewLine}{dump}");
 }
 
 static void LowererProducesTypedLandingPadRecord()
@@ -2972,6 +3897,38 @@ static void LowererProducesTypedFenceRecord()
     var fence = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredFenceInstruction>().FirstOrDefault();
     Assert(fence is not null, "Expected lowered fence to materialize as LoweredFenceInstruction.");
     Assert(fence!.Ordering.StartsWith("seq_cst", StringComparison.Ordinal), $"Expected ordering 'seq_cst', got '{fence.Ordering}'.");
+}
+
+static void LowererProducesTypedVolatileLoadRecord()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i64 @example(ptr %p) {\n" +
+        "entry:\n" +
+        "  %tmp.15 = load volatile i64, ptr %p, align 8\n" +
+        "  ret i64 %tmp.15\n" +
+        "}\n");
+    var volatileLoad = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredVolatileLoadInstruction>().FirstOrDefault();
+    Assert(volatileLoad is not null, "Expected lowered volatile load to materialize as LoweredVolatileLoadInstruction.");
+    Assert(volatileLoad!.Result == "named_tmp.15", $"Expected result 'named_tmp.15', got '{volatileLoad.Result}'.");
+    Assert(volatileLoad.ValueType == "i64", $"Expected value type 'i64', got '{volatileLoad.ValueType}'.");
+    Assert(volatileLoad.Pointer == "p", $"Expected pointer 'p', got '{volatileLoad.Pointer}'.");
+}
+
+static void LowererDumpFormatsTypedSwitch()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @sw(i32 %v) {\n" +
+        "entry:\n" +
+        "  switch i32 %v, label %default [\n" +
+        "    i32 1, label %one\n" +
+        "  ]\n" +
+        "one:\n  ret i32 11\n" +
+        "default:\n  ret i32 0\n" +
+        "}\n");
+
+    var dump = LoweredIrLowerer.Dump(module);
+    Assert(dump.Contains("switch i32 %v -> default [1: one]", StringComparison.Ordinal),
+        $"Expected lowered dump to format typed switch instructions, got:{Environment.NewLine}{dump}");
 }
 
 static void TypeLayoutScalarsAreCorrectlySized()
@@ -9655,6 +10612,115 @@ static void DepHeavyCrosscrateCallsResolveThroughLto()
     var actualResult = LoweredAssemblyInvoker.InvokeBitcode(bitcodePath, "dep_heavy_probe", [], llvmRoot);
     // fib(10)=55, collatz_steps(27)=111 => 166
     Assert(Equals(actualResult, 166), $"Expected dep_heavy_probe to return 166 (fib(10)+collatz(27)), but got '{actualResult}'.");
+}
+
+void MarkedYamlCharacterOffsetWorks()
+{
+    AssertMarkedYamlProbe("marked_yaml_parse_only_ok", 1);
+    AssertMarkedYamlProbe("marked_yaml_character_span_start", 27);
+    AssertMarkedYamlProbe("marked_yaml_character_span_end", 32);
+    AssertMarkedYamlProbe("marked_yaml_character_rewrite_matches", 1);
+}
+
+void MarkedYamlSerdeReadEverything()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_read_everything_score", 127);
+}
+
+void MarkedYamlSerdeErgonomics()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_ergonomics_score", 7);
+}
+
+void MarkedYamlSerdeParseFails()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_parse_fails_score", 15);
+}
+
+void MarkedYamlSerdeParseFailsCoerce()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_parse_fails_coerce_score", 7);
+}
+
+void MarkedYamlSerdeEmptyScalarMap()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_empty_scalar_map_ok", 1);
+}
+
+void MarkedYamlSerdeEmptyScalarSeq()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_empty_scalar_seq_ok", 1);
+}
+
+void MarkedYamlSerdeEmptyScalarUnit()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_empty_scalar_unit_ok", 1);
+}
+
+void MarkedYamlSerdeEmptyScalarStructWithDefault()
+{
+    AssertMarkedYamlProbe("marked_yaml_serde_empty_scalar_struct_with_default_ok", 1);
+}
+
+void AssertMarkedYamlProbe(string methodName, int expectedResult)
+{
+    var actualResult = InvokeMarkedYamlManagedProbe(methodName);
+    Assert(Equals(actualResult, expectedResult), $"Expected marked-yaml probe '{methodName}' to return {expectedResult.ToString(CultureInfo.InvariantCulture)}, but got '{actualResult}'.");
+}
+
+object? InvokeMarkedYamlManagedProbe(string methodName)
+{
+    var (_, assembly) = GetMarkedYamlManagedAssembly();
+    var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+        ?? throw new InvalidOperationException("Emitted marked-yaml assembly did not contain Rustlyn.GeneratedModule.");
+    var method = generatedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+        ?? throw new InvalidOperationException($"Emitted marked-yaml assembly did not contain method '{methodName}'.");
+
+    try
+    {
+        return method.Invoke(null, []);
+    }
+    catch (TargetInvocationException ex) when (ex.InnerException is not null)
+    {
+        throw new InvalidOperationException($"Marked-yaml probe '{methodName}' failed in emitted assembly: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}", ex.InnerException);
+    }
+}
+
+(AssemblyLoadContext LoadContext, Assembly Assembly) GetMarkedYamlManagedAssembly()
+{
+    if (markedYamlManagedAssembly is { } cached)
+    {
+        return cached;
+    }
+
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "marked_yaml",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var loadContext = new AssemblyLoadContext($"rustlyn-marked-yaml-{Guid.NewGuid():N}", isCollectible: true);
+    using var assemblyStream = new MemoryStream(File.ReadAllBytes(tempAssembly.Path));
+    var assembly = loadContext.LoadFromStream(assemblyStream);
+
+    markedYamlManagedAssembly = (loadContext, assembly);
+    return markedYamlManagedAssembly.Value;
 }
 
 static void FloatArithProbeReturnsExpectedResult()
@@ -20575,7 +21641,8 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
 
     try
     {
-        RunWithTimeout(test, TimeSpan.FromSeconds(30));
+        var timeout = GetTestTimeout(name);
+        RunWithTimeout(test, timeout);
         Console.WriteLine($"PASS {name}");
     }
     catch (TimeoutException)
@@ -20590,6 +21657,13 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
     {
         failures.Add($"{name}: {ex.Message}");
     }
+}
+
+static TimeSpan GetTestTimeout(string name)
+{
+    return name.StartsWith("MarkedYaml", StringComparison.Ordinal)
+        ? TimeSpan.FromSeconds(120)
+        : TimeSpan.FromSeconds(30);
 }
 
 static bool IsNonWindowsSkippedTest(string name, out string reason)
@@ -21079,6 +22153,20 @@ start:
     Assert(instruction.FalseValue == "b", $"Expected select false value metadata to be stripped, got '{instruction.FalseValue}'.");
 }
 
+static void LowererStripsAtomicStoreOrderingFromDestination()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+define void @atomic_store_probe(ptr %dst, i32 %value) {
+start:
+  store atomic i32 %value, ptr %dst seq_cst, align 4
+  ret void
+}
+""");
+
+    var instruction = module.Functions.Single().Blocks.Single().Instructions.OfType<LoweredStoreInstruction>().Single();
+    Assert(instruction.Destination == "dst", $"Expected atomic store destination to exclude ordering metadata, got '{instruction.Destination}'.");
+}
+
 static void LowererPreservesVtablePointerRelocations()
 {
     var module = LoweredIrLowerer.LowerLlvmIr("""
@@ -21107,6 +22195,20 @@ start:
     var descriptorRelocation = descriptor.PointerRelocations.Single();
     Assert(descriptorRelocation.Offset == 0, $"Expected fmt descriptor relocation at offset 0, got {descriptorRelocation.Offset.ToString(CultureInfo.InvariantCulture)}.");
     Assert(descriptorRelocation.Target == "message", $"Expected fmt descriptor relocation to target message, got '{descriptorRelocation.Target}'.");
+}
+
+static void LowererPreservesPointerRelocationZeroTail()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@empty_ctrl = private unnamed_addr constant [16 x i8] c"\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF\FF", align 16
+@empty_table = private unnamed_addr constant <{ ptr, [24 x i8] }> <{ ptr @empty_ctrl, [24 x i8] zeroinitializer }>, align 8
+""");
+
+    var global = module.Globals.Single(static global => global.Name == "empty_table");
+    Assert(global.InitializerBytes.Count == 32, $"Expected pointer relocation aggregate to preserve zero tail bytes, got {global.InitializerBytes.Count.ToString(CultureInfo.InvariantCulture)} bytes.");
+    var relocation = global.PointerRelocations.Single();
+    Assert(relocation.Offset == 0, $"Expected pointer relocation at offset 0, got {relocation.Offset.ToString(CultureInfo.InvariantCulture)}.");
+    Assert(relocation.Target == "empty_ctrl", $"Expected relocation target to be normalized, got '{relocation.Target}'.");
 }
 
 static void RuntimeSplitFacadeForwardsNumericHelpers()

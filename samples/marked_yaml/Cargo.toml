@@ -1,0 +1,17 @@
+[package]
+name = "marked_yaml_sample"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+marked-yaml = { version = "0.8.0", features = ["serde-path"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"
