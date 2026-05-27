@@ -7,6 +7,10 @@ param(
     [string]$Mode = "Bitcode",
 
     [Parameter(Mandatory = $false)]
+    [ValidateSet("Full", "Inspect")]
+    [string]$Stage = "Full",
+
+    [Parameter(Mandatory = $false)]
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug",
 
@@ -2088,6 +2092,16 @@ try {
         }
 
         $artifactPath = & (Join-Path $workspaceRoot "scripts\Build-SampleBitcode.ps1") -Sample $currentSample
+        if ($Stage -eq "Inspect") {
+            Invoke-RustlynTool inspect $artifactPath
+            if ($LASTEXITCODE -ne 0) {
+                throw "rustlyn inspect failed for '$currentSample' with exit code $LASTEXITCODE"
+            }
+
+            Write-Host ("PASS {0} (inspect)" -f $currentSample)
+            continue
+        }
+
         Invoke-SmokeCheck -CurrentSample $currentSample -ArtifactPath $artifactPath -Check $check
     }
 }

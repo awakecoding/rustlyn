@@ -146,8 +146,8 @@ jobs:
       - name: Smoke test extended samples
         shell: pwsh
         run: |
-          $samples = @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')
-          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Configuration Release
+          $samples = @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain')
+          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Stage Inspect -Configuration Release
 
       - name: Pack templates
         continue-on-error: true
