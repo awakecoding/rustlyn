@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $false)]
-    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_DEV_ROOT,
+    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_ROOT,
 
     [Parameter(Mandatory = $false)]
     [string]$Sample = "add"

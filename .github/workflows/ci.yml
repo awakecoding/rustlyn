@@ -63,6 +63,27 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Smoke test LLVM helper
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Test-LlvmHelper.ps1 -Sample add
+          ./scripts/Test-RustlynLlvmOpt.ps1 -Sample add -SkipBuild
+
+      - name: Install Rust nightly toolchain
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: rustup toolchain install nightly --component rust-src
+
+      - name: Smoke test MSBuild SDK
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Test-MsBuildSdk.ps1 -Configuration Release
+          ./scripts/Test-MsBuildSdkBinary.ps1 -Configuration Release
+          ./scripts/Test-MsBuildSdkBuildStd.ps1 -Configuration Release
+          ./scripts/Test-MsBuildSdkPackage.ps1 -Configuration Release
+
       - name: Build sample bitcode (core matrix)
         shell: pwsh
         run: |
@@ -84,6 +105,12 @@ jobs:
       - name: Audit documentation claims against support matrix
         shell: pwsh
         run: ./scripts/Test-DocClaims.ps1
+
+      - name: Smoke test Native AOT scaffold
+        if: matrix.os == 'windows-latest'
+        continue-on-error: true
+        shell: pwsh
+        run: ./scripts/Test-AotSmoke.ps1
 
   extended:
     name: Extended fixtures (preview-tier, advisory)

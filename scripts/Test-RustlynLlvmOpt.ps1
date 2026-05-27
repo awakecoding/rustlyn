@@ -2,7 +2,7 @@
 param(
     [string]$Sample = 'add',
     [string]$Passes = 'mem2reg,sroa,simplifycfg',
-    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_DEV_ROOT,
+    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_ROOT,
     [switch]$SkipBuild
 )
 
@@ -10,7 +10,8 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 Push-Location $repoRoot
 try {
-    $helper = Join-Path $repoRoot 'native\rustlyn-llvm\target\release\rustlyn-llvm.exe'
+    $helperName = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'rustlyn-llvm.exe' } else { 'rustlyn-llvm' }
+    $helper = Join-Path $repoRoot (Join-Path 'native\rustlyn-llvm\target\release' $helperName)
     if (-not $SkipBuild -or -not (Test-Path $helper)) {
         & (Join-Path $PSScriptRoot 'Build-RustlynLlvmHelper.ps1') -LlvmDevRoot $LlvmDevRoot | Out-Null
     }

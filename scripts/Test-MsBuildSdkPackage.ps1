@@ -29,8 +29,7 @@ $workloadBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0
 $addCratePath = Join-Path $workspaceRoot "samples\add"
 $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 $workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
-$fixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"
-$secondFixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt"
+$workloadFixtureDirectory = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep\fixtures"
 $supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
 if (Test-Path $scratchProjectRoot) {
@@ -193,7 +192,7 @@ if ($actualBinaryOutput -ne "") {
     throw "Expected packaged MSBuild SDK binary sample to produce no stdout/stderr, got '$actualBinaryOutput'."
 }
 
-$workloadOutput = & dotnet $workloadOutputAssembly runtime $fixturePath $secondFixturePath 2>&1
+$workloadOutput = & dotnet $workloadOutputAssembly runtime $workloadFixtureDirectory input.txt second.txt 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "Packaged MSBuild SDK generated-bindings workload failed with exit code $LASTEXITCODE.`n$($workloadOutput | Out-String)"
 }
