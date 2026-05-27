@@ -108,14 +108,12 @@ jobs:
 
       - name: Smoke test Native AOT scaffold
         if: matrix.os == 'windows-latest'
-        continue-on-error: true
         shell: pwsh
         run: ./scripts/Test-AotSmoke.ps1
 
   extended:
-    name: Extended fixtures (preview-tier, advisory)
+    name: Extended fixtures
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -131,7 +129,6 @@ jobs:
 
       - name: Build extended sample bitcode
         shell: pwsh
-        continue-on-error: true
         run: |
           foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
             ./scripts/Build-SampleBitcode.ps1 -Sample $sample
@@ -139,7 +136,6 @@ jobs:
 
       - name: Smoke test extended samples
         shell: pwsh
-        continue-on-error: true
         run: |
           foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
             ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
