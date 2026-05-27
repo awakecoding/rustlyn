@@ -17,7 +17,8 @@
 #>
 param(
     [string]$LlvmRoot = $env:RUSTLYN_LLVM_ROOT,
-    [string]$Runtime
+    [string]$Runtime,
+    [string]$ToolDll
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,7 +35,17 @@ if (-not $Runtime) {
 Write-Host "Translating $sample -> $translatedDll"
 $translateArgs = @('translate', $sample, '--out', $translatedDll, '--bitcode-out', $translatedBc)
 if ($LlvmRoot) { $translateArgs += @('--llvm-root', $LlvmRoot) }
-& dotnet run -c Release --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- @translateArgs
+if ($ToolDll) {
+    $resolvedToolDll = if ([System.IO.Path]::IsPathRooted($ToolDll)) { $ToolDll } else { Join-Path $repoRoot $ToolDll }
+    if (-not (Test-Path -LiteralPath $resolvedToolDll -PathType Leaf)) {
+        throw "Rustlyn.Tool DLL not found: $resolvedToolDll"
+    }
+
+    & dotnet $resolvedToolDll @translateArgs
+}
+else {
+    & dotnet run -c Release --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- @translateArgs
+}
 if ($LASTEXITCODE -ne 0) { throw "rustlyn translate failed with exit code $LASTEXITCODE." }
 
 Write-Host "Publishing host for $Runtime with PublishAot=true"

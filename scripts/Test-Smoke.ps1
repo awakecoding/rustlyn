@@ -8,12 +8,47 @@ param(
 
     [Parameter(Mandatory = $false)]
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Debug"
+    [string]$Configuration = "Debug",
+
+    [Parameter(Mandatory = $false)]
+    [string]$ToolDll
 )
 
 $ErrorActionPreference = "Stop"
 
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
+$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
+$defaultToolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$script:RustlynToolDll = $null
+
+function Resolve-RustlynToolDll {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CandidatePath
+    )
+
+    $resolvedPath = if ([System.IO.Path]::IsPathRooted($CandidatePath)) {
+        $CandidatePath
+    }
+    else {
+        Join-Path $workspaceRoot $CandidatePath
+    }
+
+    if (-not (Test-Path -LiteralPath $resolvedPath -PathType Leaf)) {
+        throw "Rustlyn.Tool DLL not found: $resolvedPath"
+    }
+
+    return (Resolve-Path -LiteralPath $resolvedPath).ProviderPath
+}
+
+function Invoke-RustlynTool {
+    if (-not $script:RustlynToolDll) {
+        throw "Rustlyn.Tool DLL has not been resolved."
+    }
+
+    & dotnet $script:RustlynToolDll @args
+}
+
 $sampleChecks = @{
     add = @{
         Method = "add_i32"
@@ -1713,21 +1748,21 @@ function Invoke-SmokeCheck {
         $cleanupState = $prepared.State
     }
 
-    dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- inspect $ArtifactPath
+    Invoke-RustlynTool inspect $ArtifactPath
     if ($LASTEXITCODE -ne 0) {
-        throw "dotnet run inspect failed for '$CurrentSample' with exit code $LASTEXITCODE"
+        throw "rustlyn inspect failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
-    dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- lower $ArtifactPath | Out-Null
+    Invoke-RustlynTool lower $ArtifactPath | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        throw "dotnet run lower failed for '$CurrentSample' with exit code $LASTEXITCODE"
+        throw "rustlyn lower failed for '$CurrentSample' with exit code $LASTEXITCODE"
     }
 
     $emittedAssemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rustlyn-smoke-{0}-{1}.dll" -f $CurrentSample, [Guid]::NewGuid().ToString("N"))
     try {
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
+        Invoke-RustlynTool emit $ArtifactPath --out $emittedAssemblyPath | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw "dotnet run emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
+            throw "rustlyn emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
         # Prefer invoking through Rustlyn.Tool when the argument shape is supported.
@@ -1757,15 +1792,15 @@ function Invoke-SmokeCheck {
         }
 
         if ($invokeToolEligible) {
-            $invokeCli = @('run', '-c', $Configuration, '--project', '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj', '--', 'invoke', $ArtifactPath, '--method', $Check.Method)
+            $invokeCli = @('invoke', $ArtifactPath, '--method', $Check.Method)
             foreach ($encoded in $invokeToolArgs) {
                 $invokeCli += '--arg'
                 $invokeCli += $encoded
             }
 
-            $invokeOutput = & dotnet @invokeCli
+            $invokeOutput = Invoke-RustlynTool @invokeCli
             if ($LASTEXITCODE -ne 0) {
-                throw "dotnet run invoke failed for '$CurrentSample' with exit code $LASTEXITCODE"
+                throw "rustlyn invoke failed for '$CurrentSample' with exit code $LASTEXITCODE"
             }
 
             $actualText = if ($invokeOutput -is [array]) { ($invokeOutput | Where-Object { $_ -ne $null } | Select-Object -Last 1) } else { $invokeOutput }
@@ -1862,12 +1897,6 @@ function Invoke-TranslateSmokeCheck {
         New-Item -ItemType Directory -Path $translatedOutputDirectory -Force | Out-Null
 
         $translateCommand = @(
-            'run',
-            '-c',
-            $Configuration,
-            '--project',
-            '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj',
-            '--',
             'translate',
             $CratePath,
             '--out',
@@ -1901,19 +1930,19 @@ function Invoke-TranslateSmokeCheck {
             $translateCommand += $Check.BuildStdFeatures
         }
 
-        & dotnet @translateCommand | Out-Null
+        Invoke-RustlynTool @translateCommand | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw "dotnet run translate failed for '$CurrentSample' with exit code $LASTEXITCODE"
+            throw "rustlyn translate failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- inspect $translatedBitcodePath
+        Invoke-RustlynTool inspect $translatedBitcodePath
         if ($LASTEXITCODE -ne 0) {
-            throw "dotnet run inspect failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
+            throw "rustlyn inspect failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        dotnet run -c $Configuration --project ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj" -- lower $translatedBitcodePath | Out-Null
+        Invoke-RustlynTool lower $translatedBitcodePath | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw "dotnet run lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
+            throw "rustlyn lower failed for translated '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
         if ($Check.ContainsKey("ExpectedOutput")) {
@@ -1946,12 +1975,6 @@ function Invoke-TranslateSmokeCheck {
         }
         else {
             $invokeCommand = @(
-                'run',
-                '-c',
-                $Configuration,
-                '--project',
-                '.\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj',
-                '--',
                 'invoke',
                 $translatedBitcodePath,
                 '--method',
@@ -1963,9 +1986,9 @@ function Invoke-TranslateSmokeCheck {
                 $invokeCommand += (Format-InvokeArgument -Value $argument)
             }
 
-            $invokeOutput = & dotnet @invokeCommand 2>&1
+            $invokeOutput = Invoke-RustlynTool @invokeCommand 2>&1
             if ($LASTEXITCODE -ne 0) {
-                throw "dotnet run invoke failed for translated '$CurrentSample' with exit code $LASTEXITCODE`n$($invokeOutput | Out-String)"
+                throw "rustlyn invoke failed for translated '$CurrentSample' with exit code $LASTEXITCODE`n$($invokeOutput | Out-String)"
             }
 
             $actual = (($invokeOutput | ForEach-Object { $_.ToString() }) | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1)
@@ -2031,9 +2054,16 @@ function Format-InvokeArgument {
 
 Push-Location $workspaceRoot
 try {
-    dotnet build -c $Configuration ".\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet build failed with exit code $LASTEXITCODE"
+    if ($ToolDll) {
+        $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $ToolDll
+    }
+    else {
+        dotnet build -c $Configuration $toolProject
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet build failed with exit code $LASTEXITCODE"
+        }
+
+        $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $defaultToolDll
     }
 
     foreach ($currentSample in $Sample) {

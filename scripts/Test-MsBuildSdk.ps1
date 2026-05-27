@@ -1,7 +1,10 @@
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [Parameter(Mandatory = $false)]
+    [switch]$SkipToolBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,9 +46,16 @@ function Assert-MsBuildProperty {
     }
 }
 
-dotnet build $toolProject -c $Configuration /nologo
-if ($LASTEXITCODE -ne 0) {
-    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+if ($SkipToolBuild) {
+    if (-not (Test-Path $toolDll)) {
+        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+    }
+}
+else {
+    dotnet build $toolProject -c $Configuration /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+    }
 }
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath

@@ -3,7 +3,10 @@ param(
     [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_ROOT,
 
     [Parameter(Mandatory = $false)]
-    [string]$Sample = "add"
+    [string]$Sample = "add",
+
+    [Parameter(Mandatory = $false)]
+    [string]$ToolDll
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,7 +21,17 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $helperRoot = Split-Path -Parent $helperPath
-& dotnet run -c Release --project (Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj") -- lower $bitcodePath --llvm-root $helperRoot | Out-Null
+if ($ToolDll) {
+    $resolvedToolDll = if ([System.IO.Path]::IsPathRooted($ToolDll)) { $ToolDll } else { Join-Path $workspaceRoot $ToolDll }
+    if (-not (Test-Path -LiteralPath $resolvedToolDll -PathType Leaf)) {
+        throw "Rustlyn.Tool DLL not found: $resolvedToolDll"
+    }
+
+    & dotnet $resolvedToolDll lower $bitcodePath --llvm-root $helperRoot | Out-Null
+}
+else {
+    & dotnet run -c Release --project (Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj") -- lower $bitcodePath --llvm-root $helperRoot | Out-Null
+}
 if ($LASTEXITCODE -ne 0) {
     throw "Rustlyn lower failed with helper root '$helperRoot' and exit code $LASTEXITCODE."
 }

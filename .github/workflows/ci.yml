@@ -67,8 +67,9 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          ./scripts/Test-LlvmHelper.ps1 -Sample add
-          ./scripts/Test-RustlynLlvmOpt.ps1 -Sample add -SkipBuild
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-LlvmHelper.ps1 -Sample add -ToolDll $toolDll
+          ./scripts/Test-RustlynLlvmOpt.ps1 -Sample add -SkipBuild -ToolDll $toolDll
 
       - name: Install Rust nightly toolchain
         if: matrix.os == 'windows-latest'
@@ -79,28 +80,23 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          ./scripts/Test-MsBuildSdk.ps1 -Configuration Release
-          ./scripts/Test-MsBuildSdkBinary.ps1 -Configuration Release
-          ./scripts/Test-MsBuildSdkBuildStd.ps1 -Configuration Release
-          ./scripts/Test-MsBuildSdkPackage.ps1 -Configuration Release
-
-      - name: Build sample bitcode (core matrix)
-        shell: pwsh
-        run: |
-          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
-            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
-          }
+          ./scripts/Test-MsBuildSdk.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkBinary.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkBuildStd.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkPackage.ps1 -Configuration Release -SkipToolBuild
 
       - name: Smoke test (core matrix)
         shell: pwsh
         run: |
-          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
-            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
-          }
+          $samples = @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Configuration Release -ToolDll $toolDll
 
       - name: Run backend regression harness
         shell: pwsh
-        run: dotnet run -c Release --project ./dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj
+        run: |
+          $testDll = Join-Path $PWD 'dotnet/backend/tests/Rustlyn.Backend.Tests/bin/Release/net10.0/Rustlyn.Backend.Tests.dll'
+          dotnet $testDll
 
       - name: Audit documentation claims against support matrix
         shell: pwsh
@@ -109,7 +105,9 @@ jobs:
       - name: Smoke test Native AOT scaffold
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: ./scripts/Test-AotSmoke.ps1
+        run: |
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-AotSmoke.ps1 -ToolDll $toolDll
 
   extended:
     name: Extended fixtures
@@ -127,19 +125,11 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build extended sample bitcode
-        shell: pwsh
-        run: |
-          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
-            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
-          }
-
       - name: Smoke test extended samples
         shell: pwsh
         run: |
-          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
-            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
-          }
+          $samples = @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')
+          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Configuration Release
 
       - name: Pack templates
         continue-on-error: true
@@ -160,7 +150,13 @@ jobs:
         run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
 
       - name: Validate binding surface
-        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime" --report-only
+        shell: pwsh
+        run: |
+          $bindingsToolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Bindings.Tool/bin/Release/net10.0/Rustlyn.Bindings.Tool.dll'
+          dotnet $bindingsToolDll validate --type "System.Math, System.Runtime" --report-only
 
       - name: Test delegate analysis
-        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- analyze-delegate "System.Func\`2[[System.Int32],[System.Int32]]"
+        shell: pwsh
+        run: |
+          $bindingsToolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Bindings.Tool/bin/Release/net10.0/Rustlyn.Bindings.Tool.dll'
+          dotnet $bindingsToolDll analyze-delegate "System.Func``2[[System.Int32],[System.Int32]]"
