@@ -1,7 +1,10 @@
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [Parameter(Mandatory = $false)]
+    [switch]$SkipToolBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,8 +32,7 @@ $workloadBitcodePath = Join-Path $scratchProjectRoot "obj\$Configuration\net10.0
 $addCratePath = Join-Path $workspaceRoot "samples\add"
 $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 $workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
-$fixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\input.txt"
-$secondFixturePath = Join-Path $workspaceRoot "samples\lousygrep_primitive\fixtures\second.txt"
+$workloadFixtureDirectory = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep\fixtures"
 $supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
 if (Test-Path $scratchProjectRoot) {
@@ -43,9 +45,16 @@ if (Test-Path $packagePath) {
 
 New-Item -ItemType Directory -Force -Path $packageSource, $scratchProjectRoot, $nugetPackages | Out-Null
 
-dotnet build $toolProject -c $Configuration /nologo
-if ($LASTEXITCODE -ne 0) {
-    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+if ($SkipToolBuild) {
+    if (-not (Test-Path $toolDll)) {
+        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+    }
+}
+else {
+    dotnet build $toolProject -c $Configuration /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+    }
 }
 
 dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo
@@ -193,7 +202,7 @@ if ($actualBinaryOutput -ne "") {
     throw "Expected packaged MSBuild SDK binary sample to produce no stdout/stderr, got '$actualBinaryOutput'."
 }
 
-$workloadOutput = & dotnet $workloadOutputAssembly runtime $fixturePath $secondFixturePath 2>&1
+$workloadOutput = & dotnet $workloadOutputAssembly runtime $workloadFixtureDirectory input.txt second.txt 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "Packaged MSBuild SDK generated-bindings workload failed with exit code $LASTEXITCODE.`n$($workloadOutput | Out-String)"
 }

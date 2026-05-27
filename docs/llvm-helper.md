@@ -25,7 +25,7 @@ Legacy roots containing `llvm-opt.exe` or `opt.exe` are still supported as fallb
 Building the helper requires an LLVM development root:
 
 ```text
-<RUSTLYN_LLVM_DEV_ROOT>\
+<RUSTLYN_LLVM_ROOT>\
   bin\
     llvm-config.exe
   include\
@@ -38,12 +38,14 @@ Building the helper requires an LLVM development root:
 Build with:
 
 ```powershell
+$env:RUSTLYN_LLVM_ROOT = 'D:\opt\llvm-subsets\llvm-dev'
 .\scripts\Build-RustlynLlvmHelper.ps1 -LlvmDevRoot D:\opt\llvm-subsets\llvm-dev
 ```
 
 Smoke-test with:
 
 ```powershell
+$env:RUSTLYN_LLVM_ROOT = 'D:\opt\llvm-subsets\llvm-dev'
 .\scripts\Test-LlvmHelper.ps1 -LlvmDevRoot D:\opt\llvm-subsets\llvm-dev -Sample add
 ```
 
@@ -154,4 +156,3 @@ The `DotnetRuntimePath*Score` family (StageRank variants, FullPath, PathRoot, Pa
 - Pin the helper + LLVM version: optimized output is reproducible only for the exact LLVM version that produced it.
 - The datalayout must remain stable between opt and lowering; the helper does not change triples.
 - `mem2reg`/`sroa` preserve `!dbg` metadata; avoid pipelines containing `strip-debug` if debug info matters.
-

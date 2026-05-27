@@ -2,7 +2,8 @@
 param(
     [string]$Sample = 'add',
     [string]$Passes = 'mem2reg,sroa,simplifycfg',
-    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_DEV_ROOT,
+    [string]$LlvmDevRoot = $env:RUSTLYN_LLVM_ROOT,
+    [string]$ToolDll,
     [switch]$SkipBuild
 )
 
@@ -10,7 +11,8 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 Push-Location $repoRoot
 try {
-    $helper = Join-Path $repoRoot 'native\rustlyn-llvm\target\release\rustlyn-llvm.exe'
+    $helperName = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'rustlyn-llvm.exe' } else { 'rustlyn-llvm' }
+    $helper = Join-Path $repoRoot (Join-Path 'native\rustlyn-llvm\target\release' $helperName)
     if (-not $SkipBuild -or -not (Test-Path $helper)) {
         & (Join-Path $PSScriptRoot 'Build-RustlynLlvmHelper.ps1') -LlvmDevRoot $LlvmDevRoot | Out-Null
     }
@@ -44,7 +46,17 @@ try {
     $env:RUSTLYN_LLVM_OPT_PASSES = $Passes
     if ($Sample -eq 'add') {
         Write-Host "[rustlyn invoke] add_i32(2,3) with opt pre-pass"
-        $result = dotnet run -c Release --no-build --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- invoke $bitcode --method add_i32 --arg i32:2 --arg i32:3
+        if ($ToolDll) {
+            $resolvedToolDll = if ([System.IO.Path]::IsPathRooted($ToolDll)) { $ToolDll } else { Join-Path $repoRoot $ToolDll }
+            if (-not (Test-Path -LiteralPath $resolvedToolDll -PathType Leaf)) {
+                throw "Rustlyn.Tool DLL not found: $resolvedToolDll"
+            }
+
+            $result = dotnet $resolvedToolDll invoke $bitcode --method add_i32 --arg i32:2 --arg i32:3
+        }
+        else {
+            $result = dotnet run -c Release --no-build --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- invoke $bitcode --method add_i32 --arg i32:2 --arg i32:3
+        }
         if ($LASTEXITCODE -ne 0) { throw "rustlyn invoke failed (exit $LASTEXITCODE): $result" }
         $value = ($result | Select-Object -Last 1).Trim()
         if ($value -ne '5') { throw "expected 5 from add_i32(2,3), got '$value'" }

@@ -1,7 +1,10 @@
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [Parameter(Mandatory = $false)]
+    [switch]$SkipToolBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,9 +23,16 @@ $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn
 $toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
 $supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
-dotnet build $toolProject -c $Configuration /nologo
-if ($LASTEXITCODE -ne 0) {
-    throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+if ($SkipToolBuild) {
+    if (-not (Test-Path $toolDll)) {
+        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+    }
+}
+else {
+    dotnet build $toolProject -c $Configuration /nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+    }
 }
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath

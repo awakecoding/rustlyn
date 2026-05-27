@@ -3,11 +3,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn main() {
-    let llvm_root = env::var_os("RUSTLYN_LLVM_DEV_ROOT")
+    let llvm_root = env::var_os("RUSTLYN_LLVM_ROOT")
+        .or_else(|| env::var_os("RUSTLYN_LLVM_DEV_ROOT"))
         .map(PathBuf::from)
         .or_else(|| env::var_os("LLVM_SYS_201_PREFIX").map(PathBuf::from))
         .or_else(|| env::var_os("LLVM_SYS_PREFIX").map(PathBuf::from))
-        .expect("RUSTLYN_LLVM_DEV_ROOT must point to an LLVM development root with bin/llvm-config and static libraries");
+        .expect("RUSTLYN_LLVM_ROOT must point to an LLVM development root with bin/llvm-config and static libraries");
 
     let llvm_config = find_llvm_config(&llvm_root);
     let version = run_llvm_config(&llvm_config, &["--version"]);
@@ -33,6 +34,7 @@ fn main() {
     let system_libs = run_llvm_config(&llvm_config, &["--link-static", "--system-libs"]);
     emit_link_args(&system_libs, false);
 
+    println!("cargo:rerun-if-env-changed=RUSTLYN_LLVM_ROOT");
     println!("cargo:rerun-if-env-changed=RUSTLYN_LLVM_DEV_ROOT");
     println!("cargo:rerun-if-env-changed=LLVM_SYS_201_PREFIX");
     println!("cargo:rerun-if-env-changed=LLVM_SYS_PREFIX");

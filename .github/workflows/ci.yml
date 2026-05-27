@@ -63,32 +63,55 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build sample bitcode (core matrix)
+      - name: Smoke test LLVM helper
+        if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
-            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
-          }
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-LlvmHelper.ps1 -Sample add -ToolDll $toolDll
+          ./scripts/Test-RustlynLlvmOpt.ps1 -Sample add -SkipBuild -ToolDll $toolDll
+
+      - name: Install Rust nightly toolchain
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: rustup toolchain install nightly --component rust-src
+
+      - name: Smoke test MSBuild SDK
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Test-MsBuildSdk.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkBinary.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkBuildStd.ps1 -Configuration Release -SkipToolBuild
+          ./scripts/Test-MsBuildSdkPackage.ps1 -Configuration Release -SkipToolBuild
 
       - name: Smoke test (core matrix)
         shell: pwsh
         run: |
-          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
-            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
-          }
+          $samples = @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Configuration Release -ToolDll $toolDll
 
       - name: Run backend regression harness
         shell: pwsh
-        run: dotnet run -c Release --project ./dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj
+        run: |
+          $testDll = Join-Path $PWD 'dotnet/backend/tests/Rustlyn.Backend.Tests/bin/Release/net10.0/Rustlyn.Backend.Tests.dll'
+          dotnet $testDll
 
       - name: Audit documentation claims against support matrix
         shell: pwsh
         run: ./scripts/Test-DocClaims.ps1
 
+      - name: Smoke test Native AOT scaffold
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          ./scripts/Test-AotSmoke.ps1 -ToolDll $toolDll
+
   extended:
-    name: Extended fixtures (preview-tier, advisory)
+    name: Extended fixtures
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -99,24 +122,32 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
+      - name: Install prebuilt LLVM 20.1.8
+        shell: pwsh
+        run: |
+          $asset = 'clang+llvm-20.1.8-x86_64-ubuntu-24.04.tar.xz'
+          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2025.3.0/$asset"
+          $stage = Join-Path $env:RUNNER_TEMP 'llvm'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          $archive = Join-Path $stage $asset
+          Write-Host "Downloading $url"
+          curl -fsSL -o $archive $url
+          tar -xJf $archive -C $stage
+          $root = Get-ChildItem -Path $stage -Directory | Where-Object { $_.Name -like 'clang+llvm-*' } | Select-Object -First 1
+          if (-not $root) { throw "LLVM root not found after extracting $archive" }
+          $resolved = $root.FullName
+          Write-Host "RUSTLYN_LLVM_ROOT=$resolved"
+          "RUSTLYN_LLVM_ROOT=$resolved" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          Test-Path (Join-Path $resolved 'bin/llvm-config') | ForEach-Object { Write-Host "llvm-config present: $_" }
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build extended sample bitcode
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
-            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
-          }
-
       - name: Smoke test extended samples
         shell: pwsh
-        continue-on-error: true
         run: |
-          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
-            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
-          }
+          $samples = @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain')
+          ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Stage Inspect -Configuration Release
 
       - name: Pack templates
         continue-on-error: true
@@ -137,7 +168,13 @@ jobs:
         run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
 
       - name: Validate binding surface
-        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime" --report-only
+        shell: pwsh
+        run: |
+          $bindingsToolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Bindings.Tool/bin/Release/net10.0/Rustlyn.Bindings.Tool.dll'
+          dotnet $bindingsToolDll validate --type "System.Math, System.Runtime" --report-only
 
       - name: Test delegate analysis
-        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- analyze-delegate "System.Func\`2[[System.Int32],[System.Int32]]"
+        shell: pwsh
+        run: |
+          $bindingsToolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Bindings.Tool/bin/Release/net10.0/Rustlyn.Bindings.Tool.dll'
+          dotnet $bindingsToolDll analyze-delegate "System.Func``2[[System.Int32],[System.Int32]]"

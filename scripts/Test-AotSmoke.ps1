@@ -17,15 +17,16 @@
 #>
 param(
     [string]$LlvmRoot = $env:RUSTLYN_LLVM_ROOT,
-    [string]$Runtime
+    [string]$Runtime,
+    [string]$ToolDll
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $sample = Join-Path $repoRoot 'samples\aot_smoke'
-$host = Join-Path $sample 'host'
-$translatedDll = Join-Path $host 'AotSmoke.Translated.dll'
-$translatedBc = Join-Path $host 'AotSmoke.Translated.bc'
+$hostProject = Join-Path $sample 'host'
+$translatedDll = Join-Path $hostProject 'AotSmoke.Translated.dll'
+$translatedBc = Join-Path $hostProject 'AotSmoke.Translated.bc'
 
 if (-not $Runtime) {
     $Runtime = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { 'linux-x64' }
@@ -34,17 +35,32 @@ if (-not $Runtime) {
 Write-Host "Translating $sample -> $translatedDll"
 $translateArgs = @('translate', $sample, '--out', $translatedDll, '--bitcode-out', $translatedBc)
 if ($LlvmRoot) { $translateArgs += @('--llvm-root', $LlvmRoot) }
-& dotnet run -c Release --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- @translateArgs
+if ($ToolDll) {
+    $resolvedToolDll = if ([System.IO.Path]::IsPathRooted($ToolDll)) { $ToolDll } else { Join-Path $repoRoot $ToolDll }
+    if (-not (Test-Path -LiteralPath $resolvedToolDll -PathType Leaf)) {
+        throw "Rustlyn.Tool DLL not found: $resolvedToolDll"
+    }
+
+    & dotnet $resolvedToolDll @translateArgs
+}
+else {
+    & dotnet run -c Release --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- @translateArgs
+}
 if ($LASTEXITCODE -ne 0) { throw "rustlyn translate failed with exit code $LASTEXITCODE." }
 
 Write-Host "Publishing host for $Runtime with PublishAot=true"
-& dotnet publish $host -c Release -r $Runtime --self-contained true
+& dotnet publish $hostProject -c Release -r $Runtime --self-contained true
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
-$publishDir = Join-Path $host "bin\Release\net8.0\$Runtime\publish"
+$publishDir = Join-Path $hostProject "bin\Release\net10.0\$Runtime\publish"
 $exeName = if ($IsWindows) { 'AotSmokeHost.exe' } else { 'AotSmokeHost' }
 $exe = Join-Path $publishDir $exeName
 if (-not (Test-Path $exe)) { throw "Published binary not found: $exe" }
+
+$translatedAssemblies = Get-ChildItem -Path $hostProject -Filter '*.dll' -File
+foreach ($assembly in $translatedAssemblies) {
+    Copy-Item -Path $assembly.FullName -Destination (Join-Path $publishDir $assembly.Name) -Force
+}
 
 Write-Host "Running $exe"
 $output = & $exe
