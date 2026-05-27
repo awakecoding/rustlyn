@@ -1,0 +1,129 @@
+# Revived Design
+
+This document describes the design being rebuilt in this repository today. It is intentionally separate from the historical SourceGear/Llama SDK design.
+
+## Summary
+
+The revived experiment is a cargo-first, backend-first reconstruction of the core Rust-to-.NET idea:
+
+1. Use ordinary Rust sample crates as the frontend input.
+2. Produce LLVM bitcode either directly or through Cargo.
+3. Lower LLVM text into a backend-owned reduced IR.
+4. Emit managed IL and helper methods from that reduced IR.
+5. Validate every newly supported slice with executable smoke tests and regression fixtures.
+
+The goal is not to recreate the old SDK packaging and project-system experience before the compiler path is proven. The goal is to recover and harden the translation pipeline itself.
+
+## Design Priorities
+
+- cargo-first experimentation instead of an MSBuild-first outer shell
+- minimal, explicit samples that pin one backend behavior at a time
+- executable validation after each narrow change
+- permanent regression coverage for every promoted slice
+- clear ownership boundaries between parsing/lowering and IL emission
+- documentation that keeps the historical design and the revived design distinct
+
+## Current Pipeline In This Repo
+
+The pipeline is sample-driven and intentionally conservative. Use the [support matrix](support-matrix.md) to distinguish supported behavior from preview, fixture-only, planned, and unsupported areas.
+
+### 1. Sample crates
+
+`samples/` contains small Rust crates that isolate specific behaviors such as arithmetic, control flow, comparisons, vector reductions, adjacent transformed loops, and managed runtime bridge calls.
+
+`samples/avalonia_hello` is the first desktop-app bridge fixture. Its Rust entrypoint calls `rustlyn_avalonia_run_app`, and exported Rust callbacks build a real window with a stack panel, text block, and button through explicit `rustlyn_avalonia_*` bridge calls. The support assembly owns Avalonia startup, object handles, and event dispatch, while Rust owns UI composition and the click behavior that updates the text. The sample is deliberately scoped to proving the Rust bitcode -> managed assembly -> Avalonia control API path; it is not generated Avalonia bindings, XAML translation, data binding, or general delegate support.
+
+### 2. Bitcode production
+
+`scripts/Build-SampleBitcode.ps1` builds a sample to LLVM bitcode and writes the result under `artifacts/out/`.
+
+For cargo-driven paths, `Rustlyn.Tool translate` can build from the crate and emit both the translated assembly and the intermediate bitcode. The translate path also carries SourceGear-recovery options for `--toolchain`, `--target`, `--build-std`, and `--build-std-features`, with `rust-src` preflight diagnostics when build-std is requested. The current fake-link decision keeps the historical `rsfakelink` approach deferred until a focused fixture proves direct Cargo bitcode emission cannot capture the required artifact.
+
+`Rustlyn.Sdk` is the first MSBuild facade slice. It is intentionally thin: an SDK-style `.rsproj` can be built with `dotnet build` when `MSBuildSDKsPath` points at `dotnet/backend/src`, and the SDK can also be packed into a local NuGet package for `Sdk="Rustlyn.Sdk/<version>"` resolution. The package carries a published `Rustlyn.Tool` under `tools/net10.0`, so package-based builds can invoke the translate driver without a source-tree tool override. Its props recover SourceGear-style project-system metadata such as `DefaultLanguageSourceExtension=.rs`, `Language=Rust`, `TargetRuntime=Managed`, and common item/reference schema capability flags. Its `Build` target delegates to `Rustlyn.Tool translate`, including `RustlynBinaryTarget` for Cargo binary targets, `OutputType=Exe` inference from `AssemblyName` when the binary target is not explicit, `RustlynToolchain`/`RustlynBuildStd` for nightly build-std rungs, and SourceGear-style aliases such as `RustCratePath`, `RustToolchain=+nightly`, and `RustDebugOrRelease=debug`. For `.rsproj` projects that do not carry their own `Cargo.toml`, the SDK can now synthesize a minimal Cargo manifest under `obj/.../rs` from `src/lib.rs` or `src/main.rs`, `RustEdition`, SourceGear-style Cargo auto-target guards, local `RustReference` path dependencies with optional name inference from the path, and crates.io `RustCrateReference` dependencies with version/default-feature/feature-list metadata, then feed that generated crate to the same translate driver. It also tracks emitted runtimeconfig files and copied support assemblies for console assemblies so `Clean` removes the runnable app closure it produced. Packaged validation now includes the generated-bindings lousygrep workload, proving translated console apps can run from scratch output with copied backend/runtime/OS/interop support assemblies. This starts recovering the SourceGear SDK developer experience without duplicating cargo orchestration or backend behavior inside MSBuild.
+
+### 3. Inspection and lowering
+
+`dotnet/backend/src/Rustlyn.Tool/` exposes the main CLI commands:
+
+- `inspect`
+- `lower`
+- `emit`
+- `invoke`
+- `translate`
+
+The lowering stage produces a reduced IR that is easier for the backend tests to reason about than raw LLVM syntax.
+
+### 4. Backend ownership
+
+The current design has two especially important ownership boundaries:
+
+- `LoweredIrLowerer.cs`: responsible for parsing and normalizing the lowered IR surface
+- `LoweredAssemblyEmitter.cs`: responsible for managed IL emission, helper generation, intrinsic dispatch, and runtime glue
+
+Runtime bridge support assemblies live beside the backend when a slice needs managed functionality that should not be generated as IL directly. The Avalonia slice uses this pattern so the emitter recognizes the bridge symbol family, adds the appropriate entrypoint metadata, copies the support dependencies with the generated assembly, and leaves Avalonia lifetime/threading details inside the support assembly.
+
+`Rustlyn.Interop` is the first recovered SourceGear-parity runtime layer. It owns reusable managed object and exception handles, UTF-8 pointer/length helpers, and exception text queries that future generated .NET bindings can share instead of growing one-off bridge stores per sample.
+
+`Rustlyn.Runtime` and `Rustlyn.Os` now exist as behavior-preserving project shells for the next split. `Rustlyn.Runtime` will own LLVM/runtime semantics such as panic, allocator, memop, vector, atomic, and entry-wrapper helpers. `Rustlyn.Os` will own host OS and Rust `std` compatibility helpers such as args, console, file, environment, path, and UTF-8 path/string bridge behavior. The first compatibility facade keeps Backend `RuntimeBridgeHelpers` method names stable while forwarding `rem_euclid` to `Rustlyn.Runtime.NumericRuntime`, command-line argument/environment path UTF-8 helpers to `Rustlyn.Os.HostEnvironment`, console output helpers to `Rustlyn.Os.HostConsole`, `File.ReadAllLines` UTF-8 helpers to `Rustlyn.Os.HostFileSystem`, and `Path.Combine`/`Path.ChangeExtension`/file-name/path-resolution UTF-8 helpers to `Rustlyn.Os.HostPath`.
+
+`Rustlyn.Bindings` is the first generated-bindings parity foothold. It emits the generated-style Rust wrapper module checked into `samples/generated_bindings_hello`, owns the `rustlyn_bindgen_*` managed glue map consumed by the backend emitter, and generates the backend `RuntimeBridgeHelpers.Bindings.g.cs` partial at build time through `Rustlyn.Bindings.Tool`. Managed glue is now assembled from per-binding signature, exception convention, result-operation metadata, and reflected managed expression metadata instead of fixed whole-method templates or raw C# value snippets. Rust extern declarations are derived from that same managed glue metadata, and the bindings tool emits a normalized, versioned binding manifest that records generated symbols, helper methods, managed targets, ABI signatures, wrapper signatures, managed assembly identities, compatibility policy, handle ABI version, and symbol schema version. `Rustlyn.Bindings.Tool pack --out <directory>` writes the generated Rust module, managed glue source, text manifest, JSON manifest, and a deterministic artifact summary containing the generator version, compatibility policy, managed assembly identities, handle ownership rules, artifact byte counts, and SHA-256 hashes. The mapped helpers return object and exception handles through `Rustlyn.Interop`, and the Rust wrapper generator now has metadata-backed method entries for new wrapper sections, including object-handle and boolean-as-int result wrappers. The current fixed BCL surface covers console output, command-line arguments, `Environment.CurrentDirectory` as a static property, directory current-directory and file-enumeration method calls, file line reads, `Path.ChangeExtension`, `Path.Combine`, `Path.EndsInDirectorySeparator`, `Path.GetDirectoryName`, `Path.GetExtension`, `Path.GetFileName`, `Path.GetFileNameWithoutExtension`, `Path.GetFullPath`, `Path.GetPathRoot`, `Path.GetRelativePath`, `Path.GetTempPath`, `Path.HasExtension`, `Path.IsPathFullyQualified`, `Path.IsPathRooted`, string arrays, managed strings created from Rust UTF-8 buffers, `String.Length` as an instance property, string UTF-8 copy, and ordinal string contains. `samples/generated_bindings_lousygrep` uses that generated binding surface for the lousygrep workload, including argv, directory enumeration, file IO, string matching, and output.
+
+The full-runtime projection work starts with reference-pack discovery and coverage reporting rather than immediate code generation. `Rustlyn.Bindings.Tool runtime-scan` locates the highest installed `Microsoft.NETCore.App.Ref` pack for requested TFMs such as `net8.0`, `net9.0`, and `net10.0`, scans the reference assemblies through metadata-only loading, and reports assembly/type/member inventory, skipped type categories, projected member counts under the current policy, and unsupported-shape taxonomy. `runtime-scan --manifest-json` also emits versioned runtime manifest documents with target framework, reference pack metadata, assembly identities, type/member identities, projected/rejected/deferred status, unsupported reason codes, attributes, parameter metadata, and nullability placeholders. `runtime-scan --diff` and `--diff-json` compare adjacent TFMs and report added/removed types, added/removed members, and projection-status changes. `runtime-pack --out <directory>` writes per-TFM runtime manifest, generated Rust `system.rs`, generated managed glue, coverage JSON/text, unsupported diagnostics, cross-TFM diffs, and a deterministic runtime-pack summary with artifact hashes. The runtime-manifest-to-callable compiler now promotes static scalar `System.Math` and `System.MathF` methods, supported static `System.Environment` and `System.IO.Path` members, and supported static `System.Threading.Tasks.Task` members into callable binding records. Task-returning APIs can produce managed task handles and Rust `TaskFuture<T>` wrappers for supported void/scalar/string/array results; faulted and canceled tasks surface managed exception handles instead of collapsing into generic failures. Broader runtime APIs still remain represented as projected/rejected/deferred manifest entries until their shapes are promoted. Callable coverage is tracked separately from diagnostic coverage so promoted namespaces cannot regress silently, and optional installed-reference-pack smoke coverage checks generated callable artifacts across `net8.0`, `net9.0`, and `net10.0` when those packs are present. The backend `EmitOptions` can carry additional binding manifests so the symbol map can resolve runtime-generated `rustlyn_bindgen_*` symbols against generated helper signatures. `runtime-gate` evaluates the scan as a CI-style check: every scanned member must be projected, rejected, or deferred with an explicit reason code, and missing reference packs or assembly-load diagnostics fail the gate. Text/JSON manifest generation, Rust wrapper generation, managed glue generation, backend symbol-map generation, and artifact pack summaries now consume `BindingManifestDocument`; the manifest carries managed result semantics plus Rust wrapper call arguments, result variables, extern lines, and deterministic wrapper order so generated pack artifacts no longer need to read `BindingSurface` directly. This makes the public .NET runtime surface measurable while incrementally increasing the subset that generated Rust wrappers actually cover.
+
+When a slice fails, the intended workflow is to patch the direct owner rather than layering fixes across unrelated surfaces.
+
+### 5. Validation surfaces
+
+Two validation layers matter most:
+
+- `scripts/Test-Smoke.ps1` for focused executable smoke checks
+- `dotnet/backend/tests/Rustlyn.Backend.Tests/Program.cs` for permanent regression assertions over module summaries, lowered IR, typed instructions, emitted execution, and Cargo-built behavior
+
+## How This Differs From The Original Design
+
+Compared with Eric Sink's original design, this revived repo intentionally changes the center of gravity:
+
+- from MSBuild-first to cargo-first, with a thin local MSBuild facade now beginning to wrap the stable translate driver
+- from packaged binary SDK distribution to source-first backend development
+- from one large end-user shell to many small backend regression fixtures
+- from historical proof-of-concept packaging to repeatable local validation in repo
+- from implicit compiler behavior to aggressively pinned sample-by-sample coverage
+
+The tracked recovery plan for closing those gaps is complete; see the [historical parity record](sourcegear-parity-roadmap.md). The forward-looking [roadmap](roadmap.md) charts what comes next, with the current fake-link gate permanently closed per [SourceGear fake-link decision](sourcegear-fake-link-decision.md).
+
+## Current Repository Shape
+
+- `samples/`: narrow frontend fixtures
+- `samples/generated_bindings_hello/`: generated-style .NET binding fixture over `System.Console`, `System.IO.Directory`, and `System.String`
+- `samples/generated_bindings_lousygrep/`: canonical lousygrep-style generated-bindings fixture over `System.Environment.GetCommandLineArgs`, `System.IO.File.ReadAllLines`, `System.String[]`, and `System.String.Contains`
+- `scripts/`: repeatable PowerShell workflows
+- `dotnet/backend/src/Rustlyn.Bindings/`: generated Rust binding prototype and output-shape tests
+- `dotnet/backend/src/Rustlyn.Backend/`: backend implementation
+- `dotnet/backend/src/Rustlyn.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
+- `dotnet/backend/src/Rustlyn.Runtime/`: shell for future LLVM/runtime semantic helpers
+- `dotnet/backend/src/Rustlyn.Os/`: shell for future host OS and Rust `std` compatibility helpers
+- `dotnet/backend/src/Rustlyn.Tool/`: command-line entry point
+- `dotnet/backend/src/Rustlyn.Sdk/`: local and packable SDK-style MSBuild facade that delegates `.rsproj` builds to `Rustlyn.Tool translate`
+- `dotnet/backend/tests/`: backend regression harness
+- Historical SourceGear package/decompilation details are summarized in `docs/`; extracted package trees and decompiled payloads are intentionally not kept as repo content.
+
+## Why The Repo Keeps Historical Material
+
+The old design still matters because it answers two questions:
+
+- what the original system actually shipped
+- which architectural choices are worth preserving versus replacing
+
+That historical material is kept as reference evidence, not as the primary product surface of the revived experiment.
+
+## Practical Development Loop
+
+The working loop for this repo is:
+
+1. choose one failing or uncovered slice
+2. build or translate the smallest sample that exposes it
+3. fix the direct owner in lowering or emission
+4. validate immediately with the narrowest executable check
+5. promote the slice into permanent sample, smoke coverage, regression assertions, and notes
+
+That loop is what keeps the revived experiment moving without reintroducing the complexity of the original SDK too early.

@@ -1,0 +1,7 @@
+<Project Sdk="Rustlyn.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>bin_trivial</AssemblyName>
+    <RustlynCratePath>..\bin_trivial</RustlynCratePath>
+  </PropertyGroup>
+</Project>

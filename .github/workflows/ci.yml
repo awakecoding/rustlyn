@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            llvm_asset: clang+llvm-20.1.8-x86_64-windows.tar.xz
+          - os: ubuntu-latest
+            llvm_asset: clang+llvm-20.1.8-x86_64-ubuntu-24.04.tar.xz
+          - os: macos-latest
+            llvm_asset: clang+llvm-20.1.8-aarch64-macos.tar.xz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Install prebuilt LLVM 20.1.8
+        shell: pwsh
+        run: |
+          $asset = '${{ matrix.llvm_asset }}'
+          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2025.3.0/$asset"
+          $stage = Join-Path $env:RUNNER_TEMP 'llvm'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          $archive = Join-Path $stage $asset
+          Write-Host "Downloading $url"
+          curl -fsSL -o $archive $url
+          tar -xJf $archive -C $stage
+          $root = Get-ChildItem -Path $stage -Directory | Where-Object { $_.Name -like 'clang+llvm-*' } | Select-Object -First 1
+          if (-not $root) { throw "LLVM root not found after extracting $archive" }
+          $resolved = $root.FullName
+          Write-Host "RUSTLYN_LLVM_ROOT=$resolved"
+          "RUSTLYN_LLVM_ROOT=$resolved" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          # Sanity check
+          if ($IsWindows) {
+            Test-Path (Join-Path $resolved 'bin\llvm-config.exe') | ForEach-Object { Write-Host "llvm-config.exe present: $_" }
+          } else {
+            Test-Path (Join-Path $resolved 'bin/llvm-config') | ForEach-Object { Write-Host "llvm-config present: $_" }
+          }
+
+      - name: Build backend
+        run: |
+          dotnet build dotnet/backend/src/Rustlyn.Backend/Rustlyn.Backend.csproj -c Release
+          dotnet build dotnet/backend/src/Rustlyn.Tool/Rustlyn.Tool.csproj -c Release
+          dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+
+      - name: Build tests
+        run: dotnet build dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj -c Release
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build sample bitcode (core matrix)
+        shell: pwsh
+        run: |
+          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
+            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
+          }
+
+      - name: Smoke test (core matrix)
+        shell: pwsh
+        run: |
+          foreach ($sample in @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')) {
+            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
+          }
+
+      - name: Run backend regression harness
+        shell: pwsh
+        run: dotnet run -c Release --project ./dotnet/backend/tests/Rustlyn.Backend.Tests/Rustlyn.Backend.Tests.csproj
+
+      - name: Audit documentation claims against support matrix
+        shell: pwsh
+        run: ./scripts/Test-DocClaims.ps1
+
+  extended:
+    name: Extended fixtures (preview-tier, advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build extended sample bitcode
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
+            ./scripts/Build-SampleBitcode.ps1 -Sample $sample
+          }
+
+      - name: Smoke test extended samples
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          foreach ($sample in @('async_state_machine','enum_complex','error_propagation','generic_collections','global_ptr_pass','iterator_chain','string_vec_ops')) {
+            ./scripts/Test-Smoke.ps1 -Sample $sample -Mode Bitcode
+          }
+
+      - name: Pack templates
+        continue-on-error: true
+        run: dotnet pack templates/Rustlyn.Templates.csproj -c Release
+
+  bindings-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Build bindings tool
+        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+
+      - name: Validate binding surface
+        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime" --report-only
+
+      - name: Test delegate analysis
+        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- analyze-delegate "System.Func\`2[[System.Int32],[System.Int32]]"

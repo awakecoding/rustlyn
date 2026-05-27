@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Rustlyn.Tool</AssemblyName>
+    <RootNamespace>Rustlyn.Tool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Backend\Rustlyn.Backend.csproj" />
+  </ItemGroup>
+</Project>

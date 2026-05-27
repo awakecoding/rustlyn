@@ -1,0 +1,8 @@
+<Project Sdk="Rustlyn.Sdk/0.1.0">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>RustlynConsole</AssemblyName>
+    <RustlynGenerateCargoProject>true</RustlynGenerateCargoProject>
+  </PropertyGroup>
+</Project>

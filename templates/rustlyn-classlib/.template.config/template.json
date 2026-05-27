@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Rustlyn contributors",
+  "classifications": [ "Rust", "Library" ],
+  "identity": "Rustlyn.Templates.ClassLib",
+  "name": "Rustlyn class library",
+  "shortName": "rustlyn-classlib",
+  "tags": {
+    "language": "Rust",
+    "type": "project"
+  },
+  "sourceName": "RustlynClassLib",
+  "preferNameDirectory": true,
+  "primaryOutputs": [
+    { "path": "RustlynClassLib.rsproj" }
+  ]
+}

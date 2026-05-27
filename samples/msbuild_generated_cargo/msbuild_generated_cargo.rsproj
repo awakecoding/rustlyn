@@ -1,0 +1,18 @@
+<Project Sdk="Rustlyn.Sdk">
+  <PropertyGroup>
+    <AssemblyName>msbuild_generated_cargo</AssemblyName>
+    <RustEdition>2024</RustEdition>
+  </PropertyGroup>
+  <ItemGroup>
+    <RustReference Include="..\profile_probe" />
+    <RustCrateReference Include="cfg-if">
+      <Version>1.0.0</Version>
+      <DefaultFeatures>false</DefaultFeatures>
+    </RustCrateReference>
+    <RustCrateReference Include="bitflags">
+      <Version>2.9.4</Version>
+      <DefaultFeatures>false</DefaultFeatures>
+      <Features>std,serde</Features>
+    </RustCrateReference>
+  </ItemGroup>
+</Project>

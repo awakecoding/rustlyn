@@ -1,0 +1,13 @@
+[package]
+name = "trait_object_probe"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"

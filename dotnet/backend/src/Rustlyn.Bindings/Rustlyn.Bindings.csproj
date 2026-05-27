@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Rustlyn.Bindings</AssemblyName>
+    <RootNamespace>Rustlyn.Bindings</RootNamespace>
+    <!-- Bindings is a build-time code-generation tool that uses reflection by design -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+    <ProjectReference Include="..\Rustlyn.AvaloniaSupport\Rustlyn.AvaloniaSupport.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.0" />
+  </ItemGroup>
+</Project>

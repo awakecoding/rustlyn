@@ -1,0 +1,9 @@
+[package]
+name = "aot_smoke"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["lib"]
+path = "src/lib.rs"

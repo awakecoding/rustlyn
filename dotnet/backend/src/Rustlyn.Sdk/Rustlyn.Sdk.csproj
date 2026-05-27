@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Rustlyn.Sdk</PackageId>
+    <Version>0.1.0-local</Version>
+    <Authors>rustlyn</Authors>
+    <Description>Local MSBuild SDK facade for translating Rust crates into managed assemblies with Rustlyn.Tool.</Description>
+    <PackageTags>rust;dotnet;llvm;msbuild;sdk</PackageTags>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <RustlynToolProject>..\Rustlyn.Tool\Rustlyn.Tool.csproj</RustlynToolProject>
+    <RustlynToolPublishDir>$(MSBuildProjectDirectory)\obj\rustlyn-tool\$(Configuration)\</RustlynToolPublishDir>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PublishRustlynToolForPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Sdk\Sdk.props" Pack="true" PackagePath="Sdk\Sdk.props" />
+    <None Include="Sdk\Sdk.targets" Pack="true" PackagePath="Sdk\Sdk.targets" />
+  </ItemGroup>
+
+  <Target Name="PublishRustlynToolForPackage">
+    <MSBuild Projects="$(RustlynToolProject)" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(RustlynToolPublishDir);SelfContained=false;UseAppHost=false" />
+    <ItemGroup>
+      <_RustlynToolPackageFile Include="$(RustlynToolPublishDir)**\*" />
+      <TfmSpecificPackageFile Include="@(_RustlynToolPackageFile)">
+        <PackagePath>tools\net10.0\%(_RustlynToolPackageFile.RecursiveDir)%(_RustlynToolPackageFile.Filename)%(_RustlynToolPackageFile.Extension)</PackagePath>
+        <BuildAction>None</BuildAction>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+</Project>
