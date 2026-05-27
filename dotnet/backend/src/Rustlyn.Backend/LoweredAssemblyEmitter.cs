@@ -3594,6 +3594,12 @@ public static class LoweredAssemblyEmitter
 
         var switchValue = NormalizeRawValue(switchMatch.Groups["value"].Value);
         var defaultTarget = NormalizeRawLabel(switchMatch.Groups["defaultTarget"].Value);
+        var switchType = switchMatch.Groups["type"].Value;
+        if (!CanEmitRawSwitchType(switchType))
+        {
+            return false;
+        }
+
         var caseLabels = new List<(long Value, string Target)>();
 
         var closingIndex = -1;
@@ -3616,7 +3622,7 @@ public static class LoweredAssemblyEmitter
                 System.Text.RegularExpressions.RegexOptions.CultureInvariant);
             if (caseMatch.Success)
             {
-                caseLabels.Add((long.Parse(caseMatch.Groups["value"].Value), NormalizeRawLabel(caseMatch.Groups["target"].Value)));
+                caseLabels.Add((ParseSwitchCaseValue(caseMatch.Groups["value"].Value, caseMatch.Groups["type"].Value), NormalizeRawLabel(caseMatch.Groups["target"].Value)));
             }
         }
 
@@ -3626,7 +3632,6 @@ public static class LoweredAssemblyEmitter
         }
 
         // Emit compare-and-branch chain for each case
-        var switchType = switchMatch.Groups["type"].Value;
         var isWideSwitch = string.Equals(switchType, "i64", StringComparison.Ordinal);
         foreach (var caseLabel in caseLabels)
         {
@@ -3652,6 +3657,44 @@ public static class LoweredAssemblyEmitter
         encoder.Branch(ILOpCode.Br, labelMap[defaultTarget]);
         instrIdx = closingIndex;
         return true;
+    }
+
+    private static bool CanEmitRawSwitchType(string typeText)
+    {
+        return typeText.StartsWith('i')
+            && int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth)
+            && bitWidth is > 0 and <= 64;
+    }
+
+    private static long ParseSwitchCaseValue(string valueText, string typeText)
+    {
+        if (long.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var signedValue))
+        {
+            return signedValue;
+        }
+
+        if (!typeText.StartsWith('i') || !int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth))
+        {
+            throw new FormatException($"Switch case type '{typeText}' is not an integer type.");
+        }
+
+        if (bitWidth is <= 0 or > 64
+            || !ulong.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var unsignedValue))
+        {
+            throw new OverflowException($"Switch case value '{valueText}' cannot be represented as {typeText}.");
+        }
+
+        if (bitWidth == 64)
+        {
+            return unchecked((long)unsignedValue);
+        }
+
+        var signBit = 1UL << (bitWidth - 1);
+        var mask = (1UL << bitWidth) - 1UL;
+        var truncated = unsignedValue & mask;
+        return (truncated & signBit) == 0
+            ? (long)truncated
+            : unchecked((long)(truncated | ~mask));
     }
 
     private static bool IsSwitchClosingLine(string text)

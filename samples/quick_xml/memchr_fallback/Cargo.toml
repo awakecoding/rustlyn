@@ -1,0 +1,12 @@
+[package]
+name = "memchr"
+version = "2.8.1"
+edition = "2021"
+
+[lib]
+name = "memchr"
+
+[features]
+default = ["std"]
+std = []
+alloc = []

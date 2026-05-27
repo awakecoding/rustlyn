@@ -1296,6 +1296,44 @@ public static partial class LoweredIrLowerer
         return string.Join(", ", cases.Select(@case => $"{@case.Value}: {@case.Target}"));
     }
 
+    private static long ParseSwitchCaseValue(string valueText, string typeText)
+    {
+        if (long.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var signedValue))
+        {
+            return signedValue;
+        }
+
+        if (!typeText.StartsWith('i') || !int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth))
+        {
+            throw new FormatException($"Switch case type '{typeText}' is not an integer type.");
+        }
+
+        if (bitWidth is <= 0 or > 64
+            || !ulong.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var unsignedValue))
+        {
+            throw new OverflowException($"Switch case value '{valueText}' cannot be represented as {typeText}.");
+        }
+
+        if (bitWidth == 64)
+        {
+            return unchecked((long)unsignedValue);
+        }
+
+        var signBit = 1UL << (bitWidth - 1);
+        var mask = (1UL << bitWidth) - 1UL;
+        var truncated = unsignedValue & mask;
+        return (truncated & signBit) == 0
+            ? (long)truncated
+            : unchecked((long)(truncated | ~mask));
+    }
+
+    private static bool CanCoalesceSwitchType(string typeText)
+    {
+        return typeText.StartsWith('i')
+            && int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth)
+            && bitWidth is > 0 and <= 64;
+    }
+
     private static string FormatPhiIncoming(IReadOnlyList<LoweredPhiIncoming> incoming)
     {
         return string.Join(", ", incoming.Select(edge => $"[ {edge.Value}, %{edge.SourceBlock} ]"));
@@ -2031,6 +2069,12 @@ public static partial class LoweredIrLowerer
                     var hdr = headerRegex.Match(raw.Text);
                     if (hdr.Success)
                     {
+                        if (!CanCoalesceSwitchType(hdr.Groups["type"].Value))
+                        {
+                            rewritten?.Add(instructions[i]);
+                            continue;
+                        }
+
                         // Scan forward for cases until "]".
                         var cases = new List<LoweredSwitchCase>();
                         var j = i + 1;
@@ -2046,7 +2090,7 @@ public static partial class LoweredIrLowerer
                             if (cm.Success)
                             {
                                 cases.Add(new LoweredSwitchCase(
-                                    long.Parse(cm.Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture),
+                                    ParseSwitchCaseValue(cm.Groups["value"].Value, cm.Groups["type"].Value),
                                     StripLabelQuotes(cm.Groups["target"].Value)));
                                 j++;
                                 continue;

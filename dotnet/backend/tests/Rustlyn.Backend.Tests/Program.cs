@@ -14,6 +14,17 @@ using Rustlyn.Interop;
 var failures = new List<string>();
 var requestedTests = args.Length == 0 ? null : args.ToHashSet(StringComparer.Ordinal);
 var markedYamlManagedAssembly = ((AssemblyLoadContext LoadContext, Assembly Assembly)?)null;
+var quickXmlManagedAssembly = ((AssemblyLoadContext LoadContext, Assembly Assembly)?)null;
+var simdJsonManagedAssembly = ((AssemblyLoadContext LoadContext, Assembly Assembly)?)null;
+
+RunOptionalTest("SimdJsonRuntimeDetection", SimdJsonRuntimeDetection, failures);
+RunOptionalTest("SimdJsonTapeShape", SimdJsonTapeShape, failures);
+RunOptionalTest("SimdJsonOwnedBorrowed", SimdJsonOwnedBorrowed, failures);
+RunOptionalTest("SimdJsonNumbers", SimdJsonNumbers, failures);
+RunOptionalTest("SimdJsonStringsUnicode", SimdJsonStringsUnicode, failures);
+RunOptionalTest("SimdJsonErrors", SimdJsonErrors, failures);
+RunOptionalTest("SimdJsonSerdeDeserialize", SimdJsonSerdeDeserialize, failures);
+RunOptionalTest("SimdJsonSerdeSerialize", SimdJsonSerdeSerialize, failures);
 
 RunTest("MissingFileThrows", MissingFileThrows, failures);
 RunTest("ShortFileThrows", ShortFileThrows, failures);
@@ -102,6 +113,8 @@ RunTest("LowererStripsDeadOnReturnParameterAttribute", LowererStripsDeadOnReturn
 RunTest("LowererDumpFormatsTypedSwitch", LowererDumpFormatsTypedSwitch, failures);
 RunTest("LowererCoalescesSwitchIntoTypedInstruction", LowererCoalescesSwitchIntoTypedInstruction, failures);
 RunTest("LowererCoalescesSwitchWithMultipleCases", LowererCoalescesSwitchWithMultipleCases, failures);
+RunTest("LowererCoalescesUnsignedI64SwitchCase", LowererCoalescesUnsignedI64SwitchCase, failures);
+RunTest("LowererPreservesUnsupportedWideSwitchRaw", LowererPreservesUnsupportedWideSwitchRaw, failures);
 RunTest("SwitchWithTrailingMetadataExecutes", SwitchWithTrailingMetadataExecutes, failures);
 RunTest("GepSretArgumentKeepsRootAllocaAddressable", GepSretArgumentKeepsRootAllocaAddressable, failures);
 RunTest("AggregateDynamicGepUsesMemoryStride", AggregateDynamicGepUsesMemoryStride, failures);
@@ -867,6 +880,14 @@ RunOptionalTest("MarkedYamlSerdeEmptyScalarMap", MarkedYamlSerdeEmptyScalarMap, 
 RunOptionalTest("MarkedYamlSerdeEmptyScalarSeq", MarkedYamlSerdeEmptyScalarSeq, failures);
 RunOptionalTest("MarkedYamlSerdeEmptyScalarUnit", MarkedYamlSerdeEmptyScalarUnit, failures);
 RunOptionalTest("MarkedYamlSerdeEmptyScalarStructWithDefault", MarkedYamlSerdeEmptyScalarStructWithDefault, failures);
+RunOptionalTest("QuickXmlReaderEvents", QuickXmlReaderEvents, failures);
+RunOptionalTest("QuickXmlReaderAttributes", QuickXmlReaderAttributes, failures);
+RunOptionalTest("QuickXmlReaderErrors", QuickXmlReaderErrors, failures);
+RunOptionalTest("QuickXmlEscapeHtml", QuickXmlEscapeHtml, failures);
+RunOptionalTest("QuickXmlWriterRoundtrip", QuickXmlWriterRoundtrip, failures);
+RunOptionalTest("QuickXmlEncodingDetection", QuickXmlEncodingDetection, failures);
+RunOptionalTest("QuickXmlSerdeDeserialize", QuickXmlSerdeDeserialize, failures);
+RunOptionalTest("QuickXmlSerdeSerialize", QuickXmlSerdeSerialize, failures);
 RunOptionalTest("FloatArithProbeReturnsExpectedResult", FloatArithProbeReturnsExpectedResult, failures);
 RunOptionalTest("FnPtrProbeReturnsExpectedResult", FnPtrProbeReturnsExpectedResult, failures);
 RunOptionalTest("StructReturnProbeReturnsExpectedResult", StructReturnProbeReturnsExpectedResult, failures);
@@ -4037,6 +4058,41 @@ static void LowererCoalescesSwitchWithMultipleCases()
     Assert(sw is not null && sw.Cases.Count == 4, "Expected 4 coalesced cases.");
     Assert(sw!.Cases[0].Value == -1L, $"Expected first case value -1, got {sw.Cases[0].Value}.");
     Assert(sw.Cases[3].Target == "meaning", $"Expected last case target 'meaning', got '{sw.Cases[3].Target}'.");
+}
+
+static void LowererCoalescesUnsignedI64SwitchCase()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @wide(i64 %v) {\n" +
+        "entry:\n" +
+        "  switch i64 %v, label %def [\n" +
+        "    i64 18446744073709551615, label %neg_one\n" +
+        "    i64 9223372036854775808, label %min\n" +
+        "  ]\n" +
+        "neg_one:\n  ret i32 1\n" +
+        "min:\n  ret i32 2\n" +
+        "def:\n  ret i32 0\n" +
+        "}\n");
+    var sw = module.Functions[0].Blocks.SelectMany(b => b.Instructions).OfType<LoweredSwitchInstruction>().FirstOrDefault();
+    Assert(sw is not null && sw.Cases.Count == 2, "Expected unsigned i64 switch cases to coalesce.");
+    Assert(sw!.Cases[0].Value == -1L, $"Expected 18446744073709551615 to parse as -1, got {sw.Cases[0].Value}.");
+    Assert(sw.Cases[1].Value == long.MinValue, $"Expected 9223372036854775808 to parse as long.MinValue, got {sw.Cases[1].Value}.");
+}
+
+static void LowererPreservesUnsupportedWideSwitchRaw()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr(
+        "define i32 @wide(i96 %v) {\n" +
+        "entry:\n" +
+        "  switch i96 %v, label %def [\n" +
+        "    i96 21138376743609660797026071873, label %hit\n" +
+        "  ]\n" +
+        "hit:\n  ret i32 1\n" +
+        "def:\n  ret i32 0\n" +
+        "}\n");
+    var instructions = module.Functions[0].Blocks.SelectMany(static block => block.Instructions).ToArray();
+    Assert(!instructions.OfType<LoweredSwitchInstruction>().Any(), "Expected unsupported i96 switch to remain raw.");
+    Assert(instructions.OfType<LoweredRawInstruction>().Any(static raw => raw.Text.StartsWith("switch i96", StringComparison.Ordinal)), "Expected raw i96 switch to be preserved.");
 }
 
 static void NicheLayoutPolicyHandlesPointersAndNonZero()
@@ -10721,6 +10777,208 @@ object? InvokeMarkedYamlManagedProbe(string methodName)
 
     markedYamlManagedAssembly = (loadContext, assembly);
     return markedYamlManagedAssembly.Value;
+}
+
+void QuickXmlReaderEvents()
+{
+    AssertQuickXmlProbe("quick_xml_reader_events_score", 511);
+}
+
+void QuickXmlReaderAttributes()
+{
+    AssertQuickXmlProbe("quick_xml_reader_attributes_score", 7);
+}
+
+void QuickXmlReaderErrors()
+{
+    AssertQuickXmlProbe("quick_xml_reader_errors_score", 7);
+}
+
+void QuickXmlEscapeHtml()
+{
+    AssertQuickXmlProbe("quick_xml_escape_html_score", 7);
+}
+
+void QuickXmlWriterRoundtrip()
+{
+    AssertQuickXmlProbe("quick_xml_writer_roundtrip_score", 3);
+}
+
+void QuickXmlEncodingDetection()
+{
+    AssertQuickXmlProbe("quick_xml_encoding_detection_score", 3);
+}
+
+void QuickXmlSerdeDeserialize()
+{
+    AssertQuickXmlProbe("quick_xml_serde_deserialize_score", 1);
+}
+
+void QuickXmlSerdeSerialize()
+{
+    AssertQuickXmlProbe("quick_xml_serde_serialize_score", 3);
+}
+
+void AssertQuickXmlProbe(string methodName, int expectedResult)
+{
+    var actualResult = InvokeQuickXmlManagedProbe(methodName);
+    Assert(Equals(actualResult, expectedResult), $"Expected quick-xml probe '{methodName}' to return {expectedResult.ToString(CultureInfo.InvariantCulture)}, but got '{actualResult}'.");
+}
+
+object? InvokeQuickXmlManagedProbe(string methodName)
+{
+    var (_, assembly) = GetQuickXmlManagedAssembly();
+    var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+        ?? throw new InvalidOperationException("Emitted quick-xml assembly did not contain Rustlyn.GeneratedModule.");
+    var method = generatedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+        ?? throw new InvalidOperationException($"Emitted quick-xml assembly did not contain method '{methodName}'.");
+
+    try
+    {
+        return method.Invoke(null, []);
+    }
+    catch (TargetInvocationException ex) when (ex.InnerException is not null)
+    {
+        throw new InvalidOperationException($"Quick-xml probe '{methodName}' failed in emitted assembly: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}", ex.InnerException);
+    }
+}
+
+(AssemblyLoadContext LoadContext, Assembly Assembly) GetQuickXmlManagedAssembly()
+{
+    if (quickXmlManagedAssembly is { } cached)
+    {
+        return cached;
+    }
+
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "quick_xml",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var loadContext = new AssemblyLoadContext($"rustlyn-quick-xml-{Guid.NewGuid():N}", isCollectible: true);
+    using var assemblyStream = new MemoryStream(File.ReadAllBytes(tempAssembly.Path));
+    var assembly = loadContext.LoadFromStream(assemblyStream);
+
+    quickXmlManagedAssembly = (loadContext, assembly);
+    return quickXmlManagedAssembly.Value;
+}
+
+void SimdJsonRuntimeDetection()
+{
+    AssertSimdJsonProbe("simd_json_runtime_detection_score", 7);
+}
+
+void SimdJsonTapeShape()
+{
+    AssertSimdJsonProbe("simd_json_tape_shape_score", 63);
+}
+
+void SimdJsonOwnedBorrowed()
+{
+    AssertSimdJsonProbe("simd_json_owned_borrowed_score", 15);
+}
+
+void SimdJsonNumbers()
+{
+    AssertSimdJsonProbe("simd_json_number_score", 63);
+}
+
+void SimdJsonStringsUnicode()
+{
+    AssertSimdJsonProbe("simd_json_string_unicode_score", 31);
+}
+
+void SimdJsonErrors()
+{
+    AssertSimdJsonProbe("simd_json_error_score", 31);
+}
+
+void SimdJsonSerdeDeserialize()
+{
+    AssertSimdJsonProbe("simd_json_serde_deserialize_score", 31);
+}
+
+void SimdJsonSerdeSerialize()
+{
+    AssertSimdJsonProbe("simd_json_serde_serialize_score", 7);
+}
+
+void AssertSimdJsonProbe(string methodName, int expectedResult)
+{
+    var actualResult = InvokeSimdJsonManagedProbe(methodName);
+    Assert(Equals(actualResult, expectedResult), $"Expected simd-json probe '{methodName}' to return {expectedResult.ToString(CultureInfo.InvariantCulture)}, but got '{actualResult}'.");
+}
+
+object? InvokeSimdJsonManagedProbe(string methodName)
+{
+    var (_, assembly) = GetSimdJsonManagedAssembly();
+    var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+        ?? throw new InvalidOperationException("Emitted simd-json assembly did not contain Rustlyn.GeneratedModule.");
+    var method = generatedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+        ?? throw new InvalidOperationException($"Emitted simd-json assembly did not contain method '{methodName}'.");
+
+    try
+    {
+        return method.Invoke(null, []);
+    }
+    catch (TargetInvocationException ex) when (ex.InnerException is not null)
+    {
+        throw new InvalidOperationException($"Simd-json probe '{methodName}' failed in emitted assembly: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}", ex.InnerException);
+    }
+}
+
+(AssemblyLoadContext LoadContext, Assembly Assembly) GetSimdJsonManagedAssembly()
+{
+    if (simdJsonManagedAssembly is { } cached)
+    {
+        return cached;
+    }
+
+    if (!TryGetRustcSysroot("nightly", out var sysroot))
+    {
+        throw new SkipTestException("nightly Rust toolchain is not available.");
+    }
+
+    var rustSourcePath = Path.Combine(sysroot, "lib", "rustlib", "src", "rust", "library");
+    if (!Directory.Exists(rustSourcePath))
+    {
+        throw new SkipTestException("nightly rust-src component is not installed.");
+    }
+
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcodeWithOptions(
+        "simd_json",
+        new RustBitcodeBuildOptions
+        {
+            Toolchain = "nightly",
+            BuildStd = "std,panic_abort",
+            PanicAbort = false
+        });
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, llvmRoot);
+
+    var loadContext = new AssemblyLoadContext($"rustlyn-simd-json-{Guid.NewGuid():N}", isCollectible: true);
+    using var assemblyStream = new MemoryStream(File.ReadAllBytes(tempAssembly.Path));
+    var assembly = loadContext.LoadFromStream(assemblyStream);
+
+    simdJsonManagedAssembly = (loadContext, assembly);
+    return simdJsonManagedAssembly.Value;
 }
 
 static void FloatArithProbeReturnsExpectedResult()
@@ -21662,6 +21920,8 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
 static TimeSpan GetTestTimeout(string name)
 {
     return name.StartsWith("MarkedYaml", StringComparison.Ordinal)
+        || name.StartsWith("QuickXml", StringComparison.Ordinal)
+        || name.StartsWith("SimdJson", StringComparison.Ordinal)
         ? TimeSpan.FromSeconds(120)
         : TimeSpan.FromSeconds(30);
 }

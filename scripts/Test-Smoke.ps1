@@ -582,6 +582,22 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"
     }
+    quick_xml = @{
+        Method = "quick_xml_reader_events_score"
+        Arguments = @()
+        Expected = 511
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    simd_json = @{
+        Method = "simd_json_runtime_detection_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     trait_object_probe = @{
         Method = "trait_object_score"
         Arguments = @(0)
