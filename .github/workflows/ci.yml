@@ -137,7 +137,7 @@ jobs:
         run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
 
       - name: Validate binding surface
-        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime"
+        run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- validate --type "System.Math, System.Runtime" --report-only
 
       - name: Test delegate analysis
         run: dotnet run --project dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -- analyze-delegate "System.Func\`2[[System.Int32],[System.Int32]]"

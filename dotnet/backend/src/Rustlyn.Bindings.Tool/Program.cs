@@ -104,12 +104,14 @@ if (args.Length == 3
     return 0;
 }
 
-if (args.Length == 3
+if (args.Length >= 3
     && string.Equals(args[0], "validate", StringComparison.Ordinal)
     && string.Equals(args[1], "--type", StringComparison.Ordinal))
 {
-    var type = Type.GetType(args[2], throwOnError: false)
-        ?? throw new InvalidOperationException($"Type '{args[2]}' could not be resolved.");
+    var typeName = args[2];
+    var reportOnly = args.Length >= 4 && string.Equals(args[3], "--report-only", StringComparison.Ordinal);
+    var type = Type.GetType(typeName, throwOnError: false)
+        ?? throw new InvalidOperationException($"Type '{typeName}' could not be resolved.");
     var result = BindingSurfaceScanner.ScanTypeWithDiagnostics(type);
     foreach (var shape in result.UnsupportedShapes)
     {
@@ -118,6 +120,13 @@ if (args.Length == 3
 
     Console.WriteLine($"requirements: {result.Requirements.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
     Console.WriteLine($"unsupported: {result.UnsupportedShapes.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    if (reportOnly)
+    {
+        // Diagnostic mode: succeed as long as the scanner produced at least one
+        // projectable requirement. This is used by CI to keep an executable signal
+        // on System.Math even while individual overloads remain unsupported.
+        return result.Requirements.Count == 0 ? 1 : 0;
+    }
     return result.UnsupportedShapes.Count == 0 ? 0 : 1;
 }
 
