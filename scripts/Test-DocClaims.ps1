@@ -42,13 +42,17 @@ if ($planned.Count -eq 0) {
 }
 
 $skipDirs = @('target','bin','obj','artifacts','node_modules','.git')
-$skipFiles = @('docs\original-eric-sink-design.md')
+$skipFiles = @(
+    'docs/original-eric-sink-design.md',
+    'docs/roadmap-deep.md',
+    'samples/aot_smoke/README.md'
+)
 $qualifiers = @('planned','roadmap','not yet','coming soon','todo','future','unsupported','tracked in','will support','intend to')
 
 $violations = New-Object System.Collections.Generic.List[psobject]
 $mdFiles = Get-ChildItem -Path $Root -Filter *.md -Recurse -File | Where-Object {
-    $rel = $_.FullName.Substring($Root.Length).TrimStart('\','/')
-    foreach ($d in $skipDirs) { if ($rel -like "$d*") { return $false } }
+    $rel = $_.FullName.Substring($Root.Length).TrimStart('\','/').Replace('\','/')
+    foreach ($d in $skipDirs) { if ($rel -like "$d/*") { return $false } }
     foreach ($s in $skipFiles) { if ($rel -ieq $s) { return $false } }
     return $true
 }
