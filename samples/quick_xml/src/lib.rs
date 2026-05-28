@@ -4,6 +4,7 @@ use quick_xml::{
     events::{BytesEnd, BytesStart, BytesText, Event},
 };
 use serde::{Deserialize, Serialize};
+use std::ptr;
 
 const READER_DOC: &str = r#"<?xml version="1.0"?><root><item id="a">one</item><empty flag="yes"/><!--note--><![CDATA[two]]></root>"#;
 
@@ -178,6 +179,42 @@ pub extern "C" fn quick_xml_serde_serialize_score() -> i32 {
     score
 }
 
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn quick_xml_validate_utf8(input_ptr: *const u8, input_len: i64) -> i32 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    i32::from(validate_xml(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn quick_xml_echo_utf8_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if validate_xml(input) {
+        input_len
+    } else {
+        -2
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn quick_xml_echo_utf8_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if !validate_xml(input) {
+        return -2;
+    }
+    unsafe { copy_input(input_ptr, input_len, destination_ptr, destination_capacity) }
+}
+
 fn read_until_error(input: &str) -> bool {
     let mut reader = Reader::from_reader(input.as_bytes());
     let mut buf = Vec::new();
@@ -189,6 +226,47 @@ fn read_until_error(input: &str) -> bool {
             Err(_) => return true,
         }
     }
+}
+
+unsafe fn input_bytes<'a>(input_ptr: *const u8, input_len: i64) -> Option<&'a [u8]> {
+    if input_len < 0 || (input_len > 0 && input_ptr.is_null()) {
+        return None;
+    }
+    Some(unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) })
+}
+
+fn validate_xml(input: &[u8]) -> bool {
+    let mut reader = Reader::from_reader(input);
+    let mut buf = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Eof) => return true,
+            Ok(_) => buf.clear(),
+            Err(_) => return false,
+        }
+    }
+}
+
+unsafe fn copy_input(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    if input_len < 0 || destination_capacity < 0 {
+        return -1;
+    }
+    if destination_capacity < input_len {
+        return input_len;
+    }
+    if input_len > 0 && destination_ptr.is_null() {
+        return -1;
+    }
+    if input_len > 0 {
+        unsafe { ptr::copy_nonoverlapping(input_ptr, destination_ptr, input_len as usize) };
+    }
+    input_len
 }
 
 fn write_sample_xml() -> Result<String, ()> {

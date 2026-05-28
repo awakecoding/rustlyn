@@ -1,8 +1,8 @@
-use std::{collections::HashMap, mem::forget};
+use std::{collections::HashMap, mem::forget, ptr, str};
 
 use marked_yaml::{
-    FromYamlError, LoaderOptions, Span, Spanned, from_node, from_yaml, from_yaml_with_options,
-    parse_yaml,
+    FromYamlError, LoadError, LoaderOptions, Span, Spanned, from_node, from_yaml,
+    from_yaml_with_options, parse_yaml, parse_yaml_with_options,
 };
 use serde::Deserialize;
 
@@ -291,6 +291,42 @@ pub extern "C" fn marked_yaml_serde_empty_scalar_struct_with_default_ok() -> i32
     i32::from(from_yaml::<Foo>(0, "bar:").is_ok())
 }
 
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_validate_utf8(input_ptr: *const u8, input_len: i64) -> i32 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    i32::from(validate_yaml(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_echo_utf8_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if validate_yaml(input) {
+        input_len
+    } else {
+        -2
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_echo_utf8_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if !validate_yaml(input) {
+        return -2;
+    }
+    unsafe { copy_input(input_ptr, input_len, destination_ptr, destination_capacity) }
+}
+
 fn character_span() -> Option<(usize, usize)> {
     let document = match parse_yaml(0, CHARACTER_DOC) {
         Ok(document) => document,
@@ -315,6 +351,48 @@ fn character_span() -> Option<(usize, usize)> {
     };
     forget(document);
     Some((start, end))
+}
+
+unsafe fn input_str<'a>(input_ptr: *const u8, input_len: i64) -> Option<&'a str> {
+    if input_len < 0 || (input_len > 0 && input_ptr.is_null()) {
+        return None;
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
+    str::from_utf8(bytes).ok()
+}
+
+fn validate_yaml(input: &str) -> bool {
+    match parse_yaml(0, input) {
+        Ok(_) => true,
+        Err(LoadError::TopLevelMustBeMapping(_)) => {
+            match parse_yaml_with_options(0, input, LoaderOptions::default().toplevel_sequence()) {
+                Ok(_) | Err(LoadError::TopLevelMustBeMapping(_)) | Err(LoadError::TopLevelMustBeSequence(_)) => true,
+                Err(_) => false,
+            }
+        }
+        Err(_) => false,
+    }
+}
+
+unsafe fn copy_input(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    if input_len < 0 || destination_capacity < 0 {
+        return -1;
+    }
+    if destination_capacity < input_len {
+        return input_len;
+    }
+    if input_len > 0 && destination_ptr.is_null() {
+        return -1;
+    }
+    if input_len > 0 {
+        unsafe { ptr::copy_nonoverlapping(input_ptr, destination_ptr, input_len as usize) };
+    }
+    input_len
 }
 
 fn character_rewrite_hash(start: usize, end: usize) -> u64 {

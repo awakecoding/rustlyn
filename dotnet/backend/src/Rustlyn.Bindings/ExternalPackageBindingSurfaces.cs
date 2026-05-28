@@ -206,6 +206,11 @@ public static class ExternalPackageBindingSurfaces
                 "BindgenPowerShellCmdletGetParameterString",
                 [I32("cmdletContextHandle"), I32("nameHandle")],
                 ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))")),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_input_string",
+                "BindgenPowerShellCmdletGetInputString",
+                [I32("cmdletContextHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
             BooleanBinding(
                 "rustlyn_bindgen_powershell_cmdlet_should_process_string",
                 "BindgenPowerShellCmdletShouldProcessString",

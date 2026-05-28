@@ -14,6 +14,22 @@ pub fn memchr3(needle1: u8, needle2: u8, needle3: u8, haystack: &[u8]) -> Option
         .position(|&byte| byte == needle1 || byte == needle2 || byte == needle3)
 }
 
+pub fn memrchr(needle: u8, haystack: &[u8]) -> Option<usize> {
+    haystack.iter().rposition(|&byte| byte == needle)
+}
+
+pub fn memrchr2(needle1: u8, needle2: u8, haystack: &[u8]) -> Option<usize> {
+    haystack
+        .iter()
+        .rposition(|&byte| byte == needle1 || byte == needle2)
+}
+
+pub fn memrchr3(needle1: u8, needle2: u8, needle3: u8, haystack: &[u8]) -> Option<usize> {
+    haystack
+        .iter()
+        .rposition(|&byte| byte == needle1 || byte == needle2 || byte == needle3)
+}
+
 pub fn memchr_iter(needle: u8, haystack: &[u8]) -> MemchrIter<'_> {
     MemchrIter {
         haystack,

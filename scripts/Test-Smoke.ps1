@@ -598,6 +598,30 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"
     }
+    toml = @{
+        Method = "toml_parse_score"
+        Arguments = @()
+        Expected = 3
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    bson = @{
+        Method = "bson_document_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    cbor = @{
+        Method = "cbor_value_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     trait_object_probe = @{
         Method = "trait_object_score"
         Arguments = @(0)

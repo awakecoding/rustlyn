@@ -3,6 +3,7 @@ use simd_json::{
     Deserializer, Implementation, Node, OwnedValue, StaticNode, prelude::*, to_borrowed_value,
     to_owned_value,
 };
+use std::ptr;
 
 const OBJECT_DOC: &str = r#"{"name":"rustlyn","active":true,"items":[1,2,3],"nested":{"flag":null}}"#;
 
@@ -262,10 +263,75 @@ pub extern "C" fn simd_json_serde_serialize_score() -> i32 {
     score
 }
 
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn simd_json_validate_utf8(input_ptr: *const u8, input_len: i64) -> i32 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    i32::from(validate_json(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn simd_json_echo_utf8_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if validate_json(input) { input_len } else { -2 }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn simd_json_echo_utf8_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_bytes(input_ptr, input_len) }) else {
+        return -1;
+    };
+    if !validate_json(input) {
+        return -2;
+    }
+    unsafe { copy_input(input_ptr, input_len, destination_ptr, destination_capacity) }
+}
+
 fn first_node(input: &str) -> Option<Node<'static>> {
     let mut input = input.as_bytes().to_vec();
     let tape = Deserializer::from_slice(&mut input).ok()?.into_tape();
     tape.0.first().copied().map(static_node)
+}
+
+unsafe fn input_bytes<'a>(input_ptr: *const u8, input_len: i64) -> Option<&'a [u8]> {
+    if input_len < 0 || (input_len > 0 && input_ptr.is_null()) {
+        return None;
+    }
+    Some(unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) })
+}
+
+fn validate_json(input: &[u8]) -> bool {
+    let mut owned = input.to_vec();
+    simd_json::to_owned_value(&mut owned).is_ok()
+}
+
+unsafe fn copy_input(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    if input_len < 0 || destination_capacity < 0 {
+        return -1;
+    }
+    if destination_capacity < input_len {
+        return input_len;
+    }
+    if input_len > 0 && destination_ptr.is_null() {
+        return -1;
+    }
+    if input_len > 0 {
+        unsafe { ptr::copy_nonoverlapping(input_ptr, destination_ptr, input_len as usize) };
+    }
+    input_len
 }
 
 fn nested_array_counts_match() -> bool {

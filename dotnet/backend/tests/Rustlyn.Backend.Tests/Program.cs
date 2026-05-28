@@ -131,6 +131,7 @@ RunTest("VectorMaskAndExecutes", VectorMaskAndExecutes, failures);
 RunTest("VectorSignedLessThanMaskExecutes", VectorSignedLessThanMaskExecutes, failures);
 RunTest("RustReallocPreservesBytesExecutes", RustReallocPreservesBytesExecutes, failures);
 RunTest("MemcmpComparesBytesExecutes", MemcmpComparesBytesExecutes, failures);
+RunTest("PureRustModuleAvoidsUnusedSupportReferences", PureRustModuleAvoidsUnusedSupportReferences, failures);
 RunTest("ScalarPointerGlobalRelocationExecutes", ScalarPointerGlobalRelocationExecutes, failures);
 RunTest("TypeLayoutScalarsAreCorrectlySized", TypeLayoutScalarsAreCorrectlySized, failures);
 RunTest("TypeLayoutPointerHonorsDataLayout", TypeLayoutPointerHonorsDataLayout, failures);
@@ -3809,6 +3810,40 @@ entry:
     }
 }
 
+static void PureRustModuleAvoidsUnusedSupportReferences()
+{
+    var module = new LoweredModule(
+        [
+            new LoweredFunction(
+                "pure_probe",
+                "i32",
+                [],
+                [
+                    new LoweredBlock(
+                        "entry",
+                        [
+                            new LoweredReturnInstruction("i32", "42")
+                        ])
+                ])
+        ],
+        []);
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+
+    LoweredAssemblyEmitter.EmitModule(module, tempAssembly.Path);
+
+    using var stream = File.OpenRead(tempAssembly.Path);
+    using var peReader = new PEReader(stream);
+    var reader = peReader.GetMetadataReader();
+    var references = reader.AssemblyReferences
+        .Select(handle => reader.GetString(reader.GetAssemblyReference(handle).Name))
+        .ToHashSet(StringComparer.Ordinal);
+
+    Assert(!references.Contains("Rustlyn.AvaloniaSupport"), "Expected pure Rust module metadata not to reference Avalonia support.");
+    Assert(!references.Contains("Rustlyn.Backend"), "Expected pure Rust module metadata not to reference backend runtime helpers.");
+    Assert(!references.Contains("System.Memory"), "Expected pure Rust module metadata not to reference BinaryPrimitives support.");
+    Assert(!references.Contains("System.Threading.Thread"), "Expected pure Rust module metadata not to reference Thread.MemoryBarrier support.");
+}
+
 static void ScalarPointerGlobalRelocationExecutes()
 {
     var module = LoweredIrLowerer.LowerLlvmIr("""
@@ -4571,19 +4606,29 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         "Expected PowerShell package manifest to reserve a bootstrap support assembly for generated cmdlet shims.");
     Assert(
         document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_input_string")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_should_process_string"),
         "Expected PowerShell cmdlet manifest to own generated cmdlet context symbols.");
 
     var rust = PowerShellRustBindingGenerator.GenerateCmdletModule(document);
     Assert(rust.Contains("pub struct CmdletContext", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose a cmdlet context wrapper.");
     Assert(rust.Contains("pub fn write_object_string(&self, value: &ManagedString) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose WriteObject.");
+    Assert(rust.Contains("pub fn get_input_string(&self) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose pipeline input access.");
     Assert(rust.Contains("pub fn should_process_string(&self, target: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose ShouldProcess.");
 
     var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(document);
     Assert(
         glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess", StringComparison.Ordinal),
         "Expected generated PowerShell glue to route through the cmdlet support bridge.");
+
+    var buildOutputPath = GetBackendGeneratedPowerShellBindingGluePath();
+    Assert(File.Exists(buildOutputPath), $"Expected generated PowerShell binding glue build output '{buildOutputPath}' to exist.");
+    var buildOutputText = File.ReadAllText(buildOutputPath);
+    Assert(
+        NormalizeLineEndings(glue) == NormalizeLineEndings(buildOutputText),
+        $"Expected generated PowerShell managed glue build output to match Rustlyn.Bindings. {DescribeFirstTextDifference(glue, buildOutputText)}");
 
     var packDirectory = Path.Combine(Path.GetTempPath(), $"rustlyn-powershell-pack-{Guid.NewGuid():N}");
     try
@@ -4934,6 +4979,14 @@ static string GetBackendGeneratedAvaloniaBindingGluePath()
     return Path.Combine(
         Path.GetDirectoryName(bindingGluePath) ?? throw new InvalidOperationException("Generated binding glue directory could not be determined."),
         "RuntimeBridgeHelpers.AvaloniaBindings.g.cs");
+}
+
+static string GetBackendGeneratedPowerShellBindingGluePath()
+{
+    var bindingGluePath = GetBackendGeneratedBindingGluePath();
+    return Path.Combine(
+        Path.GetDirectoryName(bindingGluePath) ?? throw new InvalidOperationException("Generated binding glue directory could not be determined."),
+        "RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs");
 }
 
 static string NormalizeLineEndings(string value)

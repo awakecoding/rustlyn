@@ -27,6 +27,7 @@ public static class PowerShellRustBindingGenerator
         "rustlyn_bindgen_powershell_cmdlet_write_warning_string",
         "rustlyn_bindgen_powershell_cmdlet_write_error_string",
         "rustlyn_bindgen_powershell_cmdlet_get_parameter_string",
+        "rustlyn_bindgen_powershell_cmdlet_get_input_string",
         "rustlyn_bindgen_powershell_cmdlet_should_process_string"
     ];
 
@@ -58,6 +59,10 @@ unsafe extern "C" {
     fn rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
         cmdlet_context_handle: i32,
         name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+        cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_should_process_string(
@@ -164,6 +169,18 @@ impl CmdletContext {
             rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
                 self.handle,
                 name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { ManagedString::from_borrowed_handle(result) })
+    }
+
+    pub fn get_input_string(&self) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_input_string(
+                self.handle,
                 &mut exception_handle,
             )
         };

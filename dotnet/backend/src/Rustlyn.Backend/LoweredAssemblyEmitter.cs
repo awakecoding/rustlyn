@@ -53,6 +53,7 @@ public static class LoweredAssemblyEmitter
         var requiredPackageManifests = GetRequiredExternalPackageManifests(emittedFunctions, options);
         var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions)
             || requiredPackageManifests.Any(static manifest => string.Equals(manifest.PackageSurface?.PackageId, "Avalonia", StringComparison.Ordinal));
+        var referenceRequirements = GetReferenceRequirements(emittedFunctions, requiresAvaloniaSupport);
 
         // Emit PDB if requested
         PortablePdbResult? pdbResult = null;
@@ -75,7 +76,7 @@ public static class LoweredAssemblyEmitter
             pdbResult = pdbEmitter.Serialize(pdbPath);
         }
 
-        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, pdbResult, options);
+        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, referenceRequirements, pdbResult, options);
 
         if (consoleEntrypoint is not null)
         {
@@ -192,6 +193,42 @@ public static class LoweredAssemblyEmitter
             .OfType<LoweredCallInstruction>()
             .Any(static call => call.Callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
                 || call.Callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal));
+
+    private static SrmReferenceRequirements GetReferenceRequirements(IReadOnlyList<LoweredFunction> functions, bool requiresAvaloniaBridge)
+    {
+        var calls = functions.SelectMany(static function => function.Blocks)
+            .SelectMany(static block => block.Instructions)
+            .OfType<LoweredCallInstruction>()
+            .ToArray();
+        return new SrmReferenceRequirements(
+            IncludeAvaloniaBridge: requiresAvaloniaBridge,
+            IncludeBinaryPrimitives: calls.Any(static call => string.Equals(call.Callee, "llvm.bswap.i32", StringComparison.Ordinal)
+                || string.Equals(call.Callee, "llvm.bswap.i64", StringComparison.Ordinal)),
+            IncludeThreadMemoryBarrier: functions.SelectMany(static function => function.Blocks)
+                .SelectMany(static block => block.Instructions)
+                .OfType<LoweredFenceInstruction>()
+                .Any(),
+            IncludeRuntimeBridge: calls.Any(static call => RequiresRuntimeBridgeReference(call.Callee)));
+    }
+
+    private static bool RequiresRuntimeBridgeReference(string callee)
+        => string.Equals(callee, "memcmp", StringComparison.Ordinal)
+            || callee.StartsWith("rustlyn_", StringComparison.Ordinal)
+            || callee.Contains("core4wtf84Wtf88to_owned", StringComparison.Ordinal)
+            || (callee.Contains("core..wtf8..Wtf8", StringComparison.Ordinal)
+                && callee.Contains("8to_owned", StringComparison.Ordinal))
+            || callee.Contains("std4path4Path", StringComparison.Ordinal)
+            || callee.Contains("std..path..Components", StringComparison.Ordinal)
+            || callee.Contains("std..path..PathBuf", StringComparison.Ordinal)
+            || callee.Contains("std4path", StringComparison.Ordinal) && (callee.Contains("PathBuf5__push", StringComparison.Ordinal)
+                || callee.Contains("PathBuf5_push", StringComparison.Ordinal))
+            || callee.Contains("std2fs14read_to_string5inner", StringComparison.Ordinal)
+            || callee.Contains("core5slice6memchr14memchr_aligned", StringComparison.Ordinal)
+            || callee.Contains("std2io5stdio", StringComparison.Ordinal)
+            || callee.Contains("Stdout", StringComparison.Ordinal)
+            || callee.Contains("Stderr", StringComparison.Ordinal)
+            || callee.Contains("std4time7Instant", StringComparison.Ordinal)
+            || callee.Contains("std3env", StringComparison.Ordinal);
 
     private static IReadOnlyList<BindingManifestDocument> GetRequiredExternalPackageManifests(IReadOnlyList<LoweredFunction> functions, EmitOptions options)
     {
@@ -398,7 +435,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, PortablePdbResult? pdbResult = null, EmitOptions? emitOptions = null)
+    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, SrmReferenceRequirements referenceRequirements, PortablePdbResult? pdbResult = null, EmitOptions? emitOptions = null)
     {
         var metadataBuilder = new MetadataBuilder();
         var ilBuilder = new BlobBuilder();
@@ -443,7 +480,7 @@ public static class LoweredAssemblyEmitter
             hashValue: default);
 
         // Pre-compute BCL type/member references
-        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef, emitOptions?.BindingManifests);
+        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef, referenceRequirements, emitOptions?.BindingManifests);
 
         // Type reference: System.Object (base type for our generated class)
         var systemObjectRef = metadataBuilder.AddTypeReference(
@@ -4379,6 +4416,12 @@ public static class LoweredAssemblyEmitter
         return int.TryParse(typeName.AsSpan(1), out width) && width > 0;
     }
 
+    private sealed record SrmReferenceRequirements(
+        bool IncludeAvaloniaBridge,
+        bool IncludeBinaryPrimitives,
+        bool IncludeThreadMemoryBarrier,
+        bool IncludeRuntimeBridge);
+
     /// <summary>
     /// Pre-computed type and member reference handles for BCL and intrinsic calls.
     /// All handles must be added before any method body references them.
@@ -4439,64 +4482,16 @@ public static class LoweredAssemblyEmitter
             MetadataBuilder mb,
             AssemblyReferenceHandle systemRuntime,
             AssemblyReferenceHandle systemInterop,
+            SrmReferenceRequirements referenceRequirements,
             IReadOnlyList<BindingManifestDocument>? bindingManifests = null)
         {
             SystemRuntime = systemRuntime;
-
-            // Additional assembly reference for types not in System.Runtime
-            var systemMemory = mb.AddAssemblyReference(
-                name: mb.GetOrAddString("System.Memory"),
-                version: new Version(10, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: mb.GetOrAddBlob(
-                    new byte[] { 0xCC, 0x7B, 0x13, 0xFF, 0xCD, 0x2D, 0xDD, 0x51 }),
-                flags: default,
-                hashValue: default);
-
-            var avaloniaSupportAssemblyName = typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
-            var avaloniaSupport = mb.AddAssemblyReference(
-                name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "Rustlyn.AvaloniaSupport"),
-                version: avaloniaSupportAssemblyName.Version ?? new Version(1, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: default,
-                flags: default,
-                hashValue: default);
-
-            var backendAssemblyName = typeof(RuntimeBridgeHelpers).Assembly.GetName();
-            var backendAssembly = mb.AddAssemblyReference(
-                name: mb.GetOrAddString(backendAssemblyName.Name ?? "Rustlyn.Backend"),
-                version: backendAssemblyName.Version ?? new Version(1, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: default,
-                flags: default,
-                hashValue: default);
 
             // System.Numerics.BitOperations (in System.Runtime)
             BitOperations = mb.AddTypeReference(
                 systemRuntime,
                 mb.GetOrAddString("System.Numerics"),
                 mb.GetOrAddString("BitOperations"));
-
-            // System.Buffers.Binary.BinaryPrimitives (in System.Memory)
-            var binaryPrimitives = mb.AddTypeReference(
-                systemMemory,
-                mb.GetOrAddString("System.Buffers.Binary"),
-                mb.GetOrAddString("BinaryPrimitives"));
-
-            var avaloniaBridge = mb.AddTypeReference(
-                avaloniaSupport,
-                mb.GetOrAddString("Rustlyn.AvaloniaSupport"),
-                mb.GetOrAddString("AvaloniaBridge"));
-
-            var runtimeBridgeHelpers = mb.AddTypeReference(
-                backendAssembly,
-                mb.GetOrAddString("Rustlyn.Backend"),
-                mb.GetOrAddString("RuntimeBridgeHelpers"));
-            RuntimeCompareBytesI64 = AddStaticMethod(
-                mb,
-                runtimeBridgeHelpers,
-                nameof(RuntimeBridgeHelpers.CompareBytesI64),
-                EncodeBridgeMethodSig(mb, "i32", "ptr", "ptr", "i64"));
 
             // Method signatures
             PopCountU32 = AddStaticMethod(mb, BitOperations, "PopCount", EncodeU32ToI32Sig(mb));
@@ -4505,24 +4500,43 @@ public static class LoweredAssemblyEmitter
             LeadingZeroCountU64 = AddStaticMethod(mb, BitOperations, "LeadingZeroCount", EncodeU64ToI32Sig(mb));
             TrailingZeroCountU32 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU32ToI32Sig(mb));
             TrailingZeroCountU64 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU64ToI32Sig(mb));
-            ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
-            ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+
+            if (referenceRequirements.IncludeBinaryPrimitives)
+            {
+                var systemMemory = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString("System.Memory"),
+                    version: new Version(10, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: mb.GetOrAddBlob(
+                        new byte[] { 0xCC, 0x7B, 0x13, 0xFF, 0xCD, 0x2D, 0xDD, 0x51 }),
+                    flags: default,
+                    hashValue: default);
+                var binaryPrimitives = mb.AddTypeReference(
+                    systemMemory,
+                    mb.GetOrAddString("System.Buffers.Binary"),
+                    mb.GetOrAddString("BinaryPrimitives"));
+                ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
+                ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+            }
 
             // System.Threading.Thread.MemoryBarrier — used to lower LLVM fence as a full barrier.
             // System.Threading.Thread is its own assembly in .NET (System.Runtime does not forward the type).
-            var systemThreadingThread = mb.AddAssemblyReference(
-                name: mb.GetOrAddString("System.Threading.Thread"),
-                version: new Version(10, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: mb.GetOrAddBlob(
-                    new byte[] { 0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A }),
-                flags: default,
-                hashValue: default);
-            var threadType = mb.AddTypeReference(
-                systemThreadingThread,
-                mb.GetOrAddString("System.Threading"),
-                mb.GetOrAddString("Thread"));
-            ThreadMemoryBarrier = AddStaticMethod(mb, threadType, "MemoryBarrier", EncodeVoidToVoidSig(mb));
+            if (referenceRequirements.IncludeThreadMemoryBarrier)
+            {
+                var systemThreadingThread = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString("System.Threading.Thread"),
+                    version: new Version(10, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: mb.GetOrAddBlob(
+                        new byte[] { 0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A }),
+                    flags: default,
+                    hashValue: default);
+                var threadType = mb.AddTypeReference(
+                    systemThreadingThread,
+                    mb.GetOrAddString("System.Threading"),
+                    mb.GetOrAddString("Thread"));
+                ThreadMemoryBarrier = AddStaticMethod(mb, threadType, "MemoryBarrier", EncodeVoidToVoidSig(mb));
+            }
 
             // System.Math (for libm intrinsics: sqrt, floor, ceil, etc.)
             var mathType = mb.AddTypeReference(
@@ -4674,12 +4688,56 @@ public static class LoweredAssemblyEmitter
                 mb.GetOrAddString(".ctor"),
                 mb.GetOrAddBlob(ofeCtorSig));
 
-            _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
+            if (referenceRequirements.IncludeAvaloniaBridge)
             {
-                ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
-            };
+                var avaloniaSupportAssemblyName = typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
+                var avaloniaSupport = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "Rustlyn.AvaloniaSupport"),
+                    version: avaloniaSupportAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: default,
+                    flags: default,
+                    hashValue: default);
+                var avaloniaBridge = mb.AddTypeReference(
+                    avaloniaSupport,
+                    mb.GetOrAddString("Rustlyn.AvaloniaSupport"),
+                    mb.GetOrAddString("AvaloniaBridge"));
+                _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
+                {
+                    ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
+                };
+            }
+            else
+            {
+                _avaloniaBridgeMap = [];
+            }
 
-            _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
+            if (referenceRequirements.IncludeRuntimeBridge)
+            {
+                var backendAssemblyName = typeof(RuntimeBridgeHelpers).Assembly.GetName();
+                var backendAssembly = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString(backendAssemblyName.Name ?? "Rustlyn.Backend"),
+                    version: backendAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: default,
+                    flags: default,
+                    hashValue: default);
+                var runtimeBridgeHelpers = mb.AddTypeReference(
+                    backendAssembly,
+                    mb.GetOrAddString("Rustlyn.Backend"),
+                    mb.GetOrAddString("RuntimeBridgeHelpers"));
+                RuntimeCompareBytesI64 = AddStaticMethod(
+                    mb,
+                    runtimeBridgeHelpers,
+                    nameof(RuntimeBridgeHelpers.CompareBytesI64),
+                    EncodeBridgeMethodSig(mb, "i32", "ptr", "ptr", "i64"));
+                _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
+            }
+            else
+            {
+                _runtimeBridgeMap = [];
+                _runtimeBridgeSretHandles = [];
+            }
 
             // Build intrinsic lookup
             _intrinsicMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
