@@ -67,7 +67,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/rustlyn.dll'
           ./scripts/Test-LlvmHelper.ps1 -Sample add -ToolDll $toolDll
           ./scripts/Test-RustlynLlvmOpt.ps1 -Sample add -SkipBuild -ToolDll $toolDll
 
@@ -89,7 +89,7 @@ jobs:
         shell: pwsh
         run: |
           $samples = @('add','and','or','xor','shl','ashr','lshr','mul','div','sub','select','phi_merge')
-          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/rustlyn.dll'
           ./scripts/Test-Smoke.ps1 -Sample $samples -Mode Bitcode -Configuration Release -ToolDll $toolDll
 
       - name: Run backend regression harness
@@ -106,7 +106,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/Rustlyn.Tool.dll'
+          $toolDll = Join-Path $PWD 'dotnet/backend/src/Rustlyn.Tool/bin/Release/net10.0/rustlyn.dll'
           ./scripts/Test-AotSmoke.ps1 -ToolDll $toolDll
 
   extended:
