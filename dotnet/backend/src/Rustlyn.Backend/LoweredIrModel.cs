@@ -3,6 +3,7 @@ namespace Rustlyn.Backend;
 public sealed record LoweredModule(
     IReadOnlyList<LoweredFunction> Functions,
     IReadOnlyList<LoweredGlobal> Globals,
+    IReadOnlyDictionary<string, string>? NamedTypes = null,
     string? SourcePath = null,
     LoweredModuleMetadata? Metadata = null);
 
@@ -71,6 +72,12 @@ public sealed record LoweredCompareInstruction(
     string Type,
     string Left,
     string Right) : LoweredInstruction;
+
+public sealed record LoweredBitcastInstruction(
+    string Result,
+    string FromType,
+    string ToType,
+    string Value) : LoweredInstruction;
 
 public sealed record LoweredConditionalBranchInstruction(
     string Condition,

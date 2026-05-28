@@ -574,6 +574,54 @@ $sampleChecks = @{
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"
     }
+    marked_yaml = @{
+        Method = "marked_yaml_serde_parse_fails_coerce_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    quick_xml = @{
+        Method = "quick_xml_reader_events_score"
+        Arguments = @()
+        Expected = 511
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    simd_json = @{
+        Method = "simd_json_runtime_detection_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    toml = @{
+        Method = "toml_parse_score"
+        Arguments = @()
+        Expected = 3
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    bson = @{
+        Method = "bson_document_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
+    cbor = @{
+        Method = "cbor_value_score"
+        Arguments = @()
+        Expected = 7
+        SupportedModes = @("Cargo")
+        Toolchain = "nightly"
+        BuildStd = "std,panic_abort"
+    }
     trait_object_probe = @{
         Method = "trait_object_score"
         Arguments = @(0)
@@ -2062,7 +2110,7 @@ try {
         $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $ToolDll
     }
     else {
-        dotnet build -c $Configuration $toolProject
+        dotnet build -c $Configuration $toolProject -p:UseSharedCompilation=false
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet build failed with exit code $LASTEXITCODE"
         }

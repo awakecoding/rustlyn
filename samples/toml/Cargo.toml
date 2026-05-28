@@ -1,0 +1,20 @@
+[package]
+name = "toml_sample"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+serde_json = "1.0"
+toml = "0.8"
+
+[patch.crates-io]
+memchr = { path = "../quick_xml/memchr_fallback" }
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"

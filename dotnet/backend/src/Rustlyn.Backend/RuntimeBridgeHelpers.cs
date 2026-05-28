@@ -38,6 +38,25 @@ public static partial class RuntimeBridgeHelpers
         return BitOperations.PopCount(value);
     }
 
+    public static int CompareBytesI64(IntPtr left, IntPtr right, long length)
+    {
+        if (length < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), "Compare length must be non-negative.");
+        }
+
+        for (var index = 0L; index < length; index++)
+        {
+            var diff = Marshal.ReadByte(left, checked((int)index)) - Marshal.ReadByte(right, checked((int)index));
+            if (diff != 0)
+            {
+                return diff;
+            }
+        }
+
+        return 0;
+    }
+
     public static int MathMaxI32(int left, int right)
     {
         return Math.Max(left, right);

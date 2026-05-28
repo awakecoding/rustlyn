@@ -12,13 +12,16 @@
       <GeneratedBindingGlueDirectory>$(IntermediateOutputPath)Generated\</GeneratedBindingGlueDirectory>
       <GeneratedBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.Bindings.g.cs</GeneratedBindingGlueFile>
       <GeneratedAvaloniaBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.AvaloniaBindings.g.cs</GeneratedAvaloniaBindingGlueFile>
+      <GeneratedPowerShellBindingGlueFile>$(GeneratedBindingGlueDirectory)RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs</GeneratedPowerShellBindingGlueFile>
     </PropertyGroup>
     <MakeDir Directories="$(GeneratedBindingGlueDirectory)" />
     <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- managed-glue --out &quot;$(GeneratedBindingGlueFile)&quot;" />
     <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- avalonia-managed-glue --out &quot;$(GeneratedAvaloniaBindingGlueFile)&quot;" />
+    <Exec Command="dotnet run -c &quot;$(Configuration)&quot; --project &quot;$(MSBuildThisFileDirectory)..\Rustlyn.Bindings.Tool\Rustlyn.Bindings.Tool.csproj&quot; -- powershell-managed-glue --out &quot;$(GeneratedPowerShellBindingGlueFile)&quot;" />
     <ItemGroup>
       <Compile Include="$(GeneratedBindingGlueFile)" Link="RuntimeBridgeHelpers.Bindings.g.cs" Visible="false" />
       <Compile Include="$(GeneratedAvaloniaBindingGlueFile)" Link="RuntimeBridgeHelpers.AvaloniaBindings.g.cs" Visible="false" />
+      <Compile Include="$(GeneratedPowerShellBindingGlueFile)" Link="RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs" Visible="false" />
     </ItemGroup>
   </Target>
 
@@ -27,6 +30,7 @@
     <ProjectReference Include="..\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
     <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
     <ProjectReference Include="..\Rustlyn.Os\Rustlyn.Os.csproj" />
+    <ProjectReference Include="..\Rustlyn.PowerShellSupport\Rustlyn.PowerShellSupport.csproj" />
     <ProjectReference Include="..\Rustlyn.Runtime\Rustlyn.Runtime.csproj" />
     <PackageReference Include="LLVMSharp.Interop" Version="20.1.2" />
   </ItemGroup>

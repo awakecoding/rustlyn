@@ -21,6 +21,16 @@ if (args.Length == 3
 }
 
 if (args.Length == 3
+    && string.Equals(args[0], "powershell-managed-glue", StringComparison.Ordinal)
+    && string.Equals(args[1], "--out", StringComparison.Ordinal))
+{
+    var outputPath = Path.GetFullPath(args[2]);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? throw new InvalidOperationException("Output directory could not be determined."));
+    File.WriteAllText(outputPath, ManagedGlueGenerator.GenerateRuntimeBridgePartial(ExternalPackageBindingSurfaces.CreatePowerShellCmdletSurface()));
+    return 0;
+}
+
+if (args.Length == 3
     && string.Equals(args[0], "rust-system-module", StringComparison.Ordinal)
     && string.Equals(args[1], "--out", StringComparison.Ordinal))
 {

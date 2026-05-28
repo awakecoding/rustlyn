@@ -1,4 +1,5 @@
 using Rustlyn.Backend;
+using Rustlyn.Bindings;
 
 if (args.Length >= 1 && string.Equals(args[0], "diagnose", StringComparison.OrdinalIgnoreCase))
 {
@@ -71,11 +72,11 @@ if (TryParseLowerArguments(args, out var lowerArtifactPath, out var lowerLlvmRoo
     }
 }
 
-if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb, out var emitStrict))
+if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath, out var emitLlvmRoot, out var emitPdb, out var emitStrict, out var emitPowerShellCmdletBindings))
 {
     try
     {
-        var emitOptions = new EmitOptions { EmitPdb = emitPdb, StrictUnsupportedIr = emitStrict };
+        var emitOptions = CreateEmitOptions(emitPdb, emitStrict, emitPowerShellCmdletBindings);
         LoweredAssemblyEmitter.EmitBitcode(emitArtifactPath, emitOutputPath, emitOptions, emitLlvmRoot);
         Console.WriteLine(Path.GetFullPath(emitOutputPath));
         if (emitPdb)
@@ -101,7 +102,7 @@ if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath
     }
 }
 
-if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot, out var translateCachePath, out var translateStrict))
+if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputPath, out var translateBuildOptions, out var translateLlvmRoot, out var translateCachePath, out var translateStrict, out var translatePowerShellCmdletBindings))
 {
     try
     {
@@ -126,7 +127,7 @@ if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputP
             cache.Save();
         }
 
-        var translateEmitOptions = new EmitOptions { StrictUnsupportedIr = translateStrict };
+        var translateEmitOptions = CreateEmitOptions(false, translateStrict, translatePowerShellCmdletBindings);
         LoweredAssemblyEmitter.EmitModule(loweredModule, translateOutputPath, translateEmitOptions);
         Console.WriteLine($"Bitcode: {Path.GetFullPath(bitcodePath)}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(translateOutputPath)}");
@@ -228,14 +229,22 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
 
 Console.Error.WriteLine("Usage: Rustlyn.Tool inspect <path-to-bc> [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool lower <path-to-bc> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--strict] [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--llvm-root <path>]");
+Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]");
+Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]   (types: i32, i64, u32, u64)");
 Console.Error.WriteLine("   or: Rustlyn.Tool pack <crate-path> --out <dir> [--version <semver>] [--llvm-root <path>]");
 Console.Error.WriteLine("   or: Rustlyn.Tool diagnose [--llvm-root <path>]");
 return 1;
 
-static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath, out bool strict)
+static EmitOptions CreateEmitOptions(bool emitPdb, bool strict, bool powerShellCmdletBindings)
+{
+    var options = new EmitOptions { EmitPdb = emitPdb, StrictUnsupportedIr = strict };
+    return powerShellCmdletBindings
+        ? options with { BindingManifests = [ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest()] }
+        : options;
+}
+
+static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath, out bool strict, out bool powerShellCmdletBindings)
 {
     cratePath = string.Empty;
     outputPath = string.Empty;
@@ -243,6 +252,7 @@ static bool TryParseTranslateArguments(string[] args, out string cratePath, out 
     llvmRoot = null;
     cachePath = null;
     strict = false;
+    powerShellCmdletBindings = false;
 
     if (args.Length < 4 || !string.Equals(args[0], "translate", StringComparison.OrdinalIgnoreCase))
     {
@@ -328,6 +338,12 @@ static bool TryParseTranslateArguments(string[] args, out string cratePath, out 
             continue;
         }
 
+        if (string.Equals(args[index], "--powershell-cmdlet-bindings", StringComparison.OrdinalIgnoreCase))
+        {
+            powerShellCmdletBindings = true;
+            continue;
+        }
+
         return false;
     }
 
@@ -408,13 +424,14 @@ static string GetInnermostExceptionMessage(Exception exception)
     return current.Message;
 }
 
-static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot, out bool emitPdb, out bool strict)
+static bool TryParseEmitArguments(string[] args, out string artifactPath, out string outputPath, out string? llvmRoot, out bool emitPdb, out bool strict, out bool powerShellCmdletBindings)
 {
     artifactPath = string.Empty;
     outputPath = string.Empty;
     llvmRoot = null;
     emitPdb = false;
     strict = false;
+    powerShellCmdletBindings = false;
 
     if (args.Length < 4 || !string.Equals(args[0], "emit", StringComparison.OrdinalIgnoreCase))
     {
@@ -448,6 +465,12 @@ static bool TryParseEmitArguments(string[] args, out string artifactPath, out st
         if (string.Equals(args[index], "--strict", StringComparison.OrdinalIgnoreCase))
         {
             strict = true;
+            continue;
+        }
+
+        if (string.Equals(args[index], "--powershell-cmdlet-bindings", StringComparison.OrdinalIgnoreCase))
+        {
+            powerShellCmdletBindings = true;
             continue;
         }
 

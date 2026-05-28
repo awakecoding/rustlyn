@@ -53,6 +53,7 @@ public static class LoweredAssemblyEmitter
         var requiredPackageManifests = GetRequiredExternalPackageManifests(emittedFunctions, options);
         var requiresAvaloniaSupport = RequiresAvaloniaSupport(emittedFunctions)
             || requiredPackageManifests.Any(static manifest => string.Equals(manifest.PackageSurface?.PackageId, "Avalonia", StringComparison.Ordinal));
+        var referenceRequirements = GetReferenceRequirements(emittedFunctions, requiresAvaloniaSupport);
 
         // Emit PDB if requested
         PortablePdbResult? pdbResult = null;
@@ -75,7 +76,7 @@ public static class LoweredAssemblyEmitter
             pdbResult = pdbEmitter.Serialize(pdbPath);
         }
 
-        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, pdbResult, options);
+        EmitAssembly(outputFullPath, assemblyName, loweredModule, emittedFunctions, consoleEntrypoint, requiresAvaloniaSupport, referenceRequirements, pdbResult, options);
 
         if (consoleEntrypoint is not null)
         {
@@ -192,6 +193,42 @@ public static class LoweredAssemblyEmitter
             .OfType<LoweredCallInstruction>()
             .Any(static call => call.Callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
                 || call.Callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal));
+
+    private static SrmReferenceRequirements GetReferenceRequirements(IReadOnlyList<LoweredFunction> functions, bool requiresAvaloniaBridge)
+    {
+        var calls = functions.SelectMany(static function => function.Blocks)
+            .SelectMany(static block => block.Instructions)
+            .OfType<LoweredCallInstruction>()
+            .ToArray();
+        return new SrmReferenceRequirements(
+            IncludeAvaloniaBridge: requiresAvaloniaBridge,
+            IncludeBinaryPrimitives: calls.Any(static call => string.Equals(call.Callee, "llvm.bswap.i32", StringComparison.Ordinal)
+                || string.Equals(call.Callee, "llvm.bswap.i64", StringComparison.Ordinal)),
+            IncludeThreadMemoryBarrier: functions.SelectMany(static function => function.Blocks)
+                .SelectMany(static block => block.Instructions)
+                .OfType<LoweredFenceInstruction>()
+                .Any(),
+            IncludeRuntimeBridge: calls.Any(static call => RequiresRuntimeBridgeReference(call.Callee)));
+    }
+
+    private static bool RequiresRuntimeBridgeReference(string callee)
+        => string.Equals(callee, "memcmp", StringComparison.Ordinal)
+            || callee.StartsWith("rustlyn_", StringComparison.Ordinal)
+            || callee.Contains("core4wtf84Wtf88to_owned", StringComparison.Ordinal)
+            || (callee.Contains("core..wtf8..Wtf8", StringComparison.Ordinal)
+                && callee.Contains("8to_owned", StringComparison.Ordinal))
+            || callee.Contains("std4path4Path", StringComparison.Ordinal)
+            || callee.Contains("std..path..Components", StringComparison.Ordinal)
+            || callee.Contains("std..path..PathBuf", StringComparison.Ordinal)
+            || callee.Contains("std4path", StringComparison.Ordinal) && (callee.Contains("PathBuf5__push", StringComparison.Ordinal)
+                || callee.Contains("PathBuf5_push", StringComparison.Ordinal))
+            || callee.Contains("std2fs14read_to_string5inner", StringComparison.Ordinal)
+            || callee.Contains("core5slice6memchr14memchr_aligned", StringComparison.Ordinal)
+            || callee.Contains("std2io5stdio", StringComparison.Ordinal)
+            || callee.Contains("Stdout", StringComparison.Ordinal)
+            || callee.Contains("Stderr", StringComparison.Ordinal)
+            || callee.Contains("std4time7Instant", StringComparison.Ordinal)
+            || callee.Contains("std3env", StringComparison.Ordinal);
 
     private static IReadOnlyList<BindingManifestDocument> GetRequiredExternalPackageManifests(IReadOnlyList<LoweredFunction> functions, EmitOptions options)
     {
@@ -398,7 +435,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, PortablePdbResult? pdbResult = null, EmitOptions? emitOptions = null)
+    private static void EmitAssembly(string outputPath, string assemblyName, LoweredModule loweredModule, IReadOnlyList<LoweredFunction> functions, LoweredFunction? consoleEntrypoint, bool requiresStaThread, SrmReferenceRequirements referenceRequirements, PortablePdbResult? pdbResult = null, EmitOptions? emitOptions = null)
     {
         var metadataBuilder = new MetadataBuilder();
         var ilBuilder = new BlobBuilder();
@@ -443,7 +480,7 @@ public static class LoweredAssemblyEmitter
             hashValue: default);
 
         // Pre-compute BCL type/member references
-        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef, emitOptions?.BindingManifests);
+        var typeContext = new SrmTypeContext(metadataBuilder, systemRuntimeRef, systemInteropRef, referenceRequirements, emitOptions?.BindingManifests);
 
         // Type reference: System.Object (base type for our generated class)
         var systemObjectRef = metadataBuilder.AddTypeReference(
@@ -510,12 +547,27 @@ public static class LoweredAssemblyEmitter
             {
                 foreach (var instr in block.Instructions)
                 {
-                    if (instr is LoweredStoreInstruction st && fieldHandles.ContainsKey(st.Destination))
-                        mutatedGlobals.Add(st.Destination);
-                    else if (instr is LoweredAtomicRmwInstruction rmw && fieldHandles.ContainsKey(rmw.Pointer))
-                        mutatedGlobals.Add(rmw.Pointer);
-                    else if (instr is LoweredCmpxchgInstruction cx && fieldHandles.ContainsKey(cx.Pointer))
-                        mutatedGlobals.Add(cx.Pointer);
+                    if (instr is LoweredStoreInstruction st)
+                    {
+                        if (fieldHandles.ContainsKey(st.Destination))
+                            mutatedGlobals.Add(st.Destination);
+                        else if (TryParseGlobalElementAccess(st.Destination, out var stBaseName, out _))
+                            mutatedGlobals.Add(stBaseName);
+                    }
+                    else if (instr is LoweredAtomicRmwInstruction rmw)
+                    {
+                        if (fieldHandles.ContainsKey(rmw.Pointer))
+                            mutatedGlobals.Add(rmw.Pointer);
+                        else if (TryParseGlobalElementAccess(rmw.Pointer, out var rmwBaseName, out _))
+                            mutatedGlobals.Add(rmwBaseName);
+                    }
+                    else if (instr is LoweredCmpxchgInstruction cx)
+                    {
+                        if (fieldHandles.ContainsKey(cx.Pointer))
+                            mutatedGlobals.Add(cx.Pointer);
+                        else if (TryParseGlobalElementAccess(cx.Pointer, out var cxBaseName, out _))
+                            mutatedGlobals.Add(cxBaseName);
+                    }
                 }
             }
         }
@@ -524,6 +576,7 @@ public static class LoweredAssemblyEmitter
         var bodyOffsets = new int[totalMethods];
         var skippedFunctions = new List<(string Name, string Reason)>();
         var strict = emitOptions?.StrictUnsupportedIr == true;
+        var namedTypes = loweredModule.NamedTypes ?? new Dictionary<string, string>(StringComparer.Ordinal);
         _strictUnsupportedIr = strict;
         try
         {
@@ -531,7 +584,7 @@ public static class LoweredAssemblyEmitter
             {
                 try
                 {
-                    bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, sretFunctions, mutatedGlobals);
+                    bodyOffsets[i] = EmitFunctionBody(metadataBuilder, methodBodyStream, functions[i], methodHandles, typeContext, fieldHandles, globalMap, namedTypes, sretFunctions, mutatedGlobals);
                 }
                 catch (NotSupportedException ex)
                 {
@@ -749,7 +802,7 @@ public static class LoweredAssemblyEmitter
             || TryGetIntegerBitWidth(typeName, out _);
     }
 
-    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlySet<string> sretFunctions, IReadOnlySet<string> mutatedGlobals)
+    private static int EmitFunctionBody(MetadataBuilder metadataBuilder, MethodBodyStreamEncoder methodBodyStream, LoweredFunction function, IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles, SrmTypeContext typeContext, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, string> namedTypes, IReadOnlySet<string> sretFunctions, IReadOnlySet<string> mutatedGlobals)
     {
         var isSret = sretFunctions.Contains(function.Name);
         var codeBuilder = new BlobBuilder();
@@ -814,17 +867,25 @@ public static class LoweredAssemblyEmitter
         var locallocAllocas = new HashSet<string>(StringComparer.Ordinal);
         // Also identify allocas whose address is passed to function calls (ptr-passing)
         var allocaNames = new HashSet<string>(StringComparer.Ordinal);
+        var gepRootBaseByResult = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var block in function.Blocks)
         {
             foreach (var instr in block.Instructions)
             {
                 if (instr is LoweredAllocaInstruction a)
                     allocaNames.Add(a.Result);
-                if (instr is LoweredGetElementPointerInstruction gep && gep.IndexVariable is not null)
-                    locallocAllocas.Add(gep.Base);
+                if (instr is LoweredGetElementPointerInstruction gep)
+                {
+                    var rootBase = gepRootBaseByResult.TryGetValue(gep.Base, out var parentRoot)
+                        ? parentRoot
+                        : gep.Base;
+                    gepRootBaseByResult[gep.Result] = rootBase;
+                    if (gep.IndexVariable is not null)
+                        locallocAllocas.Add(rootBase);
+                }
             }
         }
-        // Detect allocas passed as ptr arguments to calls
+        // Detect allocas, including derived GEP addresses, passed as ptr arguments to calls
         foreach (var block in function.Blocks)
         {
             foreach (var instr in block.Instructions)
@@ -833,15 +894,29 @@ public static class LoweredAssemblyEmitter
                 {
                     foreach (var arg in call.Arguments)
                     {
-                        if (allocaNames.Contains(arg.Value))
-                            locallocAllocas.Add(arg.Value);
+                        var normalizedArg = NormalizeSymbolReference(arg.Value);
+                        if (allocaNames.Contains(normalizedArg))
+                            locallocAllocas.Add(normalizedArg);
+                        else if (gepRootBaseByResult.TryGetValue(normalizedArg, out var rootBase)
+                            && allocaNames.Contains(rootBase))
+                            locallocAllocas.Add(rootBase);
                     }
                 }
                 else if (instr is LoweredStoreInstruction store
-                    && string.Equals(store.Type, "ptr", StringComparison.Ordinal)
-                    && allocaNames.Contains(NormalizeSymbolReference(store.Value)))
+                    && string.Equals(store.Type, "ptr", StringComparison.Ordinal))
                 {
-                    locallocAllocas.Add(NormalizeSymbolReference(store.Value));
+                    var normalizedValue = NormalizeSymbolReference(store.Value);
+                    if (allocaNames.Contains(normalizedValue))
+                        locallocAllocas.Add(normalizedValue);
+                    else if (gepRootBaseByResult.TryGetValue(normalizedValue, out var rootBase)
+                        && allocaNames.Contains(rootBase))
+                        locallocAllocas.Add(rootBase);
+                }
+                else if (instr is LoweredStoreInstruction vectorStore
+                    && vectorStore.Type.StartsWith('<')
+                    && allocaNames.Contains(vectorStore.Destination))
+                {
+                    locallocAllocas.Add(vectorStore.Destination);
                 }
             }
         }
@@ -883,11 +958,11 @@ public static class LoweredAssemblyEmitter
                 {
                     // Resolve GEP-on-GEP chains: if base is itself a GEP result, combine offsets
                     string rootBase = gep.Base;
-                    int combinedOffset = gep.Index;
+                    int combinedOffset = checked(gep.Index * GetElementTypeStride(gep.ElementType, namedTypes));
                     if (gepBaseOffset.TryGetValue(gep.Base, out var parentGep))
                     {
                         rootBase = parentGep.root;
-                        combinedOffset = parentGep.offset + gep.Index;
+                        combinedOffset = checked(parentGep.offset + combinedOffset);
                     }
                     gepBaseOffset[gep.Result] = (rootBase, combinedOffset);
 
@@ -960,6 +1035,8 @@ public static class LoweredAssemblyEmitter
             paramIndices[function.Parameters[i].Name] = i + paramShift;
         }
 
+        var vectorSplatValues = BuildVectorSplatValues(function);
+
         // Emit IL per basic block
         foreach (var block in function.Blocks)
         {
@@ -967,7 +1044,7 @@ public static class LoweredAssemblyEmitter
 
             for (var instrIdx = 0; instrIdx < block.Instructions.Count; instrIdx++)
             {
-                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, metadataBuilder, gepElementLocal, multiValueLocals, locallocAllocas, ptrParams, allocaNames, aggregatePointerLocals, sretFunctions, isSret, function.ReturnExtension, mutatedGlobals);
+                EmitInstruction(encoder, block.Instructions, ref instrIdx, paramIndices, localIndices, labelMap, methodHandles, phiByBlock, block.Name, typeContext, fieldHandles, globalMap, namedTypes, metadataBuilder, gepElementLocal, multiValueLocals, vectorSplatValues, locallocAllocas, ptrParams, allocaNames, aggregatePointerLocals, sretFunctions, isSret, function.ReturnExtension, mutatedGlobals);
             }
         }
 
@@ -992,9 +1069,11 @@ public static class LoweredAssemblyEmitter
         SrmTypeContext typeContext,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
         IReadOnlyDictionary<string, LoweredGlobal> globalMap,
+        IReadOnlyDictionary<string, string> namedTypes,
         MetadataBuilder metadataBuilder,
         IReadOnlyDictionary<string, int> gepElementLocal,
         IReadOnlyDictionary<string, int[]> multiValueLocals,
+        IReadOnlyDictionary<string, string> vectorSplatValues,
         IReadOnlySet<string> locallocAllocas,
         IReadOnlySet<string> ptrParams,
         IReadOnlySet<string> allocaNames,
@@ -1041,7 +1120,7 @@ public static class LoweredAssemblyEmitter
                 {
                     if (IsVectorLoopGuard(condBr))
                     {
-                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.TrueTarget);
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, condBr.TrueTarget);
                         encoder.Branch(ILOpCode.Br, labelMap[condBr.TrueTarget]);
                         break;
                     }
@@ -1060,27 +1139,37 @@ public static class LoweredAssemblyEmitter
                         var falsePathLabel = encoder.DefineLabel();
                         EmitLoadValue(encoder, condBr.Condition, paramIndices, localIndices, fieldHandles);
                         encoder.Branch(ILOpCode.Brfalse, falsePathLabel);
-                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.TrueTarget);
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, condBr.TrueTarget);
                         encoder.Branch(ILOpCode.Br, labelMap[condBr.TrueTarget]);
                         encoder.MarkLabel(falsePathLabel);
-                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, condBr.FalseTarget);
+                        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, condBr.FalseTarget);
                         encoder.Branch(ILOpCode.Br, labelMap[condBr.FalseTarget]);
                     }
                 }
                 break;
 
             case LoweredJumpInstruction jump:
-                EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, jump.Target);
+                EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, jump.Target);
                 encoder.Branch(ILOpCode.Br, labelMap[jump.Target]);
                 break;
 
             case LoweredCompareInstruction cmp:
+                if (TryEmitVectorCompareMask(encoder, cmp, vectorSplatValues, paramIndices, localIndices, fieldHandles))
+                {
+                    break;
+                }
+
                 EmitLoadValue(encoder, cmp.Left, paramIndices, localIndices, fieldHandles);
-                EmitSignedNarrowNormalization(encoder, cmp.Type, cmp.Predicate);
+                EmitIntegerCompareNormalization(encoder, cmp.Type, cmp.Predicate);
                 EmitLoadValue(encoder, cmp.Right, paramIndices, localIndices, fieldHandles);
-                EmitSignedNarrowNormalization(encoder, cmp.Type, cmp.Predicate);
+                EmitIntegerCompareNormalization(encoder, cmp.Type, cmp.Predicate);
                 EmitCompare(encoder, cmp.Predicate);
                 encoder.StoreLocal(localIndices[cmp.Result]);
+                break;
+
+            case LoweredBitcastInstruction bitcast:
+                EmitLoadValue(encoder, bitcast.Value, paramIndices, localIndices, fieldHandles);
+                encoder.StoreLocal(localIndices[bitcast.Result]);
                 break;
 
             case LoweredPhiInstruction:
@@ -1092,10 +1181,10 @@ public static class LoweredAssemblyEmitter
                     var endLabel = encoder.DefineLabel();
                     EmitLoadValue(encoder, sel.Condition, paramIndices, localIndices, fieldHandles);
                     encoder.Branch(ILOpCode.Brfalse, falseLabel);
-                    EmitLoadValue(encoder, sel.TrueValue, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadTypedValue(encoder, sel.ValueType, sel.TrueValue, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                     encoder.Branch(ILOpCode.Br, endLabel);
                     encoder.MarkLabel(falseLabel);
-                    EmitLoadValue(encoder, sel.FalseValue, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadTypedValue(encoder, sel.ValueType, sel.FalseValue, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                     encoder.MarkLabel(endLabel);
                     encoder.StoreLocal(localIndices[sel.Result]);
                 }
@@ -1198,6 +1287,15 @@ public static class LoweredAssemblyEmitter
                         break;
                     }
 
+                    if (call.Callee.StartsWith("llvm.threadlocal.address.", StringComparison.Ordinal)
+                        && call.Result is not null
+                        && call.Arguments.Count == 1)
+                    {
+                        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+                        encoder.StoreLocal(localIndices[call.Result]);
+                        break;
+                    }
+
                     // Memory intrinsics: memcpy/memset/memmove → cpblk/initblk
                     if (call.Callee.StartsWith("llvm.memcpy.", StringComparison.Ordinal)
                         || call.Callee.StartsWith("llvm.memmove.", StringComparison.Ordinal))
@@ -1222,6 +1320,13 @@ public static class LoweredAssemblyEmitter
                     }
 
                     if (TryEmitVectorReduceCall(encoder, call, paramIndices, localIndices, fieldHandles))
+                    {
+                        if (call.Result is not null)
+                            encoder.StoreLocal(localIndices[call.Result]);
+                        break;
+                    }
+
+                    if (TryEmitAllocatorCallBeforeArgs(encoder, typeContext, call, paramIndices, localIndices, fieldHandles, globalMap, methodHandles))
                     {
                         if (call.Result is not null)
                             encoder.StoreLocal(localIndices[call.Result]);
@@ -1290,6 +1395,10 @@ public static class LoweredAssemblyEmitter
                     {
                         encoder.Call(runtimeBridgeHandle);
                     }
+                    else if (TryEmitKnownLibcCall(encoder, typeContext, call.Callee, call.ReturnType, effectiveArgCount))
+                    {
+                        // Handled as a small C runtime helper.
+                    }
                     else if (TryEmitAllocatorCall(encoder, typeContext, call.Callee, effectiveArgCount))
                     {
                         // Handled as runtime allocator stub
@@ -1353,7 +1462,7 @@ public static class LoweredAssemblyEmitter
                 if (locallocAllocas.Contains(alloca.Result))
                 {
                     // Emit localloc for allocas that need real addressable memory
-                    var allocSize = ParseAllocaSize(alloca.Type);
+                    var allocSize = ParseAllocaSize(alloca.Type, namedTypes);
                     encoder.LoadConstantI4(allocSize);
                     encoder.OpCode(ILOpCode.Conv_u);
                     encoder.OpCode(ILOpCode.Localloc);
@@ -1367,7 +1476,7 @@ public static class LoweredAssemblyEmitter
                 if (store.Type.StartsWith('<') && store.Value.StartsWith('<') && TryParseVectorConstant(store.Value, out var vecElements))
                 {
                     var vecElemType = ParseVectorElementType(store.Type);
-                    var elemSize = GetFieldSize(vecElemType);
+                    var elemSize = GetElementTypeStride(vecElemType);
                     // Get destination pointer
                     void EmitDestPtr()
                     {
@@ -1394,7 +1503,7 @@ public static class LoweredAssemblyEmitter
                 if (gepElementLocal.TryGetValue(store.Destination, out var gepStoreIdx))
                 {
                     // Store to a GEP element slot (SROA)
-                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                     encoder.StoreLocal(gepStoreIdx);
                 }
                 else if (localIndices.TryGetValue(store.Destination, out var storeLocalIdx))
@@ -1404,12 +1513,12 @@ public static class LoweredAssemblyEmitter
                     {
                         // Store through a pointer (localloc'd alloca, non-SROA GEP, or computed ptr): ldloc ptr; value; stind
                         encoder.LoadLocal(storeLocalIdx);
-                        EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitIndirectStore(encoder, store.Type);
                     }
                     else
                     {
-                        EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         // Truncate to sub-int32 width for scalar-replaced i8/i16 allocas
                         if (TryGetIntegerBitWidth(store.Type, out var storeWidth) && storeWidth <= 8)
                             encoder.OpCode(ILOpCode.Conv_u1);
@@ -1422,79 +1531,54 @@ public static class LoweredAssemblyEmitter
                 {
                     // Store through a ptr parameter: ldarg addr; value; stind
                     encoder.LoadArgument(storeParamIdx);
-                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+                    EmitIndirectStore(encoder, store.Type);
+                }
+                else if (TryParseGlobalElementAccess(store.Destination, out var storeBaseName, out var storeByteOffset)
+                         && fieldHandles.TryGetValue(storeBaseName, out var storeElementFieldHandle))
+                {
+                    EmitGlobalElementAddress(encoder, storeElementFieldHandle, storeByteOffset, IsPointerBackedGlobal(globalMap, storeBaseName));
+                    EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                     EmitIndirectStore(encoder, store.Type);
                 }
                 else if (fieldHandles.TryGetValue(store.Destination, out var storeFieldHandle))
                 {
-                    // Store to a global static field: value; stsfld
-                    EmitLoadValue(encoder, store.Value, paramIndices, localIndices, fieldHandles, methodHandles);
-                    encoder.OpCode(ILOpCode.Stsfld);
-                    encoder.Token(storeFieldHandle);
+                    if (IsPointerBackedGlobal(globalMap, store.Destination))
+                    {
+                        encoder.OpCode(ILOpCode.Ldsfld);
+                        encoder.Token(storeFieldHandle);
+                        EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+                        EmitIndirectStore(encoder, store.Type);
+                    }
+                    else
+                    {
+                        // Store to a scalar global static field: value; stsfld
+                        EmitLoadStoredValue(encoder, store.Type, store.Value, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+                        encoder.OpCode(ILOpCode.Stsfld);
+                        encoder.Token(storeFieldHandle);
+                    }
                 }
                 break;
 
             case LoweredLoadInstruction load:
-                {
-                    if (gepElementLocal.TryGetValue(load.Source, out var gepLoadIdx))
-                    {
-                        // Load from a GEP element slot (SROA)
-                        encoder.LoadLocal(gepLoadIdx);
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                    else if (localIndices.TryGetValue(load.Source, out var loadLocalIdx))
-                    {
-                        encoder.LoadLocal(loadLocalIdx);
-                        // Indirect load needed unless source is a simple scalar-replaced alloca
-                        if (!allocaNames.Contains(load.Source) || locallocAllocas.Contains(load.Source) || IsGepResult(load.Source, instructions, instrIdx))
-                        {
-                            EmitIndirectLoad(encoder, load.Type);
-                        }
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                    else if (paramIndices.TryGetValue(load.Source, out var loadParamIdx))
-                    {
-                        encoder.LoadArgument(loadParamIdx);
-                        if (ptrParams.Contains(load.Source))
-                        {
-                            // ptr parameter holds an address — dereference it
-                            EmitIndirectLoad(encoder, load.Type);
-                        }
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                    else if (fieldHandles.TryGetValue(load.Source, out var fieldHandle))
-                    {
-                        if (!mutatedGlobals.Contains(load.Source) && TryResolveConstantGlobalElement(load.Source, load.Type, globalMap, out var constantValue))
-                        {
-                            EmitConstantValue(encoder, load.Type, constantValue);
-                        }
-                        else
-                        {
-                            encoder.OpCode(ILOpCode.Ldsfld);
-                            encoder.Token(fieldHandle);
-                        }
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                    else if (TryParseGlobalElementAccess(load.Source, out var baseName, out var elementIndex)
-                             && fieldHandles.TryGetValue(baseName, out var arrayFieldHandle))
-                    {
-                        if (TryResolveConstantGlobalElementAtIndex(baseName, elementIndex, load.Type, globalMap, out var arrValue))
-                        {
-                            EmitConstantValue(encoder, load.Type, arrValue);
-                        }
-                        else
-                        {
-                            encoder.OpCode(ILOpCode.Ldsfld);
-                            encoder.Token(arrayFieldHandle);
-                        }
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                    else
-                    {
-                        encoder.LoadConstantI4(0);
-                        encoder.StoreLocal(localIndices[load.Result]);
-                    }
-                }
+                EmitLoadInstruction(
+                    encoder,
+                    load.Result,
+                    load.Type,
+                    load.Source,
+                    isVolatile: false,
+                    instructions,
+                    instrIdx,
+                    paramIndices,
+                    localIndices,
+                    fieldHandles,
+                    typeContext,
+                    globalMap,
+                    mutatedGlobals,
+                    gepElementLocal,
+                    allocaNames,
+                    locallocAllocas,
+                    ptrParams);
                 break;
 
             case LoweredGetElementPointerInstruction gep:
@@ -1508,7 +1592,7 @@ public static class LoweredAssemblyEmitter
                     if (gep.IndexVariable is not null)
                     {
                         EmitLoadValue(encoder, gep.IndexVariable, paramIndices, localIndices, fieldHandles);
-                        var stride = GetElementTypeStride(gep.ElementType);
+                        var stride = GetElementTypeStride(gep.ElementType, namedTypes);
                         if (stride != 1)
                         {
                             encoder.LoadConstantI8((long)stride);
@@ -1519,7 +1603,7 @@ public static class LoweredAssemblyEmitter
                     }
                     else if (gep.Index != 0)
                     {
-                        encoder.LoadConstantI4(checked(gep.Index * GetElementTypeStride(gep.ElementType)));
+                        encoder.LoadConstantI4(checked(gep.Index * GetElementTypeStride(gep.ElementType, namedTypes)));
                         encoder.OpCode(ILOpCode.Conv_i);
                         encoder.OpCode(ILOpCode.Add);
                     }
@@ -1633,7 +1717,7 @@ public static class LoweredAssemblyEmitter
                 {
                     // atomicrmw op ptr %ptr, i32 %val → old value
                     // Single-threaded semantics: old = *ptr; *ptr = op(old, val); result = old
-                    EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                    EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                     EmitIndirectLoad(encoder, rmw.ValueType); // old = *ptr
                     encoder.OpCode(ILOpCode.Dup); // keep old for result
                     EmitLoadValue(encoder, rmw.Value, paramIndices, localIndices, fieldHandles, methodHandles);
@@ -1661,7 +1745,7 @@ public static class LoweredAssemblyEmitter
                         encoder.StoreLocal(rmwTempLocal); // save new_value temporarily (reuse result local)
                         // Stack: [old]
                         // Now store new_value back to *ptr
-                        EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, rmw.Pointer, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         encoder.LoadLocal(rmwTempLocal); // load new_value
                         EmitIndirectStore(encoder, rmw.ValueType);
                         // Stack: [old] — result is old value
@@ -1683,7 +1767,7 @@ public static class LoweredAssemblyEmitter
                     if (multiValueLocals.TryGetValue(cx.Result, out var cxLocals) && cxLocals.Length >= 2)
                     {
                         // Load old value
-                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitIndirectLoad(encoder, cx.ValueType);
                         encoder.StoreLocal(cxLocals[0]); // store old value
 
@@ -1697,7 +1781,7 @@ public static class LoweredAssemblyEmitter
                         encoder.LoadLocal(cxLocals[1]);
                         var cxSkipLabel = encoder.DefineLabel();
                         encoder.Branch(ILOpCode.Brfalse, cxSkipLabel);
-                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitLoadValue(encoder, cx.NewValue, paramIndices, localIndices, fieldHandles, methodHandles);
                         EmitIndirectStore(encoder, cx.ValueType);
                         encoder.MarkLabel(cxSkipLabel);
@@ -1706,7 +1790,7 @@ public static class LoweredAssemblyEmitter
                     else if (localIndices.TryGetValue(cx.Result, out var cxResIdx))
                     {
                         // Pack into i64: low 32 = old value, high 32 = success flag
-                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, methodHandles);
+                        EmitLoadAddress(encoder, cx.Pointer, paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
                         EmitIndirectLoad(encoder, cx.ValueType);
                         encoder.OpCode(ILOpCode.Dup);
                         // Compare old == cmp
@@ -1729,11 +1813,14 @@ public static class LoweredAssemblyEmitter
                 }
                 break;
 
-            case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock):
+            case LoweredRawInstruction raw when TryEmitRawSwitch(encoder, raw, instructions, ref instrIdx, typeContext, paramIndices, localIndices, fieldHandles, globalMap, labelMap, phiByBlock, sourceBlock):
+                break;
+
+            case LoweredRawInstruction raw when IsRecognizedVectorSplatRaw(raw.Text):
                 break;
 
             case LoweredSwitchInstruction sw:
-                EmitTypedSwitch(encoder, sw, typeContext, paramIndices, localIndices, fieldHandles, labelMap, phiByBlock, sourceBlock);
+                EmitTypedSwitch(encoder, sw, typeContext, paramIndices, localIndices, fieldHandles, globalMap, labelMap, phiByBlock, sourceBlock);
                 break;
 
             case LoweredRawInstruction raw:
@@ -1757,7 +1844,25 @@ public static class LoweredAssemblyEmitter
                 break;
 
             case LoweredVolatileLoadInstruction volatileLoad:
-                throw new NotSupportedException($"LLVM volatile load is not yet supported (result %{volatileLoad.Result}) — see docs/support-matrix.md (memory model).");
+                EmitLoadInstruction(
+                    encoder,
+                    volatileLoad.Result,
+                    volatileLoad.ValueType,
+                    volatileLoad.Pointer,
+                    isVolatile: true,
+                    instructions,
+                    instrIdx,
+                    paramIndices,
+                    localIndices,
+                    fieldHandles,
+                    typeContext,
+                    globalMap,
+                    mutatedGlobals,
+                    gepElementLocal,
+                    allocaNames,
+                    locallocAllocas,
+                    ptrParams);
+                break;
 
             case LoweredVolatileStoreInstruction:
                 throw new NotSupportedException("LLVM volatile store is not yet supported — see docs/support-matrix.md (memory model).");
@@ -1773,7 +1878,112 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static void EmitPhiCopies(InstructionEncoder encoder, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock, string sourceBlock, string targetBlock)
+    private static void EmitLoadInstruction(
+        InstructionEncoder encoder,
+        string result,
+        string type,
+        string source,
+        bool isVolatile,
+        IReadOnlyList<LoweredInstruction> instructions,
+        int instrIdx,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        SrmTypeContext typeContext,
+        IReadOnlyDictionary<string, LoweredGlobal> globalMap,
+        IReadOnlySet<string> mutatedGlobals,
+        IReadOnlyDictionary<string, int> gepElementLocal,
+        IReadOnlySet<string> allocaNames,
+        IReadOnlySet<string> locallocAllocas,
+        IReadOnlySet<string> ptrParams)
+    {
+        if (TryEmitVectorMemoryLoad(
+            encoder,
+            result,
+            type,
+            source,
+            typeContext,
+            paramIndices,
+            localIndices,
+            fieldHandles))
+        {
+            return;
+        }
+
+        if (gepElementLocal.TryGetValue(source, out var gepLoadIdx))
+        {
+            encoder.LoadLocal(gepLoadIdx);
+            encoder.StoreLocal(localIndices[result]);
+        }
+        else if (localIndices.TryGetValue(source, out var loadLocalIdx))
+        {
+            encoder.LoadLocal(loadLocalIdx);
+            if (!allocaNames.Contains(source) || locallocAllocas.Contains(source) || IsGepResult(source, instructions, instrIdx))
+            {
+                if (isVolatile)
+                    encoder.OpCode(ILOpCode.Volatile);
+                EmitIndirectLoad(encoder, type);
+            }
+            encoder.StoreLocal(localIndices[result]);
+        }
+        else if (paramIndices.TryGetValue(source, out var loadParamIdx))
+        {
+            encoder.LoadArgument(loadParamIdx);
+            if (ptrParams.Contains(source))
+            {
+                if (isVolatile)
+                    encoder.OpCode(ILOpCode.Volatile);
+                EmitIndirectLoad(encoder, type);
+            }
+            encoder.StoreLocal(localIndices[result]);
+        }
+        else if (fieldHandles.TryGetValue(source, out var fieldHandle))
+        {
+            if (!isVolatile && !mutatedGlobals.Contains(source) && TryResolveConstantGlobalElement(source, type, globalMap, out var constantValue))
+            {
+                EmitConstantValue(encoder, type, constantValue);
+            }
+            else if (IsPointerBackedGlobal(globalMap, source))
+            {
+                if (isVolatile)
+                    encoder.OpCode(ILOpCode.Volatile);
+                encoder.OpCode(ILOpCode.Ldsfld);
+                encoder.Token(fieldHandle);
+                EmitIndirectLoad(encoder, type);
+            }
+            else
+            {
+                if (isVolatile)
+                    encoder.OpCode(ILOpCode.Volatile);
+                encoder.OpCode(ILOpCode.Ldsfld);
+                encoder.Token(fieldHandle);
+            }
+            encoder.StoreLocal(localIndices[result]);
+        }
+        else if (TryParseGlobalElementAccess(source, out var baseName, out var byteOffset)
+                 && fieldHandles.TryGetValue(baseName, out var arrayFieldHandle))
+        {
+            if (!isVolatile && !mutatedGlobals.Contains(baseName) && TryResolveConstantGlobalElementAtIndex(baseName, byteOffset, type, globalMap, out var arrValue))
+            {
+                EmitConstantValue(encoder, type, arrValue);
+            }
+            else
+            {
+                if (isVolatile)
+                    encoder.OpCode(ILOpCode.Volatile);
+                EmitGlobalElementAddress(encoder, arrayFieldHandle, byteOffset, IsPointerBackedGlobal(globalMap, baseName));
+                EmitIndirectLoad(encoder, type);
+            }
+            encoder.StoreLocal(localIndices[result]);
+        }
+        else
+        {
+            encoder.LoadConstantI4(0);
+            encoder.StoreLocal(localIndices[result]);
+        }
+    }
+
+    private static void EmitPhiCopies(InstructionEncoder encoder, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock, string sourceBlock, string targetBlock)
     {
         if (!phiByBlock.TryGetValue(targetBlock, out var phiInstructions) || phiInstructions.Length == 0)
         {
@@ -1794,7 +2004,7 @@ public static class LoweredAssemblyEmitter
             // No conflict possible with a single copy
             foreach (var (value, result, type) in copies)
             {
-                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles, globalMap);
                 encoder.StoreLocal(localIndices[result]);
             }
             return;
@@ -1809,7 +2019,7 @@ public static class LoweredAssemblyEmitter
             // Safe to emit in order
             foreach (var (value, result, type) in copies)
             {
-                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles, globalMap);
                 encoder.StoreLocal(localIndices[result]);
             }
         }
@@ -1818,7 +2028,7 @@ public static class LoweredAssemblyEmitter
             // Load all values first (push onto stack), then store in reverse
             foreach (var (value, _, type) in copies)
             {
-                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles);
+                EmitLoadPhiValue(encoder, typeContext, value, type, paramIndices, localIndices, fieldHandles, globalMap);
             }
             for (var i = copies.Count - 1; i >= 0; i--)
             {
@@ -1840,7 +2050,7 @@ public static class LoweredAssemblyEmitter
             || blockName.StartsWith("vec.", StringComparison.Ordinal);
     }
 
-    private static void EmitLoadPhiValue(InstructionEncoder encoder, SrmTypeContext typeContext, string value, string type, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    private static void EmitLoadPhiValue(InstructionEncoder encoder, SrmTypeContext typeContext, string value, string type, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap)
     {
         if (TryParseVectorType(type, out var count, out var elementType)
             && TryEmitVectorLiteral(encoder, typeContext, value, count, elementType, paramIndices, localIndices, fieldHandles))
@@ -1848,7 +2058,7 @@ public static class LoweredAssemblyEmitter
             return;
         }
 
-        EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles);
+        EmitLoadTypedValue(encoder, type, value, paramIndices, localIndices, fieldHandles, globalMap);
     }
 
     private static void EmitLoadValue(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
@@ -1874,6 +2084,20 @@ public static class LoweredAssemblyEmitter
         if (string.Equals(value, "false", StringComparison.Ordinal))
         {
             encoder.LoadConstantI4(0);
+            return;
+        }
+
+        var intToPtrConstant = System.Text.RegularExpressions.Regex.Match(
+            value,
+            @"^inttoptr\s*\(\s*i\d+\s+(?<value>-?\d+)\s+to\s+ptr\s*\)$",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        if (intToPtrConstant.Success && long.TryParse(intToPtrConstant.Groups["value"].Value, out var ptrConst))
+        {
+            if (ptrConst is >= int.MinValue and <= int.MaxValue)
+                encoder.LoadConstantI4((int)ptrConst);
+            else
+                encoder.LoadConstantI8(ptrConst);
+            encoder.OpCode(ILOpCode.Conv_u);
             return;
         }
 
@@ -1955,6 +2179,49 @@ public static class LoweredAssemblyEmitter
             EmitStoreVectorElement(encoder, elementType);
         }
 
+        return true;
+    }
+
+    private static bool IsVectorMaskType(string type)
+        => string.Equals(type, "<16 x i1>", StringComparison.Ordinal);
+
+    private static bool TryEmitVectorMemoryLoad(
+        InstructionEncoder encoder,
+        string result,
+        string type,
+        string source,
+        SrmTypeContext typeContext,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!TryParseVectorType(type, out var count, out var elementType)
+            || !string.Equals(elementType, "i8", StringComparison.Ordinal)
+            || !localIndices.ContainsKey(result))
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(count);
+        encoder.OpCode(ILOpCode.Newarr);
+        encoder.Token(GetVectorElementTypeReference(typeContext, elementType));
+
+        for (var index = 0; index < count; index++)
+        {
+            encoder.OpCode(ILOpCode.Dup);
+            encoder.LoadConstantI4(index);
+            EmitLoadValue(encoder, source, paramIndices, localIndices, fieldHandles);
+            if (index != 0)
+            {
+                encoder.LoadConstantI4(index);
+                encoder.OpCode(ILOpCode.Conv_i);
+                encoder.OpCode(ILOpCode.Add);
+            }
+            EmitIndirectLoad(encoder, elementType);
+            EmitStoreVectorElement(encoder, elementType);
+        }
+
+        encoder.StoreLocal(localIndices[result]);
         return true;
     }
 
@@ -2056,8 +2323,145 @@ public static class LoweredAssemblyEmitter
         }
     }
 
+    private static bool TryEmitVectorCompareMask(
+        InstructionEncoder encoder,
+        LoweredCompareInstruction compare,
+        IReadOnlyDictionary<string, string> vectorSplatValues,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
+    {
+        if (!string.Equals(compare.Type, "<16 x i8>", StringComparison.Ordinal)
+            || !localIndices.TryGetValue(compare.Result, out var resultLocal)
+            || !TryResolveVectorSplatValue(compare.Right, vectorSplatValues, out var rightValue))
+        {
+            return false;
+        }
+
+        var bitwiseEquality = string.Equals(compare.Predicate, "eq", StringComparison.Ordinal);
+        var signedGreaterThan = string.Equals(compare.Predicate, "sgt", StringComparison.Ordinal);
+        var signedLessThan = string.Equals(compare.Predicate, "slt", StringComparison.Ordinal);
+        if (!bitwiseEquality && !signedGreaterThan && !signedLessThan)
+        {
+            return false;
+        }
+
+        encoder.LoadConstantI4(0);
+        encoder.StoreLocal(resultLocal);
+
+        for (var index = 0; index < 16; index++)
+        {
+            encoder.LoadLocal(resultLocal);
+            EmitLoadVectorElement(encoder, compare.Left, compare.Type, index, paramIndices, localIndices, fieldHandles);
+            if (bitwiseEquality)
+                encoder.OpCode(ILOpCode.Conv_u1);
+            EmitLoadValue(encoder, rightValue, paramIndices, localIndices, fieldHandles);
+            if (bitwiseEquality)
+                encoder.OpCode(ILOpCode.Conv_u1);
+            encoder.OpCode(bitwiseEquality ? ILOpCode.Ceq : signedGreaterThan ? ILOpCode.Cgt : ILOpCode.Clt);
+            encoder.LoadConstantI4(1 << index);
+            encoder.OpCode(ILOpCode.Mul);
+            encoder.OpCode(ILOpCode.Or);
+            encoder.StoreLocal(resultLocal);
+        }
+
+        return true;
+    }
+
+    private static bool TryResolveVectorSplatValue(string value, IReadOnlyDictionary<string, string> vectorSplatValues, out string scalarValue)
+    {
+        if (string.Equals(value, "zeroinitializer", StringComparison.Ordinal))
+        {
+            scalarValue = "0";
+            return true;
+        }
+
+        if (TryParseSplatValue(value, out scalarValue))
+            return true;
+
+        return vectorSplatValues.TryGetValue(value, out scalarValue!);
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildVectorSplatValues(LoweredFunction function)
+    {
+        var insertedScalars = new Dictionary<string, string>(StringComparer.Ordinal);
+        var splats = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var raw in function.Blocks.SelectMany(block => block.Instructions).OfType<LoweredRawInstruction>())
+        {
+            if (TryParseVectorInsertElement(raw.Text, out var insertResult, out var scalarValue))
+            {
+                insertedScalars[insertResult] = scalarValue;
+                continue;
+            }
+
+            if (TryParseVectorShuffleSplat(raw.Text, out var splatResult, out var source)
+                && insertedScalars.TryGetValue(source, out var splatValue))
+            {
+                splats[splatResult] = splatValue;
+            }
+        }
+
+        return splats;
+    }
+
+    private static bool TryParseVectorInsertElement(string text, out string result, out string scalarValue)
+    {
+        result = "";
+        scalarValue = "";
+
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text,
+            @"^%(?<result>[^\s=]+)\s*=\s*insertelement\s+<16 x i8>\s+poison,\s+i8\s+(?<scalar>[^,]+),\s+i64\s+0$",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        if (!match.Success)
+            return false;
+
+        result = NormalizeRawRegisterValue(match.Groups["result"].Value);
+        scalarValue = NormalizeRawValue(match.Groups["scalar"].Value);
+        return true;
+    }
+
+    private static bool TryParseVectorShuffleSplat(string text, out string result, out string source)
+    {
+        result = "";
+        source = "";
+
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text,
+            @"^%(?<result>[^\s=]+)\s*=\s*shufflevector\s+<16 x i8>\s+%(?<source>[^,\s]+),\s+<16 x i8>\s+poison,\s+<16 x i32>\s+zeroinitializer$",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        if (!match.Success)
+            return false;
+
+        result = NormalizeRawRegisterValue(match.Groups["result"].Value);
+        source = NormalizeRawRegisterValue(match.Groups["source"].Value);
+        return true;
+    }
+
+    private static string NormalizeRawRegisterValue(string value)
+    {
+        var normalized = value.Trim().TrimStart('%');
+        return normalized.Length > 0 && normalized.All(char.IsDigit)
+            ? $"tmp.{normalized}"
+            : NormalizeNamedValue(normalized);
+    }
+
+    private static bool IsRecognizedVectorSplatRaw(string text)
+        => TryParseVectorInsertElement(text, out _, out _)
+           || TryParseVectorShuffleSplat(text, out _, out _);
+
     private static bool TryEmitVectorBinaryInstruction(InstructionEncoder encoder, LoweredBinaryInstruction binary, SrmTypeContext typeContext, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles)
     {
+        if (IsVectorMaskType(binary.Type) && binary.Operation is "and" or "or" or "xor")
+        {
+            EmitLoadValue(encoder, binary.Left, paramIndices, localIndices, fieldHandles);
+            EmitLoadValue(encoder, binary.Right, paramIndices, localIndices, fieldHandles);
+            encoder.OpCode(MapBinaryOp(binary.Operation));
+            encoder.StoreLocal(localIndices[binary.Result]);
+            return true;
+        }
+
         if (!TryParseVectorType(binary.Type, out var count, out var elementType))
         {
             return false;
@@ -2169,25 +2573,72 @@ public static class LoweredAssemblyEmitter
     /// </summary>
     private static void EmitLoadPtrValue(InstructionEncoder encoder, LoweredArgument arg, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
     {
-        if (string.Equals(arg.Type, "ptr", StringComparison.Ordinal)
-            && fieldHandles.TryGetValue(arg.Value, out var fh))
+        if (TryEmitLoadPointerConstant(encoder, arg.Type, arg.Value, fieldHandles, globalMap))
         {
-            if (IsPointerBackedGlobal(globalMap, arg.Value))
+            return;
+        }
+
+        EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
+    }
+
+    private static void EmitLoadTypedValue(InstructionEncoder encoder, string type, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    {
+        if (TryEmitLoadPointerConstant(encoder, type, value, fieldHandles, globalMap))
+        {
+            return;
+        }
+
+        EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles, methodHandles);
+    }
+
+    private static void EmitLoadStoredValue(InstructionEncoder encoder, string type, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    {
+        if (TryEmitLoadPointerConstant(encoder, type, value, fieldHandles, globalMap))
+        {
+            return;
+        }
+
+        EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles, methodHandles);
+    }
+
+    private static bool TryEmitLoadPointerConstant(InstructionEncoder encoder, string type, string value, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap)
+    {
+        if (!string.Equals(type, "ptr", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (TryParseGlobalElementAccess(value, out var baseName, out var byteOffset)
+            && fieldHandles.TryGetValue(baseName, out var elementFieldHandle))
+        {
+            EmitGlobalElementAddress(encoder, elementFieldHandle, byteOffset, IsPointerBackedGlobal(globalMap, baseName));
+            return true;
+        }
+
+        if (TryParseInlineGlobalElementAccess(value, out baseName, out byteOffset)
+            && fieldHandles.TryGetValue(baseName, out elementFieldHandle))
+        {
+            EmitGlobalElementAddress(encoder, elementFieldHandle, byteOffset, IsPointerBackedGlobal(globalMap, baseName));
+            return true;
+        }
+
+        if (fieldHandles.TryGetValue(value, out var fieldHandle))
+        {
+            if (IsPointerBackedGlobal(globalMap, value))
             {
                 encoder.OpCode(ILOpCode.Ldsfld);
-                encoder.Token(fh);
+                encoder.Token(fieldHandle);
             }
             else
             {
                 encoder.OpCode(ILOpCode.Ldsflda);
-                encoder.Token(fh);
+                encoder.Token(fieldHandle);
                 encoder.OpCode(ILOpCode.Conv_u);
             }
+            return true;
         }
-        else
-        {
-            EmitLoadValue(encoder, arg.Value, paramIndices, localIndices, fieldHandles, methodHandles);
-        }
+
+        return false;
     }
 
     private static bool IsPointerBackedGlobal(IReadOnlyDictionary<string, LoweredGlobal> globalMap, string name)
@@ -2196,9 +2647,14 @@ public static class LoweredAssemblyEmitter
     /// <summary>
     /// Load the address of a value (for atomic pointer operands). Globals get ldsflda; locals/params emit their value directly (already pointers).
     /// </summary>
-    private static void EmitLoadAddress(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
+    private static void EmitLoadAddress(InstructionEncoder encoder, string value, IReadOnlyDictionary<string, int> paramIndices, IReadOnlyDictionary<string, int> localIndices, IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles, IReadOnlyDictionary<string, LoweredGlobal> globalMap, IReadOnlyDictionary<string, MethodDefinitionHandle>? methodHandles = null)
     {
-        if (fieldHandles.TryGetValue(value, out var fh))
+        if (TryParseGlobalElementAccess(value, out var baseName, out var byteOffset)
+            && fieldHandles.TryGetValue(baseName, out var elementFieldHandle))
+        {
+            EmitGlobalElementAddress(encoder, elementFieldHandle, byteOffset, IsPointerBackedGlobal(globalMap, baseName));
+        }
+        else if (fieldHandles.TryGetValue(value, out var fh))
         {
             encoder.OpCode(ILOpCode.Ldsflda);
             encoder.Token(fh);
@@ -2206,6 +2662,22 @@ public static class LoweredAssemblyEmitter
         else
         {
             EmitLoadValue(encoder, value, paramIndices, localIndices, fieldHandles, methodHandles);
+        }
+    }
+
+    private static void EmitGlobalElementAddress(InstructionEncoder encoder, FieldDefinitionHandle fieldHandle, int byteOffset, bool pointerBacked)
+    {
+        encoder.OpCode(pointerBacked ? ILOpCode.Ldsfld : ILOpCode.Ldsflda);
+        encoder.Token(fieldHandle);
+        if (!pointerBacked)
+        {
+            encoder.OpCode(ILOpCode.Conv_u);
+        }
+        if (byteOffset != 0)
+        {
+            encoder.LoadConstantI4(byteOffset);
+            encoder.OpCode(ILOpCode.Conv_i);
+            encoder.OpCode(ILOpCode.Add);
         }
     }
 
@@ -2278,6 +2750,20 @@ public static class LoweredAssemblyEmitter
         }
 
         EmitIntegerExtension(encoder, type, "signext");
+    }
+
+    private static void EmitIntegerCompareNormalization(InstructionEncoder encoder, string type, string predicate)
+    {
+        if (IsSignedIntegerCompare(predicate))
+        {
+            EmitIntegerExtension(encoder, type, "signext");
+            return;
+        }
+
+        if (predicate is "eq" or "ne" or "ult" or "ugt" or "ule" or "uge")
+        {
+            EmitIntegerExtension(encoder, type, "zeroext");
+        }
     }
 
     private static bool IsSignedIntegerCompare(string predicate)
@@ -2728,6 +3214,19 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
+    private static bool TryEmitKnownLibcCall(InstructionEncoder encoder, SrmTypeContext typeContext, string callee, string returnType, int argCount)
+    {
+        if (string.Equals(callee, "memcmp", StringComparison.Ordinal)
+            && string.Equals(returnType, "i32", StringComparison.Ordinal)
+            && argCount == 3)
+        {
+            encoder.Call(typeContext.RuntimeCompareBytesI64);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryEmitAllocatorCall(InstructionEncoder encoder, SrmTypeContext typeContext, string callee, int argCount)
     {
         // __rust_alloc(size: i64, align: i64) -> ptr
@@ -2769,13 +3268,36 @@ public static class LoweredAssemblyEmitter
             // Stack: [size, align]. Pop both and throw.
             for (var i = 0; i < argCount; i++)
                 encoder.OpCode(ILOpCode.Pop);
-            encoder.LoadString(default(UserStringHandle));
+            encoder.LoadString(typeContext.AllocationFailureMessage);
             encoder.OpCode(ILOpCode.Newobj);
             encoder.Token(typeContext.NotSupportedExceptionCtor);
             encoder.OpCode(ILOpCode.Throw);
             return true;
         }
         return false;
+    }
+
+    private static bool TryEmitAllocatorCallBeforeArgs(
+        InstructionEncoder encoder,
+        SrmTypeContext typeContext,
+        LoweredCallInstruction call,
+        IReadOnlyDictionary<string, int> paramIndices,
+        IReadOnlyDictionary<string, int> localIndices,
+        IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        IReadOnlyDictionary<string, LoweredGlobal> globalMap,
+        IReadOnlyDictionary<string, MethodDefinitionHandle> methodHandles)
+    {
+        if (!call.Callee.Contains("___rust_realloc", StringComparison.Ordinal)
+            || call.Arguments.Count != 4)
+        {
+            return false;
+        }
+
+        EmitLoadPtrValue(encoder, call.Arguments[0], paramIndices, localIndices, fieldHandles, globalMap, methodHandles);
+        EmitLoadValue(encoder, call.Arguments[3].Value, paramIndices, localIndices, fieldHandles, methodHandles);
+        encoder.OpCode(ILOpCode.Conv_i);
+        encoder.Call(typeContext.MarshalReAllocHGlobal);
+        return true;
     }
 
     private static bool TryEmitPanicCall(InstructionEncoder encoder, SrmTypeContext typeContext, string callee, int argCount)
@@ -2839,7 +3361,9 @@ public static class LoweredAssemblyEmitter
         LoweredPtrToIntInstruction p => p.Result,
         LoweredIntToPtrInstruction i => i.Result,
         LoweredFreezeInstruction f => f.Result,
+        LoweredBitcastInstruction b => b.Result,
         LoweredLoadInstruction l => l.Result,
+        LoweredVolatileLoadInstruction l => l.Result,
         LoweredAllocaInstruction a => a.Result,
         LoweredGetElementPointerInstruction g => g.Result,
         LoweredExtractValueInstruction e => e.Result,
@@ -2857,9 +3381,12 @@ public static class LoweredAssemblyEmitter
         LoweredPtrToIntInstruction p => p.ToType,
         LoweredIntToPtrInstruction => "ptr",
         LoweredFreezeInstruction f => f.Type,
+        LoweredBitcastInstruction b => b.ToType,
         LoweredLoadInstruction l => l.Type,
+        LoweredVolatileLoadInstruction l => l.ValueType,
         LoweredAllocaInstruction => "ptr",
         LoweredPhiInstruction p => InferPhiType(p.Type),
+        LoweredBinaryInstruction b when IsVectorMaskType(b.Type) => "i32",
         LoweredBinaryInstruction b => b.Type,
         LoweredCompareInstruction => "i32",
         LoweredSelectInstruction s => s.ValueType,
@@ -3047,6 +3574,7 @@ public static class LoweredAssemblyEmitter
         IReadOnlyDictionary<string, int> paramIndices,
         IReadOnlyDictionary<string, int> localIndices,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        IReadOnlyDictionary<string, LoweredGlobal> globalMap,
         IReadOnlyDictionary<string, LabelHandle> labelMap,
         IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock,
         string sourceBlock)
@@ -3068,12 +3596,12 @@ public static class LoweredAssemblyEmitter
             encoder.OpCode(ILOpCode.Ceq);
             var nextCase = encoder.DefineLabel();
             encoder.Branch(ILOpCode.Brfalse, nextCase);
-            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, c.Target);
+            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, c.Target);
             encoder.Branch(ILOpCode.Br, labelMap[c.Target]);
             encoder.MarkLabel(nextCase);
         }
 
-        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, sw.DefaultLabel);
+        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, sw.DefaultLabel);
         encoder.Branch(ILOpCode.Br, labelMap[sw.DefaultLabel]);
     }
 
@@ -3086,6 +3614,7 @@ public static class LoweredAssemblyEmitter
         IReadOnlyDictionary<string, int> paramIndices,
         IReadOnlyDictionary<string, int> localIndices,
         IReadOnlyDictionary<string, FieldDefinitionHandle> fieldHandles,
+        IReadOnlyDictionary<string, LoweredGlobal> globalMap,
         IReadOnlyDictionary<string, LabelHandle> labelMap,
         IReadOnlyDictionary<string, LoweredPhiInstruction[]> phiByBlock,
         string sourceBlock)
@@ -3102,6 +3631,12 @@ public static class LoweredAssemblyEmitter
 
         var switchValue = NormalizeRawValue(switchMatch.Groups["value"].Value);
         var defaultTarget = NormalizeRawLabel(switchMatch.Groups["defaultTarget"].Value);
+        var switchType = switchMatch.Groups["type"].Value;
+        if (!CanEmitRawSwitchType(switchType))
+        {
+            return false;
+        }
+
         var caseLabels = new List<(long Value, string Target)>();
 
         var closingIndex = -1;
@@ -3112,7 +3647,7 @@ public static class LoweredAssemblyEmitter
                 break;
             }
 
-            if (string.Equals(caseRaw.Text, "]", StringComparison.Ordinal))
+            if (IsSwitchClosingLine(caseRaw.Text))
             {
                 closingIndex = index;
                 break;
@@ -3124,7 +3659,7 @@ public static class LoweredAssemblyEmitter
                 System.Text.RegularExpressions.RegexOptions.CultureInvariant);
             if (caseMatch.Success)
             {
-                caseLabels.Add((long.Parse(caseMatch.Groups["value"].Value), NormalizeRawLabel(caseMatch.Groups["target"].Value)));
+                caseLabels.Add((ParseSwitchCaseValue(caseMatch.Groups["value"].Value, caseMatch.Groups["type"].Value), NormalizeRawLabel(caseMatch.Groups["target"].Value)));
             }
         }
 
@@ -3134,7 +3669,6 @@ public static class LoweredAssemblyEmitter
         }
 
         // Emit compare-and-branch chain for each case
-        var switchType = switchMatch.Groups["type"].Value;
         var isWideSwitch = string.Equals(switchType, "i64", StringComparison.Ordinal);
         foreach (var caseLabel in caseLabels)
         {
@@ -3150,16 +3684,61 @@ public static class LoweredAssemblyEmitter
             encoder.OpCode(ILOpCode.Ceq);
             var nextCase = encoder.DefineLabel();
             encoder.Branch(ILOpCode.Brfalse, nextCase);
-            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, caseLabel.Target);
+            EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, caseLabel.Target);
             encoder.Branch(ILOpCode.Br, labelMap[caseLabel.Target]);
             encoder.MarkLabel(nextCase);
         }
 
         // Default case
-        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, phiByBlock, sourceBlock, defaultTarget);
+        EmitPhiCopies(encoder, typeContext, paramIndices, localIndices, fieldHandles, globalMap, phiByBlock, sourceBlock, defaultTarget);
         encoder.Branch(ILOpCode.Br, labelMap[defaultTarget]);
         instrIdx = closingIndex;
         return true;
+    }
+
+    private static bool CanEmitRawSwitchType(string typeText)
+    {
+        return typeText.StartsWith('i')
+            && int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth)
+            && bitWidth is > 0 and <= 64;
+    }
+
+    private static long ParseSwitchCaseValue(string valueText, string typeText)
+    {
+        if (long.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var signedValue))
+        {
+            return signedValue;
+        }
+
+        if (!typeText.StartsWith('i') || !int.TryParse(typeText[1..], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bitWidth))
+        {
+            throw new FormatException($"Switch case type '{typeText}' is not an integer type.");
+        }
+
+        if (bitWidth is <= 0 or > 64
+            || !ulong.TryParse(valueText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var unsignedValue))
+        {
+            throw new OverflowException($"Switch case value '{valueText}' cannot be represented as {typeText}.");
+        }
+
+        if (bitWidth == 64)
+        {
+            return unchecked((long)unsignedValue);
+        }
+
+        var signBit = 1UL << (bitWidth - 1);
+        var mask = (1UL << bitWidth) - 1UL;
+        var truncated = unsignedValue & mask;
+        return (truncated & signBit) == 0
+            ? (long)truncated
+            : unchecked((long)(truncated | ~mask));
+    }
+
+    private static bool IsSwitchClosingLine(string text)
+    {
+        var trimmed = text.Trim();
+        return string.Equals(trimmed, "]", StringComparison.Ordinal)
+            || trimmed.StartsWith("],", StringComparison.Ordinal);
     }
 
     private static string NormalizeRawLabel(string rawLabel)
@@ -3296,7 +3875,7 @@ public static class LoweredAssemblyEmitter
         }
     }
 
-    private static int ParseAllocaSize(string allocaType)
+    private static int ParseAllocaSize(string allocaType, IReadOnlyDictionary<string, string>? namedTypes = null)
     {
         // Parse "[N x i8]" → N, or type size for simple types
         var match = System.Text.RegularExpressions.Regex.Match(allocaType, @"\[(\d+)\s+x\s+i8\]");
@@ -3305,6 +3884,9 @@ public static class LoweredAssemblyEmitter
         // Fallback: estimate from type
         if (TryGetIntegerBitWidth(allocaType, out var bits))
             return (bits + 7) / 8;
+        var size = GetMemoryTypeSize(allocaType, namedTypes);
+        if (size > 1)
+            return size;
         return 8; // default
     }
 
@@ -3328,6 +3910,10 @@ public static class LoweredAssemblyEmitter
         {
             return false;
         }
+        if (global.PointerRelocations.Count > 0)
+        {
+            return false;
+        }
         if (TryGetIntegerBitWidth(type, out var width) && width <= 32 && global.InitializerBytes.Count == 4)
         {
             value = BitConverter.ToInt32([.. global.InitializerBytes], 0);
@@ -3337,6 +3923,20 @@ public static class LoweredAssemblyEmitter
         {
             value = BitConverter.ToInt64([.. global.InitializerBytes], 0);
             return true;
+        }
+        var stride = GetElementTypeStride(type);
+        if (global.InitializerBytes.Count > 8 && stride <= global.InitializerBytes.Count)
+        {
+            var bytes = global.InitializerBytes.Take(stride).ToArray();
+            value = stride switch
+            {
+                1 => bytes[0],
+                2 => BitConverter.ToInt16(bytes, 0),
+                4 => BitConverter.ToInt32(bytes, 0),
+                8 => BitConverter.ToInt64(bytes, 0),
+                _ => 0
+            };
+            return stride is 1 or 2 or 4 or 8;
         }
         return false;
     }
@@ -3353,7 +3953,24 @@ public static class LoweredAssemblyEmitter
         return int.TryParse(source[(bracketIdx + 1)..closeBracket], out index);
     }
 
-    private static bool TryResolveConstantGlobalElementAtIndex(string baseName, int elementIndex, string type, IReadOnlyDictionary<string, LoweredGlobal> globalMap, out long value)
+    private static bool TryParseInlineGlobalElementAccess(string source, out string baseName, out int index)
+    {
+        baseName = "";
+        index = 0;
+        var match = System.Text.RegularExpressions.Regex.Match(
+            source,
+            @"^getelementptr(?:\s+[A-Za-z0-9_]+)*\s*\(.*\bptr\s+@(?<base>[^,\s\)]+).*\bi64\s+(?<index>-?\d+)\s*\)$",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        baseName = NormalizeSymbolReference(match.Groups["base"].Value);
+        return int.TryParse(match.Groups["index"].Value, out index);
+    }
+
+    private static bool TryResolveConstantGlobalElementAtIndex(string baseName, int byteOffset, string type, IReadOnlyDictionary<string, LoweredGlobal> globalMap, out long value)
     {
         value = 0;
         if (!globalMap.TryGetValue(baseName, out var global))
@@ -3361,7 +3978,7 @@ public static class LoweredAssemblyEmitter
             return false;
         }
         var stride = GetElementTypeStride(type);
-        var offset = elementIndex * stride;
+        var offset = byteOffset;
         if (offset + stride > global.InitializerBytes.Count)
         {
             return false;
@@ -3390,13 +4007,48 @@ public static class LoweredAssemblyEmitter
         return false;
     }
 
-    private static int GetElementTypeStride(string elementType)
+    private static int GetElementTypeStride(string elementType, IReadOnlyDictionary<string, string>? namedTypes = null)
     {
-        if (TryGetIntegerBitWidth(elementType, out var width))
+        return GetMemoryTypeSize(elementType, namedTypes);
+    }
+
+    private static int GetMemoryTypeSize(string type, IReadOnlyDictionary<string, string>? namedTypes = null, HashSet<string>? resolving = null)
+    {
+        type = type.Trim();
+        if (namedTypes is not null && namedTypes.TryGetValue(type, out var namedDefinition))
+        {
+            resolving ??= new HashSet<string>(StringComparer.Ordinal);
+            if (!resolving.Add(type))
+            {
+                return 1;
+            }
+
+            var namedSize = GetMemoryTypeSize(namedDefinition, namedTypes, resolving);
+            resolving.Remove(type);
+            return namedSize;
+        }
+
+        if (TryGetIntegerBitWidth(type, out var width))
         {
             return Math.Max(1, width / 8);
         }
-        return elementType switch
+
+        if (type.StartsWith('[') && type.EndsWith(']') && TryParseArrayType(type, out var count, out var elementType))
+        {
+            return checked(count * GetMemoryTypeSize(elementType, namedTypes, resolving));
+        }
+
+        if (type.StartsWith('{') && type.EndsWith('}'))
+        {
+            return SplitTopLevelTypeList(type[1..^1]).Sum(field => GetMemoryTypeSize(field, namedTypes, resolving));
+        }
+
+        if (type.StartsWith("<{", StringComparison.Ordinal) && type.EndsWith("}>", StringComparison.Ordinal))
+        {
+            return SplitTopLevelTypeList(type[2..^2]).Sum(field => GetMemoryTypeSize(field, namedTypes, resolving));
+        }
+
+        return type switch
         {
             "float" => 4,
             "double" => 8,
@@ -3405,11 +4057,63 @@ public static class LoweredAssemblyEmitter
         };
     }
 
+    private static bool TryParseArrayType(string type, out int count, out string elementType)
+    {
+        count = 0;
+        elementType = string.Empty;
+
+        var inner = type[1..^1].Trim();
+        var separatorIndex = inner.IndexOf(" x ", StringComparison.Ordinal);
+        if (separatorIndex <= 0 || !int.TryParse(inner[..separatorIndex], out count))
+        {
+            return false;
+        }
+
+        elementType = inner[(separatorIndex + 3)..].Trim();
+        return elementType.Length > 0;
+    }
+
+    private static string[] SplitTopLevelTypeList(string text)
+    {
+        var result = new List<string>();
+        var start = 0;
+        var depth = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            depth += text[i] switch
+            {
+                '{' or '[' or '<' => 1,
+                '}' or ']' or '>' => -1,
+                _ => 0
+            };
+
+            if (text[i] != ',' || depth != 0)
+            {
+                continue;
+            }
+
+            result.Add(text[start..i].Trim());
+            start = i + 1;
+        }
+
+        var tail = text[start..].Trim();
+        if (tail.Length > 0)
+        {
+            result.Add(tail);
+        }
+
+        return result.ToArray();
+    }
+
     private static BlobHandle EncodeFieldSignature(MetadataBuilder metadataBuilder, LoweredGlobal global)
     {
         var blob = new BlobBuilder();
         var encoder = new BlobEncoder(blob).Field().Type();
-        if (global.InitializerBytes.Count > 8)
+        if (global.PointerRelocations.Count > 0 && global.InitializerBytes.Count <= 8)
+        {
+            encoder.IntPtr();
+        }
+        else if (global.InitializerBytes.Count > 8)
         {
             encoder.IntPtr();
         }
@@ -3512,6 +4216,35 @@ public static class LoweredAssemblyEmitter
                 }
 
                 encoder.LoadLocal(0);
+            }
+            else if (global.PointerRelocations.Count == 1 && global.PointerRelocations[0].Offset == 0)
+            {
+                var relocation = global.PointerRelocations[0];
+                if (methodHandles.TryGetValue(relocation.Target, out var targetHandle))
+                {
+                    encoder.OpCode(ILOpCode.Ldftn);
+                    encoder.Token(targetHandle);
+                    encoder.OpCode(ILOpCode.Conv_i);
+                }
+                else if (fieldHandles.TryGetValue(relocation.Target, out var targetFieldHandle))
+                {
+                    if (IsPointerBackedGlobal(globalMap, relocation.Target))
+                    {
+                        encoder.OpCode(ILOpCode.Ldsfld);
+                        encoder.Token(targetFieldHandle);
+                    }
+                    else
+                    {
+                        encoder.OpCode(ILOpCode.Ldsflda);
+                        encoder.Token(targetFieldHandle);
+                        encoder.OpCode(ILOpCode.Conv_u);
+                    }
+                }
+                else
+                {
+                    encoder.LoadConstantI4(0);
+                    encoder.OpCode(ILOpCode.Conv_i);
+                }
             }
             else if (global.InitializerBytes.Count > 4)
             {
@@ -3683,6 +4416,12 @@ public static class LoweredAssemblyEmitter
         return int.TryParse(typeName.AsSpan(1), out width) && width > 0;
     }
 
+    private sealed record SrmReferenceRequirements(
+        bool IncludeAvaloniaBridge,
+        bool IncludeBinaryPrimitives,
+        bool IncludeThreadMemoryBarrier,
+        bool IncludeRuntimeBridge);
+
     /// <summary>
     /// Pre-computed type and member reference handles for BCL and intrinsic calls.
     /// All handles must be added before any method body references them.
@@ -3706,8 +4445,11 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle ReverseEndianness64 { get; }
         public MemberReferenceHandle ThreadMemoryBarrier { get; }
         public MemberReferenceHandle MarshalAllocHGlobal { get; }
+        public MemberReferenceHandle MarshalReAllocHGlobal { get; }
         public MemberReferenceHandle MarshalFreeHGlobal { get; }
         public MemberReferenceHandle MarshalCopy { get; }
+        public UserStringHandle AllocationFailureMessage { get; }
+        public MemberReferenceHandle RuntimeCompareBytesI64 { get; }
         public MemberReferenceHandle NotSupportedExceptionCtor { get; }
         public MemberReferenceHandle DivideByZeroExceptionCtor { get; }
         public MemberReferenceHandle OverflowExceptionCtor { get; }
@@ -3740,59 +4482,16 @@ public static class LoweredAssemblyEmitter
             MetadataBuilder mb,
             AssemblyReferenceHandle systemRuntime,
             AssemblyReferenceHandle systemInterop,
+            SrmReferenceRequirements referenceRequirements,
             IReadOnlyList<BindingManifestDocument>? bindingManifests = null)
         {
             SystemRuntime = systemRuntime;
-
-            // Additional assembly reference for types not in System.Runtime
-            var systemMemory = mb.AddAssemblyReference(
-                name: mb.GetOrAddString("System.Memory"),
-                version: new Version(10, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: mb.GetOrAddBlob(
-                    new byte[] { 0xCC, 0x7B, 0x13, 0xFF, 0xCD, 0x2D, 0xDD, 0x51 }),
-                flags: default,
-                hashValue: default);
-
-            var avaloniaSupportAssemblyName = typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
-            var avaloniaSupport = mb.AddAssemblyReference(
-                name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "Rustlyn.AvaloniaSupport"),
-                version: avaloniaSupportAssemblyName.Version ?? new Version(1, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: default,
-                flags: default,
-                hashValue: default);
-
-            var backendAssemblyName = typeof(RuntimeBridgeHelpers).Assembly.GetName();
-            var backendAssembly = mb.AddAssemblyReference(
-                name: mb.GetOrAddString(backendAssemblyName.Name ?? "Rustlyn.Backend"),
-                version: backendAssemblyName.Version ?? new Version(1, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: default,
-                flags: default,
-                hashValue: default);
 
             // System.Numerics.BitOperations (in System.Runtime)
             BitOperations = mb.AddTypeReference(
                 systemRuntime,
                 mb.GetOrAddString("System.Numerics"),
                 mb.GetOrAddString("BitOperations"));
-
-            // System.Buffers.Binary.BinaryPrimitives (in System.Memory)
-            var binaryPrimitives = mb.AddTypeReference(
-                systemMemory,
-                mb.GetOrAddString("System.Buffers.Binary"),
-                mb.GetOrAddString("BinaryPrimitives"));
-
-            var avaloniaBridge = mb.AddTypeReference(
-                avaloniaSupport,
-                mb.GetOrAddString("Rustlyn.AvaloniaSupport"),
-                mb.GetOrAddString("AvaloniaBridge"));
-
-            var runtimeBridgeHelpers = mb.AddTypeReference(
-                backendAssembly,
-                mb.GetOrAddString("Rustlyn.Backend"),
-                mb.GetOrAddString("RuntimeBridgeHelpers"));
 
             // Method signatures
             PopCountU32 = AddStaticMethod(mb, BitOperations, "PopCount", EncodeU32ToI32Sig(mb));
@@ -3801,24 +4500,43 @@ public static class LoweredAssemblyEmitter
             LeadingZeroCountU64 = AddStaticMethod(mb, BitOperations, "LeadingZeroCount", EncodeU64ToI32Sig(mb));
             TrailingZeroCountU32 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU32ToI32Sig(mb));
             TrailingZeroCountU64 = AddStaticMethod(mb, BitOperations, "TrailingZeroCount", EncodeU64ToI32Sig(mb));
-            ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
-            ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+
+            if (referenceRequirements.IncludeBinaryPrimitives)
+            {
+                var systemMemory = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString("System.Memory"),
+                    version: new Version(10, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: mb.GetOrAddBlob(
+                        new byte[] { 0xCC, 0x7B, 0x13, 0xFF, 0xCD, 0x2D, 0xDD, 0x51 }),
+                    flags: default,
+                    hashValue: default);
+                var binaryPrimitives = mb.AddTypeReference(
+                    systemMemory,
+                    mb.GetOrAddString("System.Buffers.Binary"),
+                    mb.GetOrAddString("BinaryPrimitives"));
+                ReverseEndianness32 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI32ToI32Sig(mb));
+                ReverseEndianness64 = AddStaticMethod(mb, binaryPrimitives, "ReverseEndianness", EncodeI64ToI64Sig(mb));
+            }
 
             // System.Threading.Thread.MemoryBarrier — used to lower LLVM fence as a full barrier.
             // System.Threading.Thread is its own assembly in .NET (System.Runtime does not forward the type).
-            var systemThreadingThread = mb.AddAssemblyReference(
-                name: mb.GetOrAddString("System.Threading.Thread"),
-                version: new Version(10, 0, 0, 0),
-                culture: default,
-                publicKeyOrToken: mb.GetOrAddBlob(
-                    new byte[] { 0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A }),
-                flags: default,
-                hashValue: default);
-            var threadType = mb.AddTypeReference(
-                systemThreadingThread,
-                mb.GetOrAddString("System.Threading"),
-                mb.GetOrAddString("Thread"));
-            ThreadMemoryBarrier = AddStaticMethod(mb, threadType, "MemoryBarrier", EncodeVoidToVoidSig(mb));
+            if (referenceRequirements.IncludeThreadMemoryBarrier)
+            {
+                var systemThreadingThread = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString("System.Threading.Thread"),
+                    version: new Version(10, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: mb.GetOrAddBlob(
+                        new byte[] { 0xB0, 0x3F, 0x5F, 0x7F, 0x11, 0xD5, 0x0A, 0x3A }),
+                    flags: default,
+                    hashValue: default);
+                var threadType = mb.AddTypeReference(
+                    systemThreadingThread,
+                    mb.GetOrAddString("System.Threading"),
+                    mb.GetOrAddString("Thread"));
+                ThreadMemoryBarrier = AddStaticMethod(mb, threadType, "MemoryBarrier", EncodeVoidToVoidSig(mb));
+            }
 
             // System.Math (for libm intrinsics: sqrt, floor, ceil, etc.)
             var mathType = mb.AddTypeReference(
@@ -3898,6 +4616,14 @@ public static class LoweredAssemblyEmitter
             allocParms.AddParameter().Type().IntPtr();
             MarshalAllocHGlobal = AddStaticMethod(mb, marshalType, "AllocHGlobal", mb.GetOrAddBlob(allocHGlobalSig));
 
+            // Marshal.ReAllocHGlobal(IntPtr, IntPtr) -> IntPtr
+            var reallocHGlobalSig = new BlobBuilder();
+            new BlobEncoder(reallocHGlobalSig).MethodSignature().Parameters(2, out var reallocRet, out var reallocParms);
+            reallocRet.Type().IntPtr();
+            reallocParms.AddParameter().Type().IntPtr();
+            reallocParms.AddParameter().Type().IntPtr();
+            MarshalReAllocHGlobal = AddStaticMethod(mb, marshalType, "ReAllocHGlobal", mb.GetOrAddBlob(reallocHGlobalSig));
+
             // Marshal.FreeHGlobal(IntPtr) -> void
             var freeHGlobalSig = new BlobBuilder();
             new BlobEncoder(freeHGlobalSig).MethodSignature().Parameters(1, out var freeRet, out var freeParms);
@@ -3914,6 +4640,7 @@ public static class LoweredAssemblyEmitter
             copyParms.AddParameter().Type().IntPtr();
             copyParms.AddParameter().Type().Int32();
             MarshalCopy = AddStaticMethod(mb, marshalType, "Copy", mb.GetOrAddBlob(copySig));
+            AllocationFailureMessage = mb.GetOrAddUserString("Rust allocation failed.");
 
             // System.NotSupportedException..ctor(string)
             var notSupportedExceptionType = mb.AddTypeReference(
@@ -3961,12 +4688,56 @@ public static class LoweredAssemblyEmitter
                 mb.GetOrAddString(".ctor"),
                 mb.GetOrAddBlob(ofeCtorSig));
 
-            _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
+            if (referenceRequirements.IncludeAvaloniaBridge)
             {
-                ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
-            };
+                var avaloniaSupportAssemblyName = typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
+                var avaloniaSupport = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "Rustlyn.AvaloniaSupport"),
+                    version: avaloniaSupportAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: default,
+                    flags: default,
+                    hashValue: default);
+                var avaloniaBridge = mb.AddTypeReference(
+                    avaloniaSupport,
+                    mb.GetOrAddString("Rustlyn.AvaloniaSupport"),
+                    mb.GetOrAddString("AvaloniaBridge"));
+                _avaloniaBridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
+                {
+                    ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
+                };
+            }
+            else
+            {
+                _avaloniaBridgeMap = [];
+            }
 
-            _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
+            if (referenceRequirements.IncludeRuntimeBridge)
+            {
+                var backendAssemblyName = typeof(RuntimeBridgeHelpers).Assembly.GetName();
+                var backendAssembly = mb.AddAssemblyReference(
+                    name: mb.GetOrAddString(backendAssemblyName.Name ?? "Rustlyn.Backend"),
+                    version: backendAssemblyName.Version ?? new Version(1, 0, 0, 0),
+                    culture: default,
+                    publicKeyOrToken: default,
+                    flags: default,
+                    hashValue: default);
+                var runtimeBridgeHelpers = mb.AddTypeReference(
+                    backendAssembly,
+                    mb.GetOrAddString("Rustlyn.Backend"),
+                    mb.GetOrAddString("RuntimeBridgeHelpers"));
+                RuntimeCompareBytesI64 = AddStaticMethod(
+                    mb,
+                    runtimeBridgeHelpers,
+                    nameof(RuntimeBridgeHelpers.CompareBytesI64),
+                    EncodeBridgeMethodSig(mb, "i32", "ptr", "ptr", "i64"));
+                _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
+            }
+            else
+            {
+                _runtimeBridgeMap = [];
+                _runtimeBridgeSretHandles = [];
+            }
 
             // Build intrinsic lookup
             _intrinsicMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal)
@@ -3975,6 +4746,7 @@ public static class LoweredAssemblyEmitter
                 ["llvm.ctpop.i64"] = PopCountU64,
                 ["llvm.ctlz.i32"] = LeadingZeroCountU32,
                 ["llvm.ctlz.i64"] = LeadingZeroCountU64,
+                ["llvm.cttz.i16"] = TrailingZeroCountU32,
                 ["llvm.cttz.i32"] = TrailingZeroCountU32,
                 ["llvm.cttz.i64"] = TrailingZeroCountU64,
                 ["llvm.bswap.i32"] = ReverseEndianness32,
