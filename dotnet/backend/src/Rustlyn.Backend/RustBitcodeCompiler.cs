@@ -39,7 +39,13 @@ public static class RustBitcodeCompiler
         var crateDirectory = Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory();
         ValidateTargetPath(options, crateDirectory);
         PreflightBuildStd(options, crateDirectory);
-        var cargoMetadata = ReadCargoMetadata(manifestPath, options.Toolchain, options.BinaryTargetName);
+        var cargoMetadata = ReadCargoMetadata(manifestPath, options);
+        if (cargoMetadata.IsBinary
+            && string.IsNullOrWhiteSpace(options.BinaryTargetName))
+        {
+            options = options with { BinaryTargetName = cargoMetadata.TargetName };
+        }
+
         var buildArguments = CreateCargoRustcArguments(manifestPath, options);
 
         string? buildFailure = null;
@@ -76,6 +82,39 @@ public static class RustBitcodeCompiler
         File.Copy(artifactPath, outputFullPath, overwrite: true);
         CopySiblingLlvmIrArtifact(artifactPath, outputFullPath);
         return outputFullPath;
+    }
+
+    public static RustCargoBuildResult BuildCargoProject(string cratePath, RustBitcodeBuildOptions? options)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cratePath);
+
+        options ??= new RustBitcodeBuildOptions();
+        options = NormalizeOptions(options);
+        ValidateOptions(options);
+
+        var manifestPath = ResolveManifestPath(cratePath);
+        var crateDirectory = Path.GetDirectoryName(manifestPath) ?? Directory.GetCurrentDirectory();
+        ValidateTargetPath(options, crateDirectory);
+
+        var cargoMetadata = ReadCargoMetadata(manifestPath, options);
+        var profileDirectory = GetProfileDirectory(cargoMetadata.TargetDirectory, options.Release, options.Target);
+        var bitcodeOutputPath = Path.Combine(profileDirectory, $"{NormalizeCargoArtifactName(cargoMetadata.TargetName)}.bc");
+        var buildOptions = options with { OutputBitcodePath = bitcodeOutputPath };
+        if (cargoMetadata.IsBinary
+            && string.IsNullOrWhiteSpace(buildOptions.BinaryTargetName))
+        {
+            buildOptions = buildOptions with { BinaryTargetName = cargoMetadata.TargetName };
+        }
+
+        var bitcodePath = BuildBitcode(cratePath, buildOptions);
+        var assemblyPath = Path.ChangeExtension(bitcodePath, ".dll");
+        return new RustCargoBuildResult(
+            bitcodePath,
+            assemblyPath,
+            cargoMetadata.TargetName,
+            cargoMetadata.TargetDirectory,
+            profileDirectory,
+            options.Release);
     }
 
     public static IReadOnlyList<string> CreateCargoRustcArguments(string manifestPath, RustBitcodeBuildOptions options)
@@ -263,12 +302,12 @@ public static class RustBitcodeCompiler
         throw new FileNotFoundException($"Cargo manifest not found for crate path '{cratePath}'.", candidatePath);
     }
 
-    private static CargoMetadata ReadCargoMetadata(string manifestPath, string? toolchain, string? binaryTargetName)
+    private static CargoMetadata ReadCargoMetadata(string manifestPath, RustBitcodeBuildOptions options)
     {
         var metadataArguments = new List<string>();
-        if (!string.IsNullOrWhiteSpace(toolchain))
+        if (!string.IsNullOrWhiteSpace(options.Toolchain))
         {
-            metadataArguments.Add($"+{toolchain}");
+            metadataArguments.Add($"+{options.Toolchain}");
         }
 
         metadataArguments.AddRange(["metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifestPath]);
@@ -295,7 +334,7 @@ public static class RustBitcodeCompiler
             throw new InvalidOperationException($"Cargo metadata did not contain a package entry for manifest '{manifestPath}'.");
         }
 
-        var selectedTarget = SelectTarget(package, manifestPath, binaryTargetName);
+        var selectedTarget = SelectTarget(package, manifestPath, options);
 
         var targetDirectory = root.GetProperty("target_directory").GetString();
         var targetName = selectedTarget.GetProperty("name").GetString();
@@ -304,14 +343,18 @@ public static class RustBitcodeCompiler
             throw new InvalidOperationException($"Cargo metadata for '{manifestPath}' was missing target directory or target name.");
         }
 
-        return new CargoMetadata(Path.GetFullPath(targetDirectory), targetName);
+        var isBinary = selectedTarget.GetProperty("kind")
+            .EnumerateArray()
+            .Any(kindElement => string.Equals(kindElement.GetString(), "bin", StringComparison.Ordinal));
+
+        return new CargoMetadata(Path.GetFullPath(targetDirectory), targetName, isBinary);
     }
 
-    private static JsonElement SelectTarget(JsonElement package, string manifestPath, string? binaryTargetName)
+    private static JsonElement SelectTarget(JsonElement package, string manifestPath, RustBitcodeBuildOptions options)
     {
-        var targets = package.GetProperty("targets").EnumerateArray();
+        var targets = package.GetProperty("targets").EnumerateArray().ToArray();
 
-        if (string.IsNullOrWhiteSpace(binaryTargetName))
+        if (string.IsNullOrWhiteSpace(options.BinaryTargetName))
         {
             var libraryTarget = targets.FirstOrDefault(targetElement =>
                 targetElement.GetProperty("kind")
@@ -329,11 +372,30 @@ public static class RustBitcodeCompiler
                 return libraryTarget;
             }
 
+            if (options.InferBinaryTarget)
+            {
+                var binaryTargets = targets
+                    .Where(targetElement =>
+                        targetElement.GetProperty("kind")
+                            .EnumerateArray()
+                            .Any(kindElement => string.Equals(kindElement.GetString(), "bin", StringComparison.Ordinal)))
+                    .ToArray();
+                if (binaryTargets.Length == 1)
+                {
+                    return binaryTargets[0];
+                }
+
+                if (binaryTargets.Length > 1)
+                {
+                    throw new InvalidOperationException($"Cargo package '{manifestPath}' exposes multiple binary targets. Specify --bin <name> for rustlyn cargo build.");
+                }
+            }
+
             throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a library target yet. The current translate command only supports crates with a [lib] target unless --bin <name> is specified.");
         }
 
         var binaryTarget = targets.FirstOrDefault(targetElement =>
-            string.Equals(targetElement.GetProperty("name").GetString(), binaryTargetName, StringComparison.Ordinal)
+            string.Equals(targetElement.GetProperty("name").GetString(), options.BinaryTargetName, StringComparison.Ordinal)
             && targetElement.GetProperty("kind")
                 .EnumerateArray()
                 .Any(kindElement => string.Equals(kindElement.GetString(), "bin", StringComparison.Ordinal)));
@@ -343,7 +405,7 @@ public static class RustBitcodeCompiler
             return binaryTarget;
         }
 
-        throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a binary target named '{binaryTargetName}'.");
+        throw new InvalidOperationException($"Cargo package '{manifestPath}' does not expose a binary target named '{options.BinaryTargetName}'.");
     }
 
     private static string FindBitcodeArtifact(string targetDirectory, bool release, string libraryTargetName, string? target)
@@ -396,6 +458,17 @@ public static class RustBitcodeCompiler
         return target;
     }
 
+    private static string GetProfileDirectory(string targetDirectory, bool release, string? target)
+    {
+        var profileDirectory = release ? "release" : "debug";
+        return string.IsNullOrWhiteSpace(target)
+            ? Path.Combine(targetDirectory, profileDirectory)
+            : Path.Combine(targetDirectory, ResolveTargetDirectoryName(target), profileDirectory);
+    }
+
+    private static string NormalizeCargoArtifactName(string targetName)
+        => targetName.Replace('-', '_');
+
     private static string RunProcess(string fileName, IReadOnlyList<string> arguments, string workingDirectory)
     {
         var startInfo = new ProcessStartInfo
@@ -433,5 +506,13 @@ public static class RustBitcodeCompiler
         return standardOutput;
     }
 
-    private sealed record CargoMetadata(string TargetDirectory, string TargetName);
+    private sealed record CargoMetadata(string TargetDirectory, string TargetName, bool IsBinary);
 }
+
+public sealed record RustCargoBuildResult(
+    string BitcodePath,
+    string AssemblyPath,
+    string TargetName,
+    string TargetDirectory,
+    string ProfileDirectory,
+    bool Release);

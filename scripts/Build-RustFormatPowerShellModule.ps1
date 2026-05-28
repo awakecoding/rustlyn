@@ -27,9 +27,9 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $outPath = if ([System.IO.Path]::IsPathRooted($OutDir)) { $OutDir } else { Join-Path $repoRoot $OutDir }
 $outPath = [System.IO.Path]::GetFullPath($outPath)
 $cmdletProject = Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.PowerShellCmdlets\Rustlyn.PowerShellCmdlets.csproj'
-$toolProject = Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj'
 $samplePath = Join-Path $repoRoot "samples\$Sample"
 $cmdletBuildDir = Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.PowerShellCmdlets\bin\Release\net10.0'
+. (Join-Path $PSScriptRoot 'Rustlyn.Cli.ps1')
 
 if (Test-Path $outPath) {
     Remove-Item -LiteralPath $outPath -Recurse -Force
@@ -46,7 +46,8 @@ $previousCargoTargetDir = $env:CARGO_TARGET_DIR
 $env:CARGO_INCREMENTAL = '0'
 $env:CARGO_TARGET_DIR = Join-Path ([System.IO.Path]::GetTempPath()) "rustlyn-cargo-target-$Sample"
 try {
-    dotnet run -c Release --project $toolProject -- translate $samplePath --out (Join-Path $outPath $EngineAssemblyName) --bitcode-out (Join-Path $outPath ([System.IO.Path]::ChangeExtension($EngineAssemblyName, '.bc'))) --toolchain $Toolchain --build-std $BuildStd
+    $rustlyn = Resolve-RustlynCli -RepoRoot $repoRoot -Configuration Release
+    Invoke-RustlynCli $rustlyn translate $samplePath --out (Join-Path $outPath $EngineAssemblyName) --bitcode-out (Join-Path $outPath ([System.IO.Path]::ChangeExtension($EngineAssemblyName, '.bc'))) --toolchain $Toolchain --build-std $BuildStd
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to translate sample '$Sample'."
     }

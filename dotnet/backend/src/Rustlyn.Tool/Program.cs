@@ -1,5 +1,92 @@
+using System.Diagnostics;
+using System.Reflection;
 using Rustlyn.Backend;
 using Rustlyn.Bindings;
+
+if (args.Length == 0 || IsHelpFlag(args[0]) || string.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase))
+{
+    var topic = args.Length > 1 ? args[1] : null;
+    PrintUsage(topic);
+    return args.Length == 0 ? 1 : 0;
+}
+
+if (IsVersionFlag(args[0]))
+{
+    PrintVersion();
+    return 0;
+}
+
+if (HasHelpFlag(args))
+{
+    PrintUsage(args[0]);
+    return 0;
+}
+
+if (args.Length >= 1 && string.Equals(args[0], "llvm", StringComparison.OrdinalIgnoreCase))
+{
+    return RunLlvm(args);
+}
+
+if (args.Length >= 1 && string.Equals(args[0], "rustc", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRustc(args);
+}
+
+if (args.Length >= 1 && string.Equals(args[0], "new", StringComparison.OrdinalIgnoreCase))
+{
+    return RunNew(args);
+}
+
+if (args.Length >= 1 && string.Equals(args[0], "run", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRun(args);
+}
+
+if (TryParseCargoArguments(args, out var cargoCratePath, out var cargoBuildOptions, out var cargoLlvmRoot, out var cargoStrict, out var cargoPowerShellCmdletBindings))
+{
+    try
+    {
+        var cargoResult = RustBitcodeCompiler.BuildCargoProject(cargoCratePath, cargoBuildOptions);
+        var loweredModule = LoweredIrLowerer.LowerBitcode(cargoResult.BitcodePath, cargoLlvmRoot);
+        var cargoEmitOptions = CreateEmitOptions(true, cargoStrict, cargoPowerShellCmdletBindings);
+        LoweredAssemblyEmitter.EmitModule(loweredModule, cargoResult.AssemblyPath, cargoEmitOptions);
+
+        Console.WriteLine($"Bitcode: {Path.GetFullPath(cargoResult.BitcodePath)}");
+        Console.WriteLine($"Assembly: {Path.GetFullPath(cargoResult.AssemblyPath)}");
+        Console.WriteLine($"PDB: {Path.GetFullPath(Path.ChangeExtension(cargoResult.AssemblyPath, ".pdb"))}");
+        return 0;
+    }
+    catch (UnsupportedIrException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 4;
+    }
+    catch (NotSupportedException ex)
+    {
+        Console.Error.WriteLine($"Unsupported IR: {ex.Message}");
+        return 4;
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("failed with exit code"))
+    {
+        Console.Error.WriteLine($"Build failed: {ex.Message}");
+        return 3;
+    }
+    catch (FileNotFoundException ex)
+    {
+        Console.Error.WriteLine($"Tool or artifact missing: {ex.Message}");
+        return 2;
+    }
+    catch (DirectoryNotFoundException ex)
+    {
+        Console.Error.WriteLine($"Tool or artifact missing: {ex.Message}");
+        return 2;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 1;
+    }
+}
 
 if (args.Length >= 1 && string.Equals(args[0], "diagnose", StringComparison.OrdinalIgnoreCase))
 {
@@ -227,13 +314,7 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
     }
 }
 
-Console.Error.WriteLine("Usage: Rustlyn.Tool inspect <path-to-bc> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool lower <path-to-bc> [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool emit <path-to-bc> --out <path-to-dll> [--pdb] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]   (types: i32, i64, u32, u64)");
-Console.Error.WriteLine("   or: Rustlyn.Tool pack <crate-path> --out <dir> [--version <semver>] [--llvm-root <path>]");
-Console.Error.WriteLine("   or: Rustlyn.Tool diagnose [--llvm-root <path>]");
+PrintUsage(null);
 return 1;
 
 static EmitOptions CreateEmitOptions(bool emitPdb, bool strict, bool powerShellCmdletBindings)
@@ -242,6 +323,628 @@ static EmitOptions CreateEmitOptions(bool emitPdb, bool strict, bool powerShellC
     return powerShellCmdletBindings
         ? options with { BindingManifests = [ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest()] }
         : options;
+}
+
+static bool IsHelpFlag(string argument) =>
+    string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(argument, "/?", StringComparison.Ordinal);
+
+static bool IsVersionFlag(string argument) =>
+    string.Equals(argument, "--version", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(argument, "-V", StringComparison.Ordinal);
+
+static bool HasHelpFlag(string[] args)
+{
+    for (var i = 1; i < args.Length; i++)
+    {
+        if (IsHelpFlag(args[i])) { return true; }
+    }
+    return false;
+}
+
+static void PrintVersion()
+{
+    var assembly = Assembly.GetExecutingAssembly();
+    var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+    var version = informational ?? assembly.GetName().Version?.ToString() ?? "unknown";
+    Console.WriteLine($"rustlyn {version}");
+    Console.WriteLine($"runtime: {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}");
+    var resolvedLlvmRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(null);
+    Console.WriteLine($"llvm-root: {resolvedLlvmRoot ?? "(unset; configure RUSTLYN_LLVM_ROOT)"}");
+}
+
+static void PrintUsage(string? command)
+{
+    if (!string.IsNullOrWhiteSpace(command))
+    {
+        var help = GetCommandHelp(command);
+        if (help is not null)
+        {
+            Console.WriteLine(help);
+            return;
+        }
+    }
+
+    Console.WriteLine("rustlyn - Rust -> .NET translation toolchain");
+    Console.WriteLine();
+    Console.WriteLine("Usage: rustlyn <command> [options]");
+    Console.WriteLine();
+    Console.WriteLine("Build & run:");
+    Console.WriteLine("  new        Scaffold a new sample crate");
+    Console.WriteLine("  rustc      Build single-file Rust source into bitcode (+ LLVM IR)");
+    Console.WriteLine("  cargo      Build a Cargo crate to bitcode + managed assembly");
+    Console.WriteLine("  translate  Build a Cargo crate to a managed assembly (custom outputs)");
+    Console.WriteLine("  pack       Translate and emit a .nupkg");
+    Console.WriteLine("  run        Build a Cargo crate and invoke a method on the assembly");
+    Console.WriteLine();
+    Console.WriteLine("Lower-level:");
+    Console.WriteLine("  emit       Lower a .bc into a managed .dll");
+    Console.WriteLine("  lower      Print the lowered IR for a .bc");
+    Console.WriteLine("  inspect    Print metadata for a bitcode artifact");
+    Console.WriteLine("  invoke     Invoke a method on an already-built bitcode artifact");
+    Console.WriteLine();
+    Console.WriteLine("Toolchain:");
+    Console.WriteLine("  diagnose   Check toolchain (cargo, rustc, llvm root, rustlyn-llvm)");
+    Console.WriteLine("  llvm       Forward a command to the native rustlyn-llvm helper");
+    Console.WriteLine("  help       Show this banner or per-command help (rustlyn help <command>)");
+    Console.WriteLine();
+    Console.WriteLine("Global flags:");
+    Console.WriteLine("  --help, -h        Show help (per command or top-level)");
+    Console.WriteLine("  --version, -V     Show tool version and toolchain info");
+}
+
+#pragma warning disable SA1500
+static string? GetCommandHelp(string command) => command.ToLowerInvariant() switch
+{
+    "new" => "Usage: rustlyn new <name> [--lib|--bin] [--in <dir>] [--edition <year>]\n\nScaffolds <dir>/<name>/Cargo.toml + src/lib.rs (or src/main.rs for --bin).\nDefaults: --lib, edition 2024. --in defaults to ./samples if present, else cwd.",
+    "rustc" => "Usage: rustlyn rustc <source.rs> [--out-dir <dir>] [--crate-name <name>] [--crate-type <lib|bin>] [--edition <year>] [--emit <bc|ll|bc,ll>] [--panic <abort|unwind>] [--overflow-checks <on|off>]\n\nWraps rustc with rustlyn's standardized flags (panic=abort, overflow-checks=off, edition=2021) and emits .bc/.ll in a single invocation.",
+    "cargo" => "Usage: rustlyn cargo [+<toolchain>] build [--manifest-path <Cargo.toml>] [--release] [--bin <name>] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]\n\nBuilds a Cargo crate to bitcode + managed assembly, writing into Cargo's normal target/<profile>/ directory.",
+    "translate" => "Usage: rustlyn translate <crate-path> --out <path-to-dll> [--bitcode-out <path-to-bc>] [--bin <name>] [--debug] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--cache <path>] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]\n\nBuilds a Cargo crate and emits a managed assembly at the specified path.",
+    "pack" => "Usage: rustlyn pack <crate-path> --out <dir> [--version <semver>] [--llvm-root <path>]\n\nTranslates a crate and produces a .nuspec + .nupkg in the output directory.",
+    "run" => "Usage: rustlyn run [<crate-path>] --method <name> [--arg <type:value>]... [--manifest-path <Cargo.toml>] [--release] [--bin <name>] [--toolchain <name>] [--target <triple-or-json>] [--build-std <components>] [--build-std-features <features>] [--strict] [--llvm-root <path>]\n\nBuilds a Cargo crate (like rustlyn cargo build) then invokes a method on the produced assembly. Arg types: i32, i64, u32, u64.",
+    "emit" => "Usage: rustlyn emit <path-to-bc> --out <path-to-dll> [--pdb] [--strict] [--powershell-cmdlet-bindings] [--llvm-root <path>]\n\nLowers an existing .bc into a .NET assembly.",
+    "lower" => "Usage: rustlyn lower <path-to-bc> [--llvm-root <path>]\n\nPrints the lowered IR dump for a bitcode artifact.",
+    "inspect" => "Usage: rustlyn inspect <path-to-bc> [--llvm-root <path>]\n\nPrints bitcode metadata (magic bytes, functions, globals, aliases).",
+    "invoke" => "Usage: rustlyn invoke <path-to-bc> --method <name> [--arg <type:value>]... [--llvm-root <path>]\n\nLoads a .bc, lowers it in memory, and invokes a method. Arg types: i32, i64, u32, u64.",
+    "diagnose" => "Usage: rustlyn diagnose [--llvm-root <path>]\n\nChecks cargo, rustc, nightly + rust-src, LLVM toolchain root, and the native rustlyn-llvm helper.",
+    "llvm" => "Usage: rustlyn llvm <rustlyn-llvm-command> [--llvm-root <path>]\n\nForwards a command line to the native rustlyn-llvm helper located inside the LLVM toolchain.",
+    _ => null
+};
+#pragma warning restore SA1500
+
+static int RunNew(string[] args)
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine(GetCommandHelp("new"));
+        return 1;
+    }
+
+    string? name = null;
+    string? targetDir = null;
+    var edition = "2024";
+    var isBinary = false;
+    var explicitLib = false;
+
+    for (var i = 1; i < args.Length; i++)
+    {
+        var argument = args[i];
+        if (string.Equals(argument, "--bin", StringComparison.OrdinalIgnoreCase)) { isBinary = true; continue; }
+        if (string.Equals(argument, "--lib", StringComparison.OrdinalIgnoreCase)) { explicitLib = true; continue; }
+        if (string.Equals(argument, "--in", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) { targetDir = args[++i]; continue; }
+        if (string.Equals(argument, "--edition", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) { edition = args[++i]; continue; }
+        if (name is null && !argument.StartsWith("-", StringComparison.Ordinal)) { name = argument; continue; }
+        Console.Error.WriteLine($"Unknown argument: {argument}");
+        Console.Error.WriteLine(GetCommandHelp("new"));
+        return 1;
+    }
+
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        Console.Error.WriteLine("rustlyn new requires a crate name.");
+        return 1;
+    }
+
+    if (isBinary && explicitLib)
+    {
+        Console.Error.WriteLine("--lib and --bin are mutually exclusive.");
+        return 1;
+    }
+
+    foreach (var c in name)
+    {
+        if (!char.IsLetterOrDigit(c) && c != '_' && c != '-')
+        {
+            Console.Error.WriteLine($"Invalid crate name '{name}'. Use letters, digits, '_' or '-'.");
+            return 1;
+        }
+    }
+
+    if (targetDir is null)
+    {
+        var samplesHere = Path.Combine(Directory.GetCurrentDirectory(), "samples");
+        targetDir = Directory.Exists(samplesHere) ? samplesHere : Directory.GetCurrentDirectory();
+    }
+
+    var resolvedTargetDir = Path.GetFullPath(targetDir);
+    var crateDir = Path.Combine(resolvedTargetDir, name);
+    if (Directory.Exists(crateDir) && Directory.EnumerateFileSystemEntries(crateDir).Any())
+    {
+        Console.Error.WriteLine($"Target directory already exists and is not empty: {crateDir}");
+        return 2;
+    }
+
+    Directory.CreateDirectory(Path.Combine(crateDir, "src"));
+
+    var cargoTomlBuilder = new System.Text.StringBuilder();
+    cargoTomlBuilder.AppendLine("[package]");
+    cargoTomlBuilder.AppendLine($"name = \"{name}\"");
+    cargoTomlBuilder.AppendLine("version = \"0.1.0\"");
+    cargoTomlBuilder.AppendLine($"edition = \"{edition}\"");
+    cargoTomlBuilder.AppendLine();
+    if (isBinary)
+    {
+        cargoTomlBuilder.AppendLine("[[bin]]");
+        cargoTomlBuilder.AppendLine($"name = \"{name}\"");
+        cargoTomlBuilder.AppendLine("path = \"src/main.rs\"");
+    }
+    else
+    {
+        cargoTomlBuilder.AppendLine("[lib]");
+        cargoTomlBuilder.AppendLine("crate-type = [\"lib\"]");
+    }
+
+    var cargoTomlPath = Path.Combine(crateDir, "Cargo.toml");
+    File.WriteAllText(cargoTomlPath, cargoTomlBuilder.ToString());
+
+    string sourcePath;
+    if (isBinary)
+    {
+        sourcePath = Path.Combine(crateDir, "src", "main.rs");
+        File.WriteAllText(sourcePath, $"fn main() {{\n    println!(\"hello from {name}\");\n}}\n");
+    }
+    else
+    {
+        sourcePath = Path.Combine(crateDir, "src", "lib.rs");
+        var safeName = name.Replace('-', '_');
+        var stub = "#[unsafe(no_mangle)]\n" +
+                   $"pub extern \"C\" fn {safeName}_answer() -> i32 {{\n" +
+                   "    42\n" +
+                   "}\n";
+        File.WriteAllText(sourcePath, stub);
+    }
+
+    Console.WriteLine($"Created {(isBinary ? "binary" : "library")} crate '{name}' at:");
+    Console.WriteLine($"  {crateDir}");
+    Console.WriteLine($"  {Path.GetRelativePath(crateDir, cargoTomlPath)}");
+    Console.WriteLine($"  {Path.GetRelativePath(crateDir, sourcePath)}");
+    Console.WriteLine();
+    Console.WriteLine("Next: rustlyn cargo build --manifest-path " + cargoTomlPath);
+    return 0;
+}
+
+static int RunRun(string[] args)
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine(GetCommandHelp("run"));
+        return 1;
+    }
+
+    var cratePath = Directory.GetCurrentDirectory();
+    var buildOptions = new RustBitcodeBuildOptions { Release = false, InferBinaryTarget = true };
+    string? llvmRoot = null;
+    string? methodName = null;
+    var invokeArguments = new List<object?>();
+    var strict = false;
+    var positionalAssigned = false;
+
+    for (var i = 1; i < args.Length; i++)
+    {
+        var argument = args[i];
+
+        if (string.Equals(argument, "--release", StringComparison.OrdinalIgnoreCase)) { buildOptions = buildOptions with { Release = true }; continue; }
+        if (string.Equals(argument, "--strict", StringComparison.OrdinalIgnoreCase)) { strict = true; continue; }
+        if (TryReadOptionValue(args, ref i, "--manifest-path", argument, out var manifestPath)) { cratePath = manifestPath; positionalAssigned = true; continue; }
+        if (TryReadOptionValue(args, ref i, "--bin", argument, out var binName)) { buildOptions = buildOptions with { BinaryTargetName = binName }; continue; }
+        if (TryReadOptionValue(args, ref i, "--toolchain", argument, out var toolchain)) { buildOptions = buildOptions with { Toolchain = toolchain }; continue; }
+        if (TryReadOptionValue(args, ref i, "--target", argument, out var target)) { buildOptions = buildOptions with { Target = target }; continue; }
+        if (TryReadOptionValue(args, ref i, "--build-std", argument, out var buildStd)) { buildOptions = buildOptions with { BuildStd = buildStd }; continue; }
+        if (TryReadOptionValue(args, ref i, "--build-std-features", argument, out var buildStdFeatures)) { buildOptions = buildOptions with { BuildStdFeatures = buildStdFeatures }; continue; }
+        if (TryReadOptionValue(args, ref i, "--llvm-root", argument, out var llvm)) { llvmRoot = llvm; continue; }
+        if (TryReadOptionValue(args, ref i, "--method", argument, out var method)) { methodName = method; continue; }
+        if (string.Equals(argument, "--arg", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) { invokeArguments.Add(ParseArgumentValue(args[++i])); continue; }
+        if (!positionalAssigned && !argument.StartsWith("-", StringComparison.Ordinal)) { cratePath = argument; positionalAssigned = true; continue; }
+
+        Console.Error.WriteLine($"Unknown argument: {argument}");
+        Console.Error.WriteLine(GetCommandHelp("run"));
+        return 1;
+    }
+
+    if (string.IsNullOrWhiteSpace(methodName))
+    {
+        Console.Error.WriteLine("rustlyn run requires --method <name>.");
+        return 1;
+    }
+
+    try
+    {
+        var emitOptions = CreateEmitOptions(true, strict, false);
+        var cargoResult = RustBitcodeCompiler.BuildCargoProject(cratePath, buildOptions);
+        var loweredModule = LoweredIrLowerer.LowerBitcode(cargoResult.BitcodePath, llvmRoot);
+        LoweredAssemblyEmitter.EmitModule(loweredModule, cargoResult.AssemblyPath, emitOptions);
+
+        var result = LoweredAssemblyInvoker.InvokeBitcode(cargoResult.BitcodePath, methodName, invokeArguments, llvmRoot);
+        Console.WriteLine(result is null ? "<null>" : result);
+        return 0;
+    }
+    catch (UnsupportedIrException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 4;
+    }
+    catch (NotSupportedException ex)
+    {
+        Console.Error.WriteLine($"Unsupported IR: {GetInnermostExceptionMessage(ex)}");
+        return 4;
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("failed with exit code"))
+    {
+        Console.Error.WriteLine($"Build failed: {ex.Message}");
+        return 3;
+    }
+    catch (FileNotFoundException ex)
+    {
+        Console.Error.WriteLine($"Tool or artifact missing: {ex.Message}");
+        return 2;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(GetInnermostExceptionMessage(ex));
+        return 1;
+    }
+}
+
+static int RunRustc(string[] args)
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine("Usage: rustlyn rustc <source.rs> [--out-dir <dir>] [--crate-name <name>] [--crate-type <lib|bin>] [--edition <year>] [--emit <bc|ll|bc,ll>] [--panic <abort|unwind>] [--overflow-checks <on|off>]");
+        return 1;
+    }
+
+    string? sourcePath = null;
+    string? outDir = null;
+    string? crateName = null;
+    var crateType = "lib";
+    var edition = "2021";
+    var emit = "bc,ll";
+    var panic = "abort";
+    var overflowChecks = "off";
+
+    for (var index = 1; index < args.Length; index++)
+    {
+        var argument = args[index];
+        if (string.Equals(argument, "--out-dir", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { outDir = args[++index]; continue; }
+        if (string.Equals(argument, "--crate-name", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { crateName = args[++index]; continue; }
+        if (string.Equals(argument, "--crate-type", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { crateType = args[++index]; continue; }
+        if (string.Equals(argument, "--edition", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { edition = args[++index]; continue; }
+        if (string.Equals(argument, "--emit", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { emit = args[++index]; continue; }
+        if (string.Equals(argument, "--panic", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { panic = args[++index]; continue; }
+        if (string.Equals(argument, "--overflow-checks", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length) { overflowChecks = args[++index]; continue; }
+        if (sourcePath is null && !argument.StartsWith("-", StringComparison.Ordinal)) { sourcePath = argument; continue; }
+
+        Console.Error.WriteLine($"Unknown or misplaced argument: {argument}");
+        return 1;
+    }
+
+    if (string.IsNullOrWhiteSpace(sourcePath))
+    {
+        Console.Error.WriteLine("rustlyn rustc requires a source file path.");
+        return 1;
+    }
+
+    var resolvedSource = Path.GetFullPath(sourcePath);
+    if (!File.Exists(resolvedSource))
+    {
+        Console.Error.WriteLine($"Source file not found: {resolvedSource}");
+        return 2;
+    }
+
+    crateName ??= Path.GetFileNameWithoutExtension(resolvedSource);
+    var resolvedOutDir = Path.GetFullPath(outDir ?? Path.GetDirectoryName(resolvedSource) ?? Directory.GetCurrentDirectory());
+    Directory.CreateDirectory(resolvedOutDir);
+
+    var emitKinds = new List<string>();
+    foreach (var part in emit.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        var normalized = part.ToLowerInvariant() switch
+        {
+            "bc" or "llvm-bc" => "llvm-bc",
+            "ll" or "llvm-ir" => "llvm-ir",
+            _ => null
+        };
+        if (normalized is null)
+        {
+            Console.Error.WriteLine($"Unsupported --emit kind: {part} (expected bc, ll, or bc,ll)");
+            return 1;
+        }
+        if (!emitKinds.Contains(normalized)) { emitKinds.Add(normalized); }
+    }
+
+    var bitcodePath = Path.Combine(resolvedOutDir, crateName + ".bc");
+    var irPath = Path.Combine(resolvedOutDir, crateName + ".ll");
+
+    var startInfo = new ProcessStartInfo
+    {
+        FileName = "rustc",
+        WorkingDirectory = Directory.GetCurrentDirectory(),
+        UseShellExecute = false
+    };
+    startInfo.ArgumentList.Add(resolvedSource);
+    startInfo.ArgumentList.Add("--crate-name"); startInfo.ArgumentList.Add(crateName);
+    startInfo.ArgumentList.Add("--crate-type"); startInfo.ArgumentList.Add(crateType);
+    startInfo.ArgumentList.Add("--edition"); startInfo.ArgumentList.Add(edition);
+    startInfo.ArgumentList.Add("-C"); startInfo.ArgumentList.Add($"overflow-checks={overflowChecks}");
+    startInfo.ArgumentList.Add("-C"); startInfo.ArgumentList.Add($"panic={panic}");
+    startInfo.ArgumentList.Add("--emit"); startInfo.ArgumentList.Add(string.Join(',', emitKinds));
+    startInfo.ArgumentList.Add("--out-dir"); startInfo.ArgumentList.Add(resolvedOutDir);
+
+    Process process;
+    try
+    {
+        process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start rustc.");
+    }
+    catch (System.ComponentModel.Win32Exception ex)
+    {
+        Console.Error.WriteLine($"rustc not found on PATH: {ex.Message}");
+        return 2;
+    }
+
+    process.WaitForExit();
+    if (process.ExitCode != 0)
+    {
+        return process.ExitCode;
+    }
+
+    foreach (var kind in emitKinds)
+    {
+        var produced = kind == "llvm-bc" ? bitcodePath : irPath;
+        if (!File.Exists(produced))
+        {
+            Console.Error.WriteLine($"Expected rustc output was not produced: {produced}");
+            return 3;
+        }
+        Console.WriteLine(produced);
+    }
+
+    return 0;
+}
+
+static int RunLlvm(string[] args)
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine("Usage: rustlyn llvm <rustlyn-llvm-command> [--llvm-root <path>]");
+        return 1;
+    }
+
+    string? llvmRoot = null;
+    var helperArguments = new List<string>();
+    for (var index = 1; index < args.Length; index++)
+    {
+        if (string.Equals(args[index], "--llvm-root", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+        {
+            llvmRoot = args[index + 1];
+            index++;
+            continue;
+        }
+
+        helperArguments.Add(args[index]);
+    }
+
+    if (helperArguments.Count == 0)
+    {
+        Console.Error.WriteLine("Usage: rustlyn llvm <rustlyn-llvm-command> [--llvm-root <path>]");
+        return 1;
+    }
+
+    var resolvedLlvmRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(llvmRoot);
+    if (resolvedLlvmRoot is null)
+    {
+        Console.Error.WriteLine("Set RUSTLYN_LLVM_ROOT or use --llvm-root to point at an LLVM toolchain containing rustlyn-llvm.");
+        return 2;
+    }
+
+    var helperPath = LlvmNativeLibraryLocator.TryGetToolPath(resolvedLlvmRoot, "rustlyn-llvm.exe");
+    if (helperPath is null)
+    {
+        Console.Error.WriteLine($"Configured LLVM toolchain does not contain rustlyn-llvm: {LlvmNativeLibraryLocator.GetBinPath(resolvedLlvmRoot)}");
+        return 2;
+    }
+
+    var startInfo = new ProcessStartInfo
+    {
+        FileName = helperPath,
+        WorkingDirectory = Directory.GetCurrentDirectory(),
+        UseShellExecute = false
+    };
+
+    foreach (var argument in helperArguments)
+    {
+        startInfo.ArgumentList.Add(argument);
+    }
+
+    using var process = Process.Start(startInfo)
+        ?? throw new InvalidOperationException($"Failed to start rustlyn-llvm at '{helperPath}'.");
+    process.WaitForExit();
+    return process.ExitCode;
+}
+
+static bool TryParseCargoArguments(string[] args, out string cratePath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out bool strict, out bool powerShellCmdletBindings)
+{
+    cratePath = Directory.GetCurrentDirectory();
+    buildOptions = new RustBitcodeBuildOptions
+    {
+        Release = false,
+        InferBinaryTarget = true
+    };
+    llvmRoot = null;
+    strict = false;
+    powerShellCmdletBindings = false;
+
+    if (args.Length < 2 || !string.Equals(args[0], "cargo", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    var commandIndex = 1;
+    if (args[commandIndex].StartsWith("+", StringComparison.Ordinal) && args[commandIndex].Length > 1)
+    {
+        buildOptions = buildOptions with { Toolchain = args[commandIndex][1..] };
+        commandIndex++;
+    }
+
+    if (commandIndex >= args.Length || !string.Equals(args[commandIndex], "build", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    for (var index = commandIndex + 1; index < args.Length; index++)
+    {
+        var argument = args[index];
+        if (string.Equals(argument, "--release", StringComparison.OrdinalIgnoreCase))
+        {
+            buildOptions = buildOptions with { Release = true };
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--manifest-path", argument, out var manifestPath))
+        {
+            cratePath = manifestPath;
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--bin", argument, out var binaryTargetName))
+        {
+            buildOptions = buildOptions with { BinaryTargetName = binaryTargetName };
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--target", argument, out var target))
+        {
+            buildOptions = buildOptions with { Target = target };
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--toolchain", argument, out var toolchain))
+        {
+            buildOptions = buildOptions with { Toolchain = toolchain };
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--llvm-root", argument, out var parsedLlvmRoot))
+        {
+            llvmRoot = parsedLlvmRoot;
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--build-std", argument, out var buildStd))
+        {
+            buildOptions = buildOptions with { BuildStd = buildStd };
+            continue;
+        }
+
+        if (TryReadOptionValue(args, ref index, "--build-std-features", argument, out var buildStdFeatures))
+        {
+            buildOptions = buildOptions with { BuildStdFeatures = buildStdFeatures };
+            continue;
+        }
+
+        if (string.Equals(argument, "-Z", StringComparison.Ordinal) && index + 1 < args.Length)
+        {
+            if (!TryApplyCargoUnstableOption(args[index + 1], buildOptions, out buildOptions))
+            {
+                return false;
+            }
+
+            index++;
+            continue;
+        }
+
+        if (argument.StartsWith("-Z", StringComparison.Ordinal) && argument.Length > 2)
+        {
+            if (!TryApplyCargoUnstableOption(argument[2..], buildOptions, out buildOptions))
+            {
+                return false;
+            }
+
+            continue;
+        }
+
+        if (string.Equals(argument, "--strict", StringComparison.OrdinalIgnoreCase))
+        {
+            strict = true;
+            continue;
+        }
+
+        if (string.Equals(argument, "--powershell-cmdlet-bindings", StringComparison.OrdinalIgnoreCase))
+        {
+            powerShellCmdletBindings = true;
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+static bool TryReadOptionValue(string[] args, ref int index, string optionName, string argument, out string value)
+{
+    value = string.Empty;
+
+    if (argument.StartsWith($"{optionName}=", StringComparison.OrdinalIgnoreCase))
+    {
+        value = argument[(optionName.Length + 1)..];
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    if (!string.Equals(argument, optionName, StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    if (index + 1 >= args.Length || string.IsNullOrWhiteSpace(args[index + 1]))
+    {
+        return false;
+    }
+
+    value = args[index + 1];
+    index++;
+    return true;
+}
+
+static bool TryApplyCargoUnstableOption(string option, RustBitcodeBuildOptions currentOptions, out RustBitcodeBuildOptions updatedOptions)
+{
+    updatedOptions = currentOptions;
+    const string BuildStdPrefix = "build-std=";
+    const string BuildStdFeaturesPrefix = "build-std-features=";
+
+    if (option.StartsWith(BuildStdPrefix, StringComparison.Ordinal))
+    {
+        updatedOptions = currentOptions with { BuildStd = option[BuildStdPrefix.Length..] };
+        return !string.IsNullOrWhiteSpace(updatedOptions.BuildStd);
+    }
+
+    if (option.StartsWith(BuildStdFeaturesPrefix, StringComparison.Ordinal))
+    {
+        updatedOptions = currentOptions with { BuildStdFeatures = option[BuildStdFeaturesPrefix.Length..] };
+        return !string.IsNullOrWhiteSpace(updatedOptions.BuildStdFeatures);
+    }
+
+    return false;
 }
 
 static bool TryParseTranslateArguments(string[] args, out string cratePath, out string outputPath, out RustBitcodeBuildOptions buildOptions, out string? llvmRoot, out string? cachePath, out bool strict, out bool powerShellCmdletBindings)

@@ -68,6 +68,8 @@ RunTest("RustBitcodeBuildStdRequiresToolchain", RustBitcodeBuildStdRequiresToolc
 RunTest("RustBitcodeBuildStdFeaturesRequireBuildStd", RustBitcodeBuildStdFeaturesRequireBuildStd, failures);
 RunTest("RustBitcodeBuildArgumentsIncludeBuildStdFeatures", RustBitcodeBuildArgumentsIncludeBuildStdFeatures, failures);
 RunTest("RustBitcodeToolchainAcceptsLeadingPlus", RustBitcodeToolchainAcceptsLeadingPlus, failures);
+RunTest("RustBitcodeCargoBuildArgumentsDefaultToDebug", RustBitcodeCargoBuildArgumentsDefaultToDebug, failures);
+RunTest("RustBitcodeCargoBuildArgumentsSupportBinaryTarget", RustBitcodeCargoBuildArgumentsSupportBinaryTarget, failures);
 RunTest("LowererStripsTrailingMetadataFromReturnValue", LowererStripsTrailingMetadataFromReturnValue, failures);
 RunTest("LowererStripsTrailingMetadataFromSelectValues", LowererStripsTrailingMetadataFromSelectValues, failures);
 RunTest("LowererStripsAtomicStoreOrderingFromDestination", LowererStripsAtomicStoreOrderingFromDestination, failures);
@@ -22433,6 +22435,32 @@ static void RustBitcodeToolchainAcceptsLeadingPlus()
     var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
     Assert(arguments.Contains("+nightly"), "Expected cargo arguments to include a single leading-plus toolchain selector.");
     Assert(!arguments.Contains("++nightly"), "Expected cargo arguments to normalize SourceGear-style leading-plus toolchain values.");
+}
+
+static void RustBitcodeCargoBuildArgumentsDefaultToDebug()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Release = false,
+        InferBinaryTarget = true
+    };
+
+    var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
+    Assert(!arguments.Contains("--release"), "Expected rustlyn cargo build arguments to match cargo's debug-profile default.");
+    Assert(ContainsAdjacent(arguments, "--emit", "llvm-bc,llvm-ir"), "Expected rustlyn cargo build arguments to request LLVM bitcode plus textual IR.");
+}
+
+static void RustBitcodeCargoBuildArgumentsSupportBinaryTarget()
+{
+    var options = new RustBitcodeBuildOptions
+    {
+        Release = false,
+        BinaryTargetName = "hello"
+    };
+
+    var arguments = RustBitcodeCompiler.CreateCargoRustcArguments("Cargo.toml", options).ToArray();
+    Assert(ContainsAdjacent(arguments, "--bin", "hello"), "Expected rustlyn cargo build arguments to select the requested binary target.");
+    Assert(!arguments.Contains("--lib"), "Expected rustlyn cargo build arguments to avoid --lib when a binary target is selected.");
 }
 
 static void LowererStripsTrailingMetadataFromReturnValue()

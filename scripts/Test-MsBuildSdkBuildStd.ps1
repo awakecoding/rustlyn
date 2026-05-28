@@ -15,19 +15,21 @@ $projectPath = Join-Path $workspaceRoot "samples\msbuild_build_std_core\msbuild_
 $outputAssembly = Join-Path $workspaceRoot "samples\msbuild_build_std_core\bin\$Configuration\net10.0\msbuild_build_std_core.dll"
 $bitcodePath = Join-Path $workspaceRoot "samples\msbuild_build_std_core\obj\$Configuration\net10.0\msbuild_build_std_core.bc"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\rustlyn.dll"
+. (Join-Path $PSScriptRoot "Rustlyn.Cli.ps1")
 
 if ($SkipToolBuild) {
     if (-not (Test-Path $toolDll)) {
-        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+        throw "rustlyn DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
     }
 }
 else {
     dotnet build $toolProject -c $Configuration /nologo
     if ($LASTEXITCODE -ne 0) {
-        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+        throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
+$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -SkipBuild
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
@@ -49,7 +51,7 @@ if (-not (Test-Path $bitcodePath)) {
     throw "Expected build-std translated bitcode was not created: $bitcodePath"
 }
 
-$invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
+$invokeOutput = Invoke-RustlynCli $rustlyn invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "MSBuild SDK build-std sample invoke failed with exit code $LASTEXITCODE."
 }

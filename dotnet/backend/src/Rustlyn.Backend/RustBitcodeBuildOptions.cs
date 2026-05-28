@@ -8,6 +8,8 @@ public sealed record RustBitcodeBuildOptions
 
     public string? BinaryTargetName { get; init; }
 
+    public bool InferBinaryTarget { get; init; }
+
     public string? Toolchain { get; init; }
 
     public string? Target { get; init; }

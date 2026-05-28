@@ -22,14 +22,15 @@ See the [support matrix](docs/support-matrix.md) for supported, preview, fixture
 
 ## What you can do here today
 
-1. Translate a Rust crate into a managed .NET assembly via `rustlyn translate`.
-2. Produce translated crate package artifacts via the preview `rustlyn pack` flow.
-3. Inspect or lower LLVM bitcode to see the intermediate representation.
-4. Generate bindings for any .NET assembly via `rustlyn-bindings scan/bindgen`.
-5. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
-6. Run generated-bindings workloads (lousygrep) that call .NET APIs from Rust.
-7. Run the Avalonia desktop GUI sample entirely from Rust bitcode.
-8. Validate with smoke tests and a 18,000+ line regression harness.
+1. Build a Cargo crate into LLVM bitcode plus a managed assembly via `rustlyn cargo build`.
+2. Translate a Rust crate into a managed .NET assembly via `rustlyn translate`.
+3. Produce translated crate package artifacts via the preview `rustlyn pack` flow.
+4. Inspect or lower LLVM bitcode to see the intermediate representation.
+5. Generate bindings for any .NET assembly via `rustlyn-bindings scan/bindgen`.
+6. Build `.rsproj` projects with `dotnet build` using the Rustlyn SDK.
+7. Run generated-bindings workloads (lousygrep) that call .NET APIs from Rust.
+8. Run the Avalonia desktop GUI sample entirely from Rust bitcode.
+9. Validate with smoke tests and a 18,000+ line regression harness.
 
 ## Quick Start
 
@@ -59,6 +60,16 @@ Run a focused smoke test on that sample:
 .\scripts\Test-Smoke.ps1 -Sample add -Mode Bitcode
 ```
 
+Build a Cargo crate in place and emit stable Cargo-profile artifacts:
+
+```powershell
+dotnet build .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -c Release
+$rustlyn = ".\dotnet\backend\src\Rustlyn.Tool\bin\Release\net10.0\rustlyn.exe"
+& $rustlyn cargo build --manifest-path .\samples\add\Cargo.toml
+```
+
+This writes `target\debug\<crate>.bc`, `target\debug\<crate>.ll`, `target\debug\<crate>.dll`, and `target\debug\<crate>.pdb` beside Cargo's regular debug output. Published builds use the executable name `rustlyn`, so the same flow from a crate directory is `rustlyn cargo build`. Repo scripts use `scripts\Rustlyn.Cli.ps1` to resolve this local command without requiring a global install.
+
 Run the canonical generated-bindings lousygrep workload:
 
 ```powershell
@@ -68,13 +79,13 @@ Run the canonical generated-bindings lousygrep workload:
 Drive the backend tool directly:
 
 ```powershell
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- inspect .\artifacts\out\add\add.bc
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- lower .\artifacts\out\add\add.bc
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll --pdb
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate .\samples\add --out .\artifacts\out\add\add.from-cargo.dll --bitcode-out .\artifacts\out\add\add.from-cargo.bc
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate .\samples\add --out .\artifacts\out\add\add.dll --cache .\artifacts\scratch\.cache.json
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- pack .\samples\add --out .\artifacts\out\add --version 1.0.0
+& $rustlyn inspect .\artifacts\out\add\add.bc
+& $rustlyn lower .\artifacts\out\add\add.bc
+& $rustlyn emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll
+& $rustlyn emit .\artifacts\out\add\add.bc --out .\artifacts\out\add\add.generated.dll --pdb
+& $rustlyn translate .\samples\add --out .\artifacts\out\add\add.from-cargo.dll --bitcode-out .\artifacts\out\add\add.from-cargo.bc
+& $rustlyn translate .\samples\add --out .\artifacts\out\add\add.dll --cache .\artifacts\scratch\.cache.json
+& $rustlyn pack .\samples\add --out .\artifacts\out\add --version 1.0.0
 ```
 
 Run the backend regression harness:
@@ -92,7 +103,7 @@ Try the first local MSBuild SDK facade:
 .\scripts\Test-MsBuildSdkPackage.ps1 -Configuration Release
 ```
 
-The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `Rustlyn.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. It also checks SourceGear-style project-system metadata such as `Language=Rust`, `.rs` as the default source extension, and managed target runtime. It builds `samples/msbuild_sourcegear_aliases/msbuild_sourcegear_aliases.rsproj`, proving SourceGear-style `RustToolchain=+nightly` and `RustDebugOrRelease=debug` properties map onto the revived translate path, and `samples/msbuild_generated_cargo/msbuild_generated_cargo.rsproj`, proving the SDK can synthesize a Cargo manifest from `.rsproj` metadata with both local `RustReference` and crates.io `RustCrateReference` dependencies, including inferred path dependency names, `Version`, `DefaultFeatures`, comma-separated `Features` metadata, and SourceGear-style Cargo auto-target guards. The binary script builds `samples/msbuild_bin_trivial/msbuild_bin_trivial.rsproj`, uses `RustlynBinaryTarget`, runs the emitted console assembly, verifies `Clean` removes generated outputs and copied support assemblies, and also checks `samples/msbuild_bin_inferred/msbuild_bin_inferred.rsproj`, where `OutputType=Exe` infers the Cargo binary target from `AssemblyName`. The build-std script builds `samples/msbuild_build_std_core/msbuild_build_std_core.rsproj` with `RustlynToolchain=nightly` and `RustlynBuildStd=core`, matching the first SourceGear sysroot-recovery rung. The package script packs `Rustlyn.Sdk` into `artifacts/scratch/packages`, bundles a published `Rustlyn.Tool` under `tools/net10.0`, and verifies NuGet-style SDK resolution from generated scratch library, inferred-binary, and generated-bindings lousygrep `.rsproj` projects without passing a source-tree tool path. The lousygrep package check also runs the translated console assembly from scratch output, verifies copied support assemblies are present beside it, and verifies `Clean` removes them.
+The first script builds `samples/msbuild_add/msbuild_add.rsproj` with `dotnet build` by resolving the local `Rustlyn.Sdk` from `dotnet/backend/src`, then verifies the generated bitcode still invokes `add_i32(19, 23) => 42`. It also checks SourceGear-style project-system metadata such as `Language=Rust`, `.rs` as the default source extension, and managed target runtime. It builds `samples/msbuild_sourcegear_aliases/msbuild_sourcegear_aliases.rsproj`, proving SourceGear-style `RustToolchain=+nightly` and `RustDebugOrRelease=debug` properties map onto the revived translate path, and `samples/msbuild_generated_cargo/msbuild_generated_cargo.rsproj`, proving the SDK can synthesize a Cargo manifest from `.rsproj` metadata with both local `RustReference` and crates.io `RustCrateReference` dependencies, including inferred path dependency names, `Version`, `DefaultFeatures`, comma-separated `Features` metadata, and SourceGear-style Cargo auto-target guards. The binary script builds `samples/msbuild_bin_trivial/msbuild_bin_trivial.rsproj`, uses `RustlynBinaryTarget`, runs the emitted console assembly, verifies `Clean` removes generated outputs and copied support assemblies, and also checks `samples/msbuild_bin_inferred/msbuild_bin_inferred.rsproj`, where `OutputType=Exe` infers the Cargo binary target from `AssemblyName`. The build-std script builds `samples/msbuild_build_std_core/msbuild_build_std_core.rsproj` with `RustlynToolchain=nightly` and `RustlynBuildStd=core`, matching the first SourceGear sysroot-recovery rung. The package script packs `Rustlyn.Sdk` into `artifacts/scratch/packages`, bundles the published `rustlyn` tool under `tools/net10.0`, and verifies NuGet-style SDK resolution from generated scratch library, inferred-binary, and generated-bindings lousygrep `.rsproj` projects without passing a source-tree tool path. The lousygrep package check also runs the translated console assembly from scratch output, verifies copied support assemblies are present beside it, and verifies `Clean` removes them.
 
 Try the first Avalonia bridge sample:
 
@@ -127,7 +138,7 @@ dotnet .\artifacts\scratch\avalonia_hello.dll
 - `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, path, and string method/property APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
-- `dotnet/backend/src/Rustlyn.Tool/`: CLI for inspect, lower, emit, invoke, translate, and pack flows
+- `dotnet/backend/src/Rustlyn.Tool/`: CLI for cargo, llvm, inspect, lower, emit, invoke, translate, and pack flows
 - `dotnet/backend/src/Rustlyn.Backend/`: lowering, IL emission, Portable PDB, translation cache, NuGet packaging
 - `dotnet/backend/src/Rustlyn.Bindings/`: binding generation — assembly scanner, instance/constructor/generic/delegate/event analysis
 - `dotnet/backend/src/Rustlyn.Bindings.Tool/`: CLI for scan, bindgen, analyze-delegate, analyze-events commands
