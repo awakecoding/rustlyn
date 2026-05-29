@@ -57,6 +57,12 @@ The helper's text command is equivalent to Rustlyn's old `llvm-opt` usage:
 rustlyn-llvm print-ir input.bc --disable-verify --output -
 ```
 
+The managed `rustlyn` executable also exposes the helper under the `llvm` command when `RUSTLYN_LLVM_ROOT` or `--llvm-root` points at a helper install:
+
+```powershell
+rustlyn llvm print-ir input.bc --disable-verify --output -
+```
+
 It also accepts the current compatibility shape:
 
 ```powershell

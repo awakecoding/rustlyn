@@ -4,7 +4,7 @@
     Drives the AOT smoke sample end-to-end.
 
 .DESCRIPTION
-    1. Translates samples/aot_smoke into a managed assembly using Rustlyn.Tool.
+    1. Translates samples/aot_smoke into a managed assembly using rustlyn.
     2. Copies that assembly into samples/aot_smoke/host as AotSmoke.Translated.dll.
     3. Publishes the host with PublishAot=true.
     4. Executes the published native binary and asserts the expected stdout.
@@ -18,6 +18,7 @@
 param(
     [string]$LlvmRoot = $env:RUSTLYN_LLVM_ROOT,
     [string]$Runtime,
+    [string]$ToolPath,
     [string]$ToolDll
 )
 
@@ -27,6 +28,8 @@ $sample = Join-Path $repoRoot 'samples\aot_smoke'
 $hostProject = Join-Path $sample 'host'
 $translatedDll = Join-Path $hostProject 'AotSmoke.Translated.dll'
 $translatedBc = Join-Path $hostProject 'AotSmoke.Translated.bc'
+. (Join-Path $PSScriptRoot 'Rustlyn.Cli.ps1')
+$rustlyn = Resolve-RustlynCli -RepoRoot $repoRoot -Configuration Release -ToolPath $ToolPath -ToolDll $ToolDll
 
 if (-not $Runtime) {
     $Runtime = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { 'linux-x64' }
@@ -35,17 +38,7 @@ if (-not $Runtime) {
 Write-Host "Translating $sample -> $translatedDll"
 $translateArgs = @('translate', $sample, '--out', $translatedDll, '--bitcode-out', $translatedBc)
 if ($LlvmRoot) { $translateArgs += @('--llvm-root', $LlvmRoot) }
-if ($ToolDll) {
-    $resolvedToolDll = if ([System.IO.Path]::IsPathRooted($ToolDll)) { $ToolDll } else { Join-Path $repoRoot $ToolDll }
-    if (-not (Test-Path -LiteralPath $resolvedToolDll -PathType Leaf)) {
-        throw "Rustlyn.Tool DLL not found: $resolvedToolDll"
-    }
-
-    & dotnet $resolvedToolDll @translateArgs
-}
-else {
-    & dotnet run -c Release --project (Join-Path $repoRoot 'dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj') -- @translateArgs
-}
+Invoke-RustlynCli $rustlyn @translateArgs
 if ($LASTEXITCODE -ne 0) { throw "rustlyn translate failed with exit code $LASTEXITCODE." }
 
 Write-Host "Publishing host for $Runtime with PublishAot=true"

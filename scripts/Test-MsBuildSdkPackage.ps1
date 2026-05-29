@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
 $sdkProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Sdk\Rustlyn.Sdk.csproj"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\rustlyn.dll"
 $packageSource = Join-Path $workspaceRoot "artifacts\scratch\packages"
 $packagePath = Join-Path $packageSource "Rustlyn.Sdk.0.1.0-local.nupkg"
 $scratchProjectRoot = Join-Path $workspaceRoot "artifacts\scratch\msbuild-sdk-package"
@@ -34,6 +34,7 @@ $binTrivialCratePath = Join-Path $workspaceRoot "samples\bin_trivial"
 $workloadCratePath = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep"
 $workloadFixtureDirectory = Join-Path $workspaceRoot "samples\generated_bindings_lousygrep\fixtures"
 $supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
+. (Join-Path $PSScriptRoot "Rustlyn.Cli.ps1")
 
 if (Test-Path $scratchProjectRoot) {
     Remove-Item -Recurse -Force $scratchProjectRoot
@@ -47,15 +48,16 @@ New-Item -ItemType Directory -Force -Path $packageSource, $scratchProjectRoot, $
 
 if ($SkipToolBuild) {
     if (-not (Test-Path $toolDll)) {
-        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+        throw "rustlyn DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
     }
 }
 else {
     dotnet build $toolProject -c $Configuration /nologo
     if ($LASTEXITCODE -ne 0) {
-        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+        throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
+$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $toolDll
 
 dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo
 if ($LASTEXITCODE -ne 0) {
@@ -65,9 +67,9 @@ if ($LASTEXITCODE -ne 0) {
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $package = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
 try {
-    $toolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/net10.0/Rustlyn.Tool.dll" } | Select-Object -First 1
+    $toolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/net10.0/rustlyn.dll" } | Select-Object -First 1
     if ($null -eq $toolEntry) {
-        throw "Expected packaged SDK to contain tools/net10.0/Rustlyn.Tool.dll."
+        throw "Expected packaged SDK to contain tools/net10.0/rustlyn.dll."
     }
 }
 finally {
@@ -182,7 +184,7 @@ foreach ($supportAssemblyName in $supportAssemblyNames) {
     }
 }
 
-$invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
+$invokeOutput = Invoke-RustlynCli $rustlyn invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "Packaged MSBuild SDK sample invoke failed with exit code $LASTEXITCODE."
 }

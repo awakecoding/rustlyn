@@ -21,36 +21,15 @@ param(
 $ErrorActionPreference = "Stop"
 
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
-$toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-$defaultToolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
-$script:RustlynToolDll = $null
-
-function Resolve-RustlynToolDll {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$CandidatePath
-    )
-
-    $resolvedPath = if ([System.IO.Path]::IsPathRooted($CandidatePath)) {
-        $CandidatePath
-    }
-    else {
-        Join-Path $workspaceRoot $CandidatePath
-    }
-
-    if (-not (Test-Path -LiteralPath $resolvedPath -PathType Leaf)) {
-        throw "Rustlyn.Tool DLL not found: $resolvedPath"
-    }
-
-    return (Resolve-Path -LiteralPath $resolvedPath).ProviderPath
-}
+. (Join-Path $PSScriptRoot "Rustlyn.Cli.ps1")
+$script:RustlynCli = $null
 
 function Invoke-RustlynTool {
-    if (-not $script:RustlynToolDll) {
-        throw "Rustlyn.Tool DLL has not been resolved."
+    if (-not $script:RustlynCli) {
+        throw "rustlyn CLI has not been resolved."
     }
 
-    & dotnet $script:RustlynToolDll @args
+    Invoke-RustlynCli $script:RustlynCli @args
 }
 
 $sampleChecks = @{
@@ -1817,7 +1796,7 @@ function Invoke-SmokeCheck {
             throw "rustlyn emit failed for '$CurrentSample' with exit code $LASTEXITCODE"
         }
 
-        # Prefer invoking through Rustlyn.Tool when the argument shape is supported.
+        # Prefer invoking through rustlyn when the argument shape is supported.
         # This avoids loading the emitted .NET 10 assembly into the host pwsh process,
         # which may run on an older .NET runtime (e.g. pwsh 7.4 on .NET 8) and reject
         # the System.Runtime 10.0.0.0 reference. The in-process path below remains as
@@ -2107,15 +2086,10 @@ function Format-InvokeArgument {
 Push-Location $workspaceRoot
 try {
     if ($ToolDll) {
-        $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $ToolDll
+        $script:RustlynCli = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $ToolDll -SkipBuild
     }
     else {
-        dotnet build -c $Configuration $toolProject -p:UseSharedCompilation=false
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet build failed with exit code $LASTEXITCODE"
-        }
-
-        $script:RustlynToolDll = Resolve-RustlynToolDll -CandidatePath $defaultToolDll
+        $script:RustlynCli = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration
     }
 
     foreach ($currentSample in $Sample) {

@@ -277,6 +277,8 @@ public static partial class LoweredIrLowerer
 
     private static LoweredInstruction ParseInstruction(string line)
     {
+        line = StripTrailingInstructionMetadata(line);
+
         var earlyTyped = TryParseUnsupportedTyped(line);
         if (earlyTyped is not null)
         {
@@ -723,6 +725,7 @@ public static partial class LoweredIrLowerer
         {
             if (TryReadTypePrefix(remainder, out var type, out var operandsText))
             {
+                operandsText = StripTrailingInstructionMetadata(operandsText);
                 var commaIndex = FindTopLevelComma(operandsText);
                 if (commaIndex <= 0 || commaIndex == operandsText.Length - 1)
                 {
@@ -1386,7 +1389,7 @@ public static partial class LoweredIrLowerer
 
         while (true)
         {
-            var commaIndex = FindTopLevelComma(remaining);
+            var commaIndex = FindLastTopLevelComma(remaining);
             if (commaIndex < 0)
             {
                 return remaining;
@@ -1400,6 +1403,35 @@ public static partial class LoweredIrLowerer
 
             remaining = remaining[..commaIndex].TrimEnd();
         }
+    }
+
+    private static int FindLastTopLevelComma(string text)
+    {
+        var angleDepth = 0;
+        var bracketDepth = 0;
+        var parenthesisDepth = 0;
+        var lastIndex = -1;
+
+        for (var index = 0; index < text.Length; index++)
+        {
+            switch (text[index])
+            {
+                case '<': angleDepth++; break;
+                case '>': angleDepth--; break;
+                case '[': bracketDepth++; break;
+                case ']': bracketDepth--; break;
+                case '(': parenthesisDepth++; break;
+                case ')': parenthesisDepth--; break;
+                case ',':
+                    if (angleDepth == 0 && bracketDepth == 0 && parenthesisDepth == 0)
+                    {
+                        lastIndex = index;
+                    }
+                    break;
+            }
+        }
+
+        return lastIndex;
     }
 
     private static string NormalizeResultName(string value)

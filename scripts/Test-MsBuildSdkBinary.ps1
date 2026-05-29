@@ -20,18 +20,18 @@ $inferredOutputAssembly = Join-Path $workspaceRoot "samples\msbuild_bin_inferred
 $inferredRuntimeConfigPath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\bin\$Configuration\net10.0\bin_trivial.runtimeconfig.json"
 $inferredBitcodePath = Join-Path $workspaceRoot "samples\msbuild_bin_inferred\obj\$Configuration\net10.0\bin_trivial.bc"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\rustlyn.dll"
 $supportAssemblyNames = @("Rustlyn.Backend.dll", "Rustlyn.Runtime.dll", "Rustlyn.Os.dll", "Rustlyn.Interop.dll")
 
 if ($SkipToolBuild) {
     if (-not (Test-Path $toolDll)) {
-        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+        throw "rustlyn DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
     }
 }
 else {
     dotnet build $toolProject -c $Configuration /nologo
     if ($LASTEXITCODE -ne 0) {
-        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+        throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
 

@@ -22,7 +22,8 @@ $generatedOutputAssembly = Join-Path $workspaceRoot "samples\msbuild_generated_c
 $generatedBitcodePath = Join-Path $workspaceRoot "samples\msbuild_generated_cargo\obj\$Configuration\net10.0\msbuild_generated_cargo.bc"
 $generatedCargoManifestPath = Join-Path $workspaceRoot "samples\msbuild_generated_cargo\obj\$Configuration\net10.0\rs\Cargo.toml"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
-$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\Rustlyn.Tool.dll"
+$toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\rustlyn.dll"
+. (Join-Path $PSScriptRoot "Rustlyn.Cli.ps1")
 
 function Assert-MsBuildProperty {
     param(
@@ -48,15 +49,16 @@ function Assert-MsBuildProperty {
 
 if ($SkipToolBuild) {
     if (-not (Test-Path $toolDll)) {
-        throw "Rustlyn.Tool DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
+        throw "rustlyn DLL not found at '$toolDll'. Run without -SkipToolBuild to build it first."
     }
 }
 else {
     dotnet build $toolProject -c $Configuration /nologo
     if ($LASTEXITCODE -ne 0) {
-        throw "Rustlyn.Tool build failed with exit code $LASTEXITCODE."
+        throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
+$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $toolDll
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
@@ -158,7 +160,7 @@ if ($generatedCargoTargets | Where-Object { $_.kind -contains "bin" }) {
     throw "Expected generated Cargo manifest not to expose auto-discovered bin targets for library projects."
 }
 
-$invokeOutput = & dotnet $toolDll invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
+$invokeOutput = Invoke-RustlynCli $rustlyn invoke $bitcodePath --method add_i32 --arg i32:19 --arg i32:23
 if ($LASTEXITCODE -ne 0) {
     throw "MSBuild SDK sample invoke failed with exit code $LASTEXITCODE."
 }
@@ -168,7 +170,7 @@ if ($result -ne "42") {
     throw "Expected MSBuild SDK sample to invoke add_i32(19, 23) => 42, got '$result'."
 }
 
-$aliasInvokeOutput = & dotnet $toolDll invoke $aliasBitcodePath --method profile_probe_score
+$aliasInvokeOutput = Invoke-RustlynCli $rustlyn invoke $aliasBitcodePath --method profile_probe_score
 if ($LASTEXITCODE -ne 0) {
     throw "MSBuild SDK SourceGear-alias sample invoke failed with exit code $LASTEXITCODE."
 }
@@ -178,7 +180,7 @@ if ($aliasResult -ne "11") {
     throw "Expected SourceGear RustDebugOrRelease=debug alias to invoke profile_probe_score() => 11, got '$aliasResult'."
 }
 
-$generatedInvokeOutput = & dotnet $toolDll invoke $generatedBitcodePath --method generated_cargo_score
+$generatedInvokeOutput = Invoke-RustlynCli $rustlyn invoke $generatedBitcodePath --method generated_cargo_score
 if ($LASTEXITCODE -ne 0) {
     throw "MSBuild SDK generated Cargo sample invoke failed with exit code $LASTEXITCODE."
 }
