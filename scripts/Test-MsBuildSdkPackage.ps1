@@ -57,7 +57,7 @@ else {
         throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
-$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -SkipBuild
+$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $toolDll
 
 dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo
 if ($LASTEXITCODE -ne 0) {

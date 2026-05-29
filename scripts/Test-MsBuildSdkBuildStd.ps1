@@ -29,7 +29,7 @@ else {
         throw "rustlyn build failed with exit code $LASTEXITCODE."
     }
 }
-$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -SkipBuild
+$rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $toolDll
 
 $previousMsBuildSdksPath = $env:MSBuildSDKsPath
 try {
