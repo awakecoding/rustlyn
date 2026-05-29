@@ -14,10 +14,11 @@ This repo is a backend reconstruction project for translating Rust-produced LLVM
 
 ## Architecture Anchors
 
-- `dotnet/backend/src/Rustlyn.Tool/`: CLI entry point for inspect/lower/emit/invoke/translate flows
-- `dotnet/backend/src/Rustlyn.Backend/LoweredIrLowerer.cs`: lowered IR parsing and normalization
-- `dotnet/backend/src/Rustlyn.Backend/LoweredAssemblyEmitter.cs`: IL emission, helper generation, and intrinsic dispatch
+- `dotnet/backend/src/Rustlyn.Tool/`: unified `rustlyn` CLI (`AssemblyName=rustlyn`). Subcommands: `cargo`, `rustc`, `new`, `run`, `inspect`, `lower`, `emit`, `invoke`, `translate`, `pack`, `llvm`, `--help`, `--version`
+- `dotnet/backend/src/Rustlyn.Backend/LoweredIrLowerer.cs`: lowered IR parsing and normalization (note: `StripTrailingInstructionMetadata` strips `!dbg` tails using a rightmost top-level comma scan; called once at the top of `ParseInstruction`)
+- `dotnet/backend/src/Rustlyn.Backend/LoweredAssemblyEmitter.cs`: IL emission, helper generation, intrinsic dispatch (note: `EmitLoadValue` has a silent `ldc.i4.0` fallback — when an instruction misbehaves with a `0` operand, suspect the lowerer's tokenization first)
 - `dotnet/backend/tests/Rustlyn.Backend.Tests/Program.cs`: regression harness and expected-shape assertions
+- `scripts/Rustlyn.Cli.ps1`: shared `Resolve-RustlynCli` / `Invoke-RustlynCli` helpers used by every script
 - `scripts/Build-SampleBitcode.ps1`: direct sample-to-bitcode builder
 - `scripts/Test-Smoke.ps1`: focused executable smoke checks
 
@@ -40,15 +41,24 @@ Use these before widening scope:
 dotnet run -c Release --project .\dotnet\backend\tests\Rustlyn.Backend.Tests\Rustlyn.Backend.Tests.csproj
 ```
 
-For direct tool work:
+For direct tool work (prefer the built `rustlyn.exe` over `dotnet run --project ...`):
 
 ```powershell
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- inspect <bitcode>
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- lower <bitcode>
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- emit <bitcode> --out <assembly>
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- invoke <bitcode> --method <name>
-dotnet run --project .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -- translate <crate-dir> --out <assembly> --bitcode-out <bitcode>
+dotnet build .\dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj -c Release
+$rustlyn = ".\dotnet\backend\src\Rustlyn.Tool\bin\Release\net10.0\rustlyn.exe"
+& $rustlyn inspect <bitcode>
+& $rustlyn lower <bitcode>
+& $rustlyn emit <bitcode> --out <assembly>
+& $rustlyn invoke <bitcode> --method <name> --arg i32:3 --arg i32:4
+& $rustlyn translate <crate-dir> --out <assembly> --bitcode-out <bitcode>
+& $rustlyn cargo build --manifest-path <crate>\Cargo.toml
 ```
+
+## CLI Gotchas
+
+- `Rustlyn.Tool.csproj` sets `<AssemblyName>rustlyn</AssemblyName>`. Output is `rustlyn.dll` / `rustlyn.exe`, **not** `Rustlyn.Tool.dll`. Any script or CI step hardcoding `Rustlyn.Tool.dll` will break.
+- `dotnet pack` on `Rustlyn.Sdk` publishes `Rustlyn.Tool` with `UseAppHost=false`, which deletes the local `rustlyn.exe` apphost mid-script. Scripts that pack the SDK and then invoke the tool must pin `Resolve-RustlynCli` to `-ToolDll <path-to-rustlyn.dll>` (see `Test-MsBuildSdkPackage.ps1`).
+- `Invoke-RustlynCli` uses `[ValueFromRemainingArguments]`; pass extra args as positional tokens, not a single quoted string.
 
 ## Documentation Split
 
