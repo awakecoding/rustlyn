@@ -6,7 +6,7 @@ if (args.Length == 3
 {
     var outputPath = Path.GetFullPath(args[2]);
     Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? throw new InvalidOperationException("Output directory could not be determined."));
-    File.WriteAllText(outputPath, ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingSurface.CreateTinyBclSurface()));
+    File.WriteAllText(outputPath, ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingSurface.CreateTinyBclSurface(), "GeneratedBindingAliases"));
     return 0;
 }
 

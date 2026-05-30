@@ -66,7 +66,7 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | Templates | Planned | No template package | Add `dotnet new` templates for library, console, generated-Cargo, and binding-enabled projects. |
 | IDE/language service | Planned | Project-system metadata only | Add language server, diagnostics, navigation, and generated binding awareness. |
 | Cross-platform CI | Preview | CI builds on Windows/Linux/macOS and smokes `add` | Expand CI tiers beyond the `add` bitcode smoke path. |
-| Native AOT/trimming | Planned | Design intent | Add emitted-assembly compatibility tests before claiming support. |
+| Native AOT/trimming | Planned | [NativeAOT Rust host plan](nativeaot-rust-host.md) and design intent | Extract an AOT-safe lower/emit core, prove a shared-library FFI boundary, then attempt static Rust linkage. |
 
 ## Immediate promotion targets
 
