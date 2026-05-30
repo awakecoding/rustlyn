@@ -5083,6 +5083,21 @@ public static class LoweredAssemblyEmitter
                 }
             }
 
+            foreach (var (symbol, methodName) in RuntimeBridgeHelpers.GeneratedBindingAliases)
+            {
+                if (!methods.TryGetValue(methodName, out var method))
+                {
+                    throw new InvalidOperationException($"Generated binding alias '{symbol}' references missing runtime bridge helper '{methodName}'.");
+                }
+
+                var handle = handles[methodName];
+                bridgeMap[symbol] = handle;
+                if (RuntimeBridgeUsesSret(method))
+                {
+                    sretHandles.Add(handle);
+                }
+            }
+
             foreach (var manifest in bindingManifests)
             {
                 foreach (var binding in manifest.Bindings)

@@ -4,13 +4,13 @@ namespace Rustlyn.Bindings;
 
 public static class ManagedGlueGenerator
 {
-    public static string GenerateRuntimeBridgePartial(BindingSurface surface)
+    public static string GenerateRuntimeBridgePartial(BindingSurface surface, string? aliasTablePropertyName = null)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        return GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface));
+        return GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface), aliasTablePropertyName);
     }
 
-    public static string GenerateRuntimeBridgePartial(BindingManifestDocument document)
+    public static string GenerateRuntimeBridgePartial(BindingManifestDocument document, string? aliasTablePropertyName = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         var builder = new StringBuilder();
@@ -25,6 +25,11 @@ public static class ManagedGlueGenerator
         builder.AppendLine("public static partial class RuntimeBridgeHelpers");
         builder.AppendLine("{");
 
+        if (!string.IsNullOrWhiteSpace(aliasTablePropertyName))
+        {
+            AppendAliasTable(builder, document, aliasTablePropertyName);
+        }
+
         foreach (var binding in document.Bindings)
         {
             AppendMethod(builder, binding);
@@ -33,6 +38,25 @@ public static class ManagedGlueGenerator
         builder.AppendLine();
         builder.AppendLine("}");
         return builder.ToString();
+    }
+
+    private static void AppendAliasTable(StringBuilder builder, BindingManifestDocument document, string aliasTablePropertyName)
+    {
+        builder.Append("    internal static (string Symbol, string HelperMethodName)[] ");
+        builder.Append(aliasTablePropertyName);
+        builder.AppendLine(" { get; } =");
+        builder.AppendLine("    [");
+        foreach (var binding in document.Bindings)
+        {
+            builder.Append("        (\"");
+            builder.Append(binding.Symbol);
+            builder.Append("\", nameof(");
+            builder.Append(binding.Helper);
+            builder.AppendLine(")),");
+        }
+
+        builder.AppendLine("    ];");
+        builder.AppendLine();
     }
 
     private static void AppendMethod(StringBuilder builder, BindingManifestBinding binding)
