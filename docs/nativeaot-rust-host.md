@@ -120,6 +120,38 @@ Current validation:
 - Success path: emitted the `add` sample through `rustlyn_emit` and returned result JSON with `"success":true`.
 - Failure path: a missing bitcode input returned exit code `1`, result JSON with `"success":false`, and a diagnostic from the managed export.
 
+## Static-link spike
+
+`native\rustlyn-nativeaot-static-smoke` proves the Windows x64 static-link path. It links directly against `rustlyn_nativeaot.lib` plus the NativeAOT runtime pack libraries and `bootstrapperdll.obj`.
+
+Publish the static library:
+
+```powershell
+dotnet publish .\dotnet\backend\src\Rustlyn.NativeAot\Rustlyn.NativeAot.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained `
+  -p:PublishAot=true `
+  -p:NativeLib=Static
+```
+
+Set the required linker inputs and build/run the Rust smoke:
+
+```powershell
+$env:RUSTLYN_NATIVEAOT_LIB_DIR = (Resolve-Path .\dotnet\backend\src\Rustlyn.NativeAot\bin\Release\net10.0\win-x64\publish).Path
+$nugetRoot = (dotnet nuget locals global-packages -l) -replace "^global-packages:\s*", ""
+$env:RUSTLYN_NATIVEAOT_RUNTIME_LIB_DIR = Join-Path $nugetRoot "microsoft.netcore.app.runtime.nativeaot.win-x64\10.0.5\runtimes\win-x64\native"
+
+cargo run --manifest-path .\native\rustlyn-nativeaot-static-smoke\Cargo.toml -- `
+  --input .\artifacts\out\add\add.bc `
+  --output $env:TEMP\rustlyn-add-static.dll `
+  --llvm-root D:\opt\llvm
+```
+
+Current validation: the statically linked Rust executable emitted the `add` sample and returned result JSON with `"success":true`.
+
+Important linker note: linking only `rustlyn_nativeaot.lib` is not enough. On Windows x64, the Rust build must also link the NativeAOT runtime pack libraries and `bootstrapperdll.obj`; otherwise it either fails with unresolved `Rh*`/Win32 symbols or crashes during startup before returning JSON. The smoke crate's `build.rs` wires those inputs from `RUSTLYN_NATIVEAOT_RUNTIME_LIB_DIR`.
+
 ## First build seam
 
 `Rustlyn.Backend` now has a `RustlynBackendIncludeOptionalBindings` MSBuild property. The default product build keeps optional Avalonia and PowerShell binding glue enabled. Setting the property to `false` excludes those optional generated glue files and project references, which gives the NativeAOT work a narrower backend build to harden before introducing FFI.
