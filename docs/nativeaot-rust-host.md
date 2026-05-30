@@ -101,6 +101,25 @@ Current validation:
 
 Current packaging caveat: even with optional backend bindings disabled, the publish directory still includes Avalonia/Skia/PowerShell-adjacent native assets because `Rustlyn.Backend` still references `Rustlyn.Bindings`, and `Rustlyn.Bindings` references scanner/support projects and packages. Splitting the binding-manifest DTOs from the scanner-heavy project is required before this shared library becomes a realistic release artifact.
 
+## Rust FFI caller spike
+
+`native\rustlyn-nativeaot-smoke` is a dependency-free Rust caller for the shared-library ABI. It dynamically loads the NativeAOT library by path, resolves `rustlyn_emit` / `rustlyn_free`, sends UTF-8 JSON options, copies the returned JSON into Rust-owned memory, and frees the native buffer through `rustlyn_free`.
+
+Example:
+
+```powershell
+cargo run --manifest-path .\native\rustlyn-nativeaot-smoke\Cargo.toml -- `
+  --library .\dotnet\backend\src\Rustlyn.NativeAot\bin\Release\net10.0\win-x64\publish\rustlyn_nativeaot.dll `
+  --input .\artifacts\out\add\add.bc `
+  --output $env:TEMP\rustlyn-add.dll `
+  --llvm-root D:\opt\llvm
+```
+
+Current validation:
+
+- Success path: emitted the `add` sample through `rustlyn_emit` and returned result JSON with `"success":true`.
+- Failure path: a missing bitcode input returned exit code `1`, result JSON with `"success":false`, and a diagnostic from the managed export.
+
 ## First build seam
 
 `Rustlyn.Backend` now has a `RustlynBackendIncludeOptionalBindings` MSBuild property. The default product build keeps optional Avalonia and PowerShell binding glue enabled. Setting the property to `false` excludes those optional generated glue files and project references, which gives the NativeAOT work a narrower backend build to harden before introducing FFI.
