@@ -4,11 +4,15 @@ This baseline records the SDK trim/AOT analyzer findings for the backend core
 build seam. It is the first measurable acceptance check for the NativeAOT spike
 (see [NativeAOT Rust host plan](nativeaot-rust-host.md)). The goal of that spike
 is to drive the **core-graph** findings to zero (or to justified suppressions)
-before attempting a real NativeAOT shared-library publish.
+before hardening the NativeAOT shared-library publish into a releaseable artifact.
 
 This is analyzer-only validation. It does not require a NativeAOT toolchain or a
 trimmed publish; it runs the static IL2xxx/IL3xxx analyzers that ship with the
 .NET SDK against the backend core.
+
+The shared-library spike now also has a real NativeAOT publish in
+`Rustlyn.NativeAot`; this baseline remains useful because it is faster and
+isolates the narrowed backend graph from the full native publish output.
 
 ## How to reproduce
 
@@ -67,3 +71,32 @@ Remaining genuine core-path concerns to address during the spike:
   `AssemblyLoadContext.LoadFromStream` + reflection invoke (`invoke` command);
   this is acceptable for the host CLI but must stay outside any AOT static-lib
   surface.
+
+## NativeAOT publish baseline
+
+The shared-library project can be published with:
+
+```powershell
+dotnet publish .\dotnet\backend\src\Rustlyn.NativeAot\Rustlyn.NativeAot.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained `
+  -p:PublishAot=true
+```
+
+Current result: publish succeeds, and a P/Invoke smoke against `rustlyn_emit`
+successfully emits the `add` sample from bitcode. The publish still reports trim
+and AOT warnings:
+
+| Code | Count | Dominant source |
+| --- | ---: | --- |
+| IL2075 | 38 | `Rustlyn.Bindings` scanner and runtime helper reflection |
+| IL2070 | 30 | `Rustlyn.Bindings` scanner |
+| IL2026 | 26 | reflection APIs and dynamic assembly/type loading |
+| IL3050 | 12 | reflection-based `System.Text.Json` serialization |
+| IL3000 | 2 | `Rustlyn.Bindings` `Assembly.Location` usage |
+
+The publish directory also currently carries Avalonia/Skia/PowerShell-adjacent
+native assets through the `Rustlyn.Bindings` dependency graph. That confirms the
+DTO/scanner split remains the next prerequisite before treating the NativeAOT
+library as a plausible release artifact.

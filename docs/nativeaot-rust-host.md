@@ -44,14 +44,33 @@ Keep the ABI small and stable. Do not mirror C# classes over FFI.
 ```c
 int32_t rustlyn_emit(
     const uint8_t* options_json,
-    int32_t options_len,
+    size_t options_len,
     uint8_t** result_json,
-    int32_t* result_len);
+    size_t* result_len);
 
 void rustlyn_free(uint8_t* ptr);
 ```
 
-The options JSON should carry input bitcode or lowered IR path, output assembly path, PDB flag, strict-mode flag, LLVM/root behavior if the C# side still owns that step, and explicit runtime/support asset paths. The result JSON should carry success/failure, diagnostics, produced files, copied runtime assets, and stable error codes.
+The initial shared-library spike implements this shape in `Rustlyn.NativeAot` with cdecl exports:
+
+| Export | Return code | Ownership |
+| --- | --- | --- |
+| `rustlyn_emit(options_json, options_len, result_json, result_len)` | `0` success, `1` operation failure with result JSON, `-1` invalid ABI arguments, `-2` result allocation failure | On non-negative returns, `*result_json` is owned by the caller and must be released with `rustlyn_free`. On negative returns, `*result_json == null` and `*result_len == 0`. |
+| `rustlyn_free(ptr)` | `void` | Frees memory returned by `rustlyn_emit`; `null` is accepted as a no-op. |
+
+The spike's options JSON is intentionally small and bitcode-only:
+
+```json
+{
+  "inputPath": "path/to/input.bc",
+  "outputPath": "path/to/output.dll",
+  "llvmRoot": "optional/path/to/llvm",
+  "emitPdb": false,
+  "strictUnsupportedIr": true
+}
+```
+
+The result JSON carries `success`, `outputPath`, `outputFiles`, `diagnostics`, and `exceptionType`. The export catches managed exceptions and returns them as diagnostics; process-corrupting failures such as stack overflows, access violations, or unrecoverable allocation failures can still terminate the host process.
 
 ## Non-goals for the first spike
 
@@ -59,6 +78,28 @@ The options JSON should carry input bitcode or lowered IR path, output assembly 
 - Do not port the whole CLI to Rust before proving the library boundary.
 - Do not include Avalonia, PowerShell, or binding scanners in the NativeAOT library.
 - Do not require generated managed assemblies to be NativeAOT themselves. Compiler-host NativeAOT and output-assembly NativeAOT are separate workstreams.
+
+## Shared-library spike
+
+`Rustlyn.NativeAot` publishes a NativeAOT shared library named `rustlyn_nativeaot`:
+
+```powershell
+dotnet publish .\dotnet\backend\src\Rustlyn.NativeAot\Rustlyn.NativeAot.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained `
+  -p:PublishAot=true
+```
+
+Build this project standalone. It references `Rustlyn.Backend` with `RustlynBackendIncludeOptionalBindings=false`; adding it to a broader solution build before the backend is split can create duplicate backend build graphs with different generated glue inputs.
+
+Current validation:
+
+- `dotnet publish` produces `dotnet\backend\src\Rustlyn.NativeAot\bin\Release\net10.0\win-x64\publish\rustlyn_nativeaot.dll`.
+- A PowerShell P/Invoke smoke called `rustlyn_emit` against `artifacts\out\add\add.bc` and produced a managed output assembly with `code=0`.
+- Publish currently succeeds with trim/AOT warnings. The remaining warnings are concentrated in `RuntimeBridgeHelpers.IsDefaultI32Formatter` and the still-referenced `Rustlyn.Bindings` graph.
+
+Current packaging caveat: even with optional backend bindings disabled, the publish directory still includes Avalonia/Skia/PowerShell-adjacent native assets because `Rustlyn.Backend` still references `Rustlyn.Bindings`, and `Rustlyn.Bindings` references scanner/support projects and packages. Splitting the binding-manifest DTOs from the scanner-heavy project is required before this shared library becomes a realistic release artifact.
 
 ## First build seam
 
