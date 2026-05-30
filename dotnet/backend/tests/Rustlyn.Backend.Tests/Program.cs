@@ -11375,7 +11375,11 @@ static void AvaloniaHelloSampleEmitsRunnableSmokeOutput()
     try
     {
         var assemblyPath = Path.Combine(tempDirectory, "avalonia_hello.dll");
-        LoweredAssemblyEmitter.EmitBitcode(bitcodePath, assemblyPath, llvmRoot);
+        var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, llvmRoot);
+        LoweredAssemblyEmitter.EmitModule(
+            loweredModule,
+            assemblyPath,
+            new EmitOptions { BindingManifests = [ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest()] });
 
         var runtimeConfigPath = Path.ChangeExtension(assemblyPath, ".runtimeconfig.json");
         Assert(File.Exists(runtimeConfigPath), $"Expected emitted Avalonia assembly '{assemblyPath}' to include a sibling runtimeconfig file.");

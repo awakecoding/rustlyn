@@ -240,20 +240,20 @@ public static class LoweredAssemblyEmitter
         var manifests = new List<BindingManifestDocument>();
         foreach (var manifest in options.BindingManifests.Where(static manifest => manifest.PackageSurface is not null))
         {
-            if (manifest.Bindings.Any(binding => callees.Contains(binding.Symbol)))
+            if (manifest.Bindings.Any(binding => callees.Contains(binding.Symbol))
+                || IsExternalPackageManifestRequiredByBridge(manifest, callees))
             {
                 AddExternalPackageManifest(manifests, manifest);
             }
         }
 
-        if (callees.Any(static callee => callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
-                || callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal)))
-        {
-            AddExternalPackageManifest(manifests, ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest());
-        }
-
         return manifests;
     }
+
+    private static bool IsExternalPackageManifestRequiredByBridge(BindingManifestDocument manifest, HashSet<string> callees)
+        => string.Equals(manifest.PackageSurface?.PackageId, "Avalonia", StringComparison.Ordinal)
+            && callees.Any(static callee => callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
+                || callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal));
 
     private static void AddExternalPackageManifest(List<BindingManifestDocument> manifests, BindingManifestDocument manifest)
     {
@@ -4690,6 +4690,7 @@ public static class LoweredAssemblyEmitter
 
             if (referenceRequirements.IncludeAvaloniaBridge)
             {
+#if RUSTLYN_BACKEND_OPTIONAL_BINDINGS
                 var avaloniaSupportAssemblyName = typeof(Rustlyn.AvaloniaSupport.AvaloniaBridge).Assembly.GetName();
                 var avaloniaSupport = mb.AddAssemblyReference(
                     name: mb.GetOrAddString(avaloniaSupportAssemblyName.Name ?? "Rustlyn.AvaloniaSupport"),
@@ -4706,6 +4707,9 @@ public static class LoweredAssemblyEmitter
                 {
                     ["rustlyn_avalonia_run_app"] = AddStaticMethod(mb, avaloniaBridge, "RunApp", EncodeBridgeMethodSig(mb, "i32"))
                 };
+#else
+                throw new InvalidOperationException("Avalonia bridge support is not available in this Rustlyn.Backend build.");
+#endif
             }
             else
             {
@@ -5024,35 +5028,6 @@ public static class LoweredAssemblyEmitter
 
             var bridgeMap = new Dictionary<string, MemberReferenceHandle>(StringComparer.Ordinal);
             sretHandles = [];
-            var bindingManifest = BindingManifestDocument.FromSurface(BindingSurface.CreateTinyBclSurface());
-            foreach (var binding in bindingManifest.Bindings)
-            {
-                if (!handles.TryGetValue(binding.Helper, out var handle))
-                {
-                    throw new InvalidOperationException($"Generated binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.Helper}'.");
-                }
-
-                bridgeMap[binding.Symbol] = handle;
-                if (RuntimeBridgeUsesSret(methods[binding.Helper]))
-                {
-                    sretHandles.Add(handle);
-                }
-            }
-
-            var avaloniaManifest = ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest();
-            foreach (var binding in avaloniaManifest.Bindings)
-            {
-                if (!handles.TryGetValue(binding.Helper, out var handle))
-                {
-                    throw new InvalidOperationException($"Generated Avalonia binding symbol '{binding.Symbol}' targets missing runtime bridge helper '{binding.Helper}'.");
-                }
-
-                bridgeMap[binding.Symbol] = handle;
-                if (RuntimeBridgeUsesSret(methods[binding.Helper]))
-                {
-                    sretHandles.Add(handle);
-                }
-            }
 
             foreach (var (symbol, methodName) in RuntimeBridgeAliases)
             {

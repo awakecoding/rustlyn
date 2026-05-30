@@ -91,6 +91,8 @@ Compared with Eric Sink's original design, this revived repo intentionally chang
 
 The tracked recovery plan for closing those gaps is complete; see the [historical parity record](sourcegear-parity-roadmap.md). The forward-looking [roadmap](roadmap.md) charts what comes next, with the current fake-link gate permanently closed per [SourceGear fake-link decision](sourcegear-fake-link-decision.md).
 
+The first design cut for a future single Rust-hosted executable is tracked separately in the [NativeAOT Rust host plan](nativeaot-rust-host.md). That work starts by extracting an AOT-safe lower/emit core and proving a shared-library FFI boundary before attempting static linkage from Rust.
+
 ## Current Repository Shape
 
 - `samples/`: narrow frontend fixtures

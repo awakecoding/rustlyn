@@ -48,7 +48,7 @@ if (TryParseCargoArguments(args, out var cargoCratePath, out var cargoBuildOptio
     {
         var cargoResult = RustBitcodeCompiler.BuildCargoProject(cargoCratePath, cargoBuildOptions);
         var loweredModule = LoweredIrLowerer.LowerBitcode(cargoResult.BitcodePath, cargoLlvmRoot);
-        var cargoEmitOptions = CreateEmitOptions(true, cargoStrict, cargoPowerShellCmdletBindings);
+        var cargoEmitOptions = CreateEmitOptions(true, cargoStrict, cargoPowerShellCmdletBindings, loweredModule);
         LoweredAssemblyEmitter.EmitModule(loweredModule, cargoResult.AssemblyPath, cargoEmitOptions);
 
         Console.WriteLine($"Bitcode: {Path.GetFullPath(cargoResult.BitcodePath)}");
@@ -163,8 +163,9 @@ if (TryParseEmitArguments(args, out var emitArtifactPath, out var emitOutputPath
 {
     try
     {
-        var emitOptions = CreateEmitOptions(emitPdb, emitStrict, emitPowerShellCmdletBindings);
-        LoweredAssemblyEmitter.EmitBitcode(emitArtifactPath, emitOutputPath, emitOptions, emitLlvmRoot);
+        var loweredModule = LoweredIrLowerer.LowerBitcode(emitArtifactPath, emitLlvmRoot);
+        var emitOptions = CreateEmitOptions(emitPdb, emitStrict, emitPowerShellCmdletBindings, loweredModule);
+        LoweredAssemblyEmitter.EmitModule(loweredModule, emitOutputPath, emitOptions);
         Console.WriteLine(Path.GetFullPath(emitOutputPath));
         if (emitPdb)
         {
@@ -214,7 +215,7 @@ if (TryParseTranslateArguments(args, out var cratePath, out var translateOutputP
             cache.Save();
         }
 
-        var translateEmitOptions = CreateEmitOptions(false, translateStrict, translatePowerShellCmdletBindings);
+        var translateEmitOptions = CreateEmitOptions(false, translateStrict, translatePowerShellCmdletBindings, loweredModule);
         LoweredAssemblyEmitter.EmitModule(loweredModule, translateOutputPath, translateEmitOptions);
         Console.WriteLine($"Bitcode: {Path.GetFullPath(bitcodePath)}");
         Console.WriteLine($"Assembly: {Path.GetFullPath(translateOutputPath)}");
@@ -281,8 +282,9 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
 
         // Translate
         var bitcodePath = RustBitcodeCompiler.BuildBitcode(packCratePath, packBuildOptions);
-        var emitOptions = new EmitOptions { EmitPdb = true };
-        LoweredAssemblyEmitter.EmitBitcode(bitcodePath, assemblyPath, emitOptions, packLlvmRoot);
+        var loweredModule = LoweredIrLowerer.LowerBitcode(bitcodePath, packLlvmRoot);
+        var emitOptions = CreateEmitOptions(true, false, false, loweredModule);
+        LoweredAssemblyEmitter.EmitModule(loweredModule, assemblyPath, emitOptions);
 
         // Generate .nuspec
         var spec = NuGetPackager.CreatePackSpec(crateName, packVersion, assemblyPath);
@@ -317,13 +319,32 @@ if (TryParsePackArguments(args, out var packCratePath, out var packOutputDir, ou
 PrintUsage(null);
 return 1;
 
-static EmitOptions CreateEmitOptions(bool emitPdb, bool strict, bool powerShellCmdletBindings)
+static EmitOptions CreateEmitOptions(bool emitPdb, bool strict, bool powerShellCmdletBindings, LoweredModule? loweredModule = null)
 {
     var options = new EmitOptions { EmitPdb = emitPdb, StrictUnsupportedIr = strict };
-    return powerShellCmdletBindings
-        ? options with { BindingManifests = [ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest()] }
+    var manifests = new List<BindingManifestDocument>();
+    if (powerShellCmdletBindings)
+    {
+        manifests.Add(ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest());
+    }
+
+    if (loweredModule is not null && RequiresAvaloniaExternalPackageManifest(loweredModule))
+    {
+        manifests.Add(ExternalPackageBindingSurfaces.CreateAvaloniaHelloManifest());
+    }
+
+    return manifests.Count > 0
+        ? options with { BindingManifests = manifests }
         : options;
 }
+
+static bool RequiresAvaloniaExternalPackageManifest(LoweredModule loweredModule)
+    => loweredModule.Functions
+        .SelectMany(static function => function.Blocks)
+        .SelectMany(static block => block.Instructions)
+        .OfType<LoweredCallInstruction>()
+        .Any(static call => call.Callee.StartsWith("rustlyn_avalonia_", StringComparison.Ordinal)
+            || call.Callee.StartsWith("rustlyn_bindgen_avalonia_", StringComparison.Ordinal));
 
 static bool IsHelpFlag(string argument) =>
     string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase) ||
@@ -570,9 +591,9 @@ static int RunRun(string[] args)
 
     try
     {
-        var emitOptions = CreateEmitOptions(true, strict, false);
         var cargoResult = RustBitcodeCompiler.BuildCargoProject(cratePath, buildOptions);
         var loweredModule = LoweredIrLowerer.LowerBitcode(cargoResult.BitcodePath, llvmRoot);
+        var emitOptions = CreateEmitOptions(true, strict, false, loweredModule);
         LoweredAssemblyEmitter.EmitModule(loweredModule, cargoResult.AssemblyPath, emitOptions);
 
         var result = LoweredAssemblyInvoker.InvokeBitcode(cargoResult.BitcodePath, methodName, invokeArguments, llvmRoot);

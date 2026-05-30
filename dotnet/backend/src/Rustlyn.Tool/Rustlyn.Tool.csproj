@@ -7,5 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rustlyn.Backend\Rustlyn.Backend.csproj" />
+    <ProjectReference Include="..\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
   </ItemGroup>
 </Project>
