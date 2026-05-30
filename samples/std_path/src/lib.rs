@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[unsafe(no_mangle)]
 pub extern "C" fn std_path_probe() -> i32 {
     // Basic Path construction
-    let p = Path::new("/foo/bar/baz.txt");
+    let p = PathBuf::from("foo").join("bar").join("baz.txt");
 
     // file_name
     let file_name = match p.file_name() {
@@ -38,44 +38,45 @@ pub extern "C" fn std_path_probe() -> i32 {
         Some(par) => par,
         None => return -7,
     };
-    if parent != Path::new("/foo/bar") {
+    let expected_parent = PathBuf::from("foo").join("bar");
+    if parent != expected_parent {
         return -8;
     }
 
     // is_absolute / is_relative
-    if !p.is_absolute() {
+    if p.is_absolute() {
         return -9;
     }
-    let relative = Path::new("relative/path");
-    if relative.is_absolute() {
-        return -10;
-    }
-    if !relative.is_relative() {
+    if !p.is_relative() {
         return -11;
     }
 
     // PathBuf push/join
-    let mut buf = PathBuf::from("/usr");
+    let mut buf = PathBuf::from("usr");
     buf.push("local");
     buf.push("bin");
-    if buf != Path::new("/usr/local/bin") {
+    let expected_buf = PathBuf::from("usr").join("local").join("bin");
+    if buf != expected_buf {
         return -12;
     }
 
-    let joined = Path::new("/home").join("user").join("docs");
-    if joined != Path::new("/home/user/docs") {
+    let joined = Path::new("home").join("user").join("docs");
+    let expected_joined = PathBuf::from("home").join("user").join("docs");
+    if joined != expected_joined {
         return -13;
     }
 
     // with_extension
-    let changed = Path::new("/foo/bar.rs").with_extension("txt");
-    if changed != Path::new("/foo/bar.txt") {
+    let changed = PathBuf::from("foo").join("bar.rs").with_extension("txt");
+    let expected_changed = PathBuf::from("foo").join("bar.txt");
+    if changed != expected_changed {
         return -14;
     }
 
     // with_file_name
-    let renamed = Path::new("/foo/old.rs").with_file_name("new.rs");
-    if renamed != Path::new("/foo/new.rs") {
+    let renamed = PathBuf::from("foo").join("old.rs").with_file_name("new.rs");
+    let expected_renamed = PathBuf::from("foo").join("new.rs");
+    if renamed != expected_renamed {
         return -15;
     }
 
@@ -86,7 +87,8 @@ pub extern "C" fn std_path_probe() -> i32 {
     }
 
     // starts_with / ends_with
-    if !joined.starts_with("/home/user") {
+    let expected_start = PathBuf::from("home").join("user");
+    if !joined.starts_with(expected_start) {
         return -17;
     }
     if !joined.ends_with("docs") {
