@@ -1,4 +1,5 @@
 using System.Management.Automation;
+using System.Globalization;
 
 namespace Rustlyn.PowerShellCmdlets;
 
@@ -38,39 +39,24 @@ public sealed class ConvertToRustCsvCommand : PSCmdlet
 
     protected override void EndProcessing()
     {
-        var parameters = new Dictionary<string, object?>
-        {
-            ["UseCulture"] = UseCulture,
-            ["NoTypeInformation"] = NoTypeInformation,
-            ["IncludeTypeInformation"] = IncludeTypeInformation,
-            ["NoHeader"] = NoHeader
-        };
-        if (MyInvocation.BoundParameters.ContainsKey(nameof(Delimiter)))
-        {
-            parameters["Delimiter"] = Delimiter;
-        }
-        if (QuoteFields is { Length: > 0 })
-        {
-            parameters["QuoteFields"] = QuoteFields;
-        }
-        if (!string.IsNullOrWhiteSpace(UseQuotes))
-        {
-            parameters["UseQuotes"] = UseQuotes;
-        }
-
-        var results = _input.Count > 1
-            ? PowerShellCommandRunner.InvokePipeline("Microsoft.PowerShell.Utility\\ConvertTo-Csv", parameters, _input.Items)
-            : PowerShellCommandRunner.Invoke(
-                "Microsoft.PowerShell.Utility\\ConvertTo-Csv",
-                new Dictionary<string, object?>(parameters) { ["InputObject"] = _input.ToPowerShellInput() });
-        var lines = results.Select(static result => result.BaseObject?.ToString() ?? string.Empty).ToArray();
-        RustEngineInvoker.ValidateUtf8("csv_engine.dll", "csv_validate_utf8", string.Join(Environment.NewLine, lines));
-
-        foreach (var line in lines)
-        {
-            WriteObject(line);
-        }
+        var delimiter = ResolveDelimiter(Delimiter, UseCulture.IsPresent, MyInvocation.BoundParameters.ContainsKey(nameof(Delimiter)));
+        var request = CsvProjection.CreateToCsvRequest(
+            _input,
+            delimiter,
+            IncludeTypeInformation.IsPresent,
+            NoHeader.IsPresent,
+            QuoteFields,
+            UseQuotes);
+        var linesJson = RustEngineInvoker.TransformUtf8("csv_engine.dll", "csv_json_to_csv_len", "csv_json_to_csv_copy", request);
+        CsvProjection.WriteCsvLines(this, linesJson);
     }
+
+    private static char ResolveDelimiter(char delimiter, bool useCulture, bool delimiterWasBound)
+        => delimiterWasBound
+            ? delimiter
+            : useCulture
+                ? CultureInfo.CurrentCulture.TextInfo.ListSeparator.FirstOrDefault(',')
+                : ',';
 }
 
 [Cmdlet(VerbsData.ConvertFrom, "RustCsv")]
@@ -98,25 +84,13 @@ public sealed class ConvertFromRustCsvCommand : PSCmdlet
     protected override void EndProcessing()
     {
         var csv = _input.ToText();
-        var rustCsv = RustEngineInvoker.TransformUtf8("csv_engine.dll", "csv_echo_utf8_len", "csv_echo_utf8_copy", csv);
-        var parameters = new Dictionary<string, object?>
-        {
-            ["InputObject"] = rustCsv,
-            ["UseCulture"] = UseCulture
-        };
-        if (MyInvocation.BoundParameters.ContainsKey(nameof(Delimiter)))
-        {
-            parameters["Delimiter"] = Delimiter;
-        }
-        if (Header is { Length: > 0 })
-        {
-            parameters["Header"] = Header;
-        }
-
-        var results = PowerShellCommandRunner.Invoke("Microsoft.PowerShell.Utility\\ConvertFrom-Csv", parameters);
-        foreach (var result in results)
-        {
-            WriteObject(PowerShellCommandRunner.UnwrapOutputObject(result));
-        }
+        var delimiter = MyInvocation.BoundParameters.ContainsKey(nameof(Delimiter))
+            ? Delimiter
+            : UseCulture.IsPresent
+                ? CultureInfo.CurrentCulture.TextInfo.ListSeparator.FirstOrDefault(',')
+                : ',';
+        var request = CsvProjection.CreateFromCsvRequest(csv, delimiter, Header);
+        var rowsJson = RustEngineInvoker.TransformUtf8("csv_engine.dll", "csv_to_json_len", "csv_to_json_copy", request);
+        JsonProjection.WriteFromJson(this, rowsJson);
     }
 }

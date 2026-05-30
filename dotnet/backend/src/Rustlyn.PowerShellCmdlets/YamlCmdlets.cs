@@ -16,14 +16,8 @@ public sealed class ConvertToRustYamlCommand : PSCmdlet
 
     protected override void EndProcessing()
     {
-        var yaml = _input.Count > 1
-            ? string.Concat(PowerShellCommandRunner.InvokePipeline("ConvertTo-Yaml", new Dictionary<string, object?>(), _input.Items)
-                .Select(static item => item.BaseObject?.ToString() ?? string.Empty))
-            : PowerShellCommandRunner.InvokeStringWithPreferredInputParameter(
-                "ConvertTo-Yaml",
-                ["InputObject", "Data"],
-                _input.ToPowerShellInput());
-        WriteObject(RustEngineInvoker.TransformUtf8("marked_yaml_engine.dll", "marked_yaml_echo_utf8_len", "marked_yaml_echo_utf8_copy", yaml));
+        var stream = ObjectStreamProjection.ToStream(_input, depth: 64);
+        WriteObject(RustEngineInvoker.TransformUtf8("marked_yaml_engine.dll", "marked_yaml_object_stream_to_yaml_len", "marked_yaml_object_stream_to_yaml_copy", stream));
     }
 }
 
@@ -36,21 +30,19 @@ public sealed class ConvertFromRustYamlCommand : PSCmdlet
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
     public object? InputObject { get; set; }
 
+    [Parameter]
+    public SwitchParameter AsHashtable { get; set; }
+
+    [Parameter]
+    public SwitchParameter NoEnumerate { get; set; }
+
     protected override void ProcessRecord()
         => _input.Add(InputObject);
 
     protected override void EndProcessing()
     {
         var yaml = _input.ToText();
-        var rustYaml = RustEngineInvoker.TransformUtf8("marked_yaml_engine.dll", "marked_yaml_echo_utf8_len", "marked_yaml_echo_utf8_copy", yaml);
-        var results = PowerShellCommandRunner.InvokeWithPreferredInputParameter(
-            "ConvertFrom-Yaml",
-            ["InputObject", "Yaml"],
-            rustYaml);
-
-        foreach (var result in results)
-        {
-            WriteObject(PowerShellCommandRunner.UnwrapOutputObject(result));
-        }
+        var json = RustEngineInvoker.TransformUtf8("marked_yaml_engine.dll", "marked_yaml_to_json_len", "marked_yaml_to_json_copy", yaml);
+        JsonProjection.WriteFromJson(this, json, AsHashtable.IsPresent, NoEnumerate.IsPresent);
     }
 }

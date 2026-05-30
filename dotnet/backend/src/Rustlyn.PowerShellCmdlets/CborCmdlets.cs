@@ -19,9 +19,8 @@ public sealed class ConvertToRustCborCommand : PSCmdlet
 
     protected override void EndProcessing()
     {
-        var json = JsonProjection.ToJson(_input, Depth);
-        var bytes = CborProjection.FromJson(json);
-        RustEngineInvoker.ValidateBytes("cbor_engine.dll", "cbor_validate_bytes", bytes);
+        var stream = ObjectStreamProjection.ToStream(_input, Depth);
+        var bytes = RustEngineInvoker.TransformUtf8ToBytes("cbor_engine.dll", "cbor_object_stream_to_cbor_len", "cbor_object_stream_to_cbor_copy", stream);
         WriteObject(bytes, enumerateCollection: false);
     }
 }
@@ -35,14 +34,19 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
     public object? InputObject { get; set; }
 
+    [Parameter]
+    public SwitchParameter AsHashtable { get; set; }
+
+    [Parameter]
+    public SwitchParameter NoEnumerate { get; set; }
+
     protected override void ProcessRecord()
         => _input.Add(InputObject);
 
     protected override void EndProcessing()
     {
         var bytes = _input.ToArray();
-        RustEngineInvoker.ValidateBytes("cbor_engine.dll", "cbor_validate_bytes", bytes);
-        var json = CborProjection.ToJson(bytes);
-        JsonProjection.WriteFromJson(this, json);
+        var json = RustEngineInvoker.TransformBytesToUtf8("cbor_engine.dll", "cbor_to_json_len", "cbor_to_json_copy", bytes);
+        JsonProjection.WriteFromJson(this, json, AsHashtable.IsPresent, NoEnumerate.IsPresent);
     }
 }
