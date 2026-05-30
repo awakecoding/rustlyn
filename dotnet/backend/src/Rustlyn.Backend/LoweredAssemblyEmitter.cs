@@ -298,14 +298,40 @@ public static class LoweredAssemblyEmitter
 
     private static void CopyRuntimeSupportAssemblies(string outputAssemblyPath, IReadOnlyList<BindingManifestDocument> packageManifests)
     {
-        CopySupportAssembly(typeof(RuntimeBridgeHelpers).Assembly.Location, outputAssemblyPath);
-        CopySupportAssembly(typeof(Rustlyn.Runtime.NumericRuntime).Assembly.Location, outputAssemblyPath);
-        CopySupportAssembly(typeof(Rustlyn.Os.HostEnvironment).Assembly.Location, outputAssemblyPath);
-        CopySupportAssembly(typeof(Rustlyn.Interop.ManagedInteropRuntime).Assembly.Location, outputAssemblyPath);
+        CopySupportAssembly(ResolveSupportAssemblyPath(typeof(RuntimeBridgeHelpers).Assembly), outputAssemblyPath);
+        CopySupportAssembly(ResolveSupportAssemblyPath(typeof(Rustlyn.Runtime.NumericRuntime).Assembly), outputAssemblyPath);
+        CopySupportAssembly(ResolveSupportAssemblyPath(typeof(Rustlyn.Os.HostEnvironment).Assembly), outputAssemblyPath);
+        CopySupportAssembly(ResolveSupportAssemblyPath(typeof(Rustlyn.Interop.ManagedInteropRuntime).Assembly), outputAssemblyPath);
         foreach (var manifest in packageManifests)
         {
             CopyExternalPackageRuntimeAssets(manifest, outputAssemblyPath);
         }
+    }
+
+    // Resolves the on-disk path of a managed support assembly that must ship next
+    // to emitted output. Assembly.Location works for the framework-dependent host,
+    // but returns an empty string under NativeAOT/single-file. In that case fall
+    // back to the simple name resolved against the host base directory, which is
+    // where the release layout places the support assemblies.
+    private static string ResolveSupportAssemblyPath(System.Reflection.Assembly assembly)
+    {
+        var location = assembly.Location;
+        if (!string.IsNullOrEmpty(location) && File.Exists(location))
+        {
+            return location;
+        }
+
+        var simpleName = assembly.GetName().Name;
+        if (!string.IsNullOrEmpty(simpleName))
+        {
+            var candidate = Path.Combine(AppContext.BaseDirectory, simpleName + ".dll");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return location;
     }
 
     private static void CopySupportAssembly(string supportAssemblyPath, string outputAssemblyPath)
