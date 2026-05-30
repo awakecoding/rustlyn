@@ -313,6 +313,10 @@ public static class LoweredAssemblyEmitter
     // but returns an empty string under NativeAOT/single-file. In that case fall
     // back to the simple name resolved against the host base directory, which is
     // where the release layout places the support assemblies.
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "SingleFile",
+        "IL3000:Avoid accessing Assembly.Location in single-file apps",
+        Justification = "Location is the correct source for the framework-dependent host; the empty single-file/NativeAOT result is handled by the AppContext.BaseDirectory fallback below.")]
     private static string ResolveSupportAssemblyPath(System.Reflection.Assembly assembly)
     {
         var location = assembly.Location;

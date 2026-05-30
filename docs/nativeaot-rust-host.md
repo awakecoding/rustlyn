@@ -27,13 +27,15 @@ The current `Rustlyn.Backend` project also references surfaces that should stay 
 
 ## Lowest-risk work order
 
-1. **Split data contracts from scanners.** Move or duplicate only the binding manifest DTOs needed by `EmitOptions` and `LoweredAssemblyEmitter` into an AOT-safe assembly. Leave `BindingSurface`, scanners, `MetadataLoadContext`, Avalonia, and PowerShell manifest factories in `Rustlyn.Bindings`.
-2. **Stop auto-creating optional manifests in the emitter.** The emitter should consume explicit binding manifests from options or generated static data. Avalonia and PowerShell should be supplied by the CLI or host when requested, not pulled in by the core emitter.
-3. **Replace reflection-based runtime bridge map construction.** `BuildRuntimeBridgeMap` currently reflects over `RuntimeBridgeHelpers` and re-creates binding manifests at runtime. Replace this with generated/static symbol-to-helper tables that can be rooted for trimming.
-4. **Replace support-assembly discovery.** `CopyRuntimeSupportAssemblies` currently uses `typeof(...).Assembly.Location`. Under NativeAOT or single-file assumptions, support assets need to come from explicit host-provided paths, a manifest, or a release layout known to the Rust host.
-5. **Add a shared-library NativeAOT spike.** Start with a `.dll`/`.so`/`.dylib` export before static linking. Use `[UnmanagedCallersOnly]`, coarse JSON options, source-generated JSON serializers, top-level exception capture, and a paired `rustlyn_free`.
+1. **Split data contracts from scanners.** Move or duplicate only the binding manifest DTOs needed by `EmitOptions` and `LoweredAssemblyEmitter` into an AOT-safe assembly. Leave `BindingSurface`, scanners, `MetadataLoadContext`, Avalonia, and PowerShell manifest factories in `Rustlyn.Bindings`. _(Next: the analyzer baseline shows `Rustlyn.Bindings` dominates the core-graph findings; this is now the highest-leverage decoupling step.)_
+2. **Stop auto-creating optional manifests in the emitter.** ✅ Done. The emitter no longer auto-creates Avalonia/PowerShell manifests; the CLI supplies explicit binding manifests per lowered module via `CreateEmitOptions(..., LoweredModule)`.
+3. **Replace reflection-based runtime bridge map construction.** `BuildRuntimeBridgeMap` currently reflects over `RuntimeBridgeHelpers` and re-creates binding manifests at runtime. Replace this with generated/static symbol-to-helper tables that can be rooted for trimming. _(Deferred: a source-structure regression test guards this method and there is no consuming AOT/trimmed publish yet to prove the change matters. Tackle alongside the shared-library spike.)_
+4. **Replace support-assembly discovery.** ✅ Done. `CopyRuntimeSupportAssemblies` now resolves through `ResolveSupportAssemblyPath`, which keeps `Assembly.Location` for the framework-dependent host and falls back to `AppContext.BaseDirectory` for single-file/NativeAOT layouts. The intentional `Location` access carries a justified IL3000 suppression.
+5. **Add a shared-library NativeAOT spike.** Start with a `.dll`/`.so`/`.dylib` export before static linking. Use `[UnmanagedCallersOnly]`, coarse JSON options, source-generated JSON serializers, top-level exception capture, and a paired `rustlyn_free`. _(First acceptance check: drive the [analyzer baseline](nativeaot-aot-analyzer-baseline.md) core-graph findings toward zero.)_
 6. **Add a Rust FFI caller spike.** Validate UTF-8 path/options passing, result ownership, structured diagnostics, and failure behavior.
 7. **Attempt static library linkage last.** Only after the shared library path works should the Rust executable link a NativeAOT `.lib`/`.a`, because static NativeAOT linkage needs platform-specific linker configuration and runtime/system libraries.
+
+Items 1, 3, 5, 6, and 7 form a cohesive NativeAOT spike milestone and should be tackled together, starting by standing up the minimal shared-library publish so that trimming roots and the contract split can actually be validated. The analyzer baseline ([`nativeaot-aot-analyzer-baseline.md`](nativeaot-aot-analyzer-baseline.md)) is the measurable entry check for that milestone.
 
 ## Intended FFI shape
 
@@ -61,3 +63,17 @@ The options JSON should carry input bitcode or lowered IR path, output assembly 
 ## First build seam
 
 `Rustlyn.Backend` now has a `RustlynBackendIncludeOptionalBindings` MSBuild property. The default product build keeps optional Avalonia and PowerShell binding glue enabled. Setting the property to `false` excludes those optional generated glue files and project references, which gives the NativeAOT work a narrower backend build to harden before introducing FFI.
+
+## Analyzer validation seam
+
+The SDK trim/AOT analyzers can already be run against the narrowed core build without a NativeAOT toolchain:
+
+```powershell
+dotnet build .\dotnet\backend\src\Rustlyn.Backend\Rustlyn.Backend.csproj `
+  -c Release `
+  -p:RustlynBackendIncludeOptionalBindings=false `
+  -p:IsAotCompatible=true `
+  -p:IsTrimmable=true
+```
+
+The recorded findings live in [`nativeaot-aot-analyzer-baseline.md`](nativeaot-aot-analyzer-baseline.md) and are the first acceptance check for the NativeAOT spike. The baseline confirms the remaining findings are dominated by the `Rustlyn.Bindings` scanner still present in the core graph, which makes the DTO/scanner split (work item 1) the highest-leverage next step.
