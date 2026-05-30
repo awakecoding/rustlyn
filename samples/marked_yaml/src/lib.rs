@@ -5,6 +5,7 @@ use marked_yaml::{
     from_yaml_with_options, parse_yaml, parse_yaml_with_options,
 };
 use serde::Deserialize;
+use serde_json::Value;
 
 const CHARACTER_DOC: &str = r#"# some comment
 
@@ -327,6 +328,344 @@ pub unsafe extern "C" fn marked_yaml_echo_utf8_copy(
     unsafe { copy_input(input_ptr, input_len, destination_ptr, destination_capacity) }
 }
 
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_to_json_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    output_len(yaml_to_json(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_to_json_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    unsafe { copy_output_bytes(yaml_to_json(input), destination_ptr, destination_capacity) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_json_to_yaml_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    output_len(json_to_yaml(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_json_to_yaml_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    unsafe { copy_output_bytes(json_to_yaml(input), destination_ptr, destination_capacity) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_object_stream_to_yaml_len(input_ptr: *const u8, input_len: i64) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    output_len(object_stream_to_yaml(input))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn marked_yaml_object_stream_to_yaml_copy(
+    input_ptr: *const u8,
+    input_len: i64,
+    destination_ptr: *mut u8,
+    destination_capacity: i64,
+) -> i64 {
+    let Some(input) = (unsafe { input_str(input_ptr, input_len) }) else {
+        return -1;
+    };
+    unsafe { copy_output_bytes(object_stream_to_yaml(input), destination_ptr, destination_capacity) }
+}
+
+fn yaml_to_json(input: &str) -> Result<Vec<u8>, ()> {
+    let value = match from_yaml::<Value>(0, input) {
+        Ok(value) => value,
+        Err(FromYamlError::ParseYaml(LoadError::TopLevelMustBeMapping(_))) => {
+            from_yaml_with_options::<Value>(0, input, LoaderOptions::default().toplevel_sequence())
+                .map_err(|_| ())?
+        }
+        Err(_) => return Err(()),
+    };
+    serde_json::to_vec(&value).map_err(|_| ())
+}
+
+fn json_to_yaml(input: &str) -> Result<Vec<u8>, ()> {
+    let value: Value = serde_json::from_str(input).map_err(|_| ())?;
+    let mut output = String::new();
+    write_yaml_value(&mut output, &value, 0, true)?;
+    Ok(output.into_bytes())
+}
+
+fn object_stream_to_yaml(input: &str) -> Result<Vec<u8>, ()> {
+    let json = object_stream_to_json(input.as_bytes())?;
+    let json = std::str::from_utf8(&json).map_err(|_| ())?;
+    json_to_yaml(json)
+}
+
+fn object_stream_to_json(input: &[u8]) -> Result<Vec<u8>, ()> {
+    let mut reader = ObjectStreamReader::new(input);
+    let mut output = String::new();
+    reader.write_json_value(&mut output)?;
+    if reader.offset != input.len() {
+        return Err(());
+    }
+    Ok(output.into_bytes())
+}
+
+struct ObjectStreamReader<'a> {
+    input: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> ObjectStreamReader<'a> {
+    fn new(input: &'a [u8]) -> Self {
+        Self { input, offset: 0 }
+    }
+
+    fn write_json_value(&mut self, output: &mut String) -> Result<(), ()> {
+        let tag = self.read_byte()?;
+        match tag {
+            b'N' => {
+                self.expect(b';')?;
+                output.push_str("null");
+            }
+            b'T' => {
+                self.expect(b';')?;
+                output.push_str("true");
+            }
+            b'F' => {
+                self.expect(b';')?;
+                output.push_str("false");
+            }
+            b'I' | b'D' => {
+                self.write_number(output)?;
+                self.expect(b';')?;
+            }
+            b'S' => {
+                let value = self.read_string()?;
+                push_json_string(output, value);
+            }
+            b'A' => {
+                let count = self.read_usize()?;
+                self.expect(b':')?;
+                output.push('[');
+                let mut index = 0usize;
+                while index < count {
+                    if index > 0 {
+                        output.push(',');
+                    }
+                    self.write_json_value(output)?;
+                    index += 1;
+                }
+                output.push(']');
+            }
+            b'O' => {
+                let count = self.read_usize()?;
+                self.expect(b':')?;
+                output.push('{');
+                let mut index = 0usize;
+                while index < count {
+                    if index > 0 {
+                        output.push(',');
+                    }
+                    let name = self.read_string()?;
+                    push_json_string(output, name);
+                    output.push(':');
+                    self.write_json_value(output)?;
+                    index += 1;
+                }
+                output.push('}');
+            }
+            _ => return Err(()),
+        }
+        Ok(())
+    }
+
+    fn write_number(&mut self, output: &mut String) -> Result<(), ()> {
+        let start = self.offset;
+        while self.offset < self.input.len() && self.input[self.offset] != b';' {
+            let byte = self.input[self.offset];
+            if !byte.is_ascii_digit() && byte != b'-' && byte != b'+' && byte != b'.' && byte != b'E' && byte != b'e' {
+                return Err(());
+            }
+            output.push(byte as char);
+            self.offset += 1;
+        }
+        if self.offset == start {
+            return Err(());
+        }
+        Ok(())
+    }
+
+    fn read_string(&mut self) -> Result<&'a str, ()> {
+        let length = self.read_usize()?;
+        self.expect(b':')?;
+        let end = self.offset.checked_add(length).ok_or(())?;
+        if end > self.input.len() {
+            return Err(());
+        }
+        let value = std::str::from_utf8(&self.input[self.offset..end]).map_err(|_| ())?;
+        self.offset = end;
+        Ok(value)
+    }
+
+    fn read_usize(&mut self) -> Result<usize, ()> {
+        let mut value = 0usize;
+        let start = self.offset;
+        while self.offset < self.input.len() && self.input[self.offset].is_ascii_digit() {
+            value = value
+                .checked_mul(10)
+                .and_then(|current| current.checked_add((self.input[self.offset] - b'0') as usize))
+                .ok_or(())?;
+            self.offset += 1;
+        }
+        if self.offset == start {
+            return Err(());
+        }
+        Ok(value)
+    }
+
+    fn expect(&mut self, expected: u8) -> Result<(), ()> {
+        if self.read_byte()? == expected {
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
+    fn read_byte(&mut self) -> Result<u8, ()> {
+        let value = *self.input.get(self.offset).ok_or(())?;
+        self.offset += 1;
+        Ok(value)
+    }
+}
+
+fn write_yaml_value(output: &mut String, value: &Value, indent: usize, root: bool) -> Result<(), ()> {
+    match value {
+        Value::Object(properties) => {
+            if properties.is_empty() {
+                write_indent(output, indent);
+                output.push_str("{}\n");
+                return Ok(());
+            }
+            for (key, value) in properties {
+                write_indent(output, indent);
+                output.push_str(&format_key(key));
+                if is_scalar(value) {
+                    output.push_str(": ");
+                    output.push_str(&format_scalar(value)?);
+                    output.push('\n');
+                } else {
+                    output.push_str(":\n");
+                    write_yaml_value(output, value, indent + 2, false)?;
+                }
+            }
+        }
+        Value::Array(values) => {
+            if values.is_empty() {
+                write_indent(output, indent);
+                output.push_str("[]\n");
+                return Ok(());
+            }
+            for value in values {
+                write_indent(output, indent);
+                output.push('-');
+                if is_scalar(value) {
+                    output.push(' ');
+                    output.push_str(&format_scalar(value)?);
+                    output.push('\n');
+                } else {
+                    output.push('\n');
+                    write_yaml_value(output, value, indent + 2, false)?;
+                }
+            }
+        }
+        _ => {
+            if !root {
+                write_indent(output, indent);
+            }
+            output.push_str(&format_scalar(value)?);
+            output.push('\n');
+        }
+    }
+    Ok(())
+}
+
+fn is_scalar(value: &Value) -> bool {
+    !matches!(value, Value::Object(_) | Value::Array(_))
+}
+
+fn format_scalar(value: &Value) -> Result<String, ()> {
+    match value {
+        Value::Null => Ok("null".to_owned()),
+        Value::Bool(value) => Ok(value.to_string()),
+        Value::Number(value) => Ok(value.to_string()),
+        Value::String(value) => serde_json::to_string(value).map_err(|_| ()),
+        _ => Err(()),
+    }
+}
+
+fn format_key(value: &str) -> String {
+    if value
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-')
+        && !value.is_empty()
+    {
+        value.to_owned()
+    } else {
+        serde_json::to_string(value).unwrap_or_else(|_| "\"\"".to_owned())
+    }
+}
+
+fn push_json_string(output: &mut String, value: &str) {
+    output.push('"');
+    for character in value.chars() {
+        match character {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            '\u{08}' => output.push_str("\\b"),
+            '\u{0C}' => output.push_str("\\f"),
+            character if character < ' ' => {
+                output.push_str("\\u00");
+                let value = character as u8;
+                push_hex(output, value >> 4);
+                push_hex(output, value & 0x0F);
+            }
+            _ => output.push(character),
+        }
+    }
+    output.push('"');
+}
+
+fn push_hex(output: &mut String, value: u8) {
+    output.push(if value < 10 {
+        (b'0' + value) as char
+    } else {
+        (b'a' + value - 10) as char
+    });
+}
+
+fn write_indent(output: &mut String, indent: usize) {
+    output.extend(std::iter::repeat_n(' ', indent));
+}
+
 fn character_span() -> Option<(usize, usize)> {
     let document = match parse_yaml(0, CHARACTER_DOC) {
         Ok(document) => document,
@@ -393,6 +732,30 @@ unsafe fn copy_input(
         unsafe { ptr::copy_nonoverlapping(input_ptr, destination_ptr, input_len as usize) };
     }
     input_len
+}
+
+fn output_len(output: Result<Vec<u8>, ()>) -> i64 {
+    output.map(|bytes| bytes.len() as i64).unwrap_or(-2)
+}
+
+unsafe fn copy_output_bytes(output: Result<Vec<u8>, ()>, destination_ptr: *mut u8, destination_capacity: i64) -> i64 {
+    let Ok(output) = output else {
+        return -2;
+    };
+    if destination_capacity < 0 {
+        return -1;
+    }
+    let output_len = output.len() as i64;
+    if destination_capacity < output_len {
+        return output_len;
+    }
+    if !output.is_empty() && destination_ptr.is_null() {
+        return -1;
+    }
+    if !output.is_empty() {
+        unsafe { ptr::copy_nonoverlapping(output.as_ptr(), destination_ptr, output.len()) };
+    }
+    output_len
 }
 
 fn character_rewrite_hash(start: usize, end: usize) -> u64 {
