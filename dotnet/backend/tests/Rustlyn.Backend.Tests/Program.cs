@@ -4507,8 +4507,8 @@ static void GeneratedBindingManagedGlueBuildOutputMatchesGenerator()
 
     var buildOutputText = File.ReadAllText(buildOutputPath);
     var surface = BindingSurface.CreateTinyBclSurface();
-    var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface);
-    var documentGeneratedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface));
+    var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface, "GeneratedBindingAliases");
+    var documentGeneratedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface), "GeneratedBindingAliases");
 
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(buildOutputText),
