@@ -508,13 +508,12 @@ impl CmdletContext {
     }
 
     fn input_text(&self) -> RuntimeResult<String> {
-        let text = self.input_string()?;
-        if !text.is_empty() {
+        let snapshot = self.input_snapshot()?;
+        if let Some(text) = snapshot_scalar_text(&snapshot) {
             return Ok(text);
         }
 
-        let snapshot = self.input_snapshot()?;
-        Ok(snapshot_scalar_text(&snapshot).unwrap_or(text))
+        self.input_string()
     }
 
     fn has_parameter(&self, name: &str) -> RuntimeResult<bool> {
