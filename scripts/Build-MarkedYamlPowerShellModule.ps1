@@ -6,8 +6,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 & (Join-Path $PSScriptRoot 'Build-RustFormatPowerShellModule.ps1') `
-    -Sample marked_yaml `
-    -EngineAssemblyName marked_yaml_engine.dll `
+    -Sample powershell_cmdlets `
+    -EngineAssemblyName rustlyn_powershell_format_cmdlets.dll `
     -CmdletsToExport @('ConvertTo-RustYaml', 'ConvertFrom-RustYaml') `
     -ManifestFileName Rustlyn.MarkedYaml.PowerShell.psd1 `
     -ModuleGuid '3d71fc1e-8296-41d3-a384-51c8f0fdff47' `

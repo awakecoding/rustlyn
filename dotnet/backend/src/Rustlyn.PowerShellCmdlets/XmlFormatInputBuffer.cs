@@ -1,6 +1,6 @@
 namespace Rustlyn.PowerShellCmdlets;
 
-internal sealed class FormatInputBuffer
+internal sealed class XmlFormatInputBuffer
 {
     private readonly List<object?> _items = [];
 

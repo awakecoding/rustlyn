@@ -6,8 +6,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 & (Join-Path $PSScriptRoot 'Build-RustFormatPowerShellModule.ps1') `
-    -Sample toml `
-    -EngineAssemblyName toml_engine.dll `
+    -Sample powershell_cmdlets `
+    -EngineAssemblyName rustlyn_powershell_format_cmdlets.dll `
     -CmdletsToExport @('ConvertTo-RustToml', 'ConvertFrom-RustToml') `
     -ManifestFileName Rustlyn.Toml.PowerShell.psd1 `
     -ModuleGuid 'f402491f-21cb-4478-83e0-dcfeecbd8348' `

@@ -29,12 +29,18 @@ public static class ExternalPackageProjectionPackGenerator
         var manifest = ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest();
         var rustModule = PowerShellRustBindingGenerator.GenerateCmdletModule(manifest);
         var managedGlue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(manifest);
+        var cmdletDescriptors = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdlets();
+        var generatedCmdletCount = cmdletDescriptors.Count(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust);
+        var cmdletDescriptorJson = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdletJson();
+        var cmdletShim = PowerShellCmdletShimGenerator.GenerateCSharp(cmdletDescriptors);
         var manifestJson = BindingManifestGenerator.GenerateJson(manifest);
 
         WriteFile(Path.Combine(outputDirectory, "powershell_cmdlet.rs"), rustModule);
         WriteFile(Path.Combine(outputDirectory, "RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs"), managedGlue);
+        WriteFile(Path.Combine(outputDirectory, "powershell-cmdlets.json"), cmdletDescriptorJson);
+        WriteFile(Path.Combine(outputDirectory, "Rustlyn.PowerShellCmdlets.Generated.g.cs"), cmdletShim);
         WriteFile(Path.Combine(outputDirectory, "binding-manifest.json"), manifestJson);
-        WriteFile(Path.Combine(outputDirectory, "summary.txt"), CreateSummary(manifest, rustModule, managedGlue, manifestJson));
+        WriteFile(Path.Combine(outputDirectory, "summary.txt"), CreateSummary(manifest, rustModule, managedGlue, manifestJson, generatedCmdletCount));
     }
 
     private static void WriteFile(string path, string content)
@@ -44,6 +50,9 @@ public static class ExternalPackageProjectionPackGenerator
     }
 
     private static string CreateSummary(BindingManifestDocument manifest, string rustModule, string managedGlue, string manifestJson)
+        => CreateSummary(manifest, rustModule, managedGlue, manifestJson, cmdletCount: null);
+
+    private static string CreateSummary(BindingManifestDocument manifest, string rustModule, string managedGlue, string manifestJson, int? cmdletCount)
     {
         var package = manifest.PackageSurface
             ?? throw new InvalidOperationException("External package pack manifests must include package metadata.");
@@ -55,6 +64,11 @@ public static class ExternalPackageProjectionPackGenerator
         builder.AppendLine($"rust-module-sha256: {Sha256(rustModule)}");
         builder.AppendLine($"managed-glue-sha256: {Sha256(managedGlue)}");
         builder.AppendLine($"manifest-sha256: {Sha256(manifestJson)}");
+        if (cmdletCount is not null)
+        {
+            builder.AppendLine($"cmdlets: {cmdletCount.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+
         foreach (var assembly in package.Assemblies.OrderBy(static assembly => assembly.Name, StringComparer.Ordinal))
         {
             builder.AppendLine($"assembly: {assembly.Name} role={assembly.Role}");

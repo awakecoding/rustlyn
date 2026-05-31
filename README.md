@@ -159,6 +159,7 @@ See the [support matrix](docs/support-matrix.md) for supported, preview, fixture
 - `samples/generic_collections/`: monomorphized FixedStack, RingBuffer, Pair, generic search
 - `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, path, and string method/property APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
+- `samples/powershell_cmdlets/`: Rust-owned PowerShell format cmdlet runtime for JSON/YAML/TOML/BSON/CBOR/CSV
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
 - `native/rustlyn/`: Rust-hosted unified `rustlyn` executable that links LLVM and the NativeAOT backend
 - `dotnet/backend/src/Rustlyn.Tool/`: CLI for cargo, llvm, inspect, lower, emit, invoke, translate, and pack flows
@@ -166,6 +167,8 @@ See the [support matrix](docs/support-matrix.md) for supported, preview, fixture
 - `dotnet/backend/src/Rustlyn.Bindings/`: binding generation — assembly scanner, instance/constructor/generic/delegate/event analysis
 - `dotnet/backend/src/Rustlyn.Bindings.Tool/`: CLI for scan, bindgen, analyze-delegate, analyze-events commands
 - `dotnet/backend/src/Rustlyn.Interop/`: reusable managed object/exception handles and UTF-8 interop helpers for future generated bindings
+- `dotnet/backend/src/Rustlyn.PowerShellCmdlets/`: generated `PSCmdlet` host shims plus the XML compatibility cmdlet island
+- `dotnet/backend/src/Rustlyn.PowerShellSupport/`: host callback bridge for generated PowerShell cmdlet runtimes
 - `dotnet/backend/src/Rustlyn.Runtime/`: future home for LLVM/runtime semantic helpers
 - `dotnet/backend/src/Rustlyn.Os/`: future home for host OS and Rust `std` compatibility helpers
 - `dotnet/backend/src/Rustlyn.Sdk/`: local and packable SDK-style MSBuild facade that delegates `.rsproj` builds to the backend translate driver
