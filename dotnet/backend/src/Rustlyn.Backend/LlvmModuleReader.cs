@@ -1,6 +1,8 @@
+#if RUSTLYN_BACKEND_LLVM_SHARP
 using System.Runtime.InteropServices;
 using LLVMSharp.Interop;
 using static LLVMSharp.Interop.LLVM;
+#endif
 
 namespace Rustlyn.Backend;
 
@@ -20,12 +22,17 @@ internal static class LlvmModuleReader
             return RustlynLlvmModuleReader.ReadSummary(artifactPath, toolchainRoot, irTool.Path);
         }
 
+#if RUSTLYN_BACKEND_LLVM_SHARP
         var configuredRoot = LlvmNativeLibraryLocator.TryConfigure(toolchainRoot);
         return configuredRoot is not null
             ? ReadWithInterop(artifactPath, configuredRoot)
             : LlvmToolingModuleReader.ReadSummary(artifactPath, toolchainRoot);
+#else
+        return LlvmToolingModuleReader.ReadSummary(artifactPath, toolchainRoot);
+#endif
     }
 
+#if RUSTLYN_BACKEND_LLVM_SHARP
     private static LlvmModuleSummary ReadWithInterop(string artifactPath, string configuredRoot)
     {
 
@@ -120,4 +127,5 @@ internal static class LlvmModuleReader
             DisposeMessage(message);
         }
     }
+#endif
 }

@@ -7,6 +7,8 @@ namespace Rustlyn.Backend;
 public static partial class RuntimeBridgeHelpers
 {
     private const int RustFormatArgumentSize = 16;
+    private static readonly object DefaultI32FormattersLock = new();
+    private static readonly HashSet<IntPtr> DefaultI32Formatters = [];
 
     public static int CommandLineArgCount()
     {
@@ -115,6 +117,19 @@ public static partial class RuntimeBridgeHelpers
     public static void StdIoEPrint(IntPtr argumentsPointer)
     {
         Console.Error.Write(ReadFormatLiteralPieces(argumentsPointer));
+    }
+
+    public static void RegisterDefaultI32Formatter(IntPtr formatterPointer)
+    {
+        if (formatterPointer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("The generated default i32 formatter pointer cannot be zero.");
+        }
+
+        lock (DefaultI32FormattersLock)
+        {
+            DefaultI32Formatters.Add(formatterPointer);
+        }
     }
 
     public static IntPtr StdIoStdout()
@@ -406,25 +421,10 @@ public static partial class RuntimeBridgeHelpers
 
     private static bool IsDefaultI32Formatter(IntPtr formatterPointer)
     {
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        lock (DefaultI32FormattersLock)
         {
-            var generatedType = assembly.GetType("Rustlyn.GeneratedModule", throwOnError: false);
-            if (generatedType is null)
-            {
-                continue;
-            }
-
-            foreach (var method in generatedType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
-            {
-                if (method.Name.Contains("$u20$for$u20$i32$GT$3fmt", StringComparison.Ordinal)
-                    && method.MethodHandle.GetFunctionPointer() == formatterPointer)
-                {
-                    return true;
-                }
-            }
+            return DefaultI32Formatters.Contains(formatterPointer);
         }
-
-        return false;
     }
 
     private static void WriteRustBufferFromString(IntPtr destination, string value)

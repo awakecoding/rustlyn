@@ -7,7 +7,7 @@ public static class RustBindingGenerator
     public static string GenerateSystemModule(BindingSurface surface)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        return GenerateSystemModule(BindingManifestDocument.FromSurface(surface));
+        return GenerateSystemModule(BindingManifestFactory.FromSurface(surface));
     }
 
     public static string GenerateSystemModule(BindingManifestDocument document)

@@ -41,7 +41,7 @@ public static class RuntimeProjectionPackGenerator
         {
             var tfmDirectory = GetTargetFrameworkDirectory(outputFullPath, report.TargetFramework);
             Directory.CreateDirectory(tfmDirectory);
-            var manifestDocument = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(report));
+            var manifestDocument = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestFactory.FromRuntimeSurface(report));
 
             WriteArtifact(
                 artifacts,
@@ -183,7 +183,7 @@ public static class RuntimeProjectionPackGenerator
             scanSet.Reports
                 .Select(static report =>
                 {
-                    var manifestDocument = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(report));
+                    var manifestDocument = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestFactory.FromRuntimeSurface(report));
                     var callableCoverage = RuntimeCallableCoverageGate.Measure(manifestDocument);
                     return new RuntimeProjectionPackTarget(
                         report.TargetFramework,

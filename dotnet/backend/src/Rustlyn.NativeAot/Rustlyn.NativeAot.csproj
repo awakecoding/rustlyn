@@ -6,9 +6,12 @@
     <PublishAot>true</PublishAot>
     <NativeLib>Shared</NativeLib>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <RustlynBackendIncludeOptionalBindings>false</RustlynBackendIncludeOptionalBindings>
+    <RustlynBackendIncludeLlvmSharp>false</RustlynBackendIncludeLlvmSharp>
+    <RustlynBackendUseInProcessLlvm>true</RustlynBackendUseInProcessLlvm>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Rustlyn.Backend\Rustlyn.Backend.csproj" AdditionalProperties="RustlynBackendIncludeOptionalBindings=false" />
+    <ProjectReference Include="..\Rustlyn.Backend\Rustlyn.Backend.csproj" Properties="RustlynBackendIncludeOptionalBindings=false;RustlynBackendIncludeLlvmSharp=false;RustlynBackendUseInProcessLlvm=true" />
   </ItemGroup>
 </Project>

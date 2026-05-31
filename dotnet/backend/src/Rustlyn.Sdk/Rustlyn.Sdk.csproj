@@ -11,7 +11,13 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
     <RustlynToolProject>..\Rustlyn.Tool\Rustlyn.Tool.csproj</RustlynToolProject>
     <RustlynToolPublishDir>$(MSBuildProjectDirectory)\obj\rustlyn-tool\$(Configuration)\</RustlynToolPublishDir>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PublishRustlynToolForPackage</TargetsForTfmSpecificContentInPackage>
+    <RustlynNativeHostRid Condition="'$(RustlynNativeHostRid)' == '' and '$(OS)' == 'Windows_NT'">win-x64</RustlynNativeHostRid>
+    <RustlynNativeHostFileName Condition="'$(RustlynNativeHostFileName)' == '' and '$(OS)' == 'Windows_NT'">rustlyn.exe</RustlynNativeHostFileName>
+    <RustlynNativeHostFileName Condition="'$(RustlynNativeHostFileName)' == ''">rustlyn</RustlynNativeHostFileName>
+    <RustlynNativeHostPath Condition="'$(RustlynNativeHostPath)' == ''">$(MSBuildProjectDirectory)\..\..\..\..\native\rustlyn\target\release\$(RustlynNativeHostFileName)</RustlynNativeHostPath>
+    <RustlynNativeHostRuntimeDir Condition="'$(RustlynNativeHostRuntimeDir)' == ''">$(MSBuildProjectDirectory)\..\..\..\..\native\rustlyn\target\release\</RustlynNativeHostRuntimeDir>
+    <RustlynNativeHostSupportDir Condition="'$(RustlynNativeHostSupportDir)' == ''">$(MSBuildProjectDirectory)\..\Rustlyn.Backend\bin\$(Configuration)\net10.0\</RustlynNativeHostSupportDir>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PublishRustlynToolForPackage;PackageRustlynNativeHost</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +31,22 @@
       <_RustlynToolPackageFile Include="$(RustlynToolPublishDir)**\*" />
       <TfmSpecificPackageFile Include="@(_RustlynToolPackageFile)">
         <PackagePath>tools\net10.0\%(_RustlynToolPackageFile.RecursiveDir)%(_RustlynToolPackageFile.Filename)%(_RustlynToolPackageFile.Extension)</PackagePath>
+        <BuildAction>None</BuildAction>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PackageRustlynNativeHost" Condition="'$(RustlynNativeHostRid)' != '' and Exists('$(RustlynNativeHostPath)')">
+    <ItemGroup>
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostPath)" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostRuntimeDir)rustlyn_nativeaot.dll" Condition="Exists('$(RustlynNativeHostRuntimeDir)rustlyn_nativeaot.dll')" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostSupportDir)Rustlyn.Backend.dll" Condition="Exists('$(RustlynNativeHostSupportDir)Rustlyn.Backend.dll')" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostSupportDir)Rustlyn.BindingContracts.dll" Condition="Exists('$(RustlynNativeHostSupportDir)Rustlyn.BindingContracts.dll')" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostSupportDir)Rustlyn.Runtime.dll" Condition="Exists('$(RustlynNativeHostSupportDir)Rustlyn.Runtime.dll')" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostSupportDir)Rustlyn.Os.dll" Condition="Exists('$(RustlynNativeHostSupportDir)Rustlyn.Os.dll')" />
+      <_RustlynNativeHostPackageFile Include="$(RustlynNativeHostSupportDir)Rustlyn.Interop.dll" Condition="Exists('$(RustlynNativeHostSupportDir)Rustlyn.Interop.dll')" />
+      <TfmSpecificPackageFile Include="@(_RustlynNativeHostPackageFile)">
+        <PackagePath>tools\$(RustlynNativeHostRid)\%(_RustlynNativeHostPackageFile.Filename)%(_RustlynNativeHostPackageFile.Extension)</PackagePath>
         <BuildAction>None</BuildAction>
       </TfmSpecificPackageFile>
     </ItemGroup>

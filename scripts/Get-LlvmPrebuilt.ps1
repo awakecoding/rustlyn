@@ -1,9 +1,9 @@
 param(
     [Parameter(Mandatory = $false)]
-    [string]$Version = "20.1.8",
+    [string]$Version = "22.1.4",
 
     [Parameter(Mandatory = $false)]
-    [string]$ReleaseTag = "v2025.3.0",
+    [string]$ReleaseTag = "v2026.1.0",
 
     [Parameter(Mandatory = $false)]
     [string]$Architecture = "x86_64",

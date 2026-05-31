@@ -552,8 +552,10 @@ public static class LoweredAssemblyEmitter
             methodList: MetadataTokens.MethodDefinitionHandle(1));
 
         // Pre-compute method handles (SRM assigns handles sequentially)
-        // .cctor goes last if globals exist
-        var hasCctor = loweredModule.Globals.Count > 0;
+        // .cctor goes last if globals or generated formatter registrations exist
+        var needsDefaultI32FormatterRegistration = !typeContext.RuntimeRegisterDefaultI32Formatter.IsNil
+            && functions.Any(static function => IsDefaultI32FormatterSymbol(function.Name));
+        var hasCctor = loweredModule.Globals.Count > 0 || needsDefaultI32FormatterRegistration;
         var totalMethods = functions.Count + (hasCctor ? 1 : 0);
         var methodHandles = new Dictionary<string, MethodDefinitionHandle>(StringComparer.Ordinal);
         for (var i = 0; i < functions.Count; i++)
@@ -4295,6 +4297,18 @@ public static class LoweredAssemblyEmitter
             encoder.Token(fieldHandle);
         }
 
+        if (!typeContext.RuntimeRegisterDefaultI32Formatter.IsNil)
+        {
+            foreach (var (methodName, methodHandle) in methodHandles.Where(static pair => IsDefaultI32FormatterSymbol(pair.Key)))
+            {
+                _ = methodName;
+                encoder.OpCode(ILOpCode.Ldftn);
+                encoder.Token(methodHandle);
+                encoder.OpCode(ILOpCode.Conv_i);
+                encoder.Call(typeContext.RuntimeRegisterDefaultI32Formatter);
+            }
+        }
+
         encoder.OpCode(ILOpCode.Ret);
 
         return methodBodyStream.AddMethodBody(
@@ -4446,6 +4460,9 @@ public static class LoweredAssemblyEmitter
         return int.TryParse(typeName.AsSpan(1), out width) && width > 0;
     }
 
+    private static bool IsDefaultI32FormatterSymbol(string name)
+        => name.Contains("$u20$for$u20$i32$GT$3fmt", StringComparison.Ordinal);
+
     private sealed record SrmReferenceRequirements(
         bool IncludeAvaloniaBridge,
         bool IncludeBinaryPrimitives,
@@ -4480,6 +4497,7 @@ public static class LoweredAssemblyEmitter
         public MemberReferenceHandle MarshalCopy { get; }
         public UserStringHandle AllocationFailureMessage { get; }
         public MemberReferenceHandle RuntimeCompareBytesI64 { get; }
+        public MemberReferenceHandle RuntimeRegisterDefaultI32Formatter { get; }
         public MemberReferenceHandle NotSupportedExceptionCtor { get; }
         public MemberReferenceHandle DivideByZeroExceptionCtor { get; }
         public MemberReferenceHandle OverflowExceptionCtor { get; }
@@ -4765,6 +4783,11 @@ public static class LoweredAssemblyEmitter
                     runtimeBridgeHelpers,
                     nameof(RuntimeBridgeHelpers.CompareBytesI64),
                     EncodeBridgeMethodSig(mb, "i32", "ptr", "ptr", "i64"));
+                RuntimeRegisterDefaultI32Formatter = AddStaticMethod(
+                    mb,
+                    runtimeBridgeHelpers,
+                    nameof(RuntimeBridgeHelpers.RegisterDefaultI32Formatter),
+                    EncodeBridgeMethodSig(mb, "void", "ptr"));
                 _runtimeBridgeMap = BuildRuntimeBridgeMap(mb, runtimeBridgeHelpers, bindingManifests ?? [], out _runtimeBridgeSretHandles);
             }
             else

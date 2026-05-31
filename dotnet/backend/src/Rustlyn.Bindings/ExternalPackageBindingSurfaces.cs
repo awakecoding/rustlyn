@@ -9,7 +9,7 @@ public static class ExternalPackageBindingSurfaces
     private const string PowerShellSdkPackageVersion = "7.5.0";
 
     public static BindingManifestDocument CreateAvaloniaHelloManifest()
-        => BindingManifestDocument.FromExternalPackageSurface(
+        => BindingManifestFactory.FromExternalPackageSurface(
             CreateAvaloniaHelloSurface(),
             CreateAvaloniaHelloPackageSurface());
 
@@ -53,7 +53,7 @@ public static class ExternalPackageBindingSurfaces
     }
 
     public static BindingManifestDocument CreatePowerShellCmdletManifest()
-        => BindingManifestDocument.FromExternalPackageSurface(
+        => BindingManifestFactory.FromExternalPackageSurface(
             CreatePowerShellCmdletSurface(),
             CreatePowerShellCmdletPackageSurface());
 

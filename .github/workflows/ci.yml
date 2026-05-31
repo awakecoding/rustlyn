@@ -13,11 +13,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            llvm_asset: clang+llvm-20.1.8-x86_64-windows.tar.xz
+            llvm_asset: clang+llvm-22.1.4-x86_64-windows.tar.xz
           - os: ubuntu-latest
-            llvm_asset: clang+llvm-20.1.8-x86_64-ubuntu-24.04.tar.xz
+            llvm_asset: clang+llvm-22.1.4-x86_64-ubuntu-24.04.tar.xz
           - os: macos-latest
-            llvm_asset: clang+llvm-20.1.8-aarch64-macos.tar.xz
+            llvm_asset: clang+llvm-22.1.4-aarch64-macos.tar.xz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -28,11 +28,11 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
-      - name: Install prebuilt LLVM 20.1.8
+      - name: Install prebuilt LLVM 22.1.4
         shell: pwsh
         run: |
           $asset = '${{ matrix.llvm_asset }}'
-          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2025.3.0/$asset"
+          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2026.1.0/$asset"
           $stage = Join-Path $env:RUNNER_TEMP 'llvm'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           $archive = Join-Path $stage $asset
@@ -49,6 +49,36 @@ jobs:
             Test-Path (Join-Path $resolved 'bin\llvm-config.exe') | ForEach-Object { Write-Host "llvm-config.exe present: $_" }
           } else {
             Test-Path (Join-Path $resolved 'bin/llvm-config') | ForEach-Object { Write-Host "llvm-config present: $_" }
+          }
+
+      - name: Install LLVM support libraries
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $installRoot = Join-Path $env:RUNNER_TEMP 'vcpkg-installed'
+          vcpkg install zlib:x64-windows libxml2:x64-windows --x-install-root=$installRoot
+          $installed = Join-Path $installRoot 'x64-windows'
+          $libDir = Join-Path $installed 'lib'
+          $binDir = Join-Path $installed 'bin'
+          if (-not (Test-Path $libDir)) {
+            throw "vcpkg lib directory was not found under $libDir"
+          }
+
+          Get-ChildItem -Path $libDir -Filter '*.lib' | ForEach-Object { Write-Host "vcpkg lib: $($_.Name)" }
+          if (-not (Test-Path (Join-Path $libDir 'zlib.lib'))) {
+            $zlib = Get-ChildItem -Path $libDir -Filter 'zlib*.lib' | Select-Object -First 1
+            if (-not $zlib) { $zlib = Get-ChildItem -Path $libDir -Filter 'z*.lib' | Select-Object -First 1 }
+            if (-not $zlib) { throw "vcpkg zlib library was not found under $libDir" }
+            Copy-Item -LiteralPath $zlib.FullName -Destination (Join-Path $libDir 'zlib.lib')
+          }
+          if (-not (Test-Path (Join-Path $libDir 'xml2.lib'))) {
+            $xml2 = Get-ChildItem -Path $libDir -Filter '*xml2*.lib' | Select-Object -First 1
+            if (-not $xml2) { throw "vcpkg libxml2 library was not found under $libDir" }
+            Copy-Item -LiteralPath $xml2.FullName -Destination (Join-Path $libDir 'xml2.lib')
+          }
+          "LIB=$libDir;$env:LIB" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          if (Test-Path $binDir) {
+            $binDir | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
           }
 
       - name: Build backend
@@ -122,11 +152,11 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
-      - name: Install prebuilt LLVM 20.1.8
+      - name: Install prebuilt LLVM 22.1.4
         shell: pwsh
         run: |
-          $asset = 'clang+llvm-20.1.8-x86_64-ubuntu-24.04.tar.xz'
-          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2025.3.0/$asset"
+          $asset = 'clang+llvm-22.1.4-x86_64-ubuntu-24.04.tar.xz'
+          $url = "https://github.com/awakecoding/llvm-prebuilt/releases/download/v2026.1.0/$asset"
           $stage = Join-Path $env:RUNNER_TEMP 'llvm'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           $archive = Join-Path $stage $asset
@@ -165,7 +195,7 @@ jobs:
           dotnet-quality: 'preview'
 
       - name: Build bindings tool
-        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -m:1
 
       - name: Validate binding surface
         shell: pwsh

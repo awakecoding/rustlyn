@@ -7,7 +7,7 @@ public static class ManagedGlueGenerator
     public static string GenerateRuntimeBridgePartial(BindingSurface surface, string? aliasTablePropertyName = null)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        return GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface), aliasTablePropertyName);
+        return GenerateRuntimeBridgePartial(BindingManifestFactory.FromSurface(surface), aliasTablePropertyName);
     }
 
     public static string GenerateRuntimeBridgePartial(BindingManifestDocument document, string? aliasTablePropertyName = null)

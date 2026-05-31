@@ -9,10 +9,18 @@ public static partial class LoweredIrLowerer
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactPath);
 
+        var fullArtifactPath = Path.GetFullPath(artifactPath);
+
+#if RUSTLYN_BACKEND_IN_PROCESS_LLVM
+        if (string.IsNullOrWhiteSpace(llvmRoot))
+        {
+            return LowerLlvmIr(InProcessLlvmModuleReader.ReadLlvmIr(fullArtifactPath));
+        }
+#endif
+
         var toolchainRoot = LlvmNativeLibraryLocator.TryResolveToolchainRoot(llvmRoot)
             ?? throw new InvalidOperationException("An LLVM toolchain root is required for lowering. Configure --llvm-root or RUSTLYN_LLVM_ROOT.");
 
-        var fullArtifactPath = Path.GetFullPath(artifactPath);
         var optimizedPath = RustlynLlvmOptimizer.MaybeOptimize(fullArtifactPath, toolchainRoot);
         var readerMode = GetLlvmReaderMode();
         if (readerMode != LlvmReaderMode.Text)

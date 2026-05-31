@@ -10,6 +10,7 @@ if (args.Length == 3
     return 0;
 }
 
+#if RUSTLYN_BINDINGS_OPTIONAL_SURFACES
 if (args.Length == 3
     && string.Equals(args[0], "avalonia-managed-glue", StringComparison.Ordinal)
     && string.Equals(args[1], "--out", StringComparison.Ordinal))
@@ -29,6 +30,7 @@ if (args.Length == 3
     File.WriteAllText(outputPath, ManagedGlueGenerator.GenerateRuntimeBridgePartial(ExternalPackageBindingSurfaces.CreatePowerShellCmdletSurface()));
     return 0;
 }
+#endif
 
 if (args.Length == 3
     && string.Equals(args[0], "rust-system-module", StringComparison.Ordinal)
@@ -40,6 +42,7 @@ if (args.Length == 3
     return 0;
 }
 
+#if RUSTLYN_BINDINGS_OPTIONAL_SURFACES
 if (args.Length == 3
     && string.Equals(args[0], "avalonia-hello-module", StringComparison.Ordinal)
     && string.Equals(args[1], "--out", StringComparison.Ordinal))
@@ -85,6 +88,7 @@ if (args.Length == 9
 
     throw new NotSupportedException("The package-pack prototype currently supports --package Avalonia --version 12.0.3 --tfm net10.0 and --package Microsoft.PowerShell.SDK --version 7.5.0 --tfm net10.0.");
 }
+#endif
 
 if (args.Length == 3
     && string.Equals(args[0], "manifest", StringComparison.Ordinal)

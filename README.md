@@ -2,7 +2,7 @@
 
 Rustlyn translates Rust-produced LLVM bitcode into managed .NET assemblies — like [Roslyn](https://github.com/dotnet/roslyn) is the .NET compiler platform, Rustlyn aims to be the Rust-to-.NET compiler platform.
 
-Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/entries/sg_rust_dotnet_preview.html) (2020–2021), which proved that LLVM-to-CIL translation is viable. Rustlyn reconstructs and modernizes that approach on .NET 10, current Rust toolchains, and LLVM 20 — then goes beyond what the original experiment demonstrated.
+Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/entries/sg_rust_dotnet_preview.html) (2020–2021), which proved that LLVM-to-CIL translation is viable. Rustlyn reconstructs and modernizes that approach on .NET 10, current Rust toolchains, and LLVM 22 — then goes beyond what the original experiment demonstrated.
 
 ## Quick Start
 
@@ -10,13 +10,13 @@ Heavily inspired by Eric Sink's [SourceGear Rust.NET SDK](https://ericsink.com/e
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - A Rust toolchain via [rustup](https://rustup.rs/) (nightly is used for `build-std` flows)
-- An LLVM 20 toolchain. The easiest path is the bundled prebuilt:
+- An LLVM 22 toolchain. The easiest path is the bundled prebuilt:
 
   ```powershell
   .\scripts\Get-LlvmPrebuilt.ps1
   ```
 
-  This downloads `clang+llvm-20.1.8` into the repo and sets `RUSTLYN_LLVM_ROOT` for the current session. Alternatively, build the statically linked helper with `.\scripts\Build-RustlynLlvmHelper.ps1 -LlvmDevRoot <path>`, or point `RUSTLYN_LLVM_ROOT` at any directory containing `bin\rustlyn-llvm.exe` (or `bin\llvm-opt.exe` as a legacy fallback).
+  This downloads `clang+llvm-22.1.4` into the repo and sets `RUSTLYN_LLVM_ROOT` for the current session. Alternatively, build the statically linked helper with `.\scripts\Build-RustlynLlvmHelper.ps1 -LlvmDevRoot <path>`, or point `RUSTLYN_LLVM_ROOT` at any directory containing `bin\rustlyn-llvm.exe` (or `bin\llvm-opt.exe` as a legacy fallback).
 
 ### 2. Build the `rustlyn` CLI
 
@@ -108,6 +108,15 @@ Build `.rsproj` projects with `dotnet build` via the preview MSBuild SDK:
 
 These cover SourceGear-style project metadata (`Language=Rust`, `RustToolchain=+nightly`, `RustDebugOrRelease`), synthesized Cargo manifests with both local `RustReference` and crates.io `RustCrateReference` dependencies, `RustlynBinaryTarget` / inferred binary targets, `RustlynBuildStd=core`, and NuGet-style SDK resolution including the packaged `rustlyn` tool under `tools/net10.0`.
 
+Validate the unified native host. The temporary shared-NativeAOT mode keeps `rustlyn.exe` as the Rust CLI and stages `rustlyn_nativeaot.dll` beside it; the final static mode still targets a single executable once the static LLVM CRT mode matches NativeAOT:
+
+```powershell
+.\scripts\Test-NativeHostParity.ps1 -Sample add -Configuration Release -LlvmRoot <legacy-llvm-root>
+.\scripts\Build-RustlynNativeDistribution.ps1 -Configuration Release -RuntimeIdentifier win-x64 -NativeAotLinkMode Shared
+```
+
+The parity script compares the legacy managed CLI against `native\rustlyn\target\release\rustlyn.exe` for inspect, lower, emit, cargo, translate, pack, missing-artifact diagnostics, startup timing, binary size, and packaged SDK resolution through `tools\win-x64\rustlyn.exe`. In shared mode the Rust host registers LLVM callback pointers with `rustlyn_nativeaot.dll`, so the DLL does not import symbols from the `.exe`.
+
 Run the regression harness (18,000+ lines of behavioral assertions):
 
 ```powershell
@@ -151,6 +160,7 @@ See the [support matrix](docs/support-matrix.md) for supported, preview, fixture
 - `samples/generated_bindings_hello/`: first generated-style .NET binding fixture over console, environment method/property, directory, path, and string method/property APIs
 - `samples/generated_bindings_lousygrep/`: canonical lousygrep-style fixture using generated Environment/File/String/Console bindings for the workload
 - `scripts/`: repeatable PowerShell entry points for LLVM setup, sample builds, and smoke checks
+- `native/rustlyn/`: Rust-hosted unified `rustlyn` executable that links LLVM and the NativeAOT backend
 - `dotnet/backend/src/Rustlyn.Tool/`: CLI for cargo, llvm, inspect, lower, emit, invoke, translate, and pack flows
 - `dotnet/backend/src/Rustlyn.Backend/`: lowering, IL emission, Portable PDB, translation cache, NuGet packaging
 - `dotnet/backend/src/Rustlyn.Bindings/`: binding generation — assembly scanner, instance/constructor/generic/delegate/event analysis
