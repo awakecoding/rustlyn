@@ -1,19 +1,62 @@
+use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::{env, fs};
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=RUSTLYN_NATIVEAOT_LINK_MODE");
     println!("cargo:rerun-if-env-changed=RUSTLYN_NATIVEAOT_LIB_DIR");
     println!("cargo:rerun-if-env-changed=RUSTLYN_NATIVEAOT_RUNTIME_LIB_DIR");
     println!("cargo:rerun-if-env-changed=RUSTLYN_LLVM_ROOT");
     println!("cargo:rerun-if-env-changed=RUSTLYN_LLVM_DEV_ROOT");
     println!("cargo:rerun-if-env-changed=LLVM_SYS_201_PREFIX");
     println!("cargo:rerun-if-env-changed=LLVM_SYS_PREFIX");
+    println!("cargo:rustc-check-cfg=cfg(rustlyn_nativeaot_static)");
 
-    let lib_dir = env::var("RUSTLYN_NATIVEAOT_LIB_DIR").expect(
-        "RUSTLYN_NATIVEAOT_LIB_DIR must point to the directory containing rustlyn_nativeaot.lib",
+    let link_mode =
+        env::var("RUSTLYN_NATIVEAOT_LINK_MODE").unwrap_or_else(|_| "shared".to_string());
+    let link_mode = link_mode.to_ascii_lowercase();
+    let nativeaot_lib_dir = PathBuf::from(
+        env::var("RUSTLYN_NATIVEAOT_LIB_DIR")
+            .expect("RUSTLYN_NATIVEAOT_LIB_DIR must point to the NativeAOT publish directory"),
     );
-    println!("cargo:rustc-link-search=native={lib_dir}");
+
+    println!("cargo:warning=Rustlyn NativeAOT link mode: {link_mode}");
+    println!(
+        "cargo:warning=Rustlyn NativeAOT lib dir: {}",
+        nativeaot_lib_dir.display()
+    );
+
+    match link_mode.as_str() {
+        "shared" | "dynamic" => link_shared_nativeaot(&nativeaot_lib_dir),
+        "static" => link_static_nativeaot(&nativeaot_lib_dir),
+        value => {
+            panic!("unsupported RUSTLYN_NATIVEAOT_LINK_MODE '{value}'; expected shared or static")
+        }
+    }
+
+    link_llvm(link_mode.as_str() == "static");
+}
+
+fn link_shared_nativeaot(lib_dir: &Path) {
+    stage_nativeaot_runtime_files(lib_dir);
+}
+
+fn link_static_nativeaot(lib_dir: &Path) {
+    println!("cargo:rustc-cfg=rustlyn_nativeaot_static");
+    if env::var("CARGO_CFG_WINDOWS").is_ok() {
+        let target_features = env::var("CARGO_CFG_TARGET_FEATURE").unwrap_or_default();
+        if !target_features
+            .split(',')
+            .any(|feature| feature == "crt-static")
+        {
+            panic!(
+                "static NativeAOT link mode on Windows requires Rust crt-static; set RUSTFLAGS=-C target-feature=+crt-static"
+            );
+        }
+    }
+
+    println!("cargo:rustc-link-search=native={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=rustlyn_nativeaot");
 
     let runtime_lib_dir = env::var("RUSTLYN_NATIVEAOT_RUNTIME_LIB_DIR")
@@ -46,13 +89,55 @@ fn main() {
         }
     }
 
-    let llvm_root = env::var_os("RUSTLYN_LLVM_ROOT")
-        .or_else(|| env::var_os("RUSTLYN_LLVM_DEV_ROOT"))
-        .map(PathBuf::from)
-        .or_else(|| env::var_os("LLVM_SYS_201_PREFIX").map(PathBuf::from))
-        .or_else(|| env::var_os("LLVM_SYS_PREFIX").map(PathBuf::from))
-        .expect("RUSTLYN_LLVM_ROOT must point to an LLVM development root with bin/llvm-config and static libraries");
+    let llvm_root = llvm_root();
+    let llvm_config = find_llvm_config(&llvm_root);
+    let llvm_lib_dir = run_llvm_config(&llvm_config, &["--libdir"]);
+    if env::var("CARGO_CFG_WINDOWS").is_ok() {
+        verify_windows_crt_compatibility(&runtime_lib_dir_path, Path::new(llvm_lib_dir.trim()));
+    }
+}
 
+fn stage_nativeaot_runtime_files(lib_dir: &Path) {
+    let target_dir = cargo_target_profile_dir();
+    let dll = lib_dir.join("rustlyn_nativeaot.dll");
+    if !dll.is_file() {
+        panic!("shared NativeAOT link mode requires '{}'", dll.display());
+    }
+
+    for path in [dll, lib_dir.join("rustlyn_nativeaot.pdb")] {
+        if !path.is_file() {
+            continue;
+        }
+
+        println!("cargo:rerun-if-changed={}", path.display());
+        let destination = target_dir.join(path.file_name().expect("published file has a name"));
+        fs::copy(&path, &destination).unwrap_or_else(|err| {
+            panic!(
+                "failed to stage '{}' to '{}': {err}",
+                path.display(),
+                destination.display()
+            )
+        });
+        println!("cargo:warning=staged {}", destination.display());
+    }
+}
+
+fn cargo_target_profile_dir() -> PathBuf {
+    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR is set by Cargo"));
+    out_dir
+        .ancestors()
+        .nth(3)
+        .unwrap_or_else(|| {
+            panic!(
+                "could not derive Cargo target profile directory from '{}'",
+                out_dir.display()
+            )
+        })
+        .to_path_buf()
+}
+
+fn link_llvm(check_static_crt: bool) {
+    let llvm_root = llvm_root();
     let llvm_config = find_llvm_config(&llvm_root);
     let version = run_llvm_config(&llvm_config, &["--version"]);
     println!(
@@ -62,10 +147,14 @@ fn main() {
 
     let llvm_lib_dir = run_llvm_config(&llvm_config, &["--libdir"]);
     let llvm_lib_dir = llvm_lib_dir.trim();
-    if env::var("CARGO_CFG_WINDOWS").is_ok() {
-        verify_windows_crt_compatibility(&runtime_lib_dir_path, Path::new(llvm_lib_dir));
-    }
+    println!("cargo:warning=Rustlyn LLVM lib dir: {llvm_lib_dir}");
     println!("cargo:rustc-link-search=native={llvm_lib_dir}");
+
+    if check_static_crt {
+        println!(
+            "cargo:warning=static NativeAOT mode will enforce LLVM/NativeAOT CRT compatibility"
+        );
+    }
 
     let libs = run_llvm_config(
         &llvm_config,
@@ -78,6 +167,15 @@ fn main() {
         &["--link-static", "--system-libs", "core", "bitreader"],
     );
     emit_link_args(&system_libs, false);
+}
+
+fn llvm_root() -> PathBuf {
+    env::var_os("RUSTLYN_LLVM_ROOT")
+        .or_else(|| env::var_os("RUSTLYN_LLVM_DEV_ROOT"))
+        .map(PathBuf::from)
+        .or_else(|| env::var_os("LLVM_SYS_201_PREFIX").map(PathBuf::from))
+        .or_else(|| env::var_os("LLVM_SYS_PREFIX").map(PathBuf::from))
+        .expect("RUSTLYN_LLVM_ROOT must point to an LLVM development root with bin/llvm-config and static libraries")
 }
 
 fn find_llvm_config(root: &Path) -> PathBuf {
@@ -157,11 +255,27 @@ fn emit_link_args(args: &str, prefer_static: bool) {
 }
 
 fn emit_link_lib(name: &str, prefer_static: bool) {
+    if cfg!(windows) && !prefer_static && matches!(name, "zlib" | "xml2") {
+        if !windows_lib_available(name) {
+            println!(
+                "cargo:warning=skipping LLVM system library {name}.lib because it was not found in LIB paths"
+            );
+            return;
+        }
+    }
+
     if prefer_static {
         println!("cargo:rustc-link-lib=static={name}");
     } else {
         println!("cargo:rustc-link-lib={name}");
     }
+}
+
+fn windows_lib_available(name: &str) -> bool {
+    let file_name = format!("{name}.lib");
+    env::var_os("LIB")
+        .map(|paths| env::split_paths(&paths).any(|path| path.join(&file_name).is_file()))
+        .unwrap_or(false)
 }
 
 fn verify_windows_crt_compatibility(runtime_lib_dir: &Path, llvm_lib_dir: &Path) {
@@ -177,7 +291,7 @@ fn verify_windows_crt_compatibility(runtime_lib_dir: &Path, llvm_lib_dir: &Path)
 
     if runtime_uses_static_crt && llvm_uses_dynamic_crt {
         panic!(
-            "LLVM static libraries in '{}' use the dynamic MSVC CRT (/MD), but the NativeAOT runtime pack in '{}' uses the static MSVC CRT (/MT). Build LLVM with a matching static CRT, for example CMake -DLLVM_USE_CRT_RELEASE=MT, and point RUSTLYN_LLVM_ROOT at that development root.",
+            "LLVM static libraries in '{}' use the dynamic MSVC CRT (/MD), but the NativeAOT runtime pack in '{}' uses the static MSVC CRT (/MT). Build LLVM with a matching static CRT and point RUSTLYN_LLVM_ROOT at that root.",
             llvm_lib_dir.display(),
             runtime_lib_dir.display()
         );

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Globalization;
@@ -7,7 +8,10 @@ namespace Rustlyn.Backend;
 public static class LoweredAssemblyInvoker
 {
     private const string GeneratedTypeName = "Rustlyn.GeneratedModule";
+    private const string DynamicInvocationRequiresUnreferencedCode =
+        "Rustlyn invoke dynamically loads generated assemblies and reflects over their methods; it is intentionally kept out of NativeAOT surfaces.";
 
+    [RequiresUnreferencedCode(DynamicInvocationRequiresUnreferencedCode)]
     public static object? InvokeBitcode(string artifactPath, string methodName, IReadOnlyList<object?> arguments, string? llvmRoot = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactPath);
@@ -29,6 +33,7 @@ public static class LoweredAssemblyInvoker
         }
     }
 
+    [RequiresUnreferencedCode(DynamicInvocationRequiresUnreferencedCode)]
     public static object? InvokeAssembly(string assemblyPath, string typeName, string methodName, IReadOnlyList<object?> arguments)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);

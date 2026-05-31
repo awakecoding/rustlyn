@@ -2143,7 +2143,7 @@ static void RuntimeCallableBindingCompilerGeneratesMathBindings()
         "System.MathF",
         "static-class",
         CreateRuntimeCallableMethod("System.MathF", "Abs", "System.Single", "System.Single"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, mathFType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, mathFType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2198,7 +2198,7 @@ static void RuntimeCallableBindingCompilerGeneratesEnvironmentAndPathBindings()
         CreateRuntimeCallableMethod("System.IO.Path", "Combine", "System.String", "System.String", "System.String"),
         CreateRuntimeCallableMethod("System.IO.Path", "HasExtension", "System.Boolean", "System.String"),
         CreateRuntimeCallableMethod("System.IO.Path", "GetTempPath", "System.String"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", environmentType, directoryType, fileType, pathType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", environmentType, directoryType, fileType, pathType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2274,7 +2274,7 @@ static void RuntimeCallableBindingCompilerGeneratesConvertAndUriBindings()
         "class",
         CreateRuntimeCallableMethod("System.Uri", "EscapeDataString", "System.String", "System.String"),
         CreateRuntimeCallableMethod("System.Uri", "IsWellFormedUriString", "System.Boolean", "System.String", "System.UriKind"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", convertType, uriType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", convertType, uriType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2332,7 +2332,7 @@ static void RuntimeCallableBindingCompilerGeneratesConsoleGcAndOperatingSystemBi
         "static-class",
         CreateRuntimeCallableMethod("System.OperatingSystem", "IsWindows", "System.Boolean"),
         CreateRuntimeCallableMethod("System.OperatingSystem", "IsBrowserVersionAtLeast", "System.Boolean", "System.Int32", "System.Int32", "System.Int32", "System.Int32"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", consoleType, gcType, operatingSystemType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", consoleType, gcType, operatingSystemType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2400,7 +2400,7 @@ static void RuntimeCallableBindingCompilerGeneratesValueWrapperBindings()
         "struct",
         CreateRuntimeCallableProperty("System.DateTimeOffset", "Now", "System.DateTimeOffset"),
         CreateRuntimeCallableMethod("System.DateTimeOffset", "FromUnixTimeSeconds", "System.DateTimeOffset", "System.Int64"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", guidType, timeSpanType, dateTimeOffsetType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", guidType, timeSpanType, dateTimeOffsetType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2452,7 +2452,7 @@ static void RuntimeCallableBindingCompilerGeneratesTaskFutureBindings()
         CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "Delay", "System.Threading.Tasks.Task", "System.Int32"),
         CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "FromRustlynInt32", "System.Threading.Tasks.Task<System.Int32>"),
         CreateRuntimeCallableMethod("System.Threading.Tasks.Task", "FromRustlynStream", "System.Threading.Tasks.Task<System.IO.Stream>"));
-    var document = BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", taskType));
+    var document = BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", taskType));
 
     var callableDocument = RuntimeCallableBindingCompiler.AddCallableBindings(document);
 
@@ -2495,7 +2495,7 @@ static void RuntimeCallableCoverageGateRatchetsPromotedNamespaces()
         "System.IO.Path",
         "static-class",
         CreateRuntimeCallableMethod("System.IO.Path", "GetTempPath", "System.String"));
-    var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, pathType)));
+    var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType, pathType)));
 
     var passing = RuntimeCallableCoverageGate.Evaluate(
         document,
@@ -2616,7 +2616,7 @@ static void BackendLoadsRuntimeBindingManifestSymbols()
             "System.Math",
             "static-class",
             CreateRuntimeCallableMethod("System.Math", "Abs", "System.Int32", "System.Int32"));
-        var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestDocument.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType)));
+        var document = RuntimeCallableBindingCompiler.AddCallableBindings(BindingManifestFactory.FromRuntimeSurface(CreateRuntimeDiffReport("net8.0", mathType)));
         var outputAssembly = Path.Combine(tempDirectory, "RuntimeBindingProbe.dll");
         var module = new LoweredModule(
             [
@@ -4438,7 +4438,7 @@ static void GeneratedBindingGeneratorMatchesFixture()
     var fixtureText = File.ReadAllText(fixturePath);
     var surface = BindingSurface.CreateTinyBclSurface();
     var generatedText = RustBindingGenerator.GenerateSystemModule(surface);
-    var documentGeneratedText = RustBindingGenerator.GenerateSystemModule(BindingManifestDocument.FromSurface(surface));
+    var documentGeneratedText = RustBindingGenerator.GenerateSystemModule(BindingManifestFactory.FromSurface(surface));
 
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(fixtureText),
@@ -4453,7 +4453,7 @@ static void GeneratedBindingGlueMapTargetsRuntimeHelpers()
     var surface = BindingSurface.CreateTinyBclSurface();
     var externSymbols = surface.Externs.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
     var glueSymbols = surface.ManagedGlueBindings.Select(binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
-    var manifest = BindingManifestDocument.FromSurface(surface);
+    var manifest = BindingManifestFactory.FromSurface(surface);
     var manifestSymbols = manifest.Bindings.Select(static binding => binding.Symbol).ToHashSet(StringComparer.Ordinal);
 
     Assert(externSymbols.SetEquals(glueSymbols), "Expected every generated extern to have exactly one managed glue binding.");
@@ -4508,7 +4508,7 @@ static void GeneratedBindingManagedGlueBuildOutputMatchesGenerator()
     var buildOutputText = File.ReadAllText(buildOutputPath);
     var surface = BindingSurface.CreateTinyBclSurface();
     var generatedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(surface, "GeneratedBindingAliases");
-    var documentGeneratedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingManifestDocument.FromSurface(surface), "GeneratedBindingAliases");
+    var documentGeneratedText = ManagedGlueGenerator.GenerateRuntimeBridgePartial(BindingManifestFactory.FromSurface(surface), "GeneratedBindingAliases");
 
     Assert(
         NormalizeLineEndings(generatedText) == NormalizeLineEndings(buildOutputText),
@@ -4654,7 +4654,7 @@ static void GeneratedBindingManifestListsSurface()
 {
     var surface = BindingSurface.CreateTinyBclSurface();
     var manifest = BindingManifestGenerator.GenerateText(surface);
-    var documentManifest = BindingManifestGenerator.GenerateText(BindingManifestDocument.FromSurface(surface));
+    var documentManifest = BindingManifestGenerator.GenerateText(BindingManifestFactory.FromSurface(surface));
     Assert(manifest == documentManifest, "Expected text manifest generation to be driven by the normalized manifest document.");
 
     Assert(
@@ -4753,7 +4753,7 @@ static void GeneratedBindingJsonManifestListsSurface()
 {
     var surface = BindingSurface.CreateTinyBclSurface();
     var manifest = BindingManifestGenerator.GenerateJson(surface);
-    var documentManifest = BindingManifestGenerator.GenerateJson(BindingManifestDocument.FromSurface(surface));
+    var documentManifest = BindingManifestGenerator.GenerateJson(BindingManifestFactory.FromSurface(surface));
     var repeatedManifest = BindingManifestGenerator.GenerateJson(surface);
 
     Assert(manifest == documentManifest, "Expected JSON manifest generation to be driven by the normalized manifest document.");

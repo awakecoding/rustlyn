@@ -3,9 +3,11 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>Rustlyn.Bindings.Tool</AssemblyName>
     <RootNamespace>Rustlyn.Bindings.Tool</RootNamespace>
+    <RustlynBindingsIncludeOptionalSurfaces Condition="'$(RustlynBindingsIncludeOptionalSurfaces)' == ''">true</RustlynBindingsIncludeOptionalSurfaces>
+    <DefineConstants Condition="'$(RustlynBindingsIncludeOptionalSurfaces)' == 'true'">$(DefineConstants);RUSTLYN_BINDINGS_OPTIONAL_SURFACES</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
+    <ProjectReference Include="..\Rustlyn.Bindings\Rustlyn.Bindings.csproj" Properties="RustlynBindingsIncludeOptionalSurfaces=$(RustlynBindingsIncludeOptionalSurfaces)" />
   </ItemGroup>
 </Project>

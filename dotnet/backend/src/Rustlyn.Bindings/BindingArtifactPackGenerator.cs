@@ -29,7 +29,7 @@ public static class BindingArtifactPackGenerator
 
         var outputFullPath = Path.GetFullPath(outputDirectory);
         Directory.CreateDirectory(outputFullPath);
-        var manifest = BindingManifestDocument.FromSurface(surface);
+        var manifest = BindingManifestFactory.FromSurface(surface);
 
         var artifacts = new[]
         {
@@ -51,7 +51,7 @@ public static class BindingArtifactPackGenerator
     public static string GenerateSummary(BindingSurface surface)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        var manifest = BindingManifestDocument.FromSurface(surface);
+        var manifest = BindingManifestFactory.FromSurface(surface);
         var artifacts = new[]
         {
             new ArtifactContent(RustModuleFileName, "rust-module", RustBindingGenerator.GenerateSystemModule(manifest)),

@@ -95,8 +95,9 @@
     <MakeDir Directories="$(OutputPath);$(IntermediateOutputPath)" />
 
     <PropertyGroup>
-      <_RustlynToolInvocation Condition="'$(RustlynToolDll)' != ''">dotnet &quot;$(RustlynToolDll)&quot;</_RustlynToolInvocation>
-      <_RustlynToolInvocation Condition="'$(RustlynToolDll)' == ''">dotnet run -c &quot;$(RustlynToolConfiguration)&quot; --project &quot;$(RustlynToolProject)&quot; --</_RustlynToolInvocation>
+      <_RustlynToolInvocation Condition="'$(RustlynToolPath)' != ''">&quot;$(RustlynToolPath)&quot;</_RustlynToolInvocation>
+      <_RustlynToolInvocation Condition="'$(_RustlynToolInvocation)' == '' and '$(RustlynToolDll)' != ''">dotnet &quot;$(RustlynToolDll)&quot;</_RustlynToolInvocation>
+      <_RustlynToolInvocation Condition="'$(_RustlynToolInvocation)' == ''">dotnet run -c &quot;$(RustlynToolConfiguration)&quot; --project &quot;$(RustlynToolProject)&quot; --</_RustlynToolInvocation>
       <_RustlynTranslateCommand>$(_RustlynToolInvocation) translate &quot;$(_RustlynEffectiveCratePath)&quot; --out &quot;$(RustlynOutputPath)&quot; --bitcode-out &quot;$(RustlynBitcodeOutputPath)&quot;</_RustlynTranslateCommand>
       <_RustlynTranslateCommand Condition="'$(RustlynBinaryTarget)' != ''">$(_RustlynTranslateCommand) --bin &quot;$(RustlynBinaryTarget)&quot;</_RustlynTranslateCommand>
       <_RustlynTranslateCommand Condition="'$(RustlynCargoRelease)' == 'false'">$(_RustlynTranslateCommand) --debug</_RustlynTranslateCommand>

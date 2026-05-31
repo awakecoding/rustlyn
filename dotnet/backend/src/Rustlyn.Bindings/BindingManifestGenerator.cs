@@ -16,7 +16,7 @@ public static class BindingManifestGenerator
     public static string GenerateText(BindingSurface surface)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        return GenerateText(BindingManifestDocument.FromSurface(surface));
+        return GenerateText(BindingManifestFactory.FromSurface(surface));
     }
 
     public static string GenerateText(BindingManifestDocument document)
@@ -91,7 +91,7 @@ public static class BindingManifestGenerator
         ArgumentNullException.ThrowIfNull(surface);
         ArgumentNullException.ThrowIfNull(unsupportedShapes);
 
-        var document = BindingManifestDocument.FromSurface(surface, unsupportedShapes);
+        var document = BindingManifestFactory.FromSurface(surface, unsupportedShapes);
         return GenerateJson(document);
     }
 

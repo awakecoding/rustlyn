@@ -854,7 +854,7 @@ public static class RuntimeSurfaceReportFormatter
         => JsonSerializer.Serialize(scanSet, JsonOptions);
 
     public static string GenerateManifestJson(RuntimeSurfaceScanSet scanSet)
-        => JsonSerializer.Serialize(scanSet.Reports.Select(BindingManifestDocument.FromRuntimeSurface).ToArray(), JsonOptions);
+        => JsonSerializer.Serialize(scanSet.Reports.Select(BindingManifestFactory.FromRuntimeSurface).ToArray(), JsonOptions);
 
     public static string GenerateDiffJson(RuntimeSurfaceScanSet scanSet)
         => JsonSerializer.Serialize(RuntimeSurfaceDiffReporter.CreateDiffs(scanSet), JsonOptions);
@@ -1134,5 +1134,3 @@ public sealed record RuntimeAssemblyScanReport(
     int UnsupportedShapeCount,
     string? LoadDiagnostic,
     IReadOnlyList<BindingManifestRuntimeType> Types);
-
-public sealed record RuntimeUnsupportedReasonCount(string Reason, int Count);

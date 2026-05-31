@@ -109,9 +109,25 @@ fn emit_link_args(args: &str, prefer_static: bool) {
 }
 
 fn emit_link_lib(name: &str, prefer_static: bool) {
+    if cfg!(windows) && !prefer_static && matches!(name, "zlib" | "xml2") {
+        if !windows_lib_available(name) {
+            println!(
+                "cargo:warning=skipping LLVM system library {name}.lib because it was not found in LIB paths"
+            );
+            return;
+        }
+    }
+
     if prefer_static {
         println!("cargo:rustc-link-lib=static={name}");
     } else {
         println!("cargo:rustc-link-lib={name}");
     }
+}
+
+fn windows_lib_available(name: &str) -> bool {
+    let file_name = format!("{name}.lib");
+    env::var_os("LIB")
+        .map(|paths| env::split_paths(&paths).any(|path| path.join(&file_name).is_file()))
+        .unwrap_or(false)
 }

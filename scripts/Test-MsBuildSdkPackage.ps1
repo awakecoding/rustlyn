@@ -4,7 +4,10 @@ param(
     [string]$Configuration = "Release",
 
     [Parameter(Mandatory = $false)]
-    [switch]$SkipToolBuild
+    [switch]$SkipToolBuild,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$RequireNativeHost
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +16,8 @@ $workspaceRoot = Split-Path -Parent $PSScriptRoot
 $sdkProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Sdk\Rustlyn.Sdk.csproj"
 $toolProject = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\Rustlyn.Tool.csproj"
 $toolDll = Join-Path $workspaceRoot "dotnet\backend\src\Rustlyn.Tool\bin\$Configuration\net10.0\rustlyn.dll"
+$nativeHostPath = Join-Path $workspaceRoot "native\rustlyn\target\release\rustlyn.exe"
+$nativeAotDllPath = Join-Path (Split-Path -Parent $nativeHostPath) "rustlyn_nativeaot.dll"
 $packageSource = Join-Path $workspaceRoot "artifacts\scratch\packages"
 $packagePath = Join-Path $packageSource "Rustlyn.Sdk.0.1.0-local.nupkg"
 $scratchProjectRoot = Join-Path $workspaceRoot "artifacts\scratch\msbuild-sdk-package"
@@ -59,7 +64,7 @@ else {
 }
 $rustlyn = Resolve-RustlynCli -RepoRoot $workspaceRoot -Configuration $Configuration -ToolDll $toolDll
 
-dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo
+dotnet pack $sdkProject -c $Configuration -o $packageSource /nologo -m:1
 if ($LASTEXITCODE -ne 0) {
     throw "Rustlyn.Sdk pack failed with exit code $LASTEXITCODE."
 }
@@ -70,6 +75,17 @@ try {
     $toolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/net10.0/rustlyn.dll" } | Select-Object -First 1
     if ($null -eq $toolEntry) {
         throw "Expected packaged SDK to contain tools/net10.0/rustlyn.dll."
+    }
+    $expectNativeHost = $RequireNativeHost -or (Test-Path -LiteralPath $nativeHostPath -PathType Leaf)
+    $nativeToolEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/win-x64/rustlyn.exe" } | Select-Object -First 1
+    if ($expectNativeHost -and $null -eq $nativeToolEntry) {
+        throw "Expected packaged SDK to contain tools/win-x64/rustlyn.exe."
+    }
+    if ($expectNativeHost -and (Test-Path -LiteralPath $nativeAotDllPath -PathType Leaf)) {
+        $nativeAotDllEntry = $package.Entries | Where-Object { $_.FullName -eq "tools/win-x64/rustlyn_nativeaot.dll" } | Select-Object -First 1
+        if ($null -eq $nativeAotDllEntry) {
+            throw "Expected packaged SDK to contain tools/win-x64/rustlyn_nativeaot.dll."
+        }
     }
 }
 finally {

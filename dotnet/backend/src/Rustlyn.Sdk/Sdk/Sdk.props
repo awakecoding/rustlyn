@@ -19,6 +19,10 @@
 
     <RustlynToolProject Condition="'$(RustlynToolProject)' == ''">$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\Rustlyn.Tool.csproj</RustlynToolProject>
     <RustlynToolConfiguration Condition="'$(RustlynToolConfiguration)' == ''">$(Configuration)</RustlynToolConfiguration>
+    <RustlynNativeHostRid Condition="'$(RustlynNativeHostRid)' == '' and '$(OS)' == 'Windows_NT'">win-x64</RustlynNativeHostRid>
+    <RustlynNativeHostFileName Condition="'$(RustlynNativeHostFileName)' == '' and '$(OS)' == 'Windows_NT'">rustlyn.exe</RustlynNativeHostFileName>
+    <RustlynNativeHostFileName Condition="'$(RustlynNativeHostFileName)' == ''">rustlyn</RustlynNativeHostFileName>
+    <RustlynToolPath Condition="'$(RustlynToolPath)' == '' and '$(RustlynNativeHostRid)' != '' and Exists('$(MSBuildThisFileDirectory)..\tools\$(RustlynNativeHostRid)\$(RustlynNativeHostFileName)')">$(MSBuildThisFileDirectory)..\tools\$(RustlynNativeHostRid)\$(RustlynNativeHostFileName)</RustlynToolPath>
     <RustlynToolDll Condition="'$(RustlynToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\tools\net10.0\rustlyn.dll')">$(MSBuildThisFileDirectory)..\tools\net10.0\rustlyn.dll</RustlynToolDll>
     <RustlynToolDll Condition="'$(RustlynToolDll)' == '' and Exists('$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\bin\$(RustlynToolConfiguration)\net10.0\rustlyn.dll')">$(MSBuildThisFileDirectory)..\..\Rustlyn.Tool\bin\$(RustlynToolConfiguration)\net10.0\rustlyn.dll</RustlynToolDll>
     <RustlynSupportAssemblyNames Condition="'$(RustlynSupportAssemblyNames)' == ''">Rustlyn.Backend.dll;Rustlyn.Runtime.dll;Rustlyn.Os.dll;Rustlyn.Interop.dll</RustlynSupportAssemblyNames>

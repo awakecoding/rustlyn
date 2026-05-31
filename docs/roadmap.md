@@ -10,7 +10,7 @@ Rustlyn reconstructed and modernized that approach:
 
 - .NET 10 with `System.Reflection.Metadata` (no Mono.Cecil dependency)
 - C# backend (no F# dependency)
-- LLVM 20 / current stable+nightly Rust toolchains
+- LLVM 22 / current stable+nightly Rust toolchains
 - `cargo -Z build-std` with LTO staticlib instead of xargo/fake-link
 - Metadata-driven binding generation instead of static checked-in crate snapshots
 - Sample-driven development with executable regression fixtures
