@@ -1,0 +1,25 @@
+[package]
+name = "powershell_cmdlets"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+bson = "2"
+ciborium = "0.2"
+csv = "1.4.0"
+marked-yaml = { version = "0.8.0", features = ["serde-path"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+simd-json = { version = "0.15", features = ["serde_impl"] }
+
+[patch.crates-io]
+memchr = { path = "../quick_xml/memchr_fallback" }
+
+[profile.release]
+opt-level = 1
+lto = "fat"
+codegen-units = 1
+panic = "abort"

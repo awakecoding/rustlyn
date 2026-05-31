@@ -7,7 +7,7 @@ namespace Rustlyn.PowerShellCmdlets;
 [OutputType(typeof(string), typeof(XmlDocument))]
 public sealed class ConvertToRustXmlCommand : PSCmdlet
 {
-    private readonly FormatInputBuffer _input = new();
+    private readonly XmlFormatInputBuffer _input = new();
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
     public object? InputObject { get; set; }
@@ -34,9 +34,9 @@ public sealed class ConvertToRustXmlCommand : PSCmdlet
             ["As"] = "String"
         };
         var xml = _input.Count > 1
-            ? string.Concat(PowerShellCommandRunner.InvokePipeline("Microsoft.PowerShell.Utility\\ConvertTo-Xml", parameters, _input.Items)
+            ? string.Concat(XmlPowerShellCommandRunner.InvokePipeline("Microsoft.PowerShell.Utility\\ConvertTo-Xml", parameters, _input.Items)
                 .Select(static item => item.BaseObject?.ToString() ?? string.Empty))
-            : PowerShellCommandRunner.InvokeString(
+            : XmlPowerShellCommandRunner.InvokeString(
                 "Microsoft.PowerShell.Utility\\ConvertTo-Xml",
                 new Dictionary<string, object?>(parameters) { ["InputObject"] = _input.ToPowerShellInput() });
         var rustXml = RustEngineInvoker.TransformUtf8("quick_xml_engine.dll", "quick_xml_echo_utf8_len", "quick_xml_echo_utf8_copy", xml);
@@ -63,7 +63,7 @@ public sealed class ConvertToRustXmlCommand : PSCmdlet
 [OutputType(typeof(XmlDocument))]
 public sealed class ConvertFromRustXmlCommand : PSCmdlet
 {
-    private readonly FormatInputBuffer _input = new();
+    private readonly XmlFormatInputBuffer _input = new();
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
     public object? InputObject { get; set; }

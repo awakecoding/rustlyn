@@ -9,5 +9,7 @@
     <ProjectReference Include="..\..\src\Rustlyn.Backend\Rustlyn.Backend.csproj" />
     <ProjectReference Include="..\..\src\Rustlyn.Bindings\Rustlyn.Bindings.csproj" />
     <ProjectReference Include="..\..\src\Rustlyn.Interop\Rustlyn.Interop.csproj" />
+    <ProjectReference Include="..\..\src\Rustlyn.PowerShellCmdlets\Rustlyn.PowerShellCmdlets.csproj" />
+    <ProjectReference Include="..\..\src\Rustlyn.PowerShellSupport\Rustlyn.PowerShellSupport.csproj" />
   </ItemGroup>
 </Project>

@@ -1958,7 +1958,7 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("ptr\\s+@(?<target>\"[^\"]+\"|[^\\s,}]+)|\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+(?:(?<zero>zeroinitializer|undef)|c\"(?<bytes>[^\"]*)\")", RegexOptions.CultureInvariant)]
     private static partial Regex PointerRelocationFieldRegex();
 
-    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?(?:constant|global)\\s+\\[(?<size>\\d+)\\s+x\\s+i8\\]\\s+c\"(?<bytes>[^\"]*)\"(?:,.*)?$", RegexOptions.CultureInvariant)]
     private static partial Regex ConstantByteArrayGlobalRegex();
 
     [GeneratedRegex("^@(?<name>[^\\s=]+)\\s*=\\s*(?:.+?\\s+)?constant\\s+\\[\\d+\\s+x\\s+(?<elementType>i\\d+)\\]\\s+\\[(?<values>[^\\]]+)\\](?:,.*)?$", RegexOptions.CultureInvariant)]

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Rustlyn.AvaloniaSupport;
+using Rustlyn.Interop;
 
 namespace Rustlyn.Bindings;
 
@@ -73,6 +74,12 @@ public static class ExternalPackageBindingSurfaces
                     "Rustlyn.PowerShellSupport",
                     new BindingManifestAssemblyIdentity("Rustlyn.PowerShellSupport", null, null, string.Empty),
                     "bootstrap",
+                    string.Empty),
+                PackageAssembly(typeof(ManagedInteropRuntime).Assembly, "bootstrap"),
+                new BindingManifestPackageAssembly(
+                    "Rustlyn.PowerShellCmdlets.Generated",
+                    new BindingManifestAssemblyIdentity("Rustlyn.PowerShellCmdlets.Generated", null, null, string.Empty),
+                    "generated-shim",
                     string.Empty)
             ],
             [
@@ -181,11 +188,41 @@ public static class ExternalPackageBindingSurfaces
     {
         return
         [
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_string_from_utf8",
+                "BindgenPowerShellStringFromUtf8",
+                [Pointer("valuePointer"), I64("valueLength")],
+                ManagedGlueExpression.Utf8String("valuePointer", "valueLength")),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_string_utf8_len",
+                "BindgenPowerShellStringUtf8Length",
+                [I32("stringHandle")],
+                "InteropUtf8.GetByteCount(ManagedInteropRuntime.GetObject<string>(stringHandle))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_string_copy_utf8",
+                "BindgenPowerShellStringCopyUtf8",
+                [I32("stringHandle"), Pointer("destinationPointer"), I64("destinationCapacity")],
+                "InteropUtf8.CopyString(ManagedInteropRuntime.GetObject<string>(stringHandle), destinationPointer, destinationCapacity)"),
             VoidBinding(
                 "rustlyn_bindgen_powershell_cmdlet_write_object_string",
                 "BindgenPowerShellCmdletWriteObjectString",
                 [I32("cmdletContextHandle"), I32("valueHandle")],
                 "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(valueHandle))"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_object_handle",
+                "BindgenPowerShellCmdletWriteObjectHandle",
+                [I32("cmdletContextHandle"), I32("valueHandle"), I32("enumerateCollection")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<object>(valueHandle), enumerateCollection != 0)"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_object_bytes",
+                "BindgenPowerShellCmdletWriteObjectBytes",
+                [I32("cmdletContextHandle"), Pointer("bytesPointer"), I64("byteLength")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObjectBytes(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), bytesPointer, byteLength)"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_json_string",
+                "BindgenPowerShellCmdletWriteJsonString",
+                [I32("cmdletContextHandle"), I32("jsonHandle"), I32("asHashtable"), I32("noEnumerate")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(jsonHandle), asHashtable != 0, noEnumerate != 0)"),
             VoidBinding(
                 "rustlyn_bindgen_powershell_cmdlet_write_verbose_string",
                 "BindgenPowerShellCmdletWriteVerboseString",
@@ -201,21 +238,86 @@ public static class ExternalPackageBindingSurfaces
                 "BindgenPowerShellCmdletWriteErrorString",
                 [I32("cmdletContextHandle"), I32("messageHandle")],
                 "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteErrorString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(messageHandle))"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_error_record_string",
+                "BindgenPowerShellCmdletWriteErrorRecordString",
+                [I32("cmdletContextHandle"), I32("messageHandle"), I32("fullyQualifiedErrorIdHandle"), I32("category"), I32("targetObjectHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteErrorRecordString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(messageHandle), ManagedInteropRuntime.GetObject<string>(fullyQualifiedErrorIdHandle), category, targetObjectHandle == 0 ? null : ManagedInteropRuntime.GetObject<object>(targetObjectHandle))"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_throw_terminating_error_record_string",
+                "BindgenPowerShellCmdletThrowTerminatingErrorRecordString",
+                [I32("cmdletContextHandle"), I32("messageHandle"), I32("fullyQualifiedErrorIdHandle"), I32("category"), I32("targetObjectHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ThrowTerminatingErrorRecordString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(messageHandle), ManagedInteropRuntime.GetObject<string>(fullyQualifiedErrorIdHandle), category, targetObjectHandle == 0 ? null : ManagedInteropRuntime.GetObject<object>(targetObjectHandle))"),
             ObjectBinding(
                 "rustlyn_bindgen_powershell_cmdlet_get_parameter_string",
                 "BindgenPowerShellCmdletGetParameterString",
                 [I32("cmdletContextHandle"), I32("nameHandle")],
                 ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))")),
+            BooleanBinding(
+                "rustlyn_bindgen_powershell_cmdlet_has_parameter",
+                "BindgenPowerShellCmdletHasParameter",
+                [I32("cmdletContextHandle"), I32("nameHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.HasBoundParameter(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))"),
+            BooleanBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_parameter_bool",
+                "BindgenPowerShellCmdletGetParameterBool",
+                [I32("cmdletContextHandle"), I32("nameHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterBoolean(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_cmdlet_get_parameter_i32",
+                "BindgenPowerShellCmdletGetParameterI32",
+                [I32("cmdletContextHandle"), I32("nameHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterInt32(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_cmdlet_get_parameter_char",
+                "BindgenPowerShellCmdletGetParameterChar",
+                [I32("cmdletContextHandle"), I32("nameHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterChar(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))"),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_parameter_snapshot_json",
+                "BindgenPowerShellCmdletGetParameterSnapshotJson",
+                [I32("cmdletContextHandle"), I32("nameHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterSnapshotJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(nameHandle))")),
             ObjectBinding(
                 "rustlyn_bindgen_powershell_cmdlet_get_input_string",
                 "BindgenPowerShellCmdletGetInputString",
                 [I32("cmdletContextHandle")],
                 ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator",
+                "BindgenPowerShellCmdletGetCurrentCultureListSeparator",
+                [I32("cmdletContextHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetCurrentCultureListSeparator(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json",
+                "BindgenPowerShellCmdletGetInputSnapshotJson",
+                [I32("cmdletContextHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputSnapshotJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
             BooleanBinding(
                 "rustlyn_bindgen_powershell_cmdlet_should_process_string",
                 "BindgenPowerShellCmdletShouldProcessString",
                 [I32("cmdletContextHandle"), I32("targetHandle")],
-                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(targetHandle))")
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(targetHandle))"),
+            BooleanBinding(
+                "rustlyn_bindgen_powershell_cmdlet_should_process_action_string",
+                "BindgenPowerShellCmdletShouldProcessActionString",
+                [I32("cmdletContextHandle"), I32("targetHandle"), I32("actionHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(targetHandle), ManagedInteropRuntime.GetObject<string>(actionHandle))"),
+            BooleanBinding(
+                "rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested",
+                "BindgenPowerShellCmdletIsCancellationRequested",
+                [I32("cmdletContextHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.IsCancellationRequested(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_cmdlet_get_lifecycle_state_handle",
+                "BindgenPowerShellCmdletGetLifecycleStateHandle",
+                [I32("cmdletContextHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetLifecycleStateHandle(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))"),
+            BooleanBinding(
+                "rustlyn_bindgen_powershell_object_release",
+                "BindgenPowerShellObjectRelease",
+                [I32("objectHandle")],
+                "ManagedInteropRuntime.ReleaseObject(objectHandle)")
         ];
     }
 
@@ -245,6 +347,15 @@ public static class ExternalPackageBindingSurfaces
             ManagedGlueOperation.WriteExceptionOut(
                 "exceptionOutPointer",
                 ManagedGlueResult.BooleanAsInt(ManagedGlueExpression.Raw(expression))));
+
+    private static ManagedGlueBinding Int32Binding(string symbol, string helperMethodName, IReadOnlyList<ManagedGlueParameter> parameters, string expression)
+        => new(
+            symbol,
+            helperMethodName,
+            [.. parameters, Pointer("exceptionOutPointer")],
+            ManagedGlueOperation.WriteExceptionOut(
+                "exceptionOutPointer",
+                ManagedGlueResult.Int(ManagedGlueExpression.Raw(expression))));
 
     private static ManagedGlueParameter I32(string name)
         => new("int", name);

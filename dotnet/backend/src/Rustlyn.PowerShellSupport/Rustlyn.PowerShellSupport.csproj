@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Rustlyn.Interop\Rustlyn.Interop.csproj" />
     <PackageReference Include="System.Management.Automation" Version="7.5.0" />
   </ItemGroup>
 </Project>

@@ -115,6 +115,11 @@ jobs:
           ./scripts/Test-MsBuildSdkBuildStd.ps1 -Configuration Release -SkipToolBuild
           ./scripts/Test-MsBuildSdkPackage.ps1 -Configuration Release -SkipToolBuild
 
+      - name: Smoke test PowerShell format modules
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./scripts/Test-RustFormatPowerShellModules.ps1
+
       - name: Smoke test (core matrix)
         shell: pwsh
         run: |

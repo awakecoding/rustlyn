@@ -22,13 +22,32 @@ public static class PowerShellRustBindingGenerator
 
     private static readonly string[] RequiredSymbols =
     [
+        "rustlyn_bindgen_powershell_string_from_utf8",
+        "rustlyn_bindgen_powershell_string_utf8_len",
+        "rustlyn_bindgen_powershell_string_copy_utf8",
         "rustlyn_bindgen_powershell_cmdlet_write_object_string",
+        "rustlyn_bindgen_powershell_cmdlet_write_object_handle",
+        "rustlyn_bindgen_powershell_cmdlet_write_object_bytes",
+        "rustlyn_bindgen_powershell_cmdlet_write_json_string",
         "rustlyn_bindgen_powershell_cmdlet_write_verbose_string",
         "rustlyn_bindgen_powershell_cmdlet_write_warning_string",
         "rustlyn_bindgen_powershell_cmdlet_write_error_string",
+        "rustlyn_bindgen_powershell_cmdlet_write_error_record_string",
+        "rustlyn_bindgen_powershell_cmdlet_throw_terminating_error_record_string",
         "rustlyn_bindgen_powershell_cmdlet_get_parameter_string",
+        "rustlyn_bindgen_powershell_cmdlet_has_parameter",
+        "rustlyn_bindgen_powershell_cmdlet_get_parameter_bool",
+        "rustlyn_bindgen_powershell_cmdlet_get_parameter_i32",
+        "rustlyn_bindgen_powershell_cmdlet_get_parameter_char",
+        "rustlyn_bindgen_powershell_cmdlet_get_parameter_snapshot_json",
         "rustlyn_bindgen_powershell_cmdlet_get_input_string",
-        "rustlyn_bindgen_powershell_cmdlet_should_process_string"
+        "rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator",
+        "rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json",
+        "rustlyn_bindgen_powershell_cmdlet_should_process_string",
+        "rustlyn_bindgen_powershell_cmdlet_should_process_action_string",
+        "rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested",
+        "rustlyn_bindgen_powershell_cmdlet_get_lifecycle_state_handle",
+        "rustlyn_bindgen_powershell_object_release"
     ];
 
     private const string Template = """
@@ -36,9 +55,43 @@ public static class PowerShellRustBindingGenerator
 #![allow(dead_code)]
 
 unsafe extern "C" {
+    fn rustlyn_bindgen_powershell_string_from_utf8(
+        value_ptr: *const u8,
+        value_len: i64,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_string_utf8_len(
+        string_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_string_copy_utf8(
+        string_handle: i32,
+        destination_ptr: *mut u8,
+        destination_capacity: i64,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_write_object_string(
         cmdlet_context_handle: i32,
         value_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_object_handle(
+        cmdlet_context_handle: i32,
+        value_handle: i32,
+        enumerate_collection: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_object_bytes(
+        cmdlet_context_handle: i32,
+        bytes_ptr: *const u8,
+        byte_len: i64,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
+        cmdlet_context_handle: i32,
+        json_handle: i32,
+        as_hashtable: i32,
+        no_enumerate: i32,
         exception_out: *mut i32,
     ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_write_verbose_string(
@@ -56,7 +109,48 @@ unsafe extern "C" {
         message_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_error_record_string(
+        cmdlet_context_handle: i32,
+        message_handle: i32,
+        fully_qualified_error_id_handle: i32,
+        category: i32,
+        target_object_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_throw_terminating_error_record_string(
+        cmdlet_context_handle: i32,
+        message_handle: i32,
+        fully_qualified_error_id_handle: i32,
+        category: i32,
+        target_object_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
+        cmdlet_context_handle: i32,
+        name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_has_parameter(
+        cmdlet_context_handle: i32,
+        name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_parameter_bool(
+        cmdlet_context_handle: i32,
+        name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_parameter_i32(
+        cmdlet_context_handle: i32,
+        name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_parameter_char(
+        cmdlet_context_handle: i32,
+        name_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_parameter_snapshot_json(
         cmdlet_context_handle: i32,
         name_handle: i32,
         exception_out: *mut i32,
@@ -65,9 +159,35 @@ unsafe extern "C" {
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_should_process_string(
         cmdlet_context_handle: i32,
         target_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_should_process_action_string(
+        cmdlet_context_handle: i32,
+        target_handle: i32,
+        action_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_lifecycle_state_handle(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_object_release(
+        object_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
 }
@@ -92,6 +212,23 @@ pub struct ManagedString {
 }
 
 impl ManagedString {
+    pub fn from_utf8(value: &str) -> Result<Self, Exception> {
+        Self::from_utf8_parts(value.as_ptr(), value.len() as i64)
+    }
+
+    pub fn from_utf8_parts(value_ptr: *const u8, value_len: i64) -> Result<Self, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_string_from_utf8(
+                value_ptr,
+                value_len,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { Self::from_borrowed_handle(result) })
+    }
+
     pub unsafe fn from_borrowed_handle(handle: i32) -> Self {
         Self { handle }
     }
@@ -99,6 +236,78 @@ impl ManagedString {
     pub fn handle(&self) -> i32 {
         self.handle
     }
+
+    pub fn as_object(&self) -> ManagedObject {
+        unsafe { ManagedObject::from_borrowed_handle(self.handle) }
+    }
+
+    pub fn utf8_len(&self) -> Result<i32, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_string_utf8_len(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result)
+    }
+
+    pub fn copy_utf8_into(&self, buffer: &mut [u8]) -> Result<i32, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_string_copy_utf8(
+                self.handle,
+                buffer.as_mut_ptr(),
+                buffer.len() as i64,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result)
+    }
+
+    pub fn to_utf8_string(&self) -> Result<String, Exception> {
+        let length = self.utf8_len()?;
+        let mut buffer = vec![0u8; length.max(0) as usize];
+        let copied = self.copy_utf8_into(&mut buffer)?;
+        buffer.truncate(copied.max(0) as usize);
+        Ok(String::from_utf8_lossy(&buffer).into_owned())
+    }
+
+    pub fn release(self) -> Result<bool, Exception> {
+        release_object_handle(self.handle)
+    }
+}
+
+pub struct ManagedObject {
+    handle: i32,
+}
+
+impl ManagedObject {
+    pub unsafe fn from_borrowed_handle(handle: i32) -> Self {
+        Self { handle }
+    }
+
+    pub fn handle(&self) -> i32 {
+        self.handle
+    }
+
+    pub fn release(self) -> Result<bool, Exception> {
+        release_object_handle(self.handle)
+    }
+}
+
+fn release_object_handle(handle: i32) -> Result<bool, Exception> {
+    let mut exception_handle = 0;
+    let result = unsafe {
+        rustlyn_bindgen_powershell_object_release(
+            handle,
+            &mut exception_handle,
+        )
+    };
+    Exception::from_handle(exception_handle)?;
+    Ok(result != 0)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -121,6 +330,46 @@ impl CmdletContext {
             rustlyn_bindgen_powershell_cmdlet_write_object_string(
                 self.handle,
                 value.handle(),
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_object(&self, value: &ManagedObject, enumerate_collection: bool) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_object_handle(
+                self.handle,
+                value.handle(),
+                if enumerate_collection { 1 } else { 0 },
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_object_bytes(&self, bytes: &[u8]) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_object_bytes(
+                self.handle,
+                bytes.as_ptr(),
+                bytes.len() as i64,
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_json_string(&self, json: &ManagedString, as_hashtable: bool, no_enumerate: bool) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_json_string(
+                self.handle,
+                json.handle(),
+                if as_hashtable { 1 } else { 0 },
+                if no_enumerate { 1 } else { 0 },
                 &mut exception_handle,
             );
         }
@@ -163,10 +412,117 @@ impl CmdletContext {
         Exception::from_handle(exception_handle)
     }
 
+    pub fn write_error_record_string(
+        &self,
+        message: &ManagedString,
+        fully_qualified_error_id: &ManagedString,
+        category: i32,
+        target_object: Option<&ManagedObject>,
+    ) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_error_record_string(
+                self.handle,
+                message.handle(),
+                fully_qualified_error_id.handle(),
+                category,
+                target_object.map(|value| value.handle()).unwrap_or(0),
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn throw_terminating_error_record_string(
+        &self,
+        message: &ManagedString,
+        fully_qualified_error_id: &ManagedString,
+        category: i32,
+        target_object: Option<&ManagedObject>,
+    ) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_throw_terminating_error_record_string(
+                self.handle,
+                message.handle(),
+                fully_qualified_error_id.handle(),
+                category,
+                target_object.map(|value| value.handle()).unwrap_or(0),
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
     pub fn get_parameter_string(&self, name: &ManagedString) -> Result<ManagedString, Exception> {
         let mut exception_handle = 0;
         let result = unsafe {
             rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
+                self.handle,
+                name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { ManagedString::from_borrowed_handle(result) })
+    }
+
+    pub fn has_parameter(&self, name: &ManagedString) -> Result<bool, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_has_parameter(
+                self.handle,
+                name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result != 0)
+    }
+
+    pub fn get_parameter_bool(&self, name: &ManagedString) -> Result<bool, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_parameter_bool(
+                self.handle,
+                name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result != 0)
+    }
+
+    pub fn get_parameter_i32(&self, name: &ManagedString) -> Result<i32, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_parameter_i32(
+                self.handle,
+                name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result)
+    }
+
+    pub fn get_parameter_char(&self, name: &ManagedString) -> Result<char, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_parameter_char(
+                self.handle,
+                name.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(char::from_u32(result as u32).unwrap_or('\0'))
+    }
+
+    pub fn get_parameter_snapshot_json(&self, name: &ManagedString) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_parameter_snapshot_json(
                 self.handle,
                 name.handle(),
                 &mut exception_handle,
@@ -188,6 +544,30 @@ impl CmdletContext {
         Ok(unsafe { ManagedString::from_borrowed_handle(result) })
     }
 
+    pub fn get_current_culture_list_separator(&self) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { ManagedString::from_borrowed_handle(result) })
+    }
+
+    pub fn get_input_snapshot_json(&self) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { ManagedString::from_borrowed_handle(result) })
+    }
+
     pub fn should_process_string(&self, target: &ManagedString) -> Result<bool, Exception> {
         let mut exception_handle = 0;
         let result = unsafe {
@@ -199,6 +579,44 @@ impl CmdletContext {
         };
         Exception::from_handle(exception_handle)?;
         Ok(result != 0)
+    }
+
+    pub fn should_process_action_string(&self, target: &ManagedString, action: &ManagedString) -> Result<bool, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_should_process_action_string(
+                self.handle,
+                target.handle(),
+                action.handle(),
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result != 0)
+    }
+
+    pub fn is_cancellation_requested(&self) -> Result<bool, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result != 0)
+    }
+
+    pub fn lifecycle_state_handle(&self) -> Result<i32, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_lifecycle_state_handle(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(result)
     }
 }
 """;

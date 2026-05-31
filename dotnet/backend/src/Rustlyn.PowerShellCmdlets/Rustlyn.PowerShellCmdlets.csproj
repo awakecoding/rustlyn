@@ -12,4 +12,5 @@
     <ProjectReference Include="..\Rustlyn.PowerShellSupport\Rustlyn.PowerShellSupport.csproj" />
     <PackageReference Include="System.Management.Automation" Version="7.5.0" />
   </ItemGroup>
+
 </Project>

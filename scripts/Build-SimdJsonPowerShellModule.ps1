@@ -6,8 +6,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 & (Join-Path $PSScriptRoot 'Build-RustFormatPowerShellModule.ps1') `
-    -Sample simd_json `
-    -EngineAssemblyName simd_json_engine.dll `
+    -Sample powershell_cmdlets `
+    -EngineAssemblyName rustlyn_powershell_format_cmdlets.dll `
     -CmdletsToExport @('ConvertTo-RustJson', 'ConvertFrom-RustJson') `
     -ManifestFileName Rustlyn.SimdJson.PowerShell.psd1 `
     -ModuleGuid 'e4ba0c7a-fbb1-495f-96e8-9febd90a212c' `

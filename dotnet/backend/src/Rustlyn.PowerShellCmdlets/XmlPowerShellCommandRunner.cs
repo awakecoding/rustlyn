@@ -3,7 +3,7 @@ using System.Management.Automation;
 
 namespace Rustlyn.PowerShellCmdlets;
 
-internal static class PowerShellCommandRunner
+internal static class XmlPowerShellCommandRunner
 {
     public static Collection<PSObject> Invoke(string commandName, IReadOnlyDictionary<string, object?> parameters)
     {

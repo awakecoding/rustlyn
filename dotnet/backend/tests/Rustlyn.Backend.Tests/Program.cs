@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -7,9 +9,12 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Management.Automation;
 using Rustlyn.Backend;
 using Rustlyn.Bindings;
 using Rustlyn.Interop;
+using Rustlyn.PowerShellCmdlets;
+using Rustlyn.PowerShellSupport;
 
 var failures = new List<string>();
 var requestedTests = args.Length == 0 ? null : args.ToHashSet(StringComparer.Ordinal);
@@ -48,6 +53,10 @@ RunTest("GeneratedBindingGlueMapTargetsRuntimeHelpers", GeneratedBindingGlueMapT
 RunTest("GeneratedBindingManagedGlueBuildOutputMatchesGenerator", GeneratedBindingManagedGlueBuildOutputMatchesGenerator, failures);
 RunTest("GeneratedAvaloniaBindingsReplaceHandwrittenBridge", GeneratedAvaloniaBindingsReplaceHandwrittenBridge, failures);
 RunTest("GeneratedPowerShellCmdletPackMapsPowerShellSdk", GeneratedPowerShellCmdletPackMapsPowerShellSdk, failures);
+RunTest("PowerShellCmdletDescriptorsMatchCurrentCmdlets", PowerShellCmdletDescriptorsMatchCurrentCmdlets, failures);
+RunTest("PowerShellFormatGlueRetirementGuards", PowerShellFormatGlueRetirementGuards, failures);
+RunTest("PowerShellCmdletContextExposesTypedBoundParameters", PowerShellCmdletContextExposesTypedBoundParameters, failures);
+RunTest("PowerShellRustFormatRuntimeMigratesNonXmlGlue", PowerShellRustFormatRuntimeMigratesNonXmlGlue, failures);
 RunTest("GeneratedBindingManifestListsSurface", GeneratedBindingManifestListsSurface, failures);
 RunTest("GeneratedBindingJsonManifestListsSurface", GeneratedBindingJsonManifestListsSurface, failures);
 RunTest("GeneratedBindingPackWritesDeterministicArtifacts", GeneratedBindingPackWritesDeterministicArtifacts, failures);
@@ -125,6 +134,7 @@ RunTest("NarrowIntegerEqualityIsBitwise", NarrowIntegerEqualityIsBitwise, failur
 RunTest("StoreIntToPtrConstantPreservesValue", StoreIntToPtrConstantPreservesValue, failures);
 RunTest("StoreGlobalPointerPreservesAddress", StoreGlobalPointerPreservesAddress, failures);
 RunTest("StoreInlineGlobalElementPointerPreservesAddress", StoreInlineGlobalElementPointerPreservesAddress, failures);
+RunTest("MutableByteArrayGlobalPreservesInitializerAndAddress", MutableByteArrayGlobalPreservesInitializerAndAddress, failures);
 RunTest("GlobalElementCmpxchgStoreAndLoadExecutes", GlobalElementCmpxchgStoreAndLoadExecutes, failures);
 RunTest("TrailingZeroCountI16Executes", TrailingZeroCountI16Executes, failures);
 RunTest("VectorControlByteMaskExecutes", VectorControlByteMaskExecutes, failures);
@@ -3430,6 +3440,59 @@ entry:
     }
 }
 
+static void MutableByteArrayGlobalPreservesInitializerAndAddress()
+{
+    var module = LoweredIrLowerer.LowerLlvmIr("""
+@STATE = internal global [24 x i8] c"\03\00\00\00\00\00\00\00\08\00\00\00\00\00\00\00\05\00\00\00\00\00\00\00", align 8
+
+define i32 @read_state_head(ptr %state) {
+entry:
+  %value = load i64, ptr %state, align 8
+  %result = trunc i64 %value to i32
+  ret i32 %result
+}
+
+define i32 @mutable_byte_array_global_probe() {
+entry:
+  %initial = call i32 @read_state_head(ptr @STATE)
+  store i64 7, ptr @STATE, align 8
+  %updated = call i32 @read_state_head(ptr @STATE)
+  %tail64 = load i64, ptr getelementptr inbounds nuw (i8, ptr @STATE, i64 16), align 8
+  %tail = trunc i64 %tail64 to i32
+  %partial = add i32 %initial, %updated
+  %result = add i32 %partial, %tail
+  ret i32 %result
+}
+""");
+
+    var stateGlobal = module.Globals.SingleOrDefault(global => string.Equals(global.Name, "STATE", StringComparison.Ordinal));
+    Assert(stateGlobal is not null && stateGlobal.InitializerBytes.Count == 24, "Expected lowerer to preserve mutable byte-array global initializers.");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), $"rustlyn-mutable-byte-array-global-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(tempDir);
+    var outPath = Path.Combine(tempDir, "mutable_byte_array_global.dll");
+    AssemblyLoadContext? loadContext = null;
+
+    try
+    {
+        LoweredAssemblyEmitter.EmitModule(module, outPath, new EmitOptions { StrictUnsupportedIr = true });
+        loadContext = new AssemblyLoadContext($"rustlyn-mutable-byte-array-global-{Guid.NewGuid():N}", isCollectible: true);
+        using var assemblyStream = new MemoryStream(File.ReadAllBytes(outPath));
+        var assembly = loadContext.LoadFromStream(assemblyStream);
+        var generatedType = assembly.GetType("Rustlyn.GeneratedModule")
+            ?? throw new InvalidOperationException("Emitted assembly did not contain Rustlyn.GeneratedModule.");
+        var method = generatedType.GetMethod("mutable_byte_array_global_probe", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Emitted assembly did not contain mutable_byte_array_global_probe.");
+
+        Assert(Equals(method.Invoke(null, []), 15), "Expected mutable byte-array global pointers, initializers, and stores to execute.");
+    }
+    finally
+    {
+        loadContext?.Unload();
+        if (Directory.Exists(tempDir)) { try { Directory.Delete(tempDir, recursive: true); } catch { /* best-effort cleanup */ } }
+    }
+}
+
 static void GlobalElementCmpxchgStoreAndLoadExecutes()
 {
     var module = LoweredIrLowerer.LowerLlvmIr("""
@@ -4593,6 +4656,8 @@ static void GeneratedAvaloniaBindingsReplaceHandwrittenBridge()
 
 static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
 {
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
     var document = ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest();
     var packageSurface = document.PackageSurface
         ?? throw new InvalidOperationException("Expected generated PowerShell manifest to carry package metadata.");
@@ -4607,23 +4672,128 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         packageSurface.Assemblies.Any(static assembly => assembly.Name == "Rustlyn.PowerShellSupport" && assembly.Role == "bootstrap"),
         "Expected PowerShell package manifest to reserve a bootstrap support assembly for generated cmdlet shims.");
     Assert(
-        document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_string")
+        packageSurface.Assemblies.Any(static assembly => assembly.Name == "Rustlyn.Interop" && assembly.Role == "bootstrap"),
+        "Expected PowerShell package manifest to include the managed handle runtime used by generated cmdlet shims.");
+    Assert(
+        packageSurface.Assemblies.Any(static assembly => assembly.Name == "Rustlyn.PowerShellCmdlets.Generated" && assembly.Role == "generated-shim"),
+        "Expected PowerShell package manifest to reserve a generated shim assembly identity.");
+    Assert(
+        document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_string_from_utf8")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_string_utf8_len")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_string_copy_utf8")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_handle")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_bytes")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_json_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_error_record_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_has_parameter")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_parameter_bool")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_parameter_i32")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_parameter_char")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_input_string")
-            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_should_process_string"),
-        "Expected PowerShell cmdlet manifest to own generated cmdlet context symbols.");
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_should_process_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_lifecycle_state_handle")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_object_release"),
+        "Expected PowerShell cmdlet manifest to own generated cmdlet context, error, snapshot, and cancellation symbols.");
 
     var rust = PowerShellRustBindingGenerator.GenerateCmdletModule(document);
     Assert(rust.Contains("pub struct CmdletContext", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose a cmdlet context wrapper.");
+    Assert(rust.Contains("pub struct ManagedObject", StringComparison.Ordinal), "Expected generated PowerShell Rust module to distinguish generic managed object handles from strings.");
+    Assert(rust.Contains("pub fn from_utf8(value: &str) -> Result<Self, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to let Rust create managed strings for host callbacks.");
+    Assert(rust.Contains("pub fn to_utf8_string(&self) -> Result<String, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to let Rust read managed strings returned by the host.");
     Assert(rust.Contains("pub fn write_object_string(&self, value: &ManagedString) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose WriteObject.");
+    Assert(rust.Contains("pub fn write_object(&self, value: &ManagedObject, enumerate_collection: bool) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose WriteObject with collection enumeration semantics.");
+    Assert(rust.Contains("pub fn write_object_bytes(&self, bytes: &[u8]) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose byte-array output.");
+    Assert(rust.Contains("pub fn write_json_string(&self, json: &ManagedString, as_hashtable: bool, no_enumerate: bool) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose JSON-to-PowerShell output projection.");
+    Assert(rust.Contains("pub fn write_error_record_string(", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose rich ErrorRecord writes.");
+    Assert(rust.Contains("pub fn has_parameter(&self, name: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose bound-parameter presence.");
+    Assert(rust.Contains("pub fn get_parameter_bool(&self, name: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose typed switch/bool parameters.");
+    Assert(rust.Contains("pub fn get_parameter_i32(&self, name: &ManagedString) -> Result<i32, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose typed integer parameters.");
+    Assert(rust.Contains("pub fn get_parameter_char(&self, name: &ManagedString) -> Result<char, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose typed char parameters.");
     Assert(rust.Contains("pub fn get_input_string(&self) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose pipeline input access.");
+    Assert(rust.Contains("pub fn get_current_culture_list_separator(&self) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose host culture list separator for CSV UseCulture.");
+    Assert(rust.Contains("pub fn get_input_snapshot_json(&self) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose pipeline object snapshots.");
     Assert(rust.Contains("pub fn should_process_string(&self, target: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose ShouldProcess.");
+    Assert(rust.Contains("pub fn is_cancellation_requested(&self) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose StopProcessing cancellation state.");
+    Assert(rust.Contains("pub fn lifecycle_state_handle(&self) -> Result<i32, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose per-cmdlet lifecycle state handles.");
+    Assert(rust.Contains("pub fn release(self) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose managed handle release.");
 
     var glue = ManagedGlueGenerator.GenerateRuntimeBridgePartial(document);
     Assert(
-        glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject", StringComparison.Ordinal)
+        glue.Contains("InteropUtf8.ReadString(valuePointer, valueLength)", StringComparison.Ordinal)
+            && glue.Contains("InteropUtf8.GetByteCount(ManagedInteropRuntime.GetObject<string>(stringHandle))", StringComparison.Ordinal)
+            && glue.Contains("InteropUtf8.CopyString(ManagedInteropRuntime.GetObject<string>(stringHandle), destinationPointer, destinationCapacity)", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObjectBytes", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJson", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString", StringComparison.Ordinal)
-            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess", StringComparison.Ordinal),
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteErrorRecordString", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.HasBoundParameter", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterBoolean", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterInt32", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetBoundParameterChar", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetCurrentCultureListSeparator", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputSnapshotJson", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ShouldProcess", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.IsCancellationRequested", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetLifecycleStateHandle", StringComparison.Ordinal)
+            && glue.Contains("ManagedInteropRuntime.ReleaseObject(objectHandle)", StringComparison.Ordinal),
         "Expected generated PowerShell glue to route through the cmdlet support bridge.");
+
+    var moduleBuildScript = File.ReadAllText(Path.Combine(workspaceRoot, "scripts", "Build-RustFormatPowerShellModule.ps1"));
+    Assert(moduleBuildScript.Contains("--powershell-cmdlet-bindings", StringComparison.Ordinal), "Expected PowerShell module builds to translate Rust engines with the cmdlet binding manifest.");
+    Assert(moduleBuildScript.Contains("'powershell_cmdlets'", StringComparison.Ordinal), "Expected PowerShell module builds to allow the unified Rust format cmdlet runtime crate.");
+    Assert(moduleBuildScript.Contains("The unified generated PowerShell cmdlet runtime must be packaged as 'rustlyn_powershell_format_cmdlets.dll'", StringComparison.Ordinal), "Expected module builds to reject mismatched generated runtime engine names.");
+    Assert(!moduleBuildScript.Contains("RustlynUseGeneratedFormatCmdlets", StringComparison.Ordinal), "Expected generated non-XML cmdlet shims to be the default production build path.");
+    foreach (var scriptName in new[]
+    {
+        "Build-SimdJsonPowerShellModule.ps1",
+        "Build-MarkedYamlPowerShellModule.ps1",
+        "Build-TomlPowerShellModule.ps1",
+        "Build-CsvPowerShellModule.ps1",
+        "Build-BsonPowerShellModule.ps1",
+        "Build-CborPowerShellModule.ps1"
+    })
+    {
+        var script = File.ReadAllText(Path.Combine(workspaceRoot, "scripts", scriptName));
+        Assert(script.Contains("-Sample powershell_cmdlets", StringComparison.Ordinal), $"Expected '{scriptName}' to build the unified Rust format cmdlet runtime.");
+        Assert(script.Contains("-EngineAssemblyName rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), $"Expected '{scriptName}' to package the unified Rust format engine.");
+    }
+    var xmlBuildScript = File.ReadAllText(Path.Combine(workspaceRoot, "scripts", "Build-QuickXmlPowerShellModule.ps1"));
+    Assert(xmlBuildScript.Contains("-Sample quick_xml", StringComparison.Ordinal), "Expected XML packaging to remain on the compatibility sample until XML semantics are explicitly migrated.");
+    var moduleSmokeScriptPath = Path.Combine(workspaceRoot, "scripts", "Test-RustFormatPowerShellModules.ps1");
+    var moduleSmokeScript = File.ReadAllText(moduleSmokeScriptPath);
+    foreach (var expected in new[]
+    {
+        "Build-SimdJsonPowerShellModule.ps1",
+        "Build-MarkedYamlPowerShellModule.ps1",
+        "Build-TomlPowerShellModule.ps1",
+        "Build-CsvPowerShellModule.ps1",
+        "Build-BsonPowerShellModule.ps1",
+        "Build-CborPowerShellModule.ps1",
+        "ConvertTo-RustJson",
+        "ConvertFrom-RustJson",
+        "ConvertTo-RustYaml",
+        "ConvertFrom-RustYaml",
+        "ConvertTo-RustToml",
+        "ConvertFrom-RustToml",
+        "ConvertTo-RustBson",
+        "ConvertFrom-RustBson",
+        "ConvertTo-RustCbor",
+        "ConvertFrom-RustCbor",
+        "ConvertTo-RustCsv",
+        "ConvertFrom-RustCsv",
+        "rustlyn_powershell_format_cmdlets.dll"
+    })
+    {
+        Assert(moduleSmokeScript.Contains(expected, StringComparison.Ordinal), $"Expected PowerShell format module smoke script to cover '{expected}'.");
+    }
+
+    var ciWorkflow = File.ReadAllText(Path.Combine(workspaceRoot, ".github", "workflows", "ci.yml"));
+    Assert(ciWorkflow.Contains("Test-RustFormatPowerShellModules.ps1", StringComparison.Ordinal), "Expected CI to run the generated non-XML PowerShell module smoke script.");
 
     var buildOutputPath = GetBackendGeneratedPowerShellBindingGluePath();
     Assert(File.Exists(buildOutputPath), $"Expected generated PowerShell binding glue build output '{buildOutputPath}' to exist.");
@@ -4638,8 +4808,16 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         ExternalPackageProjectionPackGenerator.WritePowerShellCmdletPack(packDirectory);
         Assert(File.Exists(Path.Combine(packDirectory, "powershell_cmdlet.rs")), "Expected PowerShell package pack to write generated Rust cmdlet module.");
         Assert(File.Exists(Path.Combine(packDirectory, "RuntimeBridgeHelpers.PowerShellCmdletBindings.g.cs")), "Expected PowerShell package pack to write generated managed cmdlet glue.");
+        Assert(File.Exists(Path.Combine(packDirectory, "powershell-cmdlets.json")), "Expected PowerShell package pack to write Rust-owned cmdlet descriptors.");
+        Assert(File.Exists(Path.Combine(packDirectory, "Rustlyn.PowerShellCmdlets.Generated.g.cs")), "Expected PowerShell package pack to write generated cmdlet shims.");
         Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("package: Microsoft.PowerShell.SDK", StringComparison.Ordinal), "Expected PowerShell package pack summary to record package identity.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("cmdlets: 12", StringComparison.Ordinal), "Expected PowerShell package pack summary to record generated cmdlet shim coverage excluding XML fallback cmdlets.");
         Assert(File.ReadAllText(Path.Combine(packDirectory, "binding-manifest.json")).Contains("System.Management.Automation", StringComparison.Ordinal), "Expected PowerShell package manifest JSON to include mapped SDK assembly.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "powershell-cmdlets.json")).Contains("\"className\": \"ConvertToRustJsonCommand\"", StringComparison.Ordinal), "Expected descriptor pack to include the JSON vertical-slice cmdlet.");
+        var generatedShim = File.ReadAllText(Path.Combine(packDirectory, "Rustlyn.PowerShellCmdlets.Generated.g.cs"));
+        Assert(generatedShim.Contains("PowerShellGeneratedCmdletInvoker.InvokeLifecycle", StringComparison.Ordinal), "Expected generated cmdlet shims to forward lifecycle calls to Rust entrypoints.");
+        Assert(generatedShim.Contains("checkCancellation: false", StringComparison.Ordinal), "Expected generated cmdlet shims to run Rust cleanup even after StopProcessing cancellation.");
+        Assert(!generatedShim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to exclude XML compatibility fallback cmdlets.");
     }
     finally
     {
@@ -4649,6 +4827,545 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         }
     }
 }
+
+static void PowerShellCmdletDescriptorsMatchCurrentCmdlets()
+{
+    var descriptors = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdlets()
+        .OrderBy(static descriptor => descriptor.ClassName, StringComparer.Ordinal)
+        .ToArray();
+    var descriptorByClassName = descriptors.ToDictionary(static descriptor => descriptor.ClassName, StringComparer.Ordinal);
+    var cmdletTypes = typeof(ConvertToRustJsonCommand).Assembly.GetTypes()
+        .Where(static type => type.GetCustomAttribute<CmdletAttribute>() is not null)
+        .OrderBy(static type => type.Name, StringComparer.Ordinal)
+        .ToArray();
+
+    Assert(descriptors.Length == cmdletTypes.Length, "Expected Rust-owned PowerShell descriptors to inventory every current format cmdlet.");
+
+    foreach (var type in cmdletTypes)
+    {
+        Assert(descriptorByClassName.TryGetValue(type.Name, out var descriptor), $"Expected descriptor for current cmdlet class '{type.Name}'.");
+        var cmdletAttribute = type.GetCustomAttribute<CmdletAttribute>()
+            ?? throw new InvalidOperationException($"Expected cmdlet attribute on '{type.FullName}'.");
+        Assert(cmdletAttribute.VerbName == descriptor.VerbName && cmdletAttribute.NounName == descriptor.NounName, $"Expected descriptor verb/noun to match '{type.Name}'.");
+        Assert(cmdletAttribute.SupportsShouldProcess == descriptor.SupportsShouldProcess, $"Expected descriptor ShouldProcess setting to match '{type.Name}'.");
+        var expectedMigrationStrategy = type.Name.Contains("Xml", StringComparison.Ordinal)
+            ? PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype
+            : PowerShellCmdletMigrationStrategies.GeneratedRust;
+        Assert(descriptor.MigrationStrategy == expectedMigrationStrategy, $"Expected descriptor migration strategy to make XML fallback status explicit for '{type.Name}'.");
+
+        var actualParameters = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(static property => (Property: property, Attribute: property.GetCustomAttribute<ParameterAttribute>()))
+            .Where(static item => item.Attribute is not null)
+            .ToDictionary(static item => item.Property.Name, StringComparer.Ordinal);
+        Assert(actualParameters.Count == descriptor.Parameters.Count, $"Expected descriptor parameter count to match '{type.Name}'.");
+
+        foreach (var parameter in descriptor.Parameters)
+        {
+            Assert(actualParameters.TryGetValue(parameter.Name, out var actual), $"Expected descriptor parameter '{type.Name}.{parameter.Name}' to exist on the current cmdlet.");
+            var parameterAttribute = actual.Attribute
+                ?? throw new InvalidOperationException($"Expected parameter attribute on '{type.FullName}.{parameter.Name}'.");
+            Assert(actual.Property.PropertyType == ResolvePowerShellDescriptorParameterType(parameter.TypeName), $"Expected descriptor parameter type to match '{type.Name}.{parameter.Name}'.");
+            Assert(parameterAttribute.Mandatory == parameter.Mandatory, $"Expected Mandatory to match '{type.Name}.{parameter.Name}'.");
+            Assert(parameterAttribute.ValueFromPipeline == parameter.ValueFromPipeline, $"Expected ValueFromPipeline to match '{type.Name}.{parameter.Name}'.");
+            Assert(parameterAttribute.ValueFromPipelineByPropertyName == parameter.ValueFromPipelineByPropertyName, $"Expected ValueFromPipelineByPropertyName to match '{type.Name}.{parameter.Name}'.");
+            if (parameter.Position is { } position)
+            {
+                Assert(parameterAttribute.Position == position, $"Expected Position to match '{type.Name}.{parameter.Name}'.");
+            }
+
+            Assert((actual.Property.GetCustomAttribute<AllowEmptyStringAttribute>() is not null) == parameter.AllowEmptyString, $"Expected AllowEmptyString to match '{type.Name}.{parameter.Name}'.");
+            var validateSet = actual.Property.GetCustomAttribute<ValidateSetAttribute>()?.ValidValues ?? [];
+            var expectedValidateSet = parameter.ValidateSet ?? [];
+            Assert(validateSet.SequenceEqual(expectedValidateSet, StringComparer.Ordinal), $"Expected ValidateSet to match '{type.Name}.{parameter.Name}'.");
+        }
+    }
+
+    var generatedDescriptors = descriptors
+        .Where(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust)
+        .ToArray();
+    var shim = PowerShellCmdletShimGenerator.GenerateCSharp(descriptors);
+    var stopProcessingCount = shim.Split("protected override void StopProcessing()", StringSplitOptions.None).Length - 1;
+    Assert(stopProcessingCount == generatedDescriptors.Length, "Expected generated cmdlet shims to include one StopProcessing cancellation hook per generated-rust descriptor.");
+    Assert(shim.Contains("(value, enumerateCollection) => WriteObject(value, enumerateCollection)", StringComparison.Ordinal), "Expected generated cmdlet shims to preserve WriteObject enumeration semantics.");
+    Assert(shim.Contains("PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle()", StringComparison.Ordinal), "Expected generated cmdlet shims to allocate per-instance lifecycle state for Rust.");
+    Assert(shim.Contains("PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle)", StringComparison.Ordinal), "Expected generated cmdlet shims to release per-instance lifecycle state.");
+    Assert(shim.Contains("EnsureLifecycleStateHandle());", StringComparison.Ordinal), "Expected generated cmdlet shims to pass per-instance lifecycle state into Rust contexts.");
+    Assert(shim.Contains("catch", StringComparison.Ordinal) && shim.Contains("ReleaseLifecycleState();", StringComparison.Ordinal), "Expected generated cmdlet shims to release lifecycle state on terminating lifecycle failures.");
+    Assert(shim.Contains("\"Rustlyn.GeneratedModule\"", StringComparison.Ordinal), "Expected generated cmdlet shims to call the type emitted by Rustlyn translated assemblies.");
+    Assert(shim.Contains("convert_to_rust_json_process_record", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON ProcessRecord entrypoint.");
+    Assert(shim.Contains("convert_to_rust_json_end_processing", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON EndProcessing entrypoint.");
+    Assert(shim.Contains("convert_to_rust_json_cleanup", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON cleanup entrypoint.");
+    Assert(!shim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to leave XML on the compatibility fallback path.");
+}
+
+static void PowerShellFormatGlueRetirementGuards()
+{
+    var cases = CreatePowerShellFormatParityCases();
+    var casesByCmdlet = cases.GroupBy(static item => item.CmdletClassName, StringComparer.Ordinal)
+        .ToDictionary(static group => group.Key, static group => group.ToArray(), StringComparer.Ordinal);
+    var descriptors = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdlets();
+    foreach (var descriptor in descriptors)
+    {
+        Assert(casesByCmdlet.TryGetValue(descriptor.ClassName, out var descriptorCases), $"Expected parity matrix cases for '{descriptor.ClassName}'.");
+        Assert(descriptorCases.Any(static item => item.CoversSuccessPath), $"Expected parity matrix to include a success-path oracle for '{descriptor.ClassName}'.");
+        Assert(descriptorCases.Any(static item => item.CoversErrorPath), $"Expected parity matrix to include an error-path oracle for '{descriptor.ClassName}'.");
+    }
+
+    Assert(cases.Any(static item => item.CoversCancellationCleanup), "Expected parity matrix to cover cancellation and lifecycle cleanup.");
+    Assert(cases.Any(static item => item.CoversLargeInput), "Expected parity matrix to cover large input behavior.");
+    Assert(cases.Any(static item => item.RequiresXmlCompatibilityDecision), "Expected parity matrix to keep XML migration behind an explicit compatibility decision.");
+
+    AssertRetiredCSharpFormatGlueIsNotProductionReferenced();
+    AssertXmlCompatibilityIslandIsExplicit();
+}
+
+static (string CmdletClassName, string Scenario, bool CoversSuccessPath, bool CoversErrorPath, bool CoversCancellationCleanup, bool CoversLargeInput, bool RequiresXmlCompatibilityDecision)[] CreatePowerShellFormatParityCases()
+    =>
+    [
+        ("ConvertToRustJsonCommand", "object stream preserves PSCustomObject ordering, depth, enum policy, compression, and large input", true, false, false, true, false),
+        ("ConvertToRustJsonCommand", "cycle and depth failures preserve terminating error shape", false, true, false, false, false),
+        ("ConvertFromRustJsonCommand", "AsHashtable and NoEnumerate preserve JSON array/object projection", true, false, false, false, false),
+        ("ConvertFromRustJsonCommand", "malformed JSON preserves parse error category and id", false, true, false, false, false),
+        ("ConvertToRustCsvCommand", "Delimiter, UseCulture, headers, QuoteFields, UseQuotes, NoHeader, and IncludeTypeInformation request shape", true, false, false, false, false),
+        ("ConvertToRustCsvCommand", "large CSV input remains bounded and cancellation cleans lifecycle state", false, true, true, true, false),
+        ("ConvertFromRustCsvCommand", "Header and delimiter request shape with AllowEmptyString input", true, false, false, false, false),
+        ("ConvertFromRustCsvCommand", "malformed CSV preserves non-success error shape", false, true, false, false, false),
+        ("ConvertToRustTomlCommand", "flat object JSON projection to TOML", true, false, false, false, false),
+        ("ConvertToRustTomlCommand", "unsupported nested JSON projection reports TOML projection error", false, true, false, false, false),
+        ("ConvertFromRustTomlCommand", "flat TOML text parses to PowerShell object projection", true, false, false, false, false),
+        ("ConvertFromRustTomlCommand", "unsupported TOML table reports validation error", false, true, false, false, false),
+        ("ConvertToRustYamlCommand", "object stream converts to YAML text", true, false, false, false, false),
+        ("ConvertToRustYamlCommand", "cycle/depth failure preserves terminating error shape", false, true, false, false, false),
+        ("ConvertFromRustYamlCommand", "YAML text converts to PowerShell object projection", true, false, false, false, false),
+        ("ConvertFromRustYamlCommand", "malformed YAML preserves parse error shape", false, true, false, false, false),
+        ("ConvertToRustBsonCommand", "object stream converts to byte array without output enumeration", true, false, false, false, false),
+        ("ConvertToRustBsonCommand", "cycle/depth failure preserves terminating error shape", false, true, false, false, false),
+        ("ConvertFromRustBsonCommand", "pipeline byte input normalizes to BSON byte payload", true, false, false, false, false),
+        ("ConvertFromRustBsonCommand", "truncated BSON preserves parse error shape", false, true, false, false, false),
+        ("ConvertToRustCborCommand", "object stream converts to byte array without output enumeration", true, false, false, false, false),
+        ("ConvertToRustCborCommand", "cycle/depth failure preserves terminating error shape", false, true, false, false, false),
+        ("ConvertFromRustCborCommand", "pipeline byte input normalizes to CBOR byte payload", true, false, false, false, false),
+        ("ConvertFromRustCborCommand", "truncated CBOR preserves parse error shape", false, true, false, false, false),
+        ("ConvertToRustXmlCommand", "As String/Document/Stream behavior remains a compatibility decision around ConvertTo-Xml", true, false, false, false, true),
+        ("ConvertToRustXmlCommand", "invalid nested ConvertTo-Xml invocation preserves host error shape", false, true, false, false, true),
+        ("ConvertFromRustXmlCommand", "valid XML parses to XmlDocument with whitespace preserved", true, false, false, false, true),
+        ("ConvertFromRustXmlCommand", "malformed XML preserves XmlDocument load error shape", false, true, false, false, true)
+    ];
+
+static void AssertRetiredCSharpFormatGlueIsNotProductionReferenced()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var projectDirectory = Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.PowerShellCmdlets");
+    var retiredFiles = new[]
+    {
+        "BinaryInputBuffer.cs",
+        "BsonCmdlets.cs",
+        "CborCmdlets.cs",
+        "CsvCmdlets.cs",
+        "CsvProjection.cs",
+        "FormatInputBuffer.cs",
+        "JsonCmdlets.cs",
+        "JsonProjection.cs",
+        "ObjectStreamProjection.cs",
+        "PowerShellCommandRunner.cs",
+        "TomlCmdlets.cs",
+        "TomlProjection.cs",
+        "YamlCmdlets.cs"
+    };
+
+    foreach (var retiredFile in retiredFiles)
+    {
+        Assert(!File.Exists(Path.Combine(projectDirectory, retiredFile)), $"Expected retired C# format glue file '{retiredFile}' to be deleted from production sources.");
+    }
+
+    var retiredIdentifiers = new[]
+    {
+        "BinaryInputBuffer",
+        "CsvProjection",
+        "FormatInputBuffer",
+        "JsonProjection",
+        "ObjectStreamProjection",
+        "PowerShellCommandRunner",
+        "TomlProjection"
+    };
+
+    foreach (var file in Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories))
+    {
+        var text = File.ReadAllText(file);
+        foreach (var identifier in retiredIdentifiers)
+        {
+            var pattern = $@"(?<![A-Za-z0-9_]){System.Text.RegularExpressions.Regex.Escape(identifier)}(?![A-Za-z0-9_])";
+            Assert(!System.Text.RegularExpressions.Regex.IsMatch(text, pattern), $"Expected production source '{Path.GetRelativePath(projectDirectory, file)}' not to reference retired C# format glue identifier '{identifier}'.");
+        }
+    }
+}
+
+static void AssertXmlCompatibilityIslandIsExplicit()
+{
+    var workspaceRoot = FindWorkspaceRoot()
+        ?? throw new InvalidOperationException("Workspace root could not be determined.");
+    var projectDirectory = Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.PowerShellCmdlets");
+    var xmlCmdlets = File.ReadAllText(Path.Combine(projectDirectory, "XmlCmdlets.cs"));
+    Assert(xmlCmdlets.Contains("XmlFormatInputBuffer", StringComparison.Ordinal), "Expected XML compatibility cmdlets to use XML-specific input buffering.");
+    Assert(xmlCmdlets.Contains("XmlPowerShellCommandRunner", StringComparison.Ordinal), "Expected XML compatibility cmdlets to isolate nested PowerShell invocation behind an XML-specific helper.");
+    Assert(xmlCmdlets.Contains("Microsoft.PowerShell.Utility\\\\ConvertTo-Xml", StringComparison.Ordinal), "Expected XML compatibility cmdlets to keep current ConvertTo-Xml/ETS behavior explicit.");
+    Assert(xmlCmdlets.Contains("quick_xml_engine.dll", StringComparison.Ordinal), "Expected XML compatibility cmdlets to keep quick_xml validation isolated from the generated non-XML runtime.");
+
+    var descriptors = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdlets();
+    Assert(
+        descriptors.Where(static descriptor => descriptor.ClassName.Contains("Xml", StringComparison.Ordinal)).All(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype),
+        "Expected XML descriptors to remain marked as compatibility fallback.");
+    Assert(
+        descriptors.Where(static descriptor => !descriptor.ClassName.Contains("Xml", StringComparison.Ordinal)).All(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust),
+        "Expected non-XML descriptors to be generated Rust cmdlets.");
+
+    var generatedShim = PowerShellCmdletShimGenerator.GenerateCSharp(descriptors);
+    Assert(generatedShim.Contains("rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), "Expected generated non-XML shims to load the unified Rust format runtime.");
+    Assert(!generatedShim.Contains("RustXml", StringComparison.Ordinal), "Expected generated non-XML shims to exclude XML compatibility cmdlets.");
+}
+
+static void PowerShellCmdletContextExposesTypedBoundParameters()
+{
+    var outputs = new List<object?>();
+    var context = CreateTestPowerShellContext(
+        outputs,
+        inputObject: null,
+        lifecycleStateHandle: 0,
+        new Dictionary<string, object?>
+        {
+            ["Delimiter"] = ';',
+            ["Depth"] = 8,
+            ["Compress"] = new SwitchParameter(true),
+            ["Name"] = "rustlyn",
+            ["Wrapped"] = PSObject.AsPSObject(5)
+        });
+
+    Assert(context.HasBoundParameter("delimiter"), "Expected bound parameter lookup to be case-insensitive.");
+    Assert(!context.HasBoundParameter("missing"), "Expected missing bound parameter lookup to return false.");
+    Assert(context.GetBoundParameterChar("Delimiter") == ';', "Expected char parameter projection to preserve delimiters.");
+    Assert(context.GetBoundParameterInt32("Depth") == 8, "Expected int parameter projection to preserve numeric options.");
+    Assert(context.GetBoundParameterInt32("Wrapped") == 5, "Expected typed parameter projection to unwrap PSObject values.");
+    Assert(context.GetBoundParameterBoolean("Compress"), "Expected switch parameter projection to expose IsPresent.");
+    Assert(context.GetBoundParameterString("Name") == "rustlyn", "Expected string parameter projection to preserve text.");
+    Assert(context.GetCurrentCultureListSeparator() == CultureInfo.CurrentCulture.TextInfo.ListSeparator, "Expected cmdlet context to expose the host culture list separator.");
+
+    Assert(PowerShellCmdletBridge.HasBoundParameter(context, "Depth"), "Expected bridge to expose parameter presence to generated bindings.");
+    Assert(PowerShellCmdletBridge.GetBoundParameterChar(context, "Delimiter") == ';', "Expected bridge to expose char parameters to generated bindings.");
+    Assert(PowerShellCmdletBridge.GetBoundParameterInt32(context, "Depth") == 8, "Expected bridge to expose integer parameters to generated bindings.");
+    Assert(PowerShellCmdletBridge.GetBoundParameterBoolean(context, "Compress"), "Expected bridge to expose switch parameters to generated bindings.");
+    Assert(PowerShellCmdletBridge.GetCurrentCultureListSeparator(context) == CultureInfo.CurrentCulture.TextInfo.ListSeparator, "Expected bridge to expose host culture list separator to generated bindings.");
+
+    var bytes = new byte[] { 1, 2, 3 };
+    var bytesPointer = Marshal.AllocHGlobal(bytes.Length);
+    try
+    {
+        Marshal.Copy(bytes, 0, bytesPointer, bytes.Length);
+        PowerShellCmdletBridge.WriteObjectBytes(context, bytesPointer, bytes.Length);
+    }
+    finally
+    {
+        Marshal.FreeHGlobal(bytesPointer);
+    }
+
+    Assert(outputs[0] is byte[] outputBytes && outputBytes.SequenceEqual(bytes), "Expected bridge byte output to write one byte[] object without enumeration.");
+
+    PowerShellCmdletBridge.WriteJson(context, "[{\"name\":\"one\"},{\"name\":\"two\"}]", asHashtable: false, noEnumerate: false);
+    Assert(outputs.Count == 3, $"Expected JSON array projection to enumerate two output objects, but got {outputs.Count.ToString(CultureInfo.InvariantCulture)} outputs.");
+    Assert(outputs[1] is PSObject firstObject && Equals(firstObject.Properties["name"].Value, "one"), "Expected JSON projection to emit PSObject values.");
+
+    PowerShellCmdletBridge.WriteJson(context, "[{\"name\":\"one\"}]", asHashtable: true, noEnumerate: true);
+    Assert(outputs[3] is object?[] { Length: 1 } noEnumerateOutput && noEnumerateOutput[0] is Hashtable table && Equals(table["NAME"], "one"), "Expected NoEnumerate AsHashtable JSON projection to write one array object with case-insensitive hashtable entries.");
+
+    var shared = new OrderedDictionary(StringComparer.Ordinal)
+    {
+        ["value"] = 1
+    };
+    using var sharedSnapshot = JsonDocument.Parse(PowerShellObjectSnapshot.ToJson(new object?[] { shared, shared }));
+    var sharedItems = sharedSnapshot.RootElement.GetProperty("items").EnumerateArray().ToArray();
+    Assert(sharedItems.All(static item => item.GetProperty("kind").GetString() == "dictionary"), "Expected repeated non-cyclic references to snapshot as repeated values, not cycles.");
+
+    using var wrappedDictionarySnapshot = JsonDocument.Parse(PowerShellObjectSnapshot.ToJson(PSObject.AsPSObject(shared)));
+    Assert(wrappedDictionarySnapshot.RootElement.GetProperty("kind").GetString() == "dictionary", "Expected PSObject-wrapped dictionaries to snapshot the base dictionary instead of adapted PSObject members.");
+    Assert(wrappedDictionarySnapshot.RootElement.GetProperty("properties")[0].GetProperty("name").GetString() == "value", "Expected PSObject-wrapped dictionary entries to remain available to Rust.");
+
+    var cycle = new ArrayList();
+    cycle.Add(cycle);
+    using var cycleSnapshot = JsonDocument.Parse(PowerShellObjectSnapshot.ToJson(cycle));
+    Assert(cycleSnapshot.RootElement.GetProperty("items")[0].GetProperty("kind").GetString() == "cycle", "Expected recursive references to snapshot as cycles.");
+}
+
+static void AssertThrows<TException>(Action action, string message) where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+
+    throw new InvalidOperationException(message);
+}
+
+static Type ResolvePowerShellDescriptorParameterType(string typeName)
+    => typeName switch
+    {
+        "object?" => typeof(object),
+        "int" => typeof(int),
+        "char" => typeof(char),
+        "string" => typeof(string),
+        "string?" => typeof(string),
+        "string[]?" => typeof(string[]),
+        "SwitchParameter" => typeof(SwitchParameter),
+        _ => throw new InvalidOperationException($"Unsupported descriptor parameter type '{typeName}'.")
+    };
+
+static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
+{
+    var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("powershell_cmdlets");
+    using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
+    var options = EmitOptions.Default with
+    {
+        BindingManifests = [ExternalPackageBindingSurfaces.CreatePowerShellCmdletManifest()]
+    };
+    LoweredAssemblyEmitter.EmitBitcode(bitcodePath, tempAssembly.Path, options, llvmRoot);
+    var loadContext = new AssemblyLoadContext($"rustlyn-powershell-slice-{Guid.NewGuid():N}", isCollectible: true);
+    using var assemblyStream = new MemoryStream(File.ReadAllBytes(Path.GetFullPath(tempAssembly.Path)));
+    var generatedAssembly = loadContext.LoadFromStream(assemblyStream);
+    var generatedType = generatedAssembly.GetType("Rustlyn.GeneratedModule")
+        ?? throw new InvalidOperationException($"Type 'Rustlyn.GeneratedModule' was not found in assembly '{tempAssembly.Path}'.");
+    try
+    {
+        var entrypointPrefixes = new[]
+        {
+            "convert_to_rust_json",
+            "convert_from_rust_json",
+            "convert_to_rust_yaml",
+            "convert_from_rust_yaml",
+            "convert_to_rust_toml",
+            "convert_from_rust_toml",
+            "convert_to_rust_bson",
+            "convert_from_rust_bson",
+            "convert_to_rust_cbor",
+            "convert_from_rust_cbor",
+            "convert_to_rust_csv",
+            "convert_from_rust_csv"
+        };
+
+        foreach (var prefix in entrypointPrefixes)
+        {
+            Assert(
+                generatedType.GetMethod($"{prefix}_process_record", BindingFlags.Public | BindingFlags.Static) is not null,
+                $"Expected Rust format runtime to export '{prefix}_process_record'.");
+            Assert(
+                generatedType.GetMethod($"{prefix}_end_processing", BindingFlags.Public | BindingFlags.Static) is not null,
+                $"Expected Rust format runtime to export '{prefix}_end_processing'.");
+            Assert(
+                generatedType.GetMethod($"{prefix}_cleanup", BindingFlags.Public | BindingFlags.Static) is not null,
+                $"Expected Rust format runtime to export '{prefix}_cleanup'.");
+        }
+
+        int GetStateCount()
+            => Convert.ToInt32(InvokeGeneratedPowerShellSliceMethod(generatedType, "powershell_format_state_count", contextHandle: null), CultureInfo.InvariantCulture);
+
+        int InvokeGeneratedContextMethod(
+            string methodName,
+            object? inputObject,
+            int lifecycleStateHandle,
+            List<object?> outputs,
+            IReadOnlyDictionary<string, object?>? boundParameters = null,
+            PowerShellCmdletCancellation? cancellation = null)
+        {
+            var context = CreateTestPowerShellContext(outputs, inputObject, lifecycleStateHandle, boundParameters, cancellation);
+            var contextHandle = ManagedInteropRuntime.AddObjectHandle(context);
+            try
+            {
+                return Convert.ToInt32(InvokeGeneratedPowerShellSliceMethod(generatedType, methodName, contextHandle), CultureInfo.InvariantCulture);
+            }
+            finally
+            {
+                ManagedInteropRuntime.ReleaseObject(contextHandle);
+            }
+        }
+
+        void CleanupGeneratedLifecycle(string prefix, int lifecycleStateHandle)
+        {
+            var cleanupOutputs = new List<object?>();
+            try
+            {
+                InvokeGeneratedContextMethod($"{prefix}_cleanup", null, lifecycleStateHandle, cleanupOutputs);
+            }
+            finally
+            {
+                PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle);
+            }
+        }
+
+        Assert(GetStateCount() == 0, "Expected Rust format runtime lifecycle state counter export to be callable.");
+
+        List<object?> InvokeGeneratedLifecycle(string prefix, object? inputObject, IReadOnlyDictionary<string, object?>? boundParameters = null)
+        {
+            var outputs = new List<object?>();
+            var lifecycleStateHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+            try
+            {
+                Assert(InvokeGeneratedContextMethod($"{prefix}_process_record", inputObject, lifecycleStateHandle, outputs, boundParameters) == 0, $"Expected generated Rust '{prefix}' ProcessRecord to collect input.");
+                Assert(GetStateCount() >= 1, $"Expected generated Rust '{prefix}' ProcessRecord to allocate lifecycle state.");
+                Assert(InvokeGeneratedContextMethod($"{prefix}_end_processing", null, lifecycleStateHandle, outputs, boundParameters) == 0, $"Expected generated Rust '{prefix}' EndProcessing to emit output.");
+            }
+            finally
+            {
+                CleanupGeneratedLifecycle(prefix, lifecycleStateHandle);
+            }
+
+            Assert(GetStateCount() == 0, $"Expected generated Rust '{prefix}' lifecycle state to be released after cleanup.");
+            return outputs;
+        }
+
+        var outputs = InvokeGeneratedLifecycle(
+            "convert_to_rust_json",
+            new OrderedDictionary(StringComparer.Ordinal)
+            {
+                ["name"] = "rustlyn",
+                ["count"] = 3
+            },
+            new Dictionary<string, object?>
+            {
+                ["Compress"] = new SwitchParameter(true),
+                ["Depth"] = 8
+            });
+        Assert(outputs.Count == 1 && Equals(outputs[0], "{\"name\":\"rustlyn\",\"count\":3}"), $"Expected generated Rust JSON lifecycle to emit compressed JSON, but got '{string.Join(", ", outputs)}'.");
+
+        outputs = InvokeGeneratedLifecycle(
+            "convert_to_rust_toml",
+            new OrderedDictionary(StringComparer.Ordinal)
+            {
+                ["name"] = "rustlyn",
+                ["count"] = 3
+            },
+            new Dictionary<string, object?> { ["Depth"] = 8 });
+        var toml = outputs.Count == 1 ? outputs[0] as string : null;
+        Assert(toml?.Contains("name = \"rustlyn\"", StringComparison.Ordinal) == true && toml.Contains("count = 3", StringComparison.Ordinal), $"Expected generated Rust TOML lifecycle to emit flat TOML, but got '{string.Join(", ", outputs)}'.");
+
+        outputs = InvokeGeneratedLifecycle("convert_from_rust_toml", "name = \"rustlyn\"\ncount = 3\n");
+        var projectedToml = outputs.Count == 1 ? outputs[0] as PSObject : null;
+        Assert(projectedToml?.Properties["name"]?.Value as string == "rustlyn", "Expected generated Rust TOML parse lifecycle to project string properties.");
+        Assert(Equals(projectedToml?.Properties["count"]?.Value, 3), "Expected generated Rust TOML parse lifecycle to project integer properties.");
+
+        outputs = InvokeGeneratedLifecycle(
+            "convert_from_rust_json",
+            "[{\"name\":\"rustlyn\",\"count\":3}]",
+            new Dictionary<string, object?>
+            {
+                ["AsHashtable"] = new SwitchParameter(true),
+                ["NoEnumerate"] = new SwitchParameter(true)
+            });
+        Assert(outputs.Count == 1 && outputs[0] is object?[] { Length: 1 } jsonArray && jsonArray[0] is Hashtable jsonTable && Equals(jsonTable["name"], "rustlyn"), "Expected generated Rust JSON parse lifecycle to preserve AsHashtable and NoEnumerate.");
+
+        var malformedJsonHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        var malformedJsonOutputs = new List<object?>();
+        try
+        {
+            Assert(InvokeGeneratedContextMethod("convert_from_rust_json_process_record", "{", malformedJsonHandle, malformedJsonOutputs) == 0, "Expected malformed JSON ProcessRecord to collect input before parse.");
+            Assert(InvokeGeneratedContextMethod("convert_from_rust_json_end_processing", null, malformedJsonHandle, malformedJsonOutputs) != 0, "Expected malformed JSON EndProcessing to report a parse failure.");
+        }
+        finally
+        {
+            CleanupGeneratedLifecycle("convert_from_rust_json", malformedJsonHandle);
+        }
+        Assert(GetStateCount() == 0, "Expected generated Rust error cleanup to release lifecycle state.");
+
+        var cancellation = new PowerShellCmdletCancellation();
+        cancellation.RequestCancellation();
+        var cancelledHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        var cancelledOutputs = new List<object?>();
+        try
+        {
+            Assert(InvokeGeneratedContextMethod("convert_to_rust_json_process_record", new OrderedDictionary(StringComparer.Ordinal), cancelledHandle, cancelledOutputs, cancellation: cancellation) != 0, "Expected generated Rust ProcessRecord to honor StopProcessing cancellation.");
+        }
+        finally
+        {
+            CleanupGeneratedLifecycle("convert_to_rust_json", cancelledHandle);
+        }
+        Assert(GetStateCount() == 0, "Expected generated Rust cancellation cleanup to leave no lifecycle state.");
+
+        var firstHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        var secondHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        var firstOutputs = new List<object?>();
+        var secondOutputs = new List<object?>();
+        try
+        {
+            Assert(InvokeGeneratedContextMethod("convert_to_rust_json_process_record", new OrderedDictionary(StringComparer.Ordinal) { ["name"] = "one" }, firstHandle, firstOutputs, new Dictionary<string, object?> { ["Compress"] = new SwitchParameter(true), ["Depth"] = 8 }) == 0, "Expected first generated Rust lifecycle instance to collect input.");
+            Assert(InvokeGeneratedContextMethod("convert_to_rust_json_process_record", new OrderedDictionary(StringComparer.Ordinal) { ["name"] = "two" }, secondHandle, secondOutputs, new Dictionary<string, object?> { ["Compress"] = new SwitchParameter(true), ["Depth"] = 8 }) == 0, "Expected second generated Rust lifecycle instance to collect input.");
+            Assert(GetStateCount() == 2, "Expected parallel generated Rust lifecycle instances to keep independent state.");
+            Assert(InvokeGeneratedContextMethod("convert_to_rust_json_end_processing", null, firstHandle, firstOutputs, new Dictionary<string, object?> { ["Compress"] = new SwitchParameter(true), ["Depth"] = 8 }) == 0, "Expected first generated Rust lifecycle instance to finish.");
+            CleanupGeneratedLifecycle("convert_to_rust_json", firstHandle);
+            firstHandle = 0;
+            Assert(GetStateCount() == 1, "Expected cleanup of one generated Rust lifecycle instance not to release another instance.");
+            Assert(InvokeGeneratedContextMethod("convert_to_rust_json_end_processing", null, secondHandle, secondOutputs, new Dictionary<string, object?> { ["Compress"] = new SwitchParameter(true), ["Depth"] = 8 }) == 0, "Expected second generated Rust lifecycle instance to finish.");
+            CleanupGeneratedLifecycle("convert_to_rust_json", secondHandle);
+            secondHandle = 0;
+        }
+        finally
+        {
+            if (firstHandle != 0)
+            {
+                CleanupGeneratedLifecycle("convert_to_rust_json", firstHandle);
+            }
+            if (secondHandle != 0)
+            {
+                CleanupGeneratedLifecycle("convert_to_rust_json", secondHandle);
+            }
+        }
+        Assert(GetStateCount() == 0, "Expected parallel generated Rust lifecycle cleanup to leave no state.");
+        Assert(firstOutputs.Count == 1 && Equals(firstOutputs[0], "{\"name\":\"one\"}"), "Expected first parallel generated Rust lifecycle instance to preserve its own output.");
+        Assert(secondOutputs.Count == 1 && Equals(secondOutputs[0], "{\"name\":\"two\"}"), "Expected second parallel generated Rust lifecycle instance to preserve its own output.");
+    }
+    finally
+    {
+        loadContext.Unload();
+    }
+}
+
+static object? InvokeGeneratedPowerShellSliceMethod(Type generatedType, string methodName, int? contextHandle)
+{
+    var method = generatedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+        ?? throw new InvalidOperationException($"Method '{methodName}' was not found on type '{generatedType.FullName}'.");
+    try
+    {
+        return contextHandle is null
+            ? method.Invoke(null, [])
+            : method.Invoke(null, [contextHandle.Value]);
+    }
+    catch (TargetInvocationException ex) when (ex.InnerException is not null)
+    {
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+        throw;
+    }
+}
+
+static PowerShellCmdletContext CreateTestPowerShellContext(
+    List<object?> outputs,
+    object? inputObject,
+    int lifecycleStateHandle,
+    IReadOnlyDictionary<string, object?>? boundParameters = null,
+    PowerShellCmdletCancellation? cancellation = null)
+    => new(
+        outputs.Add,
+        (value, _) => outputs.Add(value),
+        _ => { },
+        _ => { },
+        message => throw new InvalidOperationException(message),
+        errorRecord => throw errorRecord.Exception,
+        errorRecord => throw errorRecord.Exception,
+        _ => true,
+        (_, _) => true,
+        boundParameters ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),
+        inputObject,
+        cancellation ?? new PowerShellCmdletCancellation(),
+        lifecycleStateHandle);
 
 static void GeneratedBindingManifestListsSurface()
 {
@@ -21961,17 +22678,18 @@ void RunTest(string name, Action test, ICollection<string> failures)
 
     try
     {
-        RunWithTimeout(test, TimeSpan.FromSeconds(30));
+        var timeout = GetTestTimeout(name);
+        RunWithTimeout(test, timeout);
         Console.WriteLine($"PASS {name}");
     }
     catch (TimeoutException)
     {
-        failures.Add($"{name}: TIMEOUT (30s)");
+        failures.Add($"{name}: TIMEOUT ({GetTestTimeout(name).TotalSeconds.ToString("0", CultureInfo.InvariantCulture)}s)");
         Console.WriteLine($"TIMEOUT {name}");
     }
     catch (Exception ex)
     {
-        failures.Add($"{name}: {ex.Message}");
+        failures.Add($"{name}: {ex}");
     }
 }
 
@@ -22010,7 +22728,7 @@ void RunOptionalTest(string name, Action test, ICollection<string> failures)
     }
     catch (Exception ex)
     {
-        failures.Add($"{name}: {ex.Message}");
+        failures.Add($"{name}: {ex}");
     }
 }
 
@@ -22019,6 +22737,7 @@ static TimeSpan GetTestTimeout(string name)
     return name.StartsWith("MarkedYaml", StringComparison.Ordinal)
         || name.StartsWith("QuickXml", StringComparison.Ordinal)
         || name.StartsWith("SimdJson", StringComparison.Ordinal)
+        || name.Equals("PowerShellRustFormatRuntimeMigratesNonXmlGlue", StringComparison.Ordinal)
         ? TimeSpan.FromSeconds(120)
         : TimeSpan.FromSeconds(30);
 }
