@@ -100,6 +100,25 @@ unsafe extern "C" {
         no_enumerate: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_add_xml_input(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_add_xml_text_input(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs(
+        cmdlet_context_handle: i32,
+        depth: i32,
+        no_type_information: i32,
+        output_mode: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested(
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
@@ -295,6 +314,53 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
 }
 
 #[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_add_xml_input(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_add_xml_text_input(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs(
+    _cmdlet_context_handle: i32,
+    _depth: i32,
+    _no_type_information: i32,
+    _output_mode: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_is_cancellation_requested(
     _cmdlet_context_handle: i32,
     exception_out: *mut i32,
@@ -335,6 +401,8 @@ const STATUS_INVALID_STATE: i32 = -3;
 const STATUS_PARSE: i32 = -4;
 const STATUS_HOST_WRITE: i32 = -5;
 const STATUS_TRANSFORM: i32 = -6;
+const XML_OUTPUT_STRING: i32 = 0;
+const XML_OUTPUT_DOCUMENT: i32 = 1;
 
 #[derive(Clone, Debug, Deserialize)]
 struct PowerShellPropertySnapshot {
@@ -686,6 +754,55 @@ impl CmdletContext {
         })
     }
 
+    fn add_xml_input(&self) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_add_xml_input(self.handle, &mut exception_handle);
+        }
+        exception_to_result(exception_handle)
+    }
+
+    fn add_xml_text_input(&self) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_add_xml_text_input(
+                self.handle,
+                &mut exception_handle,
+            );
+        }
+        exception_to_result(exception_handle)
+    }
+
+    fn write_converted_xml_inputs(
+        &self,
+        depth: i32,
+        no_type_information: bool,
+        output_mode: i32,
+    ) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs(
+                self.handle,
+                depth,
+                if no_type_information { 1 } else { 0 },
+                output_mode,
+                &mut exception_handle,
+            );
+        }
+        exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+    }
+
+    fn write_xml_text_inputs_as_document(&self) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document(
+                self.handle,
+                &mut exception_handle,
+            );
+        }
+        exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+    }
+
     fn write_bytes(&self, bytes: &[u8]) -> RuntimeResult<()> {
         let mut exception_handle = 0;
         unsafe {
@@ -893,6 +1010,63 @@ pub extern "C" fn convert_from_rust_cbor_end_processing(cmdlet_context_handle: i
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn convert_to_rust_xml_process_record(cmdlet_context_handle: i32) -> i32 {
+    let context = CmdletContext::from_handle(cmdlet_context_handle);
+    let result = (|| {
+        context.throw_if_cancelled()?;
+        context.lifecycle_state_handle()?;
+        context.add_xml_input()
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(status) => status,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn convert_to_rust_xml_end_processing(cmdlet_context_handle: i32) -> i32 {
+    let context = CmdletContext::from_handle(cmdlet_context_handle);
+    let result = (|| {
+        context.throw_if_cancelled()?;
+        let depth = context.parameter_i32_or("Depth", 2)?;
+        let no_type_information = context.parameter_bool("NoTypeInformation")?;
+        let output_mode = xml_output_mode(&context)?;
+        context.write_converted_xml_inputs(depth, no_type_information, output_mode)
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(status) => status,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn convert_from_rust_xml_process_record(cmdlet_context_handle: i32) -> i32 {
+    let context = CmdletContext::from_handle(cmdlet_context_handle);
+    let result = (|| {
+        context.throw_if_cancelled()?;
+        context.lifecycle_state_handle()?;
+        context.add_xml_text_input()
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(status) => status,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn convert_from_rust_xml_end_processing(cmdlet_context_handle: i32) -> i32 {
+    let context = CmdletContext::from_handle(cmdlet_context_handle);
+    let result = (|| {
+        context.throw_if_cancelled()?;
+        context.write_xml_text_inputs_as_document()
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(status) => status,
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn convert_to_rust_csv_process_record(cmdlet_context_handle: i32) -> i32 {
     collect_snapshot(cmdlet_context_handle)
 }
@@ -957,8 +1131,19 @@ cleanup_export!(convert_to_rust_bson_cleanup);
 cleanup_export!(convert_from_rust_bson_cleanup);
 cleanup_export!(convert_to_rust_cbor_cleanup);
 cleanup_export!(convert_from_rust_cbor_cleanup);
+cleanup_export!(convert_to_rust_xml_cleanup);
+cleanup_export!(convert_from_rust_xml_cleanup);
 cleanup_export!(convert_to_rust_csv_cleanup);
 cleanup_export!(convert_from_rust_csv_cleanup);
+
+fn xml_output_mode(context: &CmdletContext) -> RuntimeResult<i32> {
+    match context.parameter_string_or("As", "Document")?.as_str() {
+        value if value.eq_ignore_ascii_case("String") => Ok(XML_OUTPUT_STRING),
+        value if value.eq_ignore_ascii_case("Document") => Ok(XML_OUTPUT_DOCUMENT),
+        value if value.eq_ignore_ascii_case("Stream") => Ok(XML_OUTPUT_STRING),
+        _ => Err(STATUS_PARSE),
+    }
+}
 
 fn collect_snapshot(cmdlet_context_handle: i32) -> i32 {
     run_collect(cmdlet_context_handle, |context, state| {

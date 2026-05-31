@@ -54,7 +54,7 @@ This matrix distinguishes fixture-backed behavior from preview and planned work.
 | Runtime/OS helper split | Preview | `Rustlyn.Runtime`, `Rustlyn.Os`, facade methods in `RuntimeBridgeHelpers` | Move remaining helpers to owned runtime projects and expand only from failing fixtures. |
 | Generated BCL bindings | Preview | `Rustlyn.Bindings`, generated lousygrep, scanner/bindgen commands | Generalize constructors, overloads, generics, delegates, events, reverse callbacks, and exception policy. |
 | Avalonia bridge | Fixture-only | `samples/avalonia_hello` and support assembly | It proves explicit bridge calls, not generated Avalonia bindings, XAML, data binding, or general delegates. |
-| PowerShell cmdlet projection | Preview | `samples/powershell_cmdlets`, generated `Rustlyn.PowerShellCmdlets` shims, wrapper module smoke coverage | JSON/YAML/TOML/BSON/CBOR/CSV behavior is Rust-owned behind generated C# `PSCmdlet` host shims. XML remains a named C# compatibility island because it preserves PowerShell `ConvertTo-Xml`/ETS semantics. |
+| PowerShell cmdlet projection | Preview | `samples/powershell_cmdlets`, generated `Rustlyn.PowerShellCmdlets` shims, wrapper module smoke coverage | JSON/YAML/TOML/XML/BSON/CBOR/CSV behavior is Rust-owned behind generated C# `PSCmdlet` host shims; XML still uses a narrow host bridge for PowerShell `ConvertTo-Xml`/ETS and `XmlDocument`/stream materialization semantics. |
 | Rust APIs exposed as .NET types | Planned | Roadmap item | Design metadata, ownership, `IDisposable`, and exception semantics. |
 
 ## Tooling and product surface

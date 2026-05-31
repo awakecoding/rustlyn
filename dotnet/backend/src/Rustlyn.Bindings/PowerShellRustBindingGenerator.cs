@@ -29,6 +29,12 @@ public static class PowerShellRustBindingGenerator
         "rustlyn_bindgen_powershell_cmdlet_write_object_handle",
         "rustlyn_bindgen_powershell_cmdlet_write_object_bytes",
         "rustlyn_bindgen_powershell_cmdlet_write_json_string",
+        "rustlyn_bindgen_powershell_cmdlet_add_xml_input",
+        "rustlyn_bindgen_powershell_cmdlet_add_xml_text_input",
+        "rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string",
+        "rustlyn_bindgen_powershell_cmdlet_write_xml_string",
+        "rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs",
+        "rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document",
         "rustlyn_bindgen_powershell_cmdlet_write_verbose_string",
         "rustlyn_bindgen_powershell_cmdlet_write_warning_string",
         "rustlyn_bindgen_powershell_cmdlet_write_error_string",
@@ -92,6 +98,37 @@ unsafe extern "C" {
         json_handle: i32,
         as_hashtable: i32,
         no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_add_xml_input(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_add_xml_text_input(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string(
+        cmdlet_context_handle: i32,
+        depth: i32,
+        no_type_information: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_xml_string(
+        cmdlet_context_handle: i32,
+        xml_handle: i32,
+        output_mode: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs(
+        cmdlet_context_handle: i32,
+        depth: i32,
+        no_type_information: i32,
+        output_mode: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document(
+        cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_write_verbose_string(
@@ -204,6 +241,10 @@ impl Exception {
         } else {
             Err(Self { handle })
         }
+    }
+
+    fn null_handle() -> Self {
+        Self { handle: 0 }
     }
 }
 
@@ -370,6 +411,83 @@ impl CmdletContext {
                 json.handle(),
                 if as_hashtable { 1 } else { 0 },
                 if no_enumerate { 1 } else { 0 },
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn add_xml_input(&self) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_add_xml_input(
+                self.handle,
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn add_xml_text_input(&self) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_add_xml_text_input(
+                self.handle,
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn convert_xml_inputs_to_string(&self, depth: i32, no_type_information: bool) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let handle = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string(
+                self.handle,
+                depth,
+                if no_type_information { 1 } else { 0 },
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        if handle == 0 {
+            return Err(Exception::null_handle());
+        }
+        Ok(unsafe { ManagedString::from_borrowed_handle(handle) })
+    }
+
+    pub fn write_xml_string(&self, xml: &ManagedString, output_mode: i32) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_xml_string(
+                self.handle,
+                xml.handle(),
+                output_mode,
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_converted_xml_inputs(&self, depth: i32, no_type_information: bool, output_mode: i32) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs(
+                self.handle,
+                depth,
+                if no_type_information { 1 } else { 0 },
+                output_mode,
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_xml_text_inputs_as_document(&self) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document(
+                self.handle,
                 &mut exception_handle,
             );
         }

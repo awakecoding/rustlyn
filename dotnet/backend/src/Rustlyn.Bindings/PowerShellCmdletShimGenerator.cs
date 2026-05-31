@@ -55,24 +55,7 @@ public static class PowerShellCmdletShimGenerator
         builder.AppendLine("    protected override void StopProcessing()");
         builder.AppendLine("        => _cancellation.RequestCancellation();");
         builder.AppendLine();
-        builder.AppendLine("    private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)");
-        builder.AppendLine("    {");
-        builder.AppendLine("        var context = new PowerShellCmdletContext(");
-        builder.AppendLine("            value => WriteObject(value),");
-        builder.AppendLine("            (value, enumerateCollection) => WriteObject(value, enumerateCollection),");
-        builder.AppendLine("            WriteVerbose,");
-        builder.AppendLine("            WriteWarning,");
-        builder.AppendLine("            message => WriteError(CreateErrorRecord(message)),");
-        builder.AppendLine("            WriteError,");
-        builder.AppendLine("            ThrowTerminatingError,");
-        builder.AppendLine("            target => ShouldProcess(target),");
-        builder.AppendLine("            (target, action) => ShouldProcess(target, action),");
-        builder.AppendLine("            MyInvocation.BoundParameters,");
-        builder.AppendLine("            inputObject,");
-        builder.AppendLine("            _cancellation,");
-        builder.AppendLine("            EnsureLifecycleStateHandle());");
-        builder.AppendLine("        PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);");
-        builder.AppendLine("    }");
+        AppendInvokeRustEntrypoint(builder, descriptor);
         builder.AppendLine();
         builder.AppendLine("    private int EnsureLifecycleStateHandle()");
         builder.AppendLine("    {");
@@ -106,6 +89,80 @@ public static class PowerShellCmdletShimGenerator
         builder.AppendLine("    private static ErrorRecord CreateErrorRecord(string message)");
         builder.AppendLine("        => new(new RuntimeException(message), \"RustlynPowerShellCmdletError\", ErrorCategory.NotSpecified, null);");
         builder.AppendLine("}");
+    }
+
+    private static void AppendInvokeRustEntrypoint(StringBuilder builder, PowerShellCmdletDescriptor descriptor)
+    {
+        var capturesXmlStream = descriptor.ClassName == "ConvertToRustXmlCommand";
+        builder.AppendLine("    private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)");
+        builder.AppendLine("    {");
+        if (capturesXmlStream)
+        {
+            builder.AppendLine("        var captureXmlStream = string.Equals(As, \"Stream\", StringComparison.OrdinalIgnoreCase) && methodName.EndsWith(\"_end_processing\", StringComparison.Ordinal);");
+            builder.AppendLine("        var capturedOutput = captureXmlStream ? new System.Collections.Generic.List<object?>() : null;");
+            builder.AppendLine("        var boundParameters = captureXmlStream");
+            builder.AppendLine("            ? new System.Collections.Generic.Dictionary<string, object?>(MyInvocation.BoundParameters, StringComparer.OrdinalIgnoreCase) { [\"As\"] = \"String\" }");
+            builder.AppendLine("            : MyInvocation.BoundParameters;");
+        }
+
+        builder.AppendLine("        var context = new PowerShellCmdletContext(");
+        if (capturesXmlStream)
+        {
+            builder.AppendLine("            value =>");
+            builder.AppendLine("            {");
+            builder.AppendLine("                if (capturedOutput is null)");
+            builder.AppendLine("                {");
+            builder.AppendLine("                    WriteObject(value);");
+            builder.AppendLine("                }");
+            builder.AppendLine("                else");
+            builder.AppendLine("                {");
+            builder.AppendLine("                    capturedOutput.Add(value);");
+            builder.AppendLine("                }");
+            builder.AppendLine("            },");
+            builder.AppendLine("            (value, enumerateCollection) =>");
+            builder.AppendLine("            {");
+            builder.AppendLine("                if (capturedOutput is null)");
+            builder.AppendLine("                {");
+            builder.AppendLine("                    WriteObject(value, enumerateCollection);");
+            builder.AppendLine("                }");
+            builder.AppendLine("                else");
+            builder.AppendLine("                {");
+            builder.AppendLine("                    capturedOutput.Add(value);");
+            builder.AppendLine("                }");
+            builder.AppendLine("            },");
+        }
+        else
+        {
+            builder.AppendLine("            value => WriteObject(value),");
+            builder.AppendLine("            (value, enumerateCollection) => WriteObject(value, enumerateCollection),");
+        }
+
+        builder.AppendLine("            WriteVerbose,");
+        builder.AppendLine("            WriteWarning,");
+        builder.AppendLine("            message => WriteError(CreateErrorRecord(message)),");
+        builder.AppendLine("            WriteError,");
+        builder.AppendLine("            ThrowTerminatingError,");
+        builder.AppendLine("            target => ShouldProcess(target),");
+        builder.AppendLine("            (target, action) => ShouldProcess(target, action),");
+        builder.AppendLine(capturesXmlStream ? "            boundParameters," : "            MyInvocation.BoundParameters,");
+        builder.AppendLine("            inputObject,");
+        builder.AppendLine("            _cancellation,");
+        builder.AppendLine("            EnsureLifecycleStateHandle());");
+        builder.AppendLine("        PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);");
+        builder.AppendLine("        PowerShellCmdletBridge.FlushPendingOutputs(context);");
+        if (capturesXmlStream)
+        {
+            builder.AppendLine("        if (capturedOutput is not null)");
+            builder.AppendLine("        {");
+            builder.AppendLine("            foreach (var output in capturedOutput)");
+            builder.AppendLine("            {");
+            builder.AppendLine("                var xml = output?.ToString() ?? string.Empty;");
+            builder.AppendLine("                WriteObject(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);");
+            builder.AppendLine("            }");
+            builder.AppendLine("        }");
+        }
+
+        builder.AppendLine("    }");
     }
 
     private static void AppendParameter(StringBuilder builder, PowerShellCmdletParameterDescriptor parameter)

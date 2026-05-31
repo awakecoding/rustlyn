@@ -56,7 +56,7 @@ RunTest("GeneratedPowerShellCmdletPackMapsPowerShellSdk", GeneratedPowerShellCmd
 RunTest("PowerShellCmdletDescriptorsMatchCurrentCmdlets", PowerShellCmdletDescriptorsMatchCurrentCmdlets, failures);
 RunTest("PowerShellFormatGlueRetirementGuards", PowerShellFormatGlueRetirementGuards, failures);
 RunTest("PowerShellCmdletContextExposesTypedBoundParameters", PowerShellCmdletContextExposesTypedBoundParameters, failures);
-RunTest("PowerShellRustFormatRuntimeMigratesNonXmlGlue", PowerShellRustFormatRuntimeMigratesNonXmlGlue, failures);
+RunTest("PowerShellRustFormatRuntimeMigratesFormatGlue", PowerShellRustFormatRuntimeMigratesFormatGlue, failures);
 RunTest("GeneratedBindingManifestListsSurface", GeneratedBindingManifestListsSurface, failures);
 RunTest("GeneratedBindingJsonManifestListsSurface", GeneratedBindingJsonManifestListsSurface, failures);
 RunTest("GeneratedBindingPackWritesDeterministicArtifacts", GeneratedBindingPackWritesDeterministicArtifacts, failures);
@@ -4685,6 +4685,12 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_handle")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_object_bytes")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_json_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_add_xml_input")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_add_xml_text_input")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_xml_string")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs")
+            && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_write_error_record_string")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_has_parameter")
             && document.Bindings.Any(static binding => binding.Symbol == "rustlyn_bindgen_powershell_cmdlet_get_parameter_bool")
@@ -4708,6 +4714,12 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
     Assert(rust.Contains("pub fn write_object(&self, value: &ManagedObject, enumerate_collection: bool) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose WriteObject with collection enumeration semantics.");
     Assert(rust.Contains("pub fn write_object_bytes(&self, bytes: &[u8]) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose byte-array output.");
     Assert(rust.Contains("pub fn write_json_string(&self, json: &ManagedString, as_hashtable: bool, no_enumerate: bool) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose JSON-to-PowerShell output projection.");
+    Assert(rust.Contains("pub fn add_xml_input(&self) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose XML input buffering.");
+    Assert(rust.Contains("pub fn add_xml_text_input(&self) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose raw XML text buffering.");
+    Assert(rust.Contains("pub fn convert_xml_inputs_to_string(&self, depth: i32, no_type_information: bool) -> Result<ManagedString, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose ConvertTo-Xml-compatible host projection.");
+    Assert(rust.Contains("pub fn write_xml_string(&self, xml: &ManagedString, output_mode: i32) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose XML output materialization.");
+    Assert(rust.Contains("pub fn write_converted_xml_inputs(&self, depth: i32, no_type_information: bool, output_mode: i32) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose ConvertTo-Xml-compatible output materialization.");
+    Assert(rust.Contains("pub fn write_xml_text_inputs_as_document(&self) -> Result<(), Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose raw XML text document materialization.");
     Assert(rust.Contains("pub fn write_error_record_string(", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose rich ErrorRecord writes.");
     Assert(rust.Contains("pub fn has_parameter(&self, name: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose bound-parameter presence.");
     Assert(rust.Contains("pub fn get_parameter_bool(&self, name: &ManagedString) -> Result<bool, Exception>", StringComparison.Ordinal), "Expected generated PowerShell Rust module to expose typed switch/bool parameters.");
@@ -4729,6 +4741,12 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObject", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObjectBytes", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJson", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.AddXmlInput", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.AddXmlTextInput", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ConvertXmlInputsToString", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteXml", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteConvertedXmlInputs", StringComparison.Ordinal)
+            && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteXmlTextInputsAsDocument", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteErrorRecordString", StringComparison.Ordinal)
             && glue.Contains("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.HasBoundParameter", StringComparison.Ordinal)
@@ -4747,7 +4765,7 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
     Assert(moduleBuildScript.Contains("--powershell-cmdlet-bindings", StringComparison.Ordinal), "Expected PowerShell module builds to translate Rust engines with the cmdlet binding manifest.");
     Assert(moduleBuildScript.Contains("'powershell_cmdlets'", StringComparison.Ordinal), "Expected PowerShell module builds to allow the unified Rust format cmdlet runtime crate.");
     Assert(moduleBuildScript.Contains("The unified generated PowerShell cmdlet runtime must be packaged as 'rustlyn_powershell_format_cmdlets.dll'", StringComparison.Ordinal), "Expected module builds to reject mismatched generated runtime engine names.");
-    Assert(!moduleBuildScript.Contains("RustlynUseGeneratedFormatCmdlets", StringComparison.Ordinal), "Expected generated non-XML cmdlet shims to be the default production build path.");
+    Assert(!moduleBuildScript.Contains("RustlynUseGeneratedFormatCmdlets", StringComparison.Ordinal), "Expected generated format cmdlet shims to be the default production build path.");
     Assert(moduleBuildScript.Contains("-PowerShellVersion '7.6'", StringComparison.Ordinal), "Expected generated PowerShell format modules to declare the .NET 10 PowerShell host baseline.");
     foreach (var scriptName in new[]
     {
@@ -4764,7 +4782,8 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         Assert(script.Contains("-EngineAssemblyName rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), $"Expected '{scriptName}' to package the unified Rust format engine.");
     }
     var xmlBuildScript = File.ReadAllText(Path.Combine(workspaceRoot, "scripts", "Build-QuickXmlPowerShellModule.ps1"));
-    Assert(xmlBuildScript.Contains("-Sample quick_xml", StringComparison.Ordinal), "Expected XML packaging to remain on the compatibility sample until XML semantics are explicitly migrated.");
+    Assert(xmlBuildScript.Contains("-Sample powershell_cmdlets", StringComparison.Ordinal), "Expected XML packaging to build the unified Rust format cmdlet runtime.");
+    Assert(xmlBuildScript.Contains("-EngineAssemblyName rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), "Expected XML packaging to use the unified Rust format engine.");
     var moduleSmokeScriptPath = Path.Combine(workspaceRoot, "scripts", "Test-RustFormatPowerShellModules.ps1");
     var moduleSmokeScript = File.ReadAllText(moduleSmokeScriptPath);
     foreach (var expected in new[]
@@ -4775,6 +4794,7 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         "Build-CsvPowerShellModule.ps1",
         "Build-BsonPowerShellModule.ps1",
         "Build-CborPowerShellModule.ps1",
+        "Build-QuickXmlPowerShellModule.ps1",
         "ConvertTo-RustJson",
         "ConvertFrom-RustJson",
         "ConvertTo-RustYaml",
@@ -4787,6 +4807,8 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         "ConvertFrom-RustCbor",
         "ConvertTo-RustCsv",
         "ConvertFrom-RustCsv",
+        "ConvertTo-RustXml",
+        "ConvertFrom-RustXml",
         "rustlyn_powershell_format_cmdlets.dll"
     })
     {
@@ -4796,7 +4818,7 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         && moduleSmokeScript.Contains("generated Rustlyn PowerShell modules target .NET", StringComparison.Ordinal), "Expected module smoke script to skip import tests on pwsh hosts that cannot load .NET 10 modules.");
 
     var ciWorkflow = File.ReadAllText(Path.Combine(workspaceRoot, ".github", "workflows", "ci.yml"));
-    Assert(ciWorkflow.Contains("Test-RustFormatPowerShellModules.ps1", StringComparison.Ordinal), "Expected CI to run the generated non-XML PowerShell module smoke script.");
+    Assert(ciWorkflow.Contains("Test-RustFormatPowerShellModules.ps1", StringComparison.Ordinal), "Expected CI to run the generated PowerShell format module smoke script.");
 
     var buildOutputPath = GetBackendGeneratedPowerShellBindingGluePath();
     Assert(File.Exists(buildOutputPath), $"Expected generated PowerShell binding glue build output '{buildOutputPath}' to exist.");
@@ -4814,13 +4836,13 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
         Assert(File.Exists(Path.Combine(packDirectory, "powershell-cmdlets.json")), "Expected PowerShell package pack to write Rust-owned cmdlet descriptors.");
         Assert(File.Exists(Path.Combine(packDirectory, "Rustlyn.PowerShellCmdlets.Generated.g.cs")), "Expected PowerShell package pack to write generated cmdlet shims.");
         Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("package: Microsoft.PowerShell.SDK", StringComparison.Ordinal), "Expected PowerShell package pack summary to record package identity.");
-        Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("cmdlets: 12", StringComparison.Ordinal), "Expected PowerShell package pack summary to record generated cmdlet shim coverage excluding XML fallback cmdlets.");
+        Assert(File.ReadAllText(Path.Combine(packDirectory, "summary.txt")).Contains("cmdlets: 14", StringComparison.Ordinal), "Expected PowerShell package pack summary to record generated cmdlet shim coverage including XML cmdlets.");
         Assert(File.ReadAllText(Path.Combine(packDirectory, "binding-manifest.json")).Contains("System.Management.Automation", StringComparison.Ordinal), "Expected PowerShell package manifest JSON to include mapped SDK assembly.");
         Assert(File.ReadAllText(Path.Combine(packDirectory, "powershell-cmdlets.json")).Contains("\"className\": \"ConvertToRustJsonCommand\"", StringComparison.Ordinal), "Expected descriptor pack to include the JSON vertical-slice cmdlet.");
         var generatedShim = File.ReadAllText(Path.Combine(packDirectory, "Rustlyn.PowerShellCmdlets.Generated.g.cs"));
         Assert(generatedShim.Contains("PowerShellGeneratedCmdletInvoker.InvokeLifecycle", StringComparison.Ordinal), "Expected generated cmdlet shims to forward lifecycle calls to Rust entrypoints.");
         Assert(generatedShim.Contains("checkCancellation: false", StringComparison.Ordinal), "Expected generated cmdlet shims to run Rust cleanup even after StopProcessing cancellation.");
-        Assert(!generatedShim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to exclude XML compatibility fallback cmdlets.");
+        Assert(generatedShim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to include the Rust XML ProcessRecord entrypoint.");
     }
     finally
     {
@@ -4851,10 +4873,7 @@ static void PowerShellCmdletDescriptorsMatchCurrentCmdlets()
             ?? throw new InvalidOperationException($"Expected cmdlet attribute on '{type.FullName}'.");
         Assert(cmdletAttribute.VerbName == descriptor.VerbName && cmdletAttribute.NounName == descriptor.NounName, $"Expected descriptor verb/noun to match '{type.Name}'.");
         Assert(cmdletAttribute.SupportsShouldProcess == descriptor.SupportsShouldProcess, $"Expected descriptor ShouldProcess setting to match '{type.Name}'.");
-        var expectedMigrationStrategy = type.Name.Contains("Xml", StringComparison.Ordinal)
-            ? PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype
-            : PowerShellCmdletMigrationStrategies.GeneratedRust;
-        Assert(descriptor.MigrationStrategy == expectedMigrationStrategy, $"Expected descriptor migration strategy to make XML fallback status explicit for '{type.Name}'.");
+        Assert(descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust, $"Expected descriptor migration strategy to mark '{type.Name}' as a generated Rust cmdlet.");
 
         var actualParameters = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Select(static property => (Property: property, Attribute: property.GetCustomAttribute<ParameterAttribute>()))
@@ -4894,11 +4913,13 @@ static void PowerShellCmdletDescriptorsMatchCurrentCmdlets()
     Assert(shim.Contains("PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle)", StringComparison.Ordinal), "Expected generated cmdlet shims to release per-instance lifecycle state.");
     Assert(shim.Contains("EnsureLifecycleStateHandle());", StringComparison.Ordinal), "Expected generated cmdlet shims to pass per-instance lifecycle state into Rust contexts.");
     Assert(shim.Contains("catch", StringComparison.Ordinal) && shim.Contains("ReleaseLifecycleState();", StringComparison.Ordinal), "Expected generated cmdlet shims to release lifecycle state on terminating lifecycle failures.");
+    Assert(shim.Contains("PowerShellCmdletBridge.FlushPendingOutputs(context);", StringComparison.Ordinal), "Expected generated cmdlet shims to flush host-materialized pending outputs after Rust lifecycle calls.");
+    Assert(shim.Contains("captureXmlStream", StringComparison.Ordinal) && shim.Contains("[\"As\"] = \"String\"", StringComparison.Ordinal), "Expected XML stream output to route through the generated Rust string lifecycle before host stream materialization.");
     Assert(shim.Contains("\"Rustlyn.GeneratedModule\"", StringComparison.Ordinal), "Expected generated cmdlet shims to call the type emitted by Rustlyn translated assemblies.");
     Assert(shim.Contains("convert_to_rust_json_process_record", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON ProcessRecord entrypoint.");
     Assert(shim.Contains("convert_to_rust_json_end_processing", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON EndProcessing entrypoint.");
     Assert(shim.Contains("convert_to_rust_json_cleanup", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON cleanup entrypoint.");
-    Assert(!shim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to leave XML on the compatibility fallback path.");
+    Assert(shim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated cmdlet shims to call the Rust XML ProcessRecord entrypoint.");
 }
 
 static void PowerShellFormatGlueRetirementGuards()
@@ -4916,10 +4937,10 @@ static void PowerShellFormatGlueRetirementGuards()
 
     Assert(cases.Any(static item => item.CoversCancellationCleanup), "Expected parity matrix to cover cancellation and lifecycle cleanup.");
     Assert(cases.Any(static item => item.CoversLargeInput), "Expected parity matrix to cover large input behavior.");
-    Assert(cases.Any(static item => item.RequiresXmlCompatibilityDecision), "Expected parity matrix to keep XML migration behind an explicit compatibility decision.");
+    Assert(!cases.Any(static item => item.RequiresXmlCompatibilityDecision), "Expected parity matrix to remove the XML compatibility island.");
 
     AssertRetiredCSharpFormatGlueIsNotProductionReferenced();
-    AssertXmlCompatibilityIslandIsExplicit();
+    AssertXmlGeneratedRuntimeIsExplicit();
 }
 
 static (string CmdletClassName, string Scenario, bool CoversSuccessPath, bool CoversErrorPath, bool CoversCancellationCleanup, bool CoversLargeInput, bool RequiresXmlCompatibilityDecision)[] CreatePowerShellFormatParityCases()
@@ -4949,10 +4970,10 @@ static (string CmdletClassName, string Scenario, bool CoversSuccessPath, bool Co
         ("ConvertToRustCborCommand", "cycle/depth failure preserves terminating error shape", false, true, false, false, false),
         ("ConvertFromRustCborCommand", "pipeline byte input normalizes to CBOR byte payload", true, false, false, false, false),
         ("ConvertFromRustCborCommand", "truncated CBOR preserves parse error shape", false, true, false, false, false),
-        ("ConvertToRustXmlCommand", "As String/Document/Stream behavior remains a compatibility decision around ConvertTo-Xml", true, false, false, false, true),
-        ("ConvertToRustXmlCommand", "invalid nested ConvertTo-Xml invocation preserves host error shape", false, true, false, false, true),
-        ("ConvertFromRustXmlCommand", "valid XML parses to XmlDocument with whitespace preserved", true, false, false, false, true),
-        ("ConvertFromRustXmlCommand", "malformed XML preserves XmlDocument load error shape", false, true, false, false, true)
+        ("ConvertToRustXmlCommand", "As String/Document/Stream behavior preserves ConvertTo-Xml parity through Rust lifecycle orchestration", true, false, false, false, false),
+        ("ConvertToRustXmlCommand", "invalid nested ConvertTo-Xml invocation preserves host error shape", false, true, false, false, false),
+        ("ConvertFromRustXmlCommand", "valid XML parses to XmlDocument with whitespace preserved", true, false, false, false, false),
+        ("ConvertFromRustXmlCommand", "malformed XML preserves XmlDocument load error shape", false, true, false, false, false)
     ];
 
 static void AssertRetiredCSharpFormatGlueIsNotProductionReferenced()
@@ -4972,8 +4993,12 @@ static void AssertRetiredCSharpFormatGlueIsNotProductionReferenced()
         "JsonProjection.cs",
         "ObjectStreamProjection.cs",
         "PowerShellCommandRunner.cs",
+        "RustEngineInvoker.cs",
         "TomlCmdlets.cs",
         "TomlProjection.cs",
+        "XmlCmdlets.cs",
+        "XmlFormatInputBuffer.cs",
+        "XmlPowerShellCommandRunner.cs",
         "YamlCmdlets.cs"
     };
 
@@ -5004,28 +5029,28 @@ static void AssertRetiredCSharpFormatGlueIsNotProductionReferenced()
     }
 }
 
-static void AssertXmlCompatibilityIslandIsExplicit()
+static void AssertXmlGeneratedRuntimeIsExplicit()
 {
     var workspaceRoot = FindWorkspaceRoot()
         ?? throw new InvalidOperationException("Workspace root could not be determined.");
     var projectDirectory = Path.Combine(workspaceRoot, "dotnet", "backend", "src", "Rustlyn.PowerShellCmdlets");
-    var xmlCmdlets = File.ReadAllText(Path.Combine(projectDirectory, "XmlCmdlets.cs"));
-    Assert(xmlCmdlets.Contains("XmlFormatInputBuffer", StringComparison.Ordinal), "Expected XML compatibility cmdlets to use XML-specific input buffering.");
-    Assert(xmlCmdlets.Contains("XmlPowerShellCommandRunner", StringComparison.Ordinal), "Expected XML compatibility cmdlets to isolate nested PowerShell invocation behind an XML-specific helper.");
-    Assert(xmlCmdlets.Contains("Microsoft.PowerShell.Utility\\\\ConvertTo-Xml", StringComparison.Ordinal), "Expected XML compatibility cmdlets to keep current ConvertTo-Xml/ETS behavior explicit.");
-    Assert(xmlCmdlets.Contains("quick_xml_engine.dll", StringComparison.Ordinal), "Expected XML compatibility cmdlets to keep quick_xml validation isolated from the generated non-XML runtime.");
 
     var descriptors = PowerShellCmdletDescriptorCatalog.CreateCurrentFormatCmdlets();
     Assert(
-        descriptors.Where(static descriptor => descriptor.ClassName.Contains("Xml", StringComparison.Ordinal)).All(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype),
-        "Expected XML descriptors to remain marked as compatibility fallback.");
+        descriptors.Where(static descriptor => descriptor.ClassName.Contains("Xml", StringComparison.Ordinal)).All(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust),
+        "Expected XML descriptors to be marked as generated Rust cmdlets.");
     Assert(
         descriptors.Where(static descriptor => !descriptor.ClassName.Contains("Xml", StringComparison.Ordinal)).All(static descriptor => descriptor.MigrationStrategy == PowerShellCmdletMigrationStrategies.GeneratedRust),
         "Expected non-XML descriptors to be generated Rust cmdlets.");
 
     var generatedShim = PowerShellCmdletShimGenerator.GenerateCSharp(descriptors);
-    Assert(generatedShim.Contains("rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), "Expected generated non-XML shims to load the unified Rust format runtime.");
-    Assert(!generatedShim.Contains("RustXml", StringComparison.Ordinal), "Expected generated non-XML shims to exclude XML compatibility cmdlets.");
+    Assert(generatedShim.Contains("rustlyn_powershell_format_cmdlets.dll", StringComparison.Ordinal), "Expected generated format shims to load the unified Rust format runtime.");
+    Assert(generatedShim.Contains("RustXml", StringComparison.Ordinal), "Expected generated format shims to include XML cmdlets.");
+    Assert(generatedShim.Contains("convert_to_rust_xml_process_record", StringComparison.Ordinal), "Expected generated format shims to call the Rust XML runtime.");
+    foreach (var fileName in new[] { "XmlCmdlets.cs", "XmlFormatInputBuffer.cs", "XmlPowerShellCommandRunner.cs", "RustEngineInvoker.cs" })
+    {
+        Assert(!File.Exists(Path.Combine(projectDirectory, fileName)), $"Expected XML compatibility source '{fileName}' to be retired.");
+    }
 }
 
 static void PowerShellCmdletContextExposesTypedBoundParameters()
@@ -5125,7 +5150,7 @@ static Type ResolvePowerShellDescriptorParameterType(string typeName)
         _ => throw new InvalidOperationException($"Unsupported descriptor parameter type '{typeName}'.")
     };
 
-static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
+static void PowerShellRustFormatRuntimeMigratesFormatGlue()
 {
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("powershell_cmdlets");
     using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
@@ -5153,6 +5178,8 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
             "convert_from_rust_bson",
             "convert_to_rust_cbor",
             "convert_from_rust_cbor",
+            "convert_to_rust_xml",
+            "convert_from_rust_xml",
             "convert_to_rust_csv",
             "convert_from_rust_csv"
         };
@@ -22834,7 +22861,7 @@ static TimeSpan GetTestTimeout(string name)
     return name.StartsWith("MarkedYaml", StringComparison.Ordinal)
         || name.StartsWith("QuickXml", StringComparison.Ordinal)
         || name.StartsWith("SimdJson", StringComparison.Ordinal)
-        || name.Equals("PowerShellRustFormatRuntimeMigratesNonXmlGlue", StringComparison.Ordinal)
+        || name.Equals("PowerShellRustFormatRuntimeMigratesFormatGlue", StringComparison.Ordinal)
         ? TimeSpan.FromSeconds(120)
         : TimeSpan.FromSeconds(30);
 }
