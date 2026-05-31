@@ -44,6 +44,10 @@ unsafe extern "C" {
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
         cmdlet_context_handle: i32,
         name_handle: i32,
@@ -148,6 +152,17 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_string_copy_utf8(
 
 #[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
     _cmdlet_context_handle: i32,
     exception_out: *mut i32,
 ) -> i32 {
@@ -473,6 +488,23 @@ impl CmdletContext {
         let release = snapshot.release();
         release?;
         serde_json::from_str(&json?).map_err(|_| STATUS_PARSE)
+    }
+
+    fn input_string(&self) -> RuntimeResult<String> {
+        let mut exception_handle = 0;
+        let string_handle = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_input_string(self.handle, &mut exception_handle)
+        };
+        exception_to_result(exception_handle)?;
+        if string_handle == 0 {
+            return Err(STATUS_EXCEPTION);
+        }
+
+        let value = unsafe { ManagedString::from_handle(string_handle) };
+        let text = value.to_utf8_string();
+        let release = value.release();
+        release?;
+        text
     }
 
     fn has_parameter(&self, name: &str) -> RuntimeResult<bool> {
@@ -928,8 +960,7 @@ fn collect_snapshot(cmdlet_context_handle: i32) -> i32 {
 
 fn collect_text(cmdlet_context_handle: i32) -> i32 {
     run_collect(cmdlet_context_handle, |context, state| {
-        let snapshot = context.input_snapshot()?;
-        append_text_items(&snapshot, &mut state.text_items);
+        state.text_items.push(context.input_string()?);
         Ok(())
     })
 }
@@ -1811,22 +1842,6 @@ fn split_toml_array_items(inner: &str) -> RuntimeResult<Vec<String>> {
         items.push(tail.to_owned());
     }
     Ok(items)
-}
-
-fn append_text_items(snapshot: &PowerShellObjectSnapshot, items: &mut Vec<String>) {
-    if snapshot.kind == "array"
-        && snapshot
-            .items
-            .iter()
-            .all(|item| item.type_name.as_deref() == Some("System.String"))
-    {
-        for item in &snapshot.items {
-            items.push(snapshot_to_string(item));
-        }
-        return;
-    }
-
-    items.push(snapshot_to_string(snapshot));
 }
 
 fn append_bytes(snapshot: &PowerShellObjectSnapshot, bytes: &mut Vec<u8>) -> RuntimeResult<()> {
