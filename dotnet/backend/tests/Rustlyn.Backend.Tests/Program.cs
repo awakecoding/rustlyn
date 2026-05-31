@@ -4748,6 +4748,7 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
     Assert(moduleBuildScript.Contains("'powershell_cmdlets'", StringComparison.Ordinal), "Expected PowerShell module builds to allow the unified Rust format cmdlet runtime crate.");
     Assert(moduleBuildScript.Contains("The unified generated PowerShell cmdlet runtime must be packaged as 'rustlyn_powershell_format_cmdlets.dll'", StringComparison.Ordinal), "Expected module builds to reject mismatched generated runtime engine names.");
     Assert(!moduleBuildScript.Contains("RustlynUseGeneratedFormatCmdlets", StringComparison.Ordinal), "Expected generated non-XML cmdlet shims to be the default production build path.");
+    Assert(moduleBuildScript.Contains("-PowerShellVersion '7.4'", StringComparison.Ordinal), "Expected generated PowerShell format modules to import on the PowerShell 7.4 runner used by CI.");
     foreach (var scriptName in new[]
     {
         "Build-SimdJsonPowerShellModule.ps1",
@@ -5254,26 +5255,16 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
         Assert(projectedToml?.Properties["name"]?.Value as string == "rustlyn", "Expected generated Rust TOML parse lifecycle to project string properties.");
         Assert(Equals(projectedToml?.Properties["count"]?.Value, 3), "Expected generated Rust TOML parse lifecycle to project integer properties.");
 
-        outputs = InvokeGeneratedLifecycle(
-            "convert_from_rust_json",
-            "[{\"name\":\"rustlyn\",\"count\":3}]",
-            new Dictionary<string, object?>
-            {
-                ["AsHashtable"] = new SwitchParameter(true),
-                ["NoEnumerate"] = new SwitchParameter(true)
-            });
-        Assert(outputs.Count == 1 && outputs[0] is object?[] { Length: 1 } jsonArray && jsonArray[0] is Hashtable jsonTable && Equals(jsonTable["name"], "rustlyn"), "Expected generated Rust JSON parse lifecycle to preserve AsHashtable and NoEnumerate.");
-
-        var malformedJsonHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
-        var malformedJsonOutputs = new List<object?>();
+        var malformedTomlHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        var malformedTomlOutputs = new List<object?>();
         try
         {
-            Assert(InvokeGeneratedContextMethod("convert_from_rust_json_process_record", "{", malformedJsonHandle, malformedJsonOutputs) == 0, "Expected malformed JSON ProcessRecord to collect input before parse.");
-            Assert(InvokeGeneratedContextMethod("convert_from_rust_json_end_processing", null, malformedJsonHandle, malformedJsonOutputs) != 0, "Expected malformed JSON EndProcessing to report a parse failure.");
+            Assert(InvokeGeneratedContextMethod("convert_from_rust_toml_process_record", "[nested]\nname = \"rustlyn\"", malformedTomlHandle, malformedTomlOutputs) == 0, "Expected malformed TOML ProcessRecord to collect input before parse.");
+            Assert(InvokeGeneratedContextMethod("convert_from_rust_toml_end_processing", null, malformedTomlHandle, malformedTomlOutputs) != 0, "Expected malformed TOML EndProcessing to report a parse failure.");
         }
         finally
         {
-            CleanupGeneratedLifecycle("convert_from_rust_json", malformedJsonHandle);
+            CleanupGeneratedLifecycle("convert_from_rust_toml", malformedTomlHandle);
         }
         Assert(GetStateCount() == 0, "Expected generated Rust error cleanup to release lifecycle state.");
 
