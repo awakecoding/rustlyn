@@ -1567,51 +1567,51 @@ fn toml_text_to_json_text(text: &str) -> RuntimeResult<String> {
     let mut output = String::new();
     output.push('{');
     let mut first = true;
-    let bytes = text.as_bytes();
-    let mut position = 0usize;
 
-    while position <= bytes.len() {
-        let line_start = position;
-        while position < bytes.len() && bytes[position] != b'\n' {
-            position += 1;
+    let mut line = String::new();
+    for character in text.chars() {
+        if character == '\n' {
+            append_toml_line_as_json(&line, &mut output, &mut first)?;
+            line.clear();
+        } else if character != '\r' {
+            line.push(character);
         }
-        let mut line_end = position;
-        if line_end > line_start && bytes[line_end - 1] == b'\r' {
-            line_end -= 1;
-        }
-        if position < bytes.len() {
-            position += 1;
-        } else if line_start == bytes.len() {
-            break;
-        }
-
-        let line = trim_ascii(&text[line_start..line_end]);
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        if line.starts_with('[') {
-            return Err(STATUS_PARSE);
-        }
-
-        let separator = find_byte(line, b'=').ok_or(STATUS_PARSE)?;
-        if separator == 0 {
-            return Err(STATUS_PARSE);
-        }
-
-        let key = parse_toml_key(trim_ascii(&line[..separator]))?;
-        let value = trim_ascii(&line[(separator + 1)..]);
-
-        if !first {
-            output.push(',');
-        }
-        write_json_string(&mut output, &key);
-        output.push(':');
-        write_toml_value_as_json(&mut output, value)?;
-        first = false;
     }
+    append_toml_line_as_json(&line, &mut output, &mut first)?;
 
     output.push('}');
     Ok(output)
+}
+
+fn append_toml_line_as_json(
+    raw_line: &str,
+    output: &mut String,
+    first: &mut bool,
+) -> RuntimeResult<()> {
+    let line = trim_ascii(raw_line);
+    if line.is_empty() || line.starts_with('#') {
+        return Ok(());
+    }
+    if line.starts_with('[') {
+        return Err(STATUS_PARSE);
+    }
+
+    let separator = find_byte(line, b'=').ok_or(STATUS_PARSE)?;
+    if separator == 0 {
+        return Err(STATUS_PARSE);
+    }
+
+    let key = parse_toml_key(trim_ascii(&line[..separator]))?;
+    let value = trim_ascii(&line[(separator + 1)..]);
+
+    if !*first {
+        output.push(',');
+    }
+    write_json_string(output, &key);
+    output.push(':');
+    write_toml_value_as_json(output, value)?;
+    *first = false;
+    Ok(())
 }
 
 fn parse_toml_key(key: &str) -> RuntimeResult<String> {
