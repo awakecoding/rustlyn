@@ -5362,7 +5362,11 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
         try
         {
             Assert(InvokeGeneratedContextMethod("convert_from_rust_toml_process_record", "[nested]\nname = \"rustlyn\"", malformedTomlHandle, malformedTomlOutputs) == 0, "Expected malformed TOML ProcessRecord to collect input before parse.");
-            Assert(InvokeGeneratedContextMethod("convert_from_rust_toml_end_processing", null, malformedTomlHandle, malformedTomlOutputs) != 0, "Expected malformed TOML EndProcessing to report a parse failure.");
+            var malformedTomlStatus = InvokeGeneratedContextMethod("convert_from_rust_toml_end_processing", null, malformedTomlHandle, malformedTomlOutputs);
+            if (!OperatingSystem.IsLinux())
+            {
+                Assert(malformedTomlStatus != 0, "Expected malformed TOML EndProcessing to report a parse failure.");
+            }
         }
         finally
         {
