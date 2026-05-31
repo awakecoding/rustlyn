@@ -55,22 +55,31 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          vcpkg install zlib:x64-windows libxml2:x64-windows
-          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
-          if ([string]::IsNullOrWhiteSpace($vcpkgRoot)) {
-            $vcpkgRoot = 'C:\vcpkg'
-          }
-          $installed = Join-Path $vcpkgRoot 'installed\x64-windows'
+          $installRoot = Join-Path $env:RUNNER_TEMP 'vcpkg-installed'
+          vcpkg install zlib:x64-windows libxml2:x64-windows --x-install-root=$installRoot
+          $installed = Join-Path $installRoot 'x64-windows'
           $libDir = Join-Path $installed 'lib'
           $binDir = Join-Path $installed 'bin'
+          if (-not (Test-Path $libDir)) {
+            throw "vcpkg lib directory was not found under $libDir"
+          }
+
+          Get-ChildItem -Path $libDir -Filter '*.lib' | ForEach-Object { Write-Host "vcpkg lib: $($_.Name)" }
           if (-not (Test-Path (Join-Path $libDir 'zlib.lib'))) {
-            throw "vcpkg zlib.lib was not found under $libDir"
+            $zlib = Get-ChildItem -Path $libDir -Filter 'zlib*.lib' | Select-Object -First 1
+            if (-not $zlib) { $zlib = Get-ChildItem -Path $libDir -Filter 'z*.lib' | Select-Object -First 1 }
+            if (-not $zlib) { throw "vcpkg zlib library was not found under $libDir" }
+            Copy-Item -LiteralPath $zlib.FullName -Destination (Join-Path $libDir 'zlib.lib')
           }
           if (-not (Test-Path (Join-Path $libDir 'xml2.lib'))) {
-            throw "vcpkg xml2.lib was not found under $libDir"
+            $xml2 = Get-ChildItem -Path $libDir -Filter '*xml2*.lib' | Select-Object -First 1
+            if (-not $xml2) { throw "vcpkg libxml2 library was not found under $libDir" }
+            Copy-Item -LiteralPath $xml2.FullName -Destination (Join-Path $libDir 'xml2.lib')
           }
           "LIB=$libDir;$env:LIB" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-          $binDir | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          if (Test-Path $binDir) {
+            $binDir | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          }
 
       - name: Build backend
         run: |
@@ -186,7 +195,7 @@ jobs:
           dotnet-quality: 'preview'
 
       - name: Build bindings tool
-        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release
+        run: dotnet build dotnet/backend/src/Rustlyn.Bindings.Tool/Rustlyn.Bindings.Tool.csproj -c Release -m:1
 
       - name: Validate binding surface
         shell: pwsh
