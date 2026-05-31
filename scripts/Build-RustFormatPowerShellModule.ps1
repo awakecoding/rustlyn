@@ -103,7 +103,7 @@ New-ModuleManifest `
     -CompanyName 'Rustlyn' `
     -Copyright '(c) Rustlyn contributors' `
     -Description "Rust-backed PowerShell cmdlets for $Sample." `
-    -PowerShellVersion '7.4' `
+    -PowerShellVersion '7.6' `
     -CmdletsToExport $CmdletsToExport `
     -FunctionsToExport @() `
     -AliasesToExport @()

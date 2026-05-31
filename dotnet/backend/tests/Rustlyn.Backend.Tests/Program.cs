@@ -4748,7 +4748,7 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
     Assert(moduleBuildScript.Contains("'powershell_cmdlets'", StringComparison.Ordinal), "Expected PowerShell module builds to allow the unified Rust format cmdlet runtime crate.");
     Assert(moduleBuildScript.Contains("The unified generated PowerShell cmdlet runtime must be packaged as 'rustlyn_powershell_format_cmdlets.dll'", StringComparison.Ordinal), "Expected module builds to reject mismatched generated runtime engine names.");
     Assert(!moduleBuildScript.Contains("RustlynUseGeneratedFormatCmdlets", StringComparison.Ordinal), "Expected generated non-XML cmdlet shims to be the default production build path.");
-    Assert(moduleBuildScript.Contains("-PowerShellVersion '7.4'", StringComparison.Ordinal), "Expected generated PowerShell format modules to import on the PowerShell 7.4 runner used by CI.");
+    Assert(moduleBuildScript.Contains("-PowerShellVersion '7.6'", StringComparison.Ordinal), "Expected generated PowerShell format modules to declare the .NET 10 PowerShell host baseline.");
     foreach (var scriptName in new[]
     {
         "Build-SimdJsonPowerShellModule.ps1",
@@ -4792,6 +4792,8 @@ static void GeneratedPowerShellCmdletPackMapsPowerShellSdk()
     {
         Assert(moduleSmokeScript.Contains(expected, StringComparison.Ordinal), $"Expected PowerShell format module smoke script to cover '{expected}'.");
     }
+    Assert(moduleSmokeScript.Contains("PowerShell module import smoke will be skipped", StringComparison.Ordinal)
+        && moduleSmokeScript.Contains("generated Rustlyn PowerShell modules target .NET", StringComparison.Ordinal), "Expected module smoke script to skip import tests on pwsh hosts that cannot load .NET 10 modules.");
 
     var ciWorkflow = File.ReadAllText(Path.Combine(workspaceRoot, ".github", "workflows", "ci.yml"));
     Assert(ciWorkflow.Contains("Test-RustFormatPowerShellModules.ps1", StringComparison.Ordinal), "Expected CI to run the generated non-XML PowerShell module smoke script.");
@@ -5229,16 +5231,92 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
         {
             if (value is PSObject psObject)
             {
-                return psObject.Properties[name]?.Value;
+                if (TryGetPsObjectProperty(psObject, name, out var propertyValue))
+                {
+                    return propertyValue;
+                }
+
+                if (psObject.BaseObject is not null
+                    && !ReferenceEquals(psObject.BaseObject, psObject)
+                    && !ReferenceEquals(psObject.BaseObject, value))
+                {
+                    return GetProjectedValue(psObject.BaseObject, name);
+                }
             }
 
             if (value is IDictionary dictionary)
             {
-                return dictionary[name];
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    if (string.Equals(Convert.ToString(entry.Key, CultureInfo.InvariantCulture), name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return entry.Value;
+                    }
+                }
+            }
+
+            if (value is IEnumerable<KeyValuePair<string, object?>> properties)
+            {
+                foreach (var property in properties)
+                {
+                    if (string.Equals(property.Key, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return property.Value;
+                    }
+                }
+            }
+
+            if (value is JsonElement jsonElement
+                && jsonElement.ValueKind == JsonValueKind.Object
+                && jsonElement.TryGetProperty(name, out var jsonProperty))
+            {
+                return ProjectJsonElementValue(jsonProperty);
+            }
+
+            if (value is PowerShellObjectSnapshot snapshot)
+            {
+                var property = snapshot.Properties.FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
+                return property?.Value.ScalarValue;
+            }
+
+            var reflectedProperty = value?.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (reflectedProperty is not null && reflectedProperty.GetIndexParameters().Length == 0)
+            {
+                return reflectedProperty.GetValue(value);
             }
 
             return null;
         }
+
+        static bool TryGetPsObjectProperty(PSObject psObject, string name, out object? value)
+        {
+            foreach (var property in psObject.Properties)
+            {
+                if (property.IsGettable
+                    && string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            value = null;
+            return false;
+        }
+
+        static object? ProjectJsonElementValue(JsonElement element)
+            => element.ValueKind switch
+            {
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Number when element.TryGetInt32(out var intValue) => intValue,
+                JsonValueKind.Number when element.TryGetInt64(out var longValue) => longValue,
+                JsonValueKind.Number when element.TryGetDecimal(out var decimalValue) => decimalValue,
+                JsonValueKind.Number => element.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => element.ToString()
+            };
 
         var outputs = InvokeGeneratedLifecycle(
             "convert_to_rust_json",
@@ -5267,8 +5345,8 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
 
         outputs = InvokeGeneratedLifecycle("convert_from_rust_toml", "name = \"rustlyn\"\ncount = 3\n");
         var projectedToml = outputs.Count == 1 ? outputs[0] : null;
-        Assert(Equals(GetProjectedValue(projectedToml, "name"), "rustlyn"), "Expected generated Rust TOML parse lifecycle to project string properties.");
-        Assert(Convert.ToInt32(GetProjectedValue(projectedToml, "count"), CultureInfo.InvariantCulture) == 3, "Expected generated Rust TOML parse lifecycle to project integer properties.");
+        Assert(Equals(GetProjectedValue(projectedToml, "name"), "rustlyn"), $"Expected generated Rust TOML parse lifecycle to project string properties, but got {PowerShellObjectSnapshot.ToJson(projectedToml)}.");
+        Assert(Convert.ToInt32(GetProjectedValue(projectedToml, "count"), CultureInfo.InvariantCulture) == 3, $"Expected generated Rust TOML parse lifecycle to project integer properties, but got {PowerShellObjectSnapshot.ToJson(projectedToml)}.");
 
         var malformedTomlHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
         var malformedTomlOutputs = new List<object?>();

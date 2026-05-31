@@ -53,6 +53,12 @@ $formats = @{
 
 $smokeScript = Join-Path $outRootPath 'Invoke-RustFormatPowerShellModuleSmoke.ps1'
 New-Item -ItemType Directory -Path $outRootPath -Force | Out-Null
+$requiredRuntimeMajor = 10
+$hostRuntimeMajor = [System.Environment]::Version.Major
+$canImportGeneratedModule = $hostRuntimeMajor -ge $requiredRuntimeMajor
+if (-not $canImportGeneratedModule) {
+    Write-Host "PowerShell module import smoke will be skipped because this pwsh host runs on .NET $([System.Environment]::Version), but generated Rustlyn PowerShell modules target .NET $requiredRuntimeMajor."
+}
 @'
 param(
     [Parameter(Mandatory = $true)]
@@ -191,6 +197,11 @@ foreach ($formatName in $Format) {
     $enginePath = Join-Path $moduleOutDir 'rustlyn_powershell_format_cmdlets.dll'
     if (-not (Test-Path $enginePath)) {
         throw "Expected unified Rust format engine '$enginePath' to exist."
+    }
+
+    if (-not $canImportGeneratedModule) {
+        Write-Host "Skipping $formatName PowerShell module import smoke on pwsh .NET $([System.Environment]::Version)."
+        continue
     }
 
     Write-Host "Smoking $formatName PowerShell module..."
