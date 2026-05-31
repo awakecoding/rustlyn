@@ -5225,6 +5225,21 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
             return outputs;
         }
 
+        static object? GetProjectedValue(object? value, string name)
+        {
+            if (value is PSObject psObject)
+            {
+                return psObject.Properties[name]?.Value;
+            }
+
+            if (value is IDictionary dictionary)
+            {
+                return dictionary[name];
+            }
+
+            return null;
+        }
+
         var outputs = InvokeGeneratedLifecycle(
             "convert_to_rust_json",
             new OrderedDictionary(StringComparer.Ordinal)
@@ -5251,9 +5266,9 @@ static void PowerShellRustFormatRuntimeMigratesNonXmlGlue()
         Assert(toml?.Contains("name = \"rustlyn\"", StringComparison.Ordinal) == true && toml.Contains("count = 3", StringComparison.Ordinal), $"Expected generated Rust TOML lifecycle to emit flat TOML, but got '{string.Join(", ", outputs)}'.");
 
         outputs = InvokeGeneratedLifecycle("convert_from_rust_toml", "name = \"rustlyn\"\ncount = 3\n");
-        var projectedToml = outputs.Count == 1 ? outputs[0] as PSObject : null;
-        Assert(projectedToml?.Properties["name"]?.Value as string == "rustlyn", "Expected generated Rust TOML parse lifecycle to project string properties.");
-        Assert(Equals(projectedToml?.Properties["count"]?.Value, 3), "Expected generated Rust TOML parse lifecycle to project integer properties.");
+        var projectedToml = outputs.Count == 1 ? outputs[0] : null;
+        Assert(Equals(GetProjectedValue(projectedToml, "name"), "rustlyn"), "Expected generated Rust TOML parse lifecycle to project string properties.");
+        Assert(Convert.ToInt32(GetProjectedValue(projectedToml, "count"), CultureInfo.InvariantCulture) == 3, "Expected generated Rust TOML parse lifecycle to project integer properties.");
 
         var malformedTomlHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
         var malformedTomlOutputs = new List<object?>();

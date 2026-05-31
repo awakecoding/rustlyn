@@ -209,6 +209,10 @@ public sealed class PowerShellCmdletContext
         }
 
         value = UnwrapPowerShellObject(value);
+        if (value is null)
+        {
+            return string.Empty;
+        }
 
         return value is IFormattable formattable
             ? formattable.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty
