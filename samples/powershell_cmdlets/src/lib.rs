@@ -1011,7 +1011,7 @@ fn finish_with_text(
     finish: impl FnOnce(CmdletContext, String) -> RuntimeResult<()>,
 ) -> i32 {
     finish_with_state(cmdlet_context_handle, |context, state| {
-        finish(context, state.text_items.join("\r\n"))
+        finish(context, join_text_items(&state.text_items))
     })
 }
 
@@ -1914,6 +1914,17 @@ fn snapshot_scalar_text(snapshot: &PowerShellObjectSnapshot) -> Option<String> {
     }
 }
 
+fn join_text_items(items: &[String]) -> String {
+    let mut output = String::new();
+    for (index, item) in items.iter().enumerate() {
+        if index > 0 {
+            output.push_str("\r\n");
+        }
+        output.push_str(item);
+    }
+    output
+}
+
 fn snapshot_to_string_array(snapshot: &PowerShellObjectSnapshot) -> Vec<String> {
     match snapshot.kind.as_str() {
         "null" => Vec::new(),
@@ -2255,6 +2266,12 @@ mod tests {
             Some("name = \"rustlyn\"\ncount = 3\n")
         );
         assert!(snapshot_scalar_text(&sample_snapshot()).is_none());
+    }
+
+    #[test]
+    fn text_items_join_without_slice_join_intrinsic() {
+        let items = vec!["name = \"rustlyn\"".to_owned(), "count = 3".to_owned()];
+        assert_eq!(join_text_items(&items), "name = \"rustlyn\"\r\ncount = 3");
     }
 
     #[test]
