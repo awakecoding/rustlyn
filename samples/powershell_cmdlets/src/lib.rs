@@ -507,6 +507,16 @@ impl CmdletContext {
         text
     }
 
+    fn input_text(&self) -> RuntimeResult<String> {
+        let text = self.input_string()?;
+        if !text.is_empty() {
+            return Ok(text);
+        }
+
+        let snapshot = self.input_snapshot()?;
+        Ok(snapshot_scalar_text(&snapshot).unwrap_or(text))
+    }
+
     fn has_parameter(&self, name: &str) -> RuntimeResult<bool> {
         with_managed_string(name, |name| {
             let mut exception_handle = 0;
@@ -960,7 +970,7 @@ fn collect_snapshot(cmdlet_context_handle: i32) -> i32 {
 
 fn collect_text(cmdlet_context_handle: i32) -> i32 {
     run_collect(cmdlet_context_handle, |context, state| {
-        state.text_items.push(context.input_string()?);
+        state.text_items.push(context.input_text()?);
         Ok(())
     })
 }
@@ -1895,6 +1905,16 @@ fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
     }
 }
 
+fn snapshot_scalar_text(snapshot: &PowerShellObjectSnapshot) -> Option<String> {
+    match snapshot.kind.as_str() {
+        "null" => Some(String::new()),
+        "scalar" | "enum" | "bytes" | "truncated" | "cycle" => {
+            Some(snapshot.scalar_value.clone().unwrap_or_default())
+        }
+        _ => None,
+    }
+}
+
 fn snapshot_to_string_array(snapshot: &PowerShellObjectSnapshot) -> Vec<String> {
     match snapshot.kind.as_str() {
         "null" => Vec::new(),
@@ -2219,6 +2239,23 @@ mod tests {
         )
         .expect("yaml json transform should succeed");
         assert_eq!(yaml_json, r#"{"name":"rustlyn","count":"3"}"#);
+    }
+
+    #[test]
+    fn text_input_fallback_uses_scalar_snapshot() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: "scalar".to_owned(),
+            type_name: Some("System.String".to_owned()),
+            scalar_value: Some("name = \"rustlyn\"\ncount = 3\n".to_owned()),
+            items: Vec::new(),
+            properties: Vec::new(),
+        };
+
+        assert_eq!(
+            snapshot_scalar_text(&snapshot).as_deref(),
+            Some("name = \"rustlyn\"\ncount = 3\n")
+        );
+        assert!(snapshot_scalar_text(&sample_snapshot()).is_none());
     }
 
     #[test]
