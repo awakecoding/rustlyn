@@ -455,24 +455,42 @@ impl<'a> ObjectStreamReader<'a> {
 }
 
 fn push_json_string(output: &mut String, value: &str) {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
     output.push('"');
-    for character in value.chars() {
-        match character {
-            '"' => output.push_str("\\\""),
-            '\\' => output.push_str("\\\\"),
-            '\n' => output.push_str("\\n"),
-            '\r' => output.push_str("\\r"),
-            '\t' => output.push_str("\\t"),
-            '\u{08}' => output.push_str("\\b"),
-            '\u{0C}' => output.push_str("\\f"),
-            character if character < ' ' => {
+    let mut segment_start = 0;
+    for (index, byte) in value.bytes().enumerate() {
+        let escape = match byte {
+            b'"' => Some("\\\""),
+            b'\\' => Some("\\\\"),
+            b'\n' => Some("\\n"),
+            b'\r' => Some("\\r"),
+            b'\t' => Some("\\t"),
+            0x08 => Some("\\b"),
+            0x0c => Some("\\f"),
+            byte if byte < 0x20 => {
+                if segment_start < index {
+                    output.push_str(&value[segment_start..index]);
+                }
                 output.push_str("\\u00");
-                let value = character as u8;
-                push_hex(output, value >> 4);
-                push_hex(output, value & 0x0F);
+                output.push(HEX[((byte >> 4) & 0x0f) as usize] as char);
+                output.push(HEX[(byte & 0x0f) as usize] as char);
+                segment_start = index + 1;
+                continue;
             }
-            _ => output.push(character),
+            _ => None,
+        };
+
+        if let Some(escape) = escape {
+            if segment_start < index {
+                output.push_str(&value[segment_start..index]);
+            }
+            output.push_str(escape);
+            segment_start = index + 1;
         }
+    }
+    if segment_start < value.len() {
+        output.push_str(&value[segment_start..]);
     }
     output.push('"');
 }

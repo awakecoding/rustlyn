@@ -134,21 +134,11 @@ public static class PowerShellCmdletBridge
                 break;
 
             case XmlOutputStream:
-                GetLifecycleState(context).AddPendingXmlStream(Encoding.UTF8.GetBytes(xml));
+                context.WriteObject(new MemoryStream(Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);
                 break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(outputMode), $"Unsupported XML output mode '{outputMode}'.");
-        }
-    }
-
-    public static void FlushPendingOutputs(PowerShellCmdletContext context)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-
-        foreach (var output in GetLifecycleState(context).DrainPendingXmlStreams())
-        {
-            context.WriteObject(new MemoryStream(output), enumerateCollection: false);
         }
     }
 

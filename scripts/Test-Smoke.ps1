@@ -578,9 +578,9 @@ $sampleChecks = @{
         BuildStd = "std,panic_abort"
     }
     toml = @{
-        Method = "toml_parse_score"
+        Method = "toml_serialize_score"
         Arguments = @()
-        Expected = 3
+        Expected = 7
         SupportedModes = @("Cargo")
         Toolchain = "nightly"
         BuildStd = "std,panic_abort"

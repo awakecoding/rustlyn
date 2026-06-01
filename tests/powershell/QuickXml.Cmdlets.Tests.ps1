@@ -16,15 +16,25 @@ Describe 'Rust quick-xml PowerShell cmdlets' {
     }
 
     It 'matches ConvertTo-Xml for diverse object graphs after canonicalization' {
+        $punctuatedObject = [pscustomobject]::new()
+        $punctuatedObject | Add-Member -NotePropertyName 'two words' -NotePropertyValue 'space'
+        $punctuatedObject | Add-Member -NotePropertyName '🚀' -NotePropertyValue 'rocket'
+        $punctuatedObject | Add-Member -NotePropertyName 'name:colon' -NotePropertyValue 'value'
+
         $cases = @(
             @{ Name = 'string'; Value = 'Tom & Jerry < 3'; Depth = 2 },
             @{ Name = 'integer'; Value = 42; Depth = 2 },
             @{ Name = 'boolean'; Value = $true; Depth = 2 },
             @{ Name = 'null'; Value = $null; Depth = 2 },
+            @{ Name = 'guid'; Value = [pscustomobject]@{ Id = [guid]'11111111-2222-3333-4444-555555555555'; Name = 'rustlyn' }; Depth = 4 },
+            @{ Name = 'char'; Value = [pscustomobject]@{ Letter = [char]0x41; Text = 'A&B' }; Depth = 4 },
             @{ Name = 'array'; Value = @(1, 'two', $false); Depth = 4 },
             @{ Name = 'ordered-map'; Value = [ordered]@{ Name = 'rustlyn'; Count = 3; Active = $true }; Depth = 4 },
             @{ Name = 'object'; Value = [pscustomobject]@{ Name = 'rustlyn'; Count = 3; Nested = [pscustomobject]@{ Active = $true } }; Depth = 4 },
-            @{ Name = 'unicode'; Value = [pscustomobject]@{ Text = "emoji 🚀 café"; Symbols = '<>&"''' }; Depth = 4 }
+            @{ Name = 'unicode'; Value = [pscustomobject]@{ Text = "emoji 🚀 𐐷 café"; Symbols = '<>&"'' 𝄞' }; Depth = 4 },
+            @{ Name = 'property-name-punctuation'; Value = $punctuatedObject; Depth = 4 },
+            @{ Name = 'scalar-mix'; Value = [pscustomobject]@{ Empty = ''; Decimal = [decimal]'12.3400'; When = [datetime]'2024-01-02T03:04:05.120Z'; Bytes = [byte[]](0, 1, 255) }; Depth = 4 },
+            @{ Name = 'array-with-null-and-empty'; Value = [pscustomobject]@{ Items = @($null, '', 'text') }; Depth = 4 }
         )
 
         foreach ($case in $cases) {

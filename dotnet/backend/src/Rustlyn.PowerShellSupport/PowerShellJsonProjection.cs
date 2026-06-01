@@ -11,18 +11,19 @@ public static class PowerShellJsonProjection
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(json);
 
-        var projected = Project(json, asHashtable);
-        if (!noEnumerate && projected is object?[] values)
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        if (!noEnumerate && root.ValueKind == JsonValueKind.Array)
         {
-            foreach (var value in values)
+            foreach (var item in root.EnumerateArray())
             {
-                context.WriteObject(value, enumerateCollection: false);
+                context.WriteObject(ProjectElement(item, asHashtable), enumerateCollection: false);
             }
 
             return;
         }
 
-        context.WriteObject(projected, enumerateCollection: false);
+        context.WriteObject(ProjectElement(root, asHashtable), enumerateCollection: false);
     }
 
     public static object? Project(string json, bool asHashtable = false)
@@ -36,7 +37,7 @@ public static class PowerShellJsonProjection
         => element.ValueKind switch
         {
             JsonValueKind.Object => ProjectObject(element, asHashtable),
-            JsonValueKind.Array => element.EnumerateArray().Select(item => ProjectElement(item, asHashtable)).ToArray(),
+            JsonValueKind.Array => ProjectArray(element, asHashtable),
             JsonValueKind.String => element.GetString(),
             JsonValueKind.Number when element.TryGetInt32(out var intValue) => intValue,
             JsonValueKind.Number when element.TryGetInt64(out var longValue) => longValue,
@@ -47,6 +48,18 @@ public static class PowerShellJsonProjection
             JsonValueKind.Null => null,
             _ => null
         };
+
+    private static object?[] ProjectArray(JsonElement element, bool asHashtable)
+    {
+        var values = new object?[element.GetArrayLength()];
+        var index = 0;
+        foreach (var item in element.EnumerateArray())
+        {
+            values[index++] = ProjectElement(item, asHashtable);
+        }
+
+        return values;
+    }
 
     private static object ProjectObject(JsonElement element, bool asHashtable)
     {

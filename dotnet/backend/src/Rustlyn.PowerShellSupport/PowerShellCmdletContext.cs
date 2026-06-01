@@ -77,19 +77,21 @@ public sealed class PowerShellCmdletContext
         _throwTerminatingError = throwTerminatingError;
         _shouldProcess = shouldProcess;
         _shouldProcessWithAction = shouldProcessWithAction;
-        _boundParameters = boundParameters is null
-            ? ReadOnlyDictionary<string, object?>.Empty
-            : new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(boundParameters, StringComparer.OrdinalIgnoreCase));
+        _boundParameters = boundParameters
+            ?? ReadOnlyDictionary<string, object?>.Empty;
         InputObject = inputObject;
         Cancellation = cancellation;
         LifecycleStateHandle = lifecycleStateHandle;
     }
 
-    public object? InputObject { get; }
+    public object? InputObject { get; private set; }
 
     public PowerShellCmdletCancellation Cancellation { get; }
 
     public int LifecycleStateHandle { get; }
+
+    public void SetInputObject(object? inputObject)
+        => InputObject = inputObject;
 
     public void WriteObject(object? value)
         => _writeObject(value);

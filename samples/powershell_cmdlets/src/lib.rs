@@ -22,6 +22,8 @@ mod cbor_engine {
 
 use serde::Deserialize;
 use serde_json::{Map, Value};
+use std::iter::Peekable;
+use std::str::Chars;
 
 #[cfg(not(test))]
 unsafe extern "C" {
@@ -555,7 +557,7 @@ impl CmdletContext {
         let json = snapshot.to_utf8_string();
         let release = snapshot.release();
         release?;
-        serde_json::from_str(&json?).map_err(|_| STATUS_PARSE)
+        parse_snapshot_json(&json?)
     }
 
     fn input_string(&self) -> RuntimeResult<String> {
@@ -577,6 +579,10 @@ impl CmdletContext {
 
     fn input_text(&self) -> RuntimeResult<String> {
         let snapshot = self.input_snapshot()?;
+        if snapshot.kind == "array" {
+            return Ok(join_text_items(&snapshot_to_string_array(&snapshot)));
+        }
+
         if let Some(text) = snapshot_scalar_text(&snapshot) {
             return Ok(text);
         }
@@ -702,8 +708,7 @@ impl CmdletContext {
             let text = value.to_utf8_string();
             let release = value.release();
             release?;
-            let snapshot: PowerShellObjectSnapshot =
-                serde_json::from_str(&text?).map_err(|_| STATUS_PARSE)?;
+            let snapshot = parse_snapshot_json(&text?)?;
             Ok(snapshot_to_string_array(&snapshot))
         })
     }
@@ -1074,13 +1079,7 @@ pub extern "C" fn convert_to_rust_csv_process_record(cmdlet_context_handle: i32)
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_to_rust_csv_end_processing(cmdlet_context_handle: i32) -> i32 {
     finish_with_snapshots(cmdlet_context_handle, |context, snapshots| {
-        let request = create_to_csv_request(context, &snapshots)?;
-        let lines_json = transform_utf8(
-            &request,
-            csv_engine::csv_json_to_csv_len,
-            csv_engine::csv_json_to_csv_copy,
-        )?;
-        let lines: Vec<String> = serde_json::from_str(&lines_json).map_err(|_| STATUS_PARSE)?;
+        let lines = snapshots_to_csv_lines(&context, &snapshots)?;
         for line in lines {
             context.write_string(&line)?;
         }
@@ -1285,7 +1284,7 @@ fn snapshots_to_json_text(
     enums_as_strings: bool,
     pretty: bool,
 ) -> String {
-    let mut output = String::new();
+    let mut output = String::with_capacity(snapshots.len().saturating_mul(128).max(4));
     match snapshots {
         [] => output.push_str("null"),
         [single] => write_snapshot_json(
@@ -1307,6 +1306,7 @@ fn snapshots_to_json_text(
             0,
         ),
     }
+
     output
 }
 
@@ -1326,6 +1326,7 @@ fn write_snapshot_json(
 
     match snapshot.kind.as_str() {
         "null" => output.push_str("null"),
+        "datetime" => write_datetime_json(output, snapshot),
         "scalar" => write_scalar_json(output, snapshot),
         "enum" if enums_as_strings => {
             write_json_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
@@ -1404,22 +1405,93 @@ fn write_snapshot_array(
 fn write_scalar_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
     match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("true"),
-        "System.Boolean" if value.eq_ignore_ascii_case("false") => output.push_str("false"),
+        "System.Boolean" if is_true_text(value) => output.push_str("true"),
+        "System.Boolean" if is_false_text(value) => output.push_str("false"),
         "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64"
-            if value.parse::<i64>().is_ok() =>
+        | "System.UInt32" | "System.Int64" | "System.UInt64"
+            if is_json_integer_literal(value) =>
         {
             output.push_str(value)
         }
-        "System.UInt64" if value.parse::<u64>().is_ok() => output.push_str(value),
-        "System.Single" | "System.Double" | "System.Decimal"
-            if value.parse::<f64>().is_ok_and(f64::is_finite) =>
-        {
+        "System.Single" | "System.Double" if !is_non_finite_float_text(value) => {
+            if trim_ascii(value) == "-0" {
+                output.push_str("-0.0")
+            } else {
+                output.push_str(value)
+            }
+        }
+        "System.Decimal" if !is_non_finite_float_text(value) => {
             output.push_str(value)
         }
         _ => write_json_string(output, value),
     }
+}
+
+fn write_datetime_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
+    let value = snapshot.scalar_value.as_deref().unwrap_or_default();
+    write_json_string(output, &normalize_roundtrip_datetime_text(value));
+}
+
+fn is_json_integer_literal(value: &str) -> bool {
+    let text = trim_ascii(value);
+    if text.is_empty() {
+        return false;
+    }
+
+    let digits = if let Some(rest) = text.strip_prefix('-') {
+        rest
+    } else {
+        text
+    };
+
+    !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+}
+
+fn is_true_text(value: &str) -> bool {
+    matches!(value, "True" | "true")
+}
+
+fn is_false_text(value: &str) -> bool {
+    matches!(value, "False" | "false")
+}
+
+fn is_non_finite_float_text(value: &str) -> bool {
+    matches!(trim_ascii(value), "NaN" | "nan" | "Infinity" | "infinity" | "-Infinity" | "-infinity")
+}
+
+fn normalize_roundtrip_datetime_text(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let Some(dot_index) = bytes.iter().position(|byte| *byte == b'.') else {
+        return value.to_owned();
+    };
+
+    let mut timezone_index = bytes.len();
+    let mut scan_index = dot_index + 1;
+    while scan_index < bytes.len() {
+        if matches!(bytes[scan_index], b'Z' | b'+' | b'-') {
+            timezone_index = scan_index;
+            break;
+        }
+        scan_index += 1;
+    }
+
+    let mut fractional_end = timezone_index;
+    while fractional_end > dot_index + 1 && bytes[fractional_end - 1] == b'0' {
+        fractional_end -= 1;
+    }
+
+    if fractional_end == timezone_index {
+        return value.to_owned();
+    }
+
+    let mut normalized = String::with_capacity(value.len());
+    normalized.push_str(&value[..dot_index]);
+    if fractional_end > dot_index + 1 {
+        normalized.push('.');
+        normalized.push_str(&value[dot_index + 1..fractional_end]);
+    }
+    normalized.push_str(&value[timezone_index..]);
+    normalized
 }
 
 fn write_json_array_start(output: &mut String, _pretty: bool) {
@@ -1473,6 +1545,8 @@ fn write_json_string(output: &mut String, value: &str) {
             '\t' => output.push_str("\\t"),
             '\u{08}' => output.push_str("\\b"),
             '\u{0c}' => output.push_str("\\f"),
+            '\u{2028}' => output.push_str("\\u2028"),
+            '\u{2029}' => output.push_str("\\u2029"),
             ch if (ch as u32) < 0x20 => {
                 let value = ch as u32;
                 output.push_str("\\u00");
@@ -1497,6 +1571,9 @@ fn snapshot_to_json_value(
 
     match snapshot.kind.as_str() {
         "null" => Value::Null,
+        "datetime" => Value::String(normalize_roundtrip_datetime_text(
+            snapshot.scalar_value.as_deref().unwrap_or_default(),
+        )),
         "scalar" => scalar_snapshot_to_json(snapshot),
         "enum" if enums_as_strings => {
             Value::String(snapshot.scalar_value.clone().unwrap_or_default())
@@ -1588,6 +1665,12 @@ fn write_object_stream_value(
 
     match snapshot.kind.as_str() {
         "null" => output.push_str("N;"),
+        "datetime" => write_object_stream_string(
+            output,
+            &normalize_roundtrip_datetime_text(
+                snapshot.scalar_value.as_deref().unwrap_or_default(),
+            ),
+        ),
         "scalar" => write_scalar_object_stream(output, snapshot),
         "enum" if enums_as_strings => {
             write_object_stream_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
@@ -1634,8 +1717,8 @@ fn write_object_stream_value(
 fn write_scalar_object_stream(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
     match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("T;"),
-        "System.Boolean" => output.push_str("F;"),
+        "System.Boolean" if is_true_text(value) => output.push_str("T;"),
+        "System.Boolean" if is_false_text(value) => output.push_str("F;"),
         "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
         | "System.UInt32" | "System.Int64" | "System.UInt64" => {
             output.push('I');
@@ -1662,25 +1745,137 @@ fn write_raw_object_stream_string(output: &mut String, value: &str) {
     output.push_str(value);
 }
 
+fn snapshots_to_toml_json_value(
+    snapshots: &[PowerShellObjectSnapshot],
+    max_depth: i32,
+) -> RuntimeResult<Value> {
+    let [snapshot] = snapshots else {
+        return Err(STATUS_PARSE);
+    };
+    match snapshot.kind.as_str() {
+        "dictionary" | "psobject" => {
+            let mut object = Map::new();
+            for property in &snapshot.properties {
+                object.insert(
+                    property.name.clone(),
+                    snapshot_to_toml_json_scalar(&property.value, max_depth, 1),
+                );
+            }
+            Ok(Value::Object(object))
+        }
+        _ => Err(STATUS_PARSE),
+    }
+}
+
 fn snapshots_to_toml_text(
     snapshots: &[PowerShellObjectSnapshot],
     max_depth: i32,
 ) -> RuntimeResult<String> {
-    let [snapshot] = snapshots else {
-        return Err(STATUS_PARSE);
-    };
-    if !matches!(snapshot.kind.as_str(), "dictionary" | "psobject") {
-        return Err(STATUS_PARSE);
-    }
-
+    let value = snapshots_to_toml_json_value(snapshots, max_depth)?;
+    let object = value.as_object().ok_or(STATUS_PARSE)?;
     let mut output = String::new();
-    for property in &snapshot.properties {
-        write_toml_key(&mut output, &property.name);
+    for (key, value) in object {
+        write_toml_key(&mut output, key);
         output.push_str(" = ");
-        write_toml_snapshot_value(&mut output, &property.value, max_depth, 1)?;
+        write_json_value_as_toml(&mut output, value)?;
         output.push('\n');
     }
     Ok(output)
+}
+
+fn snapshot_to_toml_json_scalar(
+    snapshot: &PowerShellObjectSnapshot,
+    max_depth: i32,
+    depth: i32,
+) -> Value {
+    if depth > max_depth.max(0) {
+        return Value::String(snapshot_to_string(snapshot));
+    }
+
+    match snapshot.kind.as_str() {
+        "null" => Value::String(String::new()),
+        "datetime" => Value::String(normalize_roundtrip_datetime_text(
+            snapshot.scalar_value.as_deref().unwrap_or_default(),
+        )),
+        "scalar" | "enum" => snapshot_scalar_toml_value(snapshot),
+        "bytes" => Value::Array(
+            decode_base64(snapshot.scalar_value.as_deref().unwrap_or_default())
+                .into_iter()
+                .map(|byte| Value::Number(serde_json::Number::from(byte)))
+                .collect(),
+        ),
+        "array" => Value::Array(
+            snapshot
+                .items
+                .iter()
+                .map(|item| snapshot_to_toml_json_scalar(item, max_depth, depth + 1))
+                .collect(),
+        ),
+        "dictionary" | "psobject" => Value::String(snapshot_to_string(snapshot)),
+        "cycle" | "truncated" => Value::String(snapshot_to_string(snapshot)),
+        _ => Value::String(snapshot_to_string(snapshot)),
+    }
+}
+
+fn snapshot_scalar_toml_value(snapshot: &PowerShellObjectSnapshot) -> Value {
+    let value = snapshot.scalar_value.as_deref().unwrap_or_default();
+    match snapshot.type_name.as_deref().unwrap_or_default() {
+        "System.Boolean" if value.eq_ignore_ascii_case("true") => Value::Bool(true),
+        "System.Boolean" if value.eq_ignore_ascii_case("false") => Value::Bool(false),
+        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
+        | "System.UInt32" | "System.Int64"
+            if value.parse::<i64>().is_ok() =>
+        {
+            Value::Number(serde_json::Number::from(value.parse::<i64>().unwrap_or_default()))
+        }
+        "System.UInt64" if value.parse::<u64>().is_ok() => Value::Number(
+            serde_json::Number::from(value.parse::<u64>().unwrap_or_default()),
+        ),
+        "System.Single" | "System.Double" | "System.Decimal"
+            if value.parse::<f64>().is_ok_and(f64::is_finite) =>
+        {
+            serde_json::Number::from_f64(value.parse::<f64>().unwrap_or_default())
+                .map(Value::Number)
+                .unwrap_or_else(|| Value::String(value.to_owned()))
+        }
+        _ => Value::String(value.to_owned()),
+    }
+}
+
+fn write_json_value_as_toml(output: &mut String, value: &Value) -> RuntimeResult<()> {
+    match value {
+        Value::Null => {
+            write_json_string(output, "");
+            Ok(())
+        }
+        Value::Bool(flag) => {
+            output.push_str(if *flag { "true" } else { "false" });
+            Ok(())
+        }
+        Value::Number(number) => {
+            output.push_str(&number.to_string());
+            Ok(())
+        }
+        Value::String(text) => {
+            write_json_string(output, text);
+            Ok(())
+        }
+        Value::Array(items) => {
+            output.push('[');
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push_str(", ");
+                }
+                write_json_value_as_toml(output, item)?;
+            }
+            output.push(']');
+            Ok(())
+        }
+        Value::Object(_) => {
+            write_json_string(output, &value.to_string());
+            Ok(())
+        }
+    }
 }
 
 fn write_toml_snapshot_value(
@@ -1695,6 +1890,15 @@ fn write_toml_snapshot_value(
     }
 
     match snapshot.kind.as_str() {
+        "datetime" => {
+            write_json_string(
+                output,
+                &normalize_roundtrip_datetime_text(
+                    snapshot.scalar_value.as_deref().unwrap_or_default(),
+                ),
+            );
+            Ok(())
+        }
         "scalar" | "enum" => {
             let value = snapshot.scalar_value.as_deref().unwrap_or_default();
             match snapshot.type_name.as_deref().unwrap_or_default() {
@@ -2069,7 +2273,7 @@ fn append_bytes(snapshot: &PowerShellObjectSnapshot, bytes: &mut Vec<u8>) -> Run
 fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
     match snapshot.kind.as_str() {
         "null" => String::new(),
-        "scalar" | "enum" | "truncated" | "cycle" => {
+        "scalar" | "enum" | "datetime" | "truncated" | "cycle" => {
             snapshot.scalar_value.clone().unwrap_or_default()
         }
         "bytes" => snapshot.scalar_value.clone().unwrap_or_default(),
@@ -2079,12 +2283,24 @@ fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
             .map(snapshot_to_string)
             .collect::<Vec<_>>()
             .join(" "),
-        "dictionary" | "psobject" => snapshot
-            .properties
-            .iter()
-            .map(|property| format!("{}={}", property.name, snapshot_to_string(&property.value)))
-            .collect::<Vec<_>>()
-            .join("; "),
+        "dictionary" | "psobject" => {
+            let content = snapshot
+                .properties
+                .iter()
+                .map(|property| {
+                    let value = match property.value.kind.as_str() {
+                        "null" => String::new(),
+                        "scalar" | "enum" | "datetime" | "bytes" | "truncated" | "cycle" => {
+                            snapshot_to_string(&property.value)
+                        }
+                        _ => String::new(),
+                    };
+                    format!("{}={}", property.name, value)
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            format!("@{{{}}}", content)
+        }
         _ => snapshot.scalar_value.clone().unwrap_or_default(),
     }
 }
@@ -2092,7 +2308,7 @@ fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
 fn snapshot_scalar_text(snapshot: &PowerShellObjectSnapshot) -> Option<String> {
     match snapshot.kind.as_str() {
         "null" => Some(String::new()),
-        "scalar" | "enum" | "bytes" | "truncated" | "cycle" => {
+        "scalar" | "enum" | "datetime" | "bytes" | "truncated" | "cycle" => {
             Some(snapshot.scalar_value.clone().unwrap_or_default())
         }
         _ => None,
@@ -2122,7 +2338,7 @@ fn create_to_csv_request(
     context: CmdletContext,
     snapshots: &[PowerShellObjectSnapshot],
 ) -> RuntimeResult<String> {
-    let delimiter = resolve_delimiter(context)?;
+    let delimiter = resolve_delimiter(&context)?;
     let rows = snapshots
         .iter()
         .map(csv_row_from_snapshot)
@@ -2145,11 +2361,11 @@ fn create_to_csv_request(
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+
     let type_name = snapshots
         .first()
         .and_then(|snapshot| snapshot.type_name.clone())
         .unwrap_or_default();
-
     let mut request = Map::new();
     request.insert("delimiter".to_owned(), Value::String(delimiter.to_string()));
     request.insert(
@@ -2187,8 +2403,456 @@ fn create_to_csv_request(
     serde_json::to_string(&Value::Object(request)).map_err(|_| STATUS_PARSE)
 }
 
-fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<String> {
+fn snapshots_to_csv_lines(
+    context: &CmdletContext,
+    snapshots: &[PowerShellObjectSnapshot],
+) -> RuntimeResult<Vec<String>> {
     let delimiter = resolve_delimiter(context)?;
+    let include_type_information = context.parameter_bool("IncludeTypeInformation")?;
+    let no_header = context.parameter_bool("NoHeader")?;
+    let quote_fields = context.parameter_string_array("QuoteFields")?;
+    let use_quotes = if context.has_parameter("UseQuotes")? {
+        context.parameter_string_or("UseQuotes", "Always")?
+    } else if quote_fields.is_empty() {
+        String::from("Always")
+    } else {
+        String::from("Never")
+    };
+
+    let mut headers = Vec::new();
+    if !snapshots.is_empty() {
+        let first_row = csv_row_values_from_snapshot(&snapshots[0]);
+        for field in first_row {
+            headers.push(field.0.clone());
+        }
+    }
+
+    let mut lines = Vec::new();
+    if include_type_information {
+        let mut line = String::from("#TYPE ");
+        if !snapshots.is_empty() {
+            if let Some(type_name) = snapshots[0].type_name.as_deref() {
+                line.push_str(type_name);
+            }
+        }
+        lines.push(line);
+    }
+
+    if !no_header {
+        let mut header_values = Vec::new();
+        for header in &headers {
+            header_values.push(CsvFieldValue::new(header.clone(), false));
+        }
+        lines.push(format_csv_record(
+            &header_values,
+            delimiter,
+            &use_quotes,
+            &quote_fields,
+        ));
+    }
+
+    let quote_field_indexes = csv_quote_field_indexes(&headers, &quote_fields);
+    for snapshot in snapshots {
+        let row = csv_row_values_from_snapshot(snapshot);
+        let mut values: Vec<CsvFieldValue> = Vec::new();
+        for header in &headers {
+            let mut value = CsvFieldValue::new(String::new(), true);
+            for field in &row {
+                if &field.0 == header {
+                    value = field.1.clone();
+                    break;
+                }
+            }
+            values.push(value);
+        }
+        lines.push(format_csv_record(
+            &values,
+            delimiter,
+            &use_quotes,
+            &quote_field_indexes,
+        ));
+    }
+
+    Ok(lines)
+}
+
+fn csv_quote_field_indexes(headers: &[String], quote_fields: &[String]) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut index = 0usize;
+    while index < headers.len() {
+        let mut quote_index = 0usize;
+        while quote_index < quote_fields.len() {
+            if quote_fields[quote_index] == headers[index] {
+                values.push(index.to_string());
+                break;
+            }
+            quote_index += 1;
+        }
+        index += 1;
+    }
+    values
+}
+
+#[derive(Clone)]
+struct CsvFieldValue {
+    text: String,
+    is_null: bool,
+}
+
+impl CsvFieldValue {
+    fn new(text: String, is_null: bool) -> Self {
+        Self { text, is_null }
+    }
+}
+
+fn csv_row_values_from_snapshot(snapshot: &PowerShellObjectSnapshot) -> Vec<(String, CsvFieldValue)> {
+    match snapshot.kind.as_str() {
+        "null" => vec![(
+            "Length".to_owned(),
+            CsvFieldValue::new(String::new(), true),
+        )],
+        "dictionary" | "psobject" if !snapshot.properties.is_empty() => {
+            let mut values = Vec::new();
+            for property in &snapshot.properties {
+                values.push((
+                    property.name.clone(),
+                    csv_field_value_from_snapshot(&property.value),
+                ));
+            }
+            values
+        }
+        _ => vec![(
+            "Length".to_owned(),
+            csv_field_value_from_snapshot(snapshot),
+        )],
+    }
+}
+
+fn csv_field_value_from_snapshot(snapshot: &PowerShellObjectSnapshot) -> CsvFieldValue {
+    CsvFieldValue::new(snapshot_to_string(snapshot), snapshot.kind == "null")
+}
+
+fn format_csv_record(
+    values: &[CsvFieldValue],
+    delimiter: char,
+    use_quotes: &str,
+    quote_fields: &[String],
+) -> String {
+    let mut output = String::new();
+    let mut index = 0usize;
+    while index < values.len() {
+        if index > 0 {
+            output.push(delimiter);
+        }
+
+        let mut force_quote = false;
+        let index_text = index.to_string();
+        let mut quote_index = 0usize;
+        while quote_index < quote_fields.len() {
+            if quote_fields[quote_index] == index_text
+                || quote_fields[quote_index] == values[index].text
+            {
+                force_quote = true;
+                break;
+            }
+            quote_index += 1;
+        }
+
+        write_csv_field(&mut output, &values[index], delimiter, use_quotes, force_quote);
+        index += 1;
+    }
+    output
+}
+
+fn write_csv_field(
+    output: &mut String,
+    value: &CsvFieldValue,
+    delimiter: char,
+    use_quotes: &str,
+    force_quote: bool,
+) {
+    let should_quote = if force_quote {
+        true
+    } else if value.is_null {
+        false
+    } else {
+        match use_quotes {
+            "Never" => false,
+            "AsNeeded" => csv_field_needs_quotes(&value.text, delimiter),
+            _ => true,
+        }
+    };
+
+    if !should_quote {
+        output.push_str(&value.text);
+        return;
+    }
+
+    output.push('"');
+    for ch in value.text.chars() {
+        if ch == '"' {
+            output.push('"');
+            output.push('"');
+        } else {
+            output.push(ch);
+        }
+    }
+    output.push('"');
+}
+
+fn csv_field_needs_quotes(value: &str, delimiter: char) -> bool {
+    for ch in value.chars() {
+        if ch == delimiter || ch == '"' || ch == '\r' || ch == '\n' {
+            return true;
+        }
+    }
+    false
+}
+
+fn parse_snapshot_json(input: &str) -> RuntimeResult<PowerShellObjectSnapshot> {
+    SnapshotJsonParser::new(input).parse_snapshot()
+}
+
+struct SnapshotJsonParser<'a> {
+    chars: Peekable<Chars<'a>>,
+}
+
+impl<'a> SnapshotJsonParser<'a> {
+    fn new(input: &'a str) -> Self {
+        Self {
+            chars: input.chars().peekable(),
+        }
+    }
+
+    fn parse_snapshot(mut self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        self.skip_whitespace();
+        let snapshot = self.parse_snapshot_object()?;
+        self.skip_whitespace();
+        if self.chars.next().is_some() {
+            return Err(STATUS_PARSE);
+        }
+        Ok(snapshot)
+    }
+
+    fn parse_snapshot_object(&mut self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        self.expect_char('{')?;
+        let mut kind = None;
+        let mut type_name = None;
+        let mut scalar_value = None;
+        let mut items = Vec::new();
+        let mut properties = Vec::new();
+
+        loop {
+            self.skip_whitespace();
+            if self.consume_char('}') {
+                break;
+            }
+
+            let name = self.parse_string()?;
+            self.expect_char(':')?;
+            match name.as_str() {
+                "kind" => kind = Some(self.parse_string()?),
+                "typeName" => type_name = self.parse_nullable_string()?,
+                "scalarValue" => scalar_value = self.parse_nullable_string()?,
+                "items" => items = self.parse_snapshot_array()?,
+                "properties" => properties = self.parse_property_array()?,
+                _ => return Err(STATUS_PARSE),
+            }
+
+            self.skip_whitespace();
+            if self.consume_char('}') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+
+        Ok(PowerShellObjectSnapshot {
+            kind: kind.ok_or(STATUS_PARSE)?,
+            type_name,
+            scalar_value,
+            items,
+            properties,
+        })
+    }
+
+    fn parse_property_object(&mut self) -> RuntimeResult<PowerShellPropertySnapshot> {
+        self.expect_char('{')?;
+        let mut name = None;
+        let mut value = None;
+
+        loop {
+            self.skip_whitespace();
+            if self.consume_char('}') {
+                break;
+            }
+
+            let field = self.parse_string()?;
+            self.expect_char(':')?;
+            match field.as_str() {
+                "name" => name = Some(self.parse_string()?),
+                "value" => value = Some(self.parse_snapshot_object()?),
+                _ => return Err(STATUS_PARSE),
+            }
+
+            self.skip_whitespace();
+            if self.consume_char('}') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+
+        Ok(PowerShellPropertySnapshot {
+            name: name.ok_or(STATUS_PARSE)?,
+            value: value.ok_or(STATUS_PARSE)?,
+        })
+    }
+
+    fn parse_snapshot_array(&mut self) -> RuntimeResult<Vec<PowerShellObjectSnapshot>> {
+        self.expect_char('[')?;
+        let mut items = Vec::new();
+        loop {
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            items.push(self.parse_snapshot_object()?);
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+        Ok(items)
+    }
+
+    fn parse_property_array(&mut self) -> RuntimeResult<Vec<PowerShellPropertySnapshot>> {
+        self.expect_char('[')?;
+        let mut properties = Vec::new();
+        loop {
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            properties.push(self.parse_property_object()?);
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+        Ok(properties)
+    }
+
+    fn parse_nullable_string(&mut self) -> RuntimeResult<Option<String>> {
+        self.skip_whitespace();
+        if self.consume_literal("null") {
+            return Ok(None);
+        }
+        Ok(Some(self.parse_string()?))
+    }
+
+    fn parse_string(&mut self) -> RuntimeResult<String> {
+        self.expect_char('"')?;
+        let mut output = String::new();
+        loop {
+            let Some(ch) = self.chars.next() else {
+                return Err(STATUS_PARSE);
+            };
+            match ch {
+                '"' => return Ok(output),
+                '\\' => output.push(self.parse_escape_sequence()?),
+                ch if (ch as u32) < 0x20 => return Err(STATUS_PARSE),
+                ch => output.push(ch),
+            }
+        }
+    }
+
+    fn parse_escape_sequence(&mut self) -> RuntimeResult<char> {
+        let Some(escape) = self.chars.next() else {
+            return Err(STATUS_PARSE);
+        };
+        match escape {
+            '"' => Ok('"'),
+            '\\' => Ok('\\'),
+            '/' => Ok('/'),
+            'b' => Ok('\u{08}'),
+            'f' => Ok('\u{0c}'),
+            'n' => Ok('\n'),
+            'r' => Ok('\r'),
+            't' => Ok('\t'),
+            'u' => self.parse_unicode_escape(),
+            _ => Err(STATUS_PARSE),
+        }
+    }
+
+    fn parse_unicode_escape(&mut self) -> RuntimeResult<char> {
+        let first = self.parse_hex_u16()?;
+        if (0xd800..=0xdbff).contains(&first) {
+            if self.chars.next() != Some('\\') || self.chars.next() != Some('u') {
+                return Err(STATUS_PARSE);
+            }
+            let second = self.parse_hex_u16()?;
+            if !(0xdc00..=0xdfff).contains(&second) {
+                return Err(STATUS_PARSE);
+            }
+            let scalar = 0x10000 + (((first as u32 - 0xd800) << 10) | (second as u32 - 0xdc00));
+            return char::from_u32(scalar).ok_or(STATUS_PARSE);
+        }
+        if (0xdc00..=0xdfff).contains(&first) {
+            return Err(STATUS_PARSE);
+        }
+        char::from_u32(first as u32).ok_or(STATUS_PARSE)
+    }
+
+    fn parse_hex_u16(&mut self) -> RuntimeResult<u16> {
+        let mut value = 0u16;
+        for _ in 0..4 {
+            let Some(ch) = self.chars.next() else {
+                return Err(STATUS_PARSE);
+            };
+            let Some(digit) = ch.to_digit(16) else {
+                return Err(STATUS_PARSE);
+            };
+            value = (value << 4) | digit as u16;
+        }
+        Ok(value)
+    }
+
+    fn consume_literal(&mut self, expected: &str) -> bool {
+        let mut clone = self.chars.clone();
+        for expected_char in expected.chars() {
+            if clone.next() != Some(expected_char) {
+                return false;
+            }
+        }
+        self.chars = clone;
+        true
+    }
+
+    fn expect_char(&mut self, expected: char) -> RuntimeResult<()> {
+        self.skip_whitespace();
+        match self.chars.next() {
+            Some(ch) if ch == expected => Ok(()),
+            _ => Err(STATUS_PARSE),
+        }
+    }
+
+    fn consume_char(&mut self, expected: char) -> bool {
+        self.skip_whitespace();
+        matches!(self.chars.peek().copied(), Some(ch) if ch == expected)
+            .then(|| self.chars.next())
+            .is_some()
+    }
+
+    fn skip_whitespace(&mut self) {
+        while matches!(self.chars.peek(), Some(ch) if ch.is_ascii_whitespace()) {
+            self.chars.next();
+        }
+    }
+}
+
+fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<String> {
+    let delimiter = resolve_delimiter(&context)?;
     let header = context.parameter_string_array("Header")?;
     let mut request = Map::new();
     request.insert("csv".to_owned(), Value::String(csv.to_owned()));
@@ -2205,7 +2869,7 @@ fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<S
     serde_json::to_string(&Value::Object(request)).map_err(|_| STATUS_PARSE)
 }
 
-fn resolve_delimiter(context: CmdletContext) -> RuntimeResult<char> {
+fn resolve_delimiter(context: &CmdletContext) -> RuntimeResult<char> {
     if context.has_parameter("Delimiter")? {
         return context.parameter_char_or("Delimiter", ',');
     }
@@ -2415,6 +3079,59 @@ mod tests {
         )
         .expect("cbor json transform should succeed");
         assert_eq!(cbor_json, r#"{"name":"rustlyn","count":3}"#);
+    }
+
+    #[test]
+    fn roundtrip_datetime_text_trims_only_insignificant_fractional_zeros() {
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-01T22:04:05.0000000-05:00"),
+            "2024-01-01T22:04:05-05:00"
+        );
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-02T03:04:05.1200000+02:30"),
+            "2024-01-02T03:04:05.12+02:30"
+        );
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-02T03:04:05.1234567+02:30"),
+            "2024-01-02T03:04:05.1234567+02:30"
+        );
+    }
+
+    #[test]
+    fn snapshot_parser_preserves_literal_and_escaped_astral_unicode() {
+        let literal = parse_snapshot_json(
+            r#"{"kind":"scalar","typeName":"System.String","scalarValue":"emoji 🚀 𐐷 𝄞","items":[],"properties":[]}"#,
+        )
+        .expect("literal astral snapshot should parse");
+        assert_eq!(
+            literal.scalar_value.as_deref(),
+            Some("emoji 🚀 𐐷 𝄞")
+        );
+
+        let escaped = parse_snapshot_json(
+            r#"{"kind":"scalar","typeName":"System.String","scalarValue":"emoji \uD83D\uDE80 \uD801\uDC37 \uD834\uDD1E","items":[],"properties":[]}"#,
+        )
+        .expect("escaped astral snapshot should parse");
+        assert_eq!(
+            escaped.scalar_value.as_deref(),
+            Some("emoji 🚀 𐐷 𝄞")
+        );
+    }
+
+    #[test]
+    fn json_writer_matches_negative_zero_and_separator_escaping() {
+        let mut output = String::new();
+        write_json_string(&mut output, "\u{2028}line\u{2029}para");
+        assert_eq!(output, r#""\u2028line\u2029para""#);
+
+        let negative_zero = PowerShellObjectSnapshot {
+            kind: "scalar".to_owned(),
+            type_name: Some("System.Double".to_owned()),
+            scalar_value: Some("-0".to_owned()),
+            items: Vec::new(),
+            properties: Vec::new(),
+        };
+        assert_eq!(snapshots_to_json_text(&[negative_zero], 8, false, false), "-0.0");
     }
 
     #[test]

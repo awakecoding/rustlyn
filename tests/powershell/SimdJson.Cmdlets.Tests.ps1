@@ -4,9 +4,10 @@ Set-StrictMode -Version Latest
 Describe 'Rust simd-json PowerShell cmdlets' {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'RustFormat.CmdletHelpers.ps1')
-        $manifest = Build-RustlynPowerShellModule `
-            -BuildScriptName 'Build-SimdJsonPowerShellModule.ps1' `
-            -ManifestRelativePath 'artifacts\out\simd_json_powershell\Rustlyn.SimdJson.PowerShell.psd1'
+        $repoRoot = Get-RustlynRepoRoot
+        $outDir = Join-Path $repoRoot ('artifacts\scratch\pester-simd-json-' + [guid]::NewGuid().ToString('N'))
+        & (Join-Path $repoRoot 'scripts\Build-SimdJsonPowerShellModule.ps1') -OutDir $outDir | Out-Host
+        $manifest = Join-Path $outDir 'Rustlyn.SimdJson.PowerShell.psd1'
         Import-RustlynPowerShellModule -ManifestPath $manifest
     }
 
@@ -23,6 +24,8 @@ Describe 'Rust simd-json PowerShell cmdlets' {
             @{ Name = 'double'; Value = 3.14159; Depth = 4 },
             @{ Name = 'bool'; Value = $true; Depth = 4 },
             @{ Name = 'null'; Value = $null; Depth = 4 },
+            @{ Name = 'char'; Value = [char]0x41; Depth = 4 },
+            @{ Name = 'guid'; Value = [guid]'11111111-2222-3333-4444-555555555555'; Depth = 4 },
             @{ Name = 'array'; Value = @(1, 'two', $false, $null); Depth = 5 },
             @{ Name = 'ordered-map'; Value = [ordered]@{ name = 'rustlyn'; count = 3; active = $true }; Depth = 5 },
             @{ Name = 'object'; Value = [pscustomobject]@{ name = 'rustlyn'; count = 3; nested = [pscustomobject]@{ active = $true } }; Depth = 5 },
@@ -71,6 +74,47 @@ Describe 'Rust simd-json PowerShell cmdlets' {
 
         ConvertTo-RustJson -InputObject ([System.DayOfWeek]::Friday) -EnumsAsStrings -Compress |
             Should -Be (ConvertTo-Json -InputObject ([System.DayOfWeek]::Friday) -EnumsAsStrings -Compress)
+
+        $nestedEnum = [pscustomobject]@{
+            Day = [System.DayOfWeek]::Friday
+            Inner = [pscustomobject]@{ Day = [System.DayOfWeek]::Monday }
+        }
+
+        ConvertTo-RustJson -InputObject $nestedEnum -Depth 5 -EnumsAsStrings -Compress |
+            Should -Be (ConvertTo-Json -InputObject $nestedEnum -Depth 5 -EnumsAsStrings -Compress)
+    }
+
+    It 'matches ConvertTo-Json for serialization edge cases' {
+        $cases = @(
+            @{ Name = 'nan'; Value = [double]::NaN; Depth = 4 },
+            @{ Name = 'positive-infinity'; Value = [double]::PositiveInfinity; Depth = 4 },
+            @{ Name = 'negative-infinity'; Value = [double]::NegativeInfinity; Depth = 4 },
+            @{ Name = 'decimal'; Value = [decimal]'1234567890.0123456789'; Depth = 4 },
+            @{ Name = 'bytes'; Value = [byte[]](1, 2, 255); Depth = 4 },
+            @{ Name = 'uint64-max'; Value = [uint64]18446744073709551615; Depth = 4 },
+            @{ Name = 'negative-zero'; Value = [double]::Parse('-0', [cultureinfo]::InvariantCulture); Depth = 4 },
+            @{ Name = 'single-negative-zero'; Value = [single]::Parse('-0', [cultureinfo]::InvariantCulture); Depth = 4 },
+            @{ Name = 'datetime'; Value = [datetime]'2024-01-02T03:04:05.120Z'; Depth = 4 },
+            @{ Name = 'datetimeoffset'; Value = [datetimeoffset]'2024-01-02T03:04:05.120+02:30'; Depth = 4 },
+            @{ Name = 'control-chars'; Value = [pscustomobject]@{ Text = "nul$([char]0)bs$([char]8)ff$([char]12)" }; Depth = 5 },
+            @{ Name = 'empty-and-unicode-keys'; Value = [ordered]@{ '' = 'blank'; '🚀 key' = 'rocket' }; Depth = 5 },
+            @{ Name = 'json-separators'; Value = [pscustomobject]@{ Text = ([string][char]0x2028) + 'line' + ([string][char]0x2029) + 'para' }; Depth = 5 },
+            @{ Name = 'mixed-nested'; Value = [pscustomobject]@{
+                    Data = [byte[]](1, 2, 3)
+                    Number = [double]::NaN
+                    Value = [decimal]12.50
+                    Nested = [pscustomobject]@{
+                        When = [datetime]'2024-01-02T03:04:05Z'
+                        Offset = [datetimeoffset]'2024-01-02T03:04:05+02:30'
+                        Big = [uint64]18446744073709551615
+                    }
+                }; Depth = 6 }
+        )
+
+        foreach ($case in $cases) {
+            ConvertTo-RustJson -InputObject $case.Value -Depth $case.Depth -Compress |
+                Should -Be (ConvertTo-Json -InputObject $case.Value -Depth $case.Depth -Compress)
+        }
     }
 
     It 'matches ConvertFrom-Json object shape after normalization for diverse documents' {

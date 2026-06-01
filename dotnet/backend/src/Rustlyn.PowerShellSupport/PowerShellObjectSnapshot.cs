@@ -54,7 +54,12 @@ public sealed record PowerShellObjectSnapshot(
 
         try
         {
-            if (value is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or DateTime or DateTimeOffset or Guid)
+            if (value is DateTime or DateTimeOffset)
+            {
+                return Create("datetime", type.FullName, ConvertToInvariantString(value));
+            }
+
+            if (value is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or Guid)
             {
                 return Create("scalar", type.FullName, ConvertToInvariantString(value));
             }
@@ -163,6 +168,16 @@ public sealed record PowerShellObjectSnapshot(
         if (value is string text)
         {
             return text;
+        }
+
+        if (value is DateTime dateTime)
+        {
+            return dateTime.ToString("o", CultureInfo.InvariantCulture);
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            return dateTimeOffset.ToString("o", CultureInfo.InvariantCulture);
         }
 
         return value is IFormattable formattable

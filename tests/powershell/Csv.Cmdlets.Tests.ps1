@@ -20,6 +20,7 @@ Describe 'Rust csv PowerShell cmdlets' {
             [pscustomobject]@{ Name = 'rustlyn'; Count = 3; Active = $true },
             [pscustomobject]@{ Name = 'comma,value'; Quote = 'he said "yes"'; Empty = '' },
             [pscustomobject]@{ Name = 'unicode'; Text = "emoji 🚀 café"; NullValue = $null },
+            [pscustomobject]@{ Name = 'astral'; Text = "emoji 🚀 𐐷"; Note = '𝄞' },
             [pscustomobject]@{ Name = 'multiline'; Text = "line1`nline2" }
         )
 
@@ -44,8 +45,34 @@ Describe 'Rust csv PowerShell cmdlets' {
         Assert-StringSequenceEquivalent $actual $expected
     }
 
+    It 'matches ConvertTo-Csv for mixed-schema pipeline rows' {
+        $cases = @(
+            @(
+                [pscustomobject]@{ Name = 'one'; Count = 1 },
+                [pscustomobject]@{ Name = 'two'; Count = 2; Extra = 'later' }
+            ),
+            @(
+                [pscustomobject]@{ Name = 'one'; Count = 1; Note = 'a' },
+                [pscustomobject]@{ Name = 'two'; Count = 2 }
+            ),
+            @(
+                [pscustomobject]@{ Name = 'one'; Note = $null },
+                [pscustomobject]@{ Name = 'two'; Note = '' },
+                [pscustomobject]@{ Name = 'three'; Note = '🚀' }
+            )
+        )
+
+        foreach ($rows in $cases) {
+            $expected = @($rows | ConvertTo-Csv -NoTypeInformation)
+            $actual = @($rows | ConvertTo-RustCsv -NoTypeInformation)
+
+            Assert-StringSequenceEquivalent $actual $expected
+        }
+    }
+
     It 'matches ConvertTo-Csv formatting parameters exposed by the host' {
         $row = [pscustomobject]@{ Name = 'rustlyn'; Note = 'comma,value'; Count = 3 }
+        $astralRow = [pscustomobject]@{ Name = 'emoji 🚀'; Note = 'he said "go, now"'; Glyph = '𝄞' }
 
         Assert-StringSequenceEquivalent `
             @(ConvertTo-RustCsv -InputObject $row -NoTypeInformation -Delimiter ';') `
@@ -63,12 +90,20 @@ Describe 'Rust csv PowerShell cmdlets' {
             Assert-StringSequenceEquivalent `
                 @(ConvertTo-RustCsv -InputObject $row -NoTypeInformation -NoHeader) `
                 @(ConvertTo-Csv -InputObject $row -NoTypeInformation -NoHeader)
+
+            Assert-StringSequenceEquivalent `
+                @(ConvertTo-RustCsv -InputObject $astralRow -NoTypeInformation -NoHeader) `
+                @(ConvertTo-Csv -InputObject $astralRow -NoTypeInformation -NoHeader)
         }
 
         if (Test-CommandParameter 'ConvertTo-Csv' 'QuoteFields') {
             Assert-StringSequenceEquivalent `
                 @(ConvertTo-RustCsv -InputObject $row -NoTypeInformation -QuoteFields Name) `
                 @(ConvertTo-Csv -InputObject $row -NoTypeInformation -QuoteFields Name)
+
+            Assert-StringSequenceEquivalent `
+                @(ConvertTo-RustCsv -InputObject $astralRow -NoTypeInformation -QuoteFields Name) `
+                @(ConvertTo-Csv -InputObject $astralRow -NoTypeInformation -QuoteFields Name)
         }
 
         if (Test-CommandParameter 'ConvertTo-Csv' 'UseQuotes') {
@@ -77,6 +112,12 @@ Describe 'Rust csv PowerShell cmdlets' {
                 Assert-StringSequenceEquivalent `
                     @(ConvertTo-RustCsv -InputObject $simple -NoTypeInformation -UseQuotes $mode) `
                     @(ConvertTo-Csv -InputObject $simple -NoTypeInformation -UseQuotes $mode)
+            }
+
+            foreach ($mode in 'AsNeeded', 'Never') {
+                Assert-StringSequenceEquivalent `
+                    @(ConvertTo-RustCsv -InputObject $astralRow -NoTypeInformation -UseQuotes $mode) `
+                    @(ConvertTo-Csv -InputObject $astralRow -NoTypeInformation -UseQuotes $mode)
             }
 
             $literalQuote = [pscustomobject]@{ Name = 'rustlyn'; Note = 'literal"quote' }
