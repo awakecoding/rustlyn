@@ -1,6 +1,6 @@
 param(
-    [ValidateSet('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv')]
-    [string[]]$Format = @('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv'),
+    [ValidateSet('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv', 'Xml')]
+    [string[]]$Format = @('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv', 'Xml'),
 
     [string]$OutRoot = 'artifacts\scratch\rust_format_powershell_modules',
 
@@ -49,6 +49,11 @@ $formats = @{
         OutDir = 'csv'
         Manifest = 'Rustlyn.Csv.PowerShell.psd1'
     }
+    Xml = @{
+        BuildScript = 'Build-QuickXmlPowerShellModule.ps1'
+        OutDir = 'quick_xml'
+        Manifest = 'Rustlyn.QuickXml.PowerShell.psd1'
+    }
 }
 
 $smokeScript = Join-Path $outRootPath 'Invoke-RustFormatPowerShellModuleSmoke.ps1'
@@ -65,7 +70,7 @@ param(
     [string]$ManifestPath,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv')]
+    [ValidateSet('Json', 'Yaml', 'Toml', 'Bson', 'Cbor', 'Csv', 'Xml')]
     [string]$Format
 )
 
@@ -170,6 +175,15 @@ switch ($Format) {
         Assert-Condition ((Get-RustFormatValue $headerDecoded 'name') -eq 'rustlyn') 'Unexpected CSV Header decode result.'
         $noHeaderLines = @($sample | ConvertTo-RustCsv -NoHeader)
         Assert-Condition (($noHeaderLines.Count -eq 1) -and $noHeaderLines[0].Contains('rustlyn')) "Unexpected CSV NoHeader output: $($noHeaderLines -join '|')"
+    }
+    'Xml' {
+        $text = $sample | ConvertTo-RustXml -As String -NoTypeInformation
+        Assert-Condition $text.Contains('<Objects>') "Unexpected XML output: $text"
+        $document = $sample | ConvertTo-RustXml -As Document -NoTypeInformation
+        Assert-Condition ($document -is [xml]) 'XML document output was not an XmlDocument.'
+        $decoded = ConvertFrom-RustXml -InputObject $text
+        Assert-Condition ($decoded -is [xml]) 'Unexpected XML decode result.'
+        Assert-Throws { '<root>&not-an-entity;</root>' | ConvertFrom-RustXml -ErrorAction Stop } 'Malformed XML did not fail.'
     }
 }
 '@ | Set-Content -LiteralPath $smokeScript -Encoding UTF8

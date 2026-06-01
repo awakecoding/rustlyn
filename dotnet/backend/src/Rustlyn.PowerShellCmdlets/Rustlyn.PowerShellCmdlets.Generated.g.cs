@@ -69,6 +69,7 @@ public sealed class ConvertToRustJsonCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -165,6 +166,7 @@ public sealed class ConvertFromRustJsonCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -277,6 +279,7 @@ public sealed class ConvertToRustCsvCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -377,6 +380,7 @@ public sealed class ConvertFromRustCsvCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -470,6 +474,7 @@ public sealed class ConvertToRustTomlCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -560,6 +565,7 @@ public sealed class ConvertFromRustTomlCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -583,6 +589,231 @@ public sealed class ConvertFromRustTomlCommand : PSCmdlet
         try
         {
             InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_from_rust_toml_cleanup", null, checkCancellation: false);
+        }
+        finally
+        {
+            _lifecycleStateHandle = 0;
+            PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle);
+        }
+    }
+
+    private static ErrorRecord CreateErrorRecord(string message)
+        => new(new RuntimeException(message), "RustlynPowerShellCmdletError", ErrorCategory.NotSpecified, null);
+}
+
+[Cmdlet(VerbsData.ConvertTo, "RustXml")]
+[OutputType(typeof(string), typeof(System.Xml.XmlDocument), typeof(System.IO.Stream))]
+public sealed class ConvertToRustXmlCommand : PSCmdlet
+{
+    private readonly PowerShellCmdletCancellation _cancellation = new();
+    private int _lifecycleStateHandle;
+
+    [Parameter(Position = 0, ValueFromPipeline = true)]
+    public object? InputObject { get; set; }
+
+    [Parameter]
+    public int Depth { get; set; } = 2;
+
+    [Parameter]
+    public SwitchParameter NoTypeInformation { get; set; }
+
+    [Parameter]
+    [ValidateSet("String", "Document", "Stream")]
+    public string As { get; set; } = "Document";
+
+    protected override void ProcessRecord()
+    {
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_to_rust_xml_process_record", InputObject);
+        }
+        catch
+        {
+            ReleaseLifecycleState();
+            throw;
+        }
+    }
+
+    protected override void EndProcessing()
+    {
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_to_rust_xml_end_processing", null);
+        }
+        finally
+        {
+            ReleaseLifecycleState();
+        }
+    }
+
+    protected override void StopProcessing()
+        => _cancellation.RequestCancellation();
+
+    private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
+    {
+        var captureXmlStream = string.Equals(As, "Stream", StringComparison.OrdinalIgnoreCase) && methodName.EndsWith("_end_processing", StringComparison.Ordinal);
+        var capturedOutput = captureXmlStream ? new System.Collections.Generic.List<object?>() : null;
+        var boundParameters = captureXmlStream
+            ? new System.Collections.Generic.Dictionary<string, object?>(MyInvocation.BoundParameters, StringComparer.OrdinalIgnoreCase) { ["As"] = "String" }
+            : MyInvocation.BoundParameters;
+        var context = new PowerShellCmdletContext(
+            value =>
+            {
+                if (capturedOutput is null)
+                {
+                    WriteObject(value);
+                }
+                else
+                {
+                    capturedOutput.Add(value);
+                }
+            },
+            (value, enumerateCollection) =>
+            {
+                if (capturedOutput is null)
+                {
+                    WriteObject(value, enumerateCollection);
+                }
+                else
+                {
+                    capturedOutput.Add(value);
+                }
+            },
+            WriteVerbose,
+            WriteWarning,
+            message => WriteError(CreateErrorRecord(message)),
+            WriteError,
+            ThrowTerminatingError,
+            target => ShouldProcess(target),
+            (target, action) => ShouldProcess(target, action),
+            boundParameters,
+            inputObject,
+            _cancellation,
+            EnsureLifecycleStateHandle());
+        PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
+        if (capturedOutput is not null)
+        {
+            foreach (var output in capturedOutput)
+            {
+                var xml = output?.ToString() ?? string.Empty;
+                WriteObject(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);
+            }
+        }
+    }
+
+    private int EnsureLifecycleStateHandle()
+    {
+        if (_lifecycleStateHandle == 0)
+        {
+            _lifecycleStateHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        }
+
+        return _lifecycleStateHandle;
+    }
+
+    private void ReleaseLifecycleState()
+    {
+        var lifecycleStateHandle = _lifecycleStateHandle;
+        if (lifecycleStateHandle == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_to_rust_xml_cleanup", null, checkCancellation: false);
+        }
+        finally
+        {
+            _lifecycleStateHandle = 0;
+            PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle);
+        }
+    }
+
+    private static ErrorRecord CreateErrorRecord(string message)
+        => new(new RuntimeException(message), "RustlynPowerShellCmdletError", ErrorCategory.NotSpecified, null);
+}
+
+[Cmdlet(VerbsData.ConvertFrom, "RustXml")]
+[OutputType(typeof(System.Xml.XmlDocument))]
+public sealed class ConvertFromRustXmlCommand : PSCmdlet
+{
+    private readonly PowerShellCmdletCancellation _cancellation = new();
+    private int _lifecycleStateHandle;
+
+    [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
+    public object? InputObject { get; set; }
+
+    protected override void ProcessRecord()
+    {
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_from_rust_xml_process_record", InputObject);
+        }
+        catch
+        {
+            ReleaseLifecycleState();
+            throw;
+        }
+    }
+
+    protected override void EndProcessing()
+    {
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_from_rust_xml_end_processing", null);
+        }
+        finally
+        {
+            ReleaseLifecycleState();
+        }
+    }
+
+    protected override void StopProcessing()
+        => _cancellation.RequestCancellation();
+
+    private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
+    {
+        var context = new PowerShellCmdletContext(
+            value => WriteObject(value),
+            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
+            WriteVerbose,
+            WriteWarning,
+            message => WriteError(CreateErrorRecord(message)),
+            WriteError,
+            ThrowTerminatingError,
+            target => ShouldProcess(target),
+            (target, action) => ShouldProcess(target, action),
+            MyInvocation.BoundParameters,
+            inputObject,
+            _cancellation,
+            EnsureLifecycleStateHandle());
+        PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
+    }
+
+    private int EnsureLifecycleStateHandle()
+    {
+        if (_lifecycleStateHandle == 0)
+        {
+            _lifecycleStateHandle = PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle();
+        }
+
+        return _lifecycleStateHandle;
+    }
+
+    private void ReleaseLifecycleState()
+    {
+        var lifecycleStateHandle = _lifecycleStateHandle;
+        if (lifecycleStateHandle == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            InvokeRustEntrypoint("rustlyn_powershell_format_cmdlets.dll", "Rustlyn.GeneratedModule", "convert_from_rust_xml_cleanup", null, checkCancellation: false);
         }
         finally
         {
@@ -650,6 +881,7 @@ public sealed class ConvertToRustYamlCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -746,6 +978,7 @@ public sealed class ConvertFromRustYamlCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -839,6 +1072,7 @@ public sealed class ConvertToRustBsonCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -935,6 +1169,7 @@ public sealed class ConvertFromRustBsonCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1028,6 +1263,7 @@ public sealed class ConvertToRustCborCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1124,6 +1360,7 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
+        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1158,5 +1395,3 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
     private static ErrorRecord CreateErrorRecord(string message)
         => new(new RuntimeException(message), "RustlynPowerShellCmdletError", ErrorCategory.NotSpecified, null);
 }
-
-

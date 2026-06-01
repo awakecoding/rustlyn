@@ -55,8 +55,8 @@ public static class PowerShellCmdletDescriptorCatalog
             ConvertTo("ConvertToRustTomlCommand", "RustToml", ["string"], [PipelineObject(), Parameter("Depth", "int", defaultValueExpression: "8")]),
             ConvertFrom("ConvertFromRustTomlCommand", "RustToml", ["System.Management.Automation.PSObject", "System.Collections.Generic.IDictionary<string, object>"], [PipelineObject(mandatory: true)]),
 
-            ConvertTo("ConvertToRustXmlCommand", "RustXml", ["string", "System.Xml.XmlDocument"], [PipelineObject(), Parameter("Depth", "int", defaultValueExpression: "2"), Switch("NoTypeInformation"), Parameter("As", "string", validateSet: ["String", "Document", "Stream"], defaultValueExpression: "\"Document\"")], PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype),
-            ConvertFrom("ConvertFromRustXmlCommand", "RustXml", ["System.Xml.XmlDocument"], [PipelineObject(mandatory: true)], PowerShellCmdletMigrationStrategies.CompatibilityFallbackPendingRunspacePrototype),
+            ConvertTo("ConvertToRustXmlCommand", "RustXml", ["string", "System.Xml.XmlDocument", "System.IO.Stream"], [PipelineObject(), Parameter("Depth", "int", defaultValueExpression: "2"), Switch("NoTypeInformation"), Parameter("As", "string", validateSet: ["String", "Document", "Stream"], defaultValueExpression: "\"Document\"")]),
+            ConvertFrom("ConvertFromRustXmlCommand", "RustXml", ["System.Xml.XmlDocument"], [PipelineObject(mandatory: true)]),
 
             ConvertTo("ConvertToRustYamlCommand", "RustYaml", ["string"], [PipelineObject()]),
             ConvertFrom("ConvertFromRustYamlCommand", "RustYaml", ["System.Management.Automation.PSObject", "System.Collections.Generic.IDictionary<string, object>"], [PipelineObject(mandatory: true), Switch("AsHashtable"), Switch("NoEnumerate")]),

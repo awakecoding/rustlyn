@@ -224,6 +224,36 @@ public static class ExternalPackageBindingSurfaces
                 [I32("cmdletContextHandle"), I32("jsonHandle"), I32("asHashtable"), I32("noEnumerate")],
                 "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(jsonHandle), asHashtable != 0, noEnumerate != 0)"),
             VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_add_xml_input",
+                "BindgenPowerShellCmdletAddXmlInput",
+                [I32("cmdletContextHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.AddXmlInput(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_add_xml_text_input",
+                "BindgenPowerShellCmdletAddXmlTextInput",
+                [I32("cmdletContextHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.AddXmlTextInput(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))"),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string",
+                "BindgenPowerShellCmdletConvertXmlInputsToString",
+                [I32("cmdletContextHandle"), I32("depth"), I32("noTypeInformation")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.ConvertXmlInputsToString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), depth, noTypeInformation != 0)")),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_xml_string",
+                "BindgenPowerShellCmdletWriteXmlString",
+                [I32("cmdletContextHandle"), I32("xmlHandle"), I32("outputMode")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteXml(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(xmlHandle), outputMode)"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_converted_xml_inputs",
+                "BindgenPowerShellCmdletWriteConvertedXmlInputs",
+                [I32("cmdletContextHandle"), I32("depth"), I32("noTypeInformation"), I32("outputMode")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteConvertedXmlInputs(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), depth, noTypeInformation != 0, outputMode)"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_xml_text_inputs_as_document",
+                "BindgenPowerShellCmdletWriteXmlTextInputsAsDocument",
+                [I32("cmdletContextHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteXmlTextInputsAsDocument(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))"),
+            VoidBinding(
                 "rustlyn_bindgen_powershell_cmdlet_write_verbose_string",
                 "BindgenPowerShellCmdletWriteVerboseString",
                 [I32("cmdletContextHandle"), I32("messageHandle")],
