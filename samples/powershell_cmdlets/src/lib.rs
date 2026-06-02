@@ -1419,30 +1419,14 @@ fn snapshots_to_json_text(
     enums_as_strings: bool,
     pretty: bool,
 ) -> String {
-    let mut output = String::with_capacity(snapshots.len().saturating_mul(128).max(4));
-    match snapshots {
-        [] => output.push_str("null"),
-        [single] => write_snapshot_json(
-            &mut output,
-            single,
-            max_depth,
-            0,
-            enums_as_strings,
-            pretty,
-            0,
-        ),
-        _ => write_snapshot_array(
-            &mut output,
-            snapshots,
-            max_depth,
-            0,
-            enums_as_strings,
-            pretty,
-            0,
-        ),
-    }
+    let value = snapshots_to_json_value(snapshots, max_depth, enums_as_strings);
+    let serialized = if pretty {
+        serde_json::to_string_pretty(&value)
+    } else {
+        serde_json::to_string(&value)
+    };
 
-    output
+    serialized.unwrap_or_else(|_| "null".to_owned())
 }
 
 fn write_snapshot_json(
