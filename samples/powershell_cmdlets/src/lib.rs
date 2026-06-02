@@ -2167,6 +2167,32 @@ fn normalize_snapshot_type_name(mut type_name: &str) -> &str {
     type_name
 }
 
+fn normalized_snapshot_scalar_type(snapshot: &PowerShellObjectSnapshot) -> Option<&str> {
+    snapshot
+        .scalar_type
+        .as_deref()
+        .map(trim_ascii)
+        .filter(|value| !value.is_empty())
+}
+
+fn snapshot_scalar_type_is_known(value: &str) -> bool {
+    matches!(
+        value,
+        SCALAR_TYPE_BOOLEAN
+            | SCALAR_TYPE_SIGNED_INTEGER
+            | SCALAR_TYPE_UNSIGNED_INTEGER
+            | SCALAR_TYPE_FLOATING_POINT
+            | SCALAR_TYPE_DECIMAL
+    )
+}
+
+fn snapshot_should_fallback_to_type_name(snapshot: &PowerShellObjectSnapshot) -> bool {
+    match normalized_snapshot_scalar_type(snapshot) {
+        None => true,
+        Some(value) => !snapshot_scalar_type_is_known(value),
+    }
+}
+
 fn snapshot_type_ends_with(type_name: &str, suffix: &str) -> bool {
     type_name == suffix || type_name.ends_with(suffix)
 }
@@ -2199,28 +2225,30 @@ fn snapshot_type_is_decimal(type_name: &str) -> bool {
 }
 
 fn snapshot_is_boolean(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_BOOLEAN)
-        || (snapshot.scalar_type.is_none() && snapshot_type_is_boolean(type_name))
+    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_BOOLEAN)
+        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_boolean(type_name))
 }
 
 fn snapshot_is_signed_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_SIGNED_INTEGER)
-        || (snapshot.scalar_type.is_none() && snapshot_type_is_signed_integer(type_name))
+    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_SIGNED_INTEGER)
+        || (snapshot_should_fallback_to_type_name(snapshot)
+            && snapshot_type_is_signed_integer(type_name))
 }
 
 fn snapshot_is_unsigned_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
-        || (snapshot.scalar_type.is_none() && snapshot_type_is_unsigned_integer(type_name))
+    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
+        || (snapshot_should_fallback_to_type_name(snapshot)
+            && snapshot_type_is_unsigned_integer(type_name))
 }
 
 fn snapshot_is_float(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_FLOATING_POINT)
-        || (snapshot.scalar_type.is_none() && snapshot_type_is_float(type_name))
+    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_FLOATING_POINT)
+        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_float(type_name))
 }
 
 fn snapshot_is_decimal(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_DECIMAL)
-        || (snapshot.scalar_type.is_none() && snapshot_type_is_decimal(type_name))
+    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_DECIMAL)
+        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_decimal(type_name))
 }
 
 fn is_non_finite_float_text(value: &str) -> bool {
@@ -4091,6 +4119,50 @@ mod tests {
 
         assert_eq!(snapshots_to_json_text(&[snapshot.clone()], 8, false, false), "3");
         assert_eq!(snapshots_to_json_value(&[snapshot], 8, false), serde_json::json!(3));
+    }
+
+    #[test]
+    fn degraded_scalar_type_falls_back_to_type_name_in_json() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: "dictionary".to_owned(),
+            type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
+            scalar_value: None,
+            scalar_type: None,
+            items: vec![],
+            properties: vec![
+                PowerShellPropertySnapshot {
+                    name: "name".to_owned(),
+                    value: PowerShellObjectSnapshot {
+                        kind: "scalar".to_owned(),
+                        type_name: Some("System.String".to_owned()),
+                        scalar_value: Some("rustlyn".to_owned()),
+                        scalar_type: Some(String::new()),
+                        items: vec![],
+                        properties: vec![],
+                    },
+                },
+                PowerShellPropertySnapshot {
+                    name: "count".to_owned(),
+                    value: PowerShellObjectSnapshot {
+                        kind: "scalar".to_owned(),
+                        type_name: Some("System.Int32".to_owned()),
+                        scalar_value: Some("3".to_owned()),
+                        scalar_type: Some(String::new()),
+                        items: vec![],
+                        properties: vec![],
+                    },
+                },
+            ],
+        };
+
+        assert_eq!(
+            snapshots_to_json_text(&[snapshot.clone()], 8, false, false),
+            r#"{"name":"rustlyn","count":3}"#
+        );
+        assert_eq!(
+            snapshots_to_json_value(&[snapshot], 8, false),
+            serde_json::json!({"name":"rustlyn","count":3})
+        );
     }
 
     #[test]
