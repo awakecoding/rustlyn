@@ -1810,41 +1810,24 @@ fn write_snapshot_array(
 fn write_scalar_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
     let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
-    match type_name {
-        "System.Boolean" if is_true_text(value) => {
-            output.push_str("true")
+    if snapshot_type_is_boolean(type_name) && is_true_text(value) {
+        output.push_str("true");
+    } else if snapshot_type_is_boolean(type_name) && is_false_text(value) {
+        output.push_str("false");
+    } else if snapshot_type_is_signed_integer(type_name) && is_json_integer_literal(value) {
+        output.push_str(value);
+    } else if snapshot_type_is_unsigned_integer(type_name) && is_unsigned_integer_literal(value) {
+        output.push_str(value);
+    } else if snapshot_type_is_float(type_name) && !is_non_finite_float_text(value) {
+        if trim_ascii(value) == "-0" {
+            output.push_str("-0.0");
+        } else {
+            output.push_str(value);
         }
-        "System.Boolean" if is_false_text(value) => {
-            output.push_str("false")
-        }
-        "System.Byte"
-        | "System.SByte"
-        | "System.Int16"
-        | "System.UInt16"
-        | "System.Int32"
-        | "System.UInt32"
-        | "System.Int64"
-            if is_json_integer_literal(value) =>
-        {
-            output.push_str(value)
-        }
-        "System.UInt64" if is_unsigned_integer_literal(value) => {
-            output.push_str(value)
-        }
-        "System.Single"
-        | "System.Double"
-            if !is_non_finite_float_text(value) =>
-        {
-            if trim_ascii(value) == "-0" {
-                output.push_str("-0.0")
-            } else {
-                output.push_str(value)
-            }
-        }
-        "System.Decimal" if !is_non_finite_float_text(value) => {
-            output.push_str(value)
-        }
-        _ => write_json_string(output, value),
+    } else if snapshot_type_is_decimal(type_name) && !is_non_finite_float_text(value) {
+        output.push_str(value);
+    } else {
+        write_json_string(output, value);
     }
 }
 
@@ -1882,6 +1865,37 @@ fn normalize_snapshot_type_name(mut type_name: &str) -> &str {
     }
 
     type_name
+}
+
+fn snapshot_type_ends_with(type_name: &str, suffix: &str) -> bool {
+    type_name == suffix || type_name.ends_with(suffix)
+}
+
+fn snapshot_type_is_boolean(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Boolean")
+}
+
+fn snapshot_type_is_signed_integer(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Byte")
+        || snapshot_type_ends_with(type_name, "System.SByte")
+        || snapshot_type_ends_with(type_name, "System.Int16")
+        || snapshot_type_ends_with(type_name, "System.UInt16")
+        || snapshot_type_ends_with(type_name, "System.Int32")
+        || snapshot_type_ends_with(type_name, "System.UInt32")
+        || snapshot_type_ends_with(type_name, "System.Int64")
+}
+
+fn snapshot_type_is_unsigned_integer(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.UInt64")
+}
+
+fn snapshot_type_is_float(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Single")
+        || snapshot_type_ends_with(type_name, "System.Double")
+}
+
+fn snapshot_type_is_decimal(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Decimal")
 }
 
 fn is_non_finite_float_text(value: &str) -> bool {
@@ -2038,33 +2052,28 @@ fn snapshot_to_json_value(
 
 fn scalar_snapshot_to_json(snapshot: &PowerShellObjectSnapshot) -> Value {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default()) {
-        "System.Boolean" => {
-            Value::Bool(value.eq_ignore_ascii_case("true"))
-        }
-        "System.Byte"
-        | "System.SByte"
-        | "System.Int16"
-        | "System.UInt16"
-        | "System.Int32"
-        | "System.UInt32"
-        | "System.Int64" => value
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_type_is_boolean(type_name) {
+        Value::Bool(value.eq_ignore_ascii_case("true"))
+    } else if snapshot_type_is_signed_integer(type_name) {
+        value
             .parse::<i64>()
             .map(|number| Value::Number(number.into()))
-            .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.UInt64" => value
+            .unwrap_or_else(|_| Value::String(value.to_owned()))
+    } else if snapshot_type_is_unsigned_integer(type_name) {
+        value
             .parse::<u64>()
             .map(|number| Value::Number(number.into()))
-            .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.Single"
-        | "System.Double"
-        | "System.Decimal" => value
+            .unwrap_or_else(|_| Value::String(value.to_owned()))
+    } else if snapshot_type_is_float(type_name) || snapshot_type_is_decimal(type_name) {
+        value
             .parse::<f64>()
             .ok()
             .and_then(serde_json::Number::from_f64)
             .map(Value::Number)
-            .unwrap_or_else(|| Value::String(value.to_owned())),
-        _ => Value::String(value.to_owned()),
+            .unwrap_or_else(|| Value::String(value.to_owned()))
+    } else {
+        Value::String(value.to_owned())
     }
 }
 
@@ -2213,33 +2222,21 @@ fn write_object_stream_value(
 
 fn write_scalar_object_stream(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default()) {
-        "System.Boolean" if is_true_text(value) => {
-            output.push_str("T;")
-        }
-        "System.Boolean" if is_false_text(value) => {
-            output.push_str("F;")
-        }
-        "System.Byte"
-        | "System.SByte"
-        | "System.Int16"
-        | "System.UInt16"
-        | "System.Int32"
-        | "System.UInt32"
-        | "System.Int64"
-        | "System.UInt64" => {
-            output.push('I');
-            output.push_str(value);
-            output.push(';');
-        }
-        "System.Single"
-        | "System.Double"
-        | "System.Decimal" => {
-            output.push('D');
-            output.push_str(value);
-            output.push(';');
-        }
-        _ => write_object_stream_string(output, value),
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_type_is_boolean(type_name) && is_true_text(value) {
+        output.push_str("T;");
+    } else if snapshot_type_is_boolean(type_name) && is_false_text(value) {
+        output.push_str("F;");
+    } else if snapshot_type_is_signed_integer(type_name) || snapshot_type_is_unsigned_integer(type_name) {
+        output.push('I');
+        output.push_str(value);
+        output.push(';');
+    } else if snapshot_type_is_float(type_name) || snapshot_type_is_decimal(type_name) {
+        output.push('D');
+        output.push_str(value);
+        output.push(';');
+    } else {
+        write_object_stream_string(output, value);
     }
 }
 
@@ -2328,37 +2325,23 @@ fn snapshot_to_toml_json_scalar(
 
 fn snapshot_scalar_toml_value(snapshot: &PowerShellObjectSnapshot) -> Value {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default()) {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => {
-            Value::Bool(true)
-        }
-        "System.Boolean" if value.eq_ignore_ascii_case("false") => {
-            Value::Bool(false)
-        }
-        "System.Byte"
-        | "System.SByte"
-        | "System.Int16"
-        | "System.UInt16"
-        | "System.Int32"
-        | "System.UInt32"
-        | "System.Int64"
-            if value.parse::<i64>().is_ok() =>
-        {
-            Value::Number(serde_json::Number::from(value.parse::<i64>().unwrap_or_default()))
-        }
-        "System.UInt64" if value.parse::<u64>().is_ok() => Value::Number(
-            serde_json::Number::from(value.parse::<u64>().unwrap_or_default()),
-        ),
-        "System.Single"
-        | "System.Double"
-        | "System.Decimal"
-            if value.parse::<f64>().is_ok_and(f64::is_finite) =>
-        {
-            serde_json::Number::from_f64(value.parse::<f64>().unwrap_or_default())
-                .map(Value::Number)
-                .unwrap_or_else(|| Value::String(value.to_owned()))
-        }
-        _ => Value::String(value.to_owned()),
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_type_is_boolean(type_name) && value.eq_ignore_ascii_case("true") {
+        Value::Bool(true)
+    } else if snapshot_type_is_boolean(type_name) && value.eq_ignore_ascii_case("false") {
+        Value::Bool(false)
+    } else if snapshot_type_is_signed_integer(type_name) && value.parse::<i64>().is_ok() {
+        Value::Number(serde_json::Number::from(value.parse::<i64>().unwrap_or_default()))
+    } else if snapshot_type_is_unsigned_integer(type_name) && value.parse::<u64>().is_ok() {
+        Value::Number(serde_json::Number::from(value.parse::<u64>().unwrap_or_default()))
+    } else if (snapshot_type_is_float(type_name) || snapshot_type_is_decimal(type_name))
+        && value.parse::<f64>().is_ok_and(f64::is_finite)
+    {
+        serde_json::Number::from_f64(value.parse::<f64>().unwrap_or_default())
+            .map(Value::Number)
+            .unwrap_or_else(|| Value::String(value.to_owned()))
+    } else {
+        Value::String(value.to_owned())
     }
 }
 
@@ -2421,35 +2404,21 @@ fn write_toml_snapshot_value(
         }
         "scalar" | "enum" => {
             let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-            match normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default()) {
-                "System.Boolean" if value.eq_ignore_ascii_case("true") => {
-                    output.push_str("true")
-                }
-                "System.Boolean" if value.eq_ignore_ascii_case("false") => {
-                    output.push_str("false")
-                }
-                "System.Byte"
-                | "System.SByte"
-                | "System.Int16"
-                | "System.UInt16"
-                | "System.Int32"
-                | "System.UInt32"
-                | "System.Int64"
-                    if is_integer_literal(value) =>
-                {
-                    output.push_str(value);
-                }
-                "System.UInt64" if is_unsigned_integer_literal(value) => {
-                    output.push_str(value)
-                }
-                "System.Single"
-                | "System.Double"
-                | "System.Decimal"
-                    if is_float_literal(value) || is_integer_literal(value) =>
-                {
-                    output.push_str(value);
-                }
-                _ => write_json_string(output, value),
+            let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+            if snapshot_type_is_boolean(type_name) && value.eq_ignore_ascii_case("true") {
+                output.push_str("true");
+            } else if snapshot_type_is_boolean(type_name) && value.eq_ignore_ascii_case("false") {
+                output.push_str("false");
+            } else if snapshot_type_is_signed_integer(type_name) && is_integer_literal(value) {
+                output.push_str(value);
+            } else if snapshot_type_is_unsigned_integer(type_name) && is_unsigned_integer_literal(value) {
+                output.push_str(value);
+            } else if (snapshot_type_is_float(type_name) || snapshot_type_is_decimal(type_name))
+                && (is_float_literal(value) || is_integer_literal(value))
+            {
+                output.push_str(value);
+            } else {
+                write_json_string(output, value);
             }
             Ok(())
         }
