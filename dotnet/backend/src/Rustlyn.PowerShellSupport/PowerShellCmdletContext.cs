@@ -77,8 +77,9 @@ public sealed class PowerShellCmdletContext
         _throwTerminatingError = throwTerminatingError;
         _shouldProcess = shouldProcess;
         _shouldProcessWithAction = shouldProcessWithAction;
-        _boundParameters = boundParameters
-            ?? ReadOnlyDictionary<string, object?>.Empty;
+        _boundParameters = boundParameters is not null
+            ? new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(boundParameters, StringComparer.OrdinalIgnoreCase))
+            : ReadOnlyDictionary<string, object?>.Empty;
         InputObject = inputObject;
         Cancellation = cancellation;
         LifecycleStateHandle = lifecycleStateHandle;

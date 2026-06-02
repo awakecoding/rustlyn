@@ -4908,12 +4908,20 @@ static void PowerShellCmdletDescriptorsMatchCurrentCmdlets()
     var shim = PowerShellCmdletShimGenerator.GenerateCSharp(descriptors);
     var stopProcessingCount = shim.Split("protected override void StopProcessing()", StringSplitOptions.None).Length - 1;
     Assert(stopProcessingCount == generatedDescriptors.Length, "Expected generated cmdlet shims to include one StopProcessing cancellation hook per generated-rust descriptor.");
-    Assert(shim.Contains("(value, enumerateCollection) => WriteObject(value, enumerateCollection)", StringComparison.Ordinal), "Expected generated cmdlet shims to preserve WriteObject enumeration semantics.");
+    Assert(
+        shim.Contains("(value, enumerateCollection) => WriteObject(value, enumerateCollection)", StringComparison.Ordinal)
+            || (shim.Contains("_writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;", StringComparison.Ordinal)
+                && shim.Contains("private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)", StringComparison.Ordinal)
+                && shim.Contains("=> WriteObject(value, enumerateCollection);", StringComparison.Ordinal)),
+        "Expected generated cmdlet shims to preserve WriteObject enumeration semantics.");
     Assert(shim.Contains("PowerShellGeneratedCmdletInvoker.CreateLifecycleStateHandle()", StringComparison.Ordinal), "Expected generated cmdlet shims to allocate per-instance lifecycle state for Rust.");
     Assert(shim.Contains("PowerShellGeneratedCmdletInvoker.ReleaseLifecycleStateHandle(lifecycleStateHandle)", StringComparison.Ordinal), "Expected generated cmdlet shims to release per-instance lifecycle state.");
     Assert(shim.Contains("EnsureLifecycleStateHandle());", StringComparison.Ordinal), "Expected generated cmdlet shims to pass per-instance lifecycle state into Rust contexts.");
     Assert(shim.Contains("catch", StringComparison.Ordinal) && shim.Contains("ReleaseLifecycleState();", StringComparison.Ordinal), "Expected generated cmdlet shims to release lifecycle state on terminating lifecycle failures.");
-    Assert(shim.Contains("PowerShellCmdletBridge.FlushPendingOutputs(context);", StringComparison.Ordinal), "Expected generated cmdlet shims to flush host-materialized pending outputs after Rust lifecycle calls.");
+    Assert(
+        shim.Contains("var context = new PowerShellCmdletContext(", StringComparison.Ordinal)
+            && !shim.Contains("FlushPendingOutputs", StringComparison.Ordinal),
+        "Expected generated cmdlet shims to emit host-materialized outputs directly through the cmdlet context instead of deferred bridge flushing.");
     Assert(shim.Contains("captureXmlStream", StringComparison.Ordinal) && shim.Contains("[\"As\"] = \"String\"", StringComparison.Ordinal), "Expected XML stream output to route through the generated Rust string lifecycle before host stream materialization.");
     Assert(shim.Contains("\"Rustlyn.GeneratedModule\"", StringComparison.Ordinal), "Expected generated cmdlet shims to call the type emitted by Rustlyn translated assemblies.");
     Assert(shim.Contains("convert_to_rust_json_process_record", StringComparison.Ordinal), "Expected generated cmdlet shim to call the Rust JSON ProcessRecord entrypoint.");

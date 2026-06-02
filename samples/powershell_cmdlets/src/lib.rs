@@ -465,6 +465,10 @@ const STATUS_TRANSFORM: i32 = -6;
 const XML_OUTPUT_STRING: i32 = 0;
 const XML_OUTPUT_DOCUMENT: i32 = 1;
 
+fn utf8_string_from_bytes(bytes: Vec<u8>) -> RuntimeResult<String> {
+    String::from_utf8(bytes).map_err(|_| STATUS_PARSE)
+}
+
 #[derive(Clone, Debug, Deserialize)]
 struct PowerShellPropertySnapshot {
     name: String,
@@ -549,7 +553,7 @@ impl ManagedString {
         }
 
         buffer.truncate(copied as usize);
-        Ok(String::from_utf8_lossy(&buffer).into_owned())
+        utf8_string_from_bytes(buffer)
     }
 
     fn release(self) -> RuntimeResult<()> {
@@ -621,7 +625,7 @@ impl CmdletContext {
 
     fn input_string(&self) -> RuntimeResult<String> {
         let bytes = self.input_bytes()?;
-        Ok(String::from_utf8_lossy(&bytes).into_owned())
+        utf8_string_from_bytes(bytes)
     }
 
     fn input_bytes(&self) -> RuntimeResult<Vec<u8>> {
