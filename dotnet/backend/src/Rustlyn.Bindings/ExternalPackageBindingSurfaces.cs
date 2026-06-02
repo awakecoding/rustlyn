@@ -338,6 +338,56 @@ public static class ExternalPackageBindingSurfaces
                 "BindgenPowerShellCmdletGetInputSnapshotJson",
                 [I32("cmdletContextHandle")],
                 ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputSnapshotJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle",
+                "BindgenPowerShellCmdletGetInputSnapshotHandle",
+                [I32("cmdletContextHandle")],
+                "ManagedInteropRuntime.AddObjectHandle(Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputSnapshot(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle)))"),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_snapshot_get_kind",
+                "BindgenPowerShellSnapshotGetKind",
+                [I32("snapshotHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotKind(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle))")),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_type_name",
+                "BindgenPowerShellSnapshotGetTypeName",
+                [I32("snapshotHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotTypeName(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle)) is string value ? ManagedInteropRuntime.AddObjectHandle(value) : 0"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_scalar_value",
+                "BindgenPowerShellSnapshotGetScalarValue",
+                [I32("snapshotHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotScalarValue(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle)) is string value ? ManagedInteropRuntime.AddObjectHandle(value) : 0"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_scalar_type",
+                "BindgenPowerShellSnapshotGetScalarType",
+                [I32("snapshotHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotScalarType(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle)) is string value ? ManagedInteropRuntime.AddObjectHandle(value) : 0"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_item_count",
+                "BindgenPowerShellSnapshotGetItemCount",
+                [I32("snapshotHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotItemCount(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_item",
+                "BindgenPowerShellSnapshotGetItem",
+                [I32("snapshotHandle"), I32("index")],
+                "ManagedInteropRuntime.AddObjectHandle(Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotItem(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle), index))"),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_property_count",
+                "BindgenPowerShellSnapshotGetPropertyCount",
+                [I32("snapshotHandle")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotPropertyCount(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle))"),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_snapshot_get_property_name",
+                "BindgenPowerShellSnapshotGetPropertyName",
+                [I32("snapshotHandle"), I32("index")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotPropertyName(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle), index)")),
+            Int32Binding(
+                "rustlyn_bindgen_powershell_snapshot_get_property_value",
+                "BindgenPowerShellSnapshotGetPropertyValue",
+                [I32("snapshotHandle"), I32("index")],
+                "ManagedInteropRuntime.AddObjectHandle(Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetSnapshotPropertyValue(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellObjectSnapshot>(snapshotHandle), index))"),
             BooleanBinding(
                 "rustlyn_bindgen_powershell_cmdlet_should_process_string",
                 "BindgenPowerShellCmdletShouldProcessString",

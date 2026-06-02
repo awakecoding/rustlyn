@@ -44,6 +44,49 @@ unsafe extern "C" {
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_kind(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_type_name(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_scalar_value(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_scalar_type(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_item_count(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_item(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_count(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_name(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_value(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
@@ -191,6 +234,119 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_string_copy_utf8(
 #[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
     _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_kind(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_type_name(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_scalar_value(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_scalar_type(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_item_count(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_item(
+    _snapshot_handle: i32,
+    _index: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_count(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_name(
+    _snapshot_handle: i32,
+    _index: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_value(
+    _snapshot_handle: i32,
+    _index: i32,
     exception_out: *mut i32,
 ) -> i32 {
     unsafe {
@@ -534,7 +690,7 @@ impl ManagedString {
         Self { handle }
     }
 
-    fn to_utf8_string(&self) -> RuntimeResult<String> {
+    fn to_utf8_bytes(&self) -> RuntimeResult<Vec<u8>> {
         let mut exception_handle = 0;
         let length = unsafe {
             rustlyn_bindgen_powershell_string_utf8_len(self.handle, &mut exception_handle)
@@ -559,11 +715,151 @@ impl ManagedString {
         }
 
         buffer.truncate(copied as usize);
-        utf8_string_from_bytes(buffer)
+        Ok(buffer)
+    }
+
+    fn to_utf8_string(&self) -> RuntimeResult<String> {
+        utf8_string_from_bytes(self.to_utf8_bytes()?)
     }
 
     fn release(self) -> RuntimeResult<()> {
         release_handle(self.handle)
+    }
+}
+
+struct ManagedSnapshot {
+    handle: i32,
+}
+
+impl ManagedSnapshot {
+    unsafe fn from_handle(handle: i32) -> Self {
+        Self { handle }
+    }
+
+    fn release(self) -> RuntimeResult<()> {
+        release_handle(self.handle)
+    }
+
+    fn into_snapshot(self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        let result = (|| {
+            let kind = self.required_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_kind(self.handle, exception_out)
+            })?;
+            let type_name = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_type_name(self.handle, exception_out)
+            })?;
+            let scalar_value = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_scalar_value(self.handle, exception_out)
+            })?;
+            let scalar_type = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_scalar_type(self.handle, exception_out)
+            })?;
+
+            let item_count = self.get_count(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_item_count(self.handle, exception_out)
+            })?;
+            let mut items = Vec::with_capacity(item_count as usize);
+            for index in 0..item_count {
+                let child = self.required_snapshot(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_item(self.handle, index, exception_out)
+                })?;
+                items.push(child.into_snapshot()?);
+            }
+
+            let property_count = self.get_count(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_property_count(self.handle, exception_out)
+            })?;
+            let mut properties = Vec::with_capacity(property_count as usize);
+            for index in 0..property_count {
+                let name = self.required_string(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_property_name(
+                        self.handle,
+                        index,
+                        exception_out,
+                    )
+                })?;
+                let value = self.required_snapshot(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_property_value(
+                        self.handle,
+                        index,
+                        exception_out,
+                    )
+                })?;
+                properties.push(PowerShellPropertySnapshot {
+                    name,
+                    value: value.into_snapshot()?,
+                });
+            }
+
+            Ok(PowerShellObjectSnapshot {
+                kind,
+                type_name,
+                scalar_value,
+                scalar_type,
+                items,
+                properties,
+            })
+        })();
+
+        let release = self.release();
+        release?;
+        result
+    }
+
+    fn required_string(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<String> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Err(STATUS_PARSE);
+        }
+        let value = unsafe { ManagedString::from_handle(handle) };
+        let text = value.to_utf8_string();
+        let release = value.release();
+        release?;
+        text
+    }
+
+    fn optional_string(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<Option<String>> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Ok(None);
+        }
+        let value = unsafe { ManagedString::from_handle(handle) };
+        let text = value.to_utf8_string();
+        let release = value.release();
+        release?;
+        Ok(Some(text?))
+    }
+
+    fn required_snapshot(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<ManagedSnapshot> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Err(STATUS_PARSE);
+        }
+        Ok(unsafe { ManagedSnapshot::from_handle(handle) })
+    }
+
+    fn get_count(&self, get_count: impl FnOnce(*mut i32) -> i32) -> RuntimeResult<i32> {
+        let count = self.get_handle(get_count)?;
+        if count < 0 {
+            return Err(STATUS_EXCEPTION);
+        }
+        Ok(count)
+    }
+
+    fn get_handle(&self, get_handle: impl FnOnce(*mut i32) -> i32) -> RuntimeResult<i32> {
+        let mut exception_handle = 0;
+        let handle = get_handle(&mut exception_handle);
+        exception_to_result(exception_handle)?;
+        Ok(handle)
     }
 }
 
@@ -612,7 +908,7 @@ impl CmdletContext {
     fn input_snapshot(&self) -> RuntimeResult<PowerShellObjectSnapshot> {
         let mut exception_handle = 0;
         let snapshot_handle = unsafe {
-            rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
+            rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
                 self.handle,
                 &mut exception_handle,
             )
@@ -622,11 +918,7 @@ impl CmdletContext {
             return Err(STATUS_EXCEPTION);
         }
 
-        let snapshot = unsafe { ManagedString::from_handle(snapshot_handle) };
-        let json = snapshot.to_utf8_string();
-        let release = snapshot.release();
-        release?;
-        parse_snapshot_json(&json?)
+        unsafe { ManagedSnapshot::from_handle(snapshot_handle) }.into_snapshot()
     }
 
     fn input_string(&self) -> RuntimeResult<String> {
@@ -788,10 +1080,10 @@ impl CmdletContext {
             }
 
             let value = unsafe { ManagedString::from_handle(result) };
-            let text = value.to_utf8_string();
+            let text = value.to_utf8_bytes();
             let release = value.release();
             release?;
-            let snapshot = parse_snapshot_json(&text?)?;
+            let snapshot = parse_snapshot_bytes(&text?)?;
             Ok(snapshot_to_string_array(&snapshot))
         })
     }
@@ -2282,39 +2574,23 @@ fn write_raw_object_stream_string(output: &mut String, value: &str) {
     output.push_str(value);
 }
 
-fn snapshots_to_toml_json_value(
-    snapshots: &[PowerShellObjectSnapshot],
-    max_depth: i32,
-) -> RuntimeResult<Value> {
-    let [snapshot] = snapshots else {
-        return Err(STATUS_PARSE);
-    };
-    match snapshot.kind.as_str() {
-        "dictionary" | "psobject" => {
-            let mut object = Map::new();
-            for property in &snapshot.properties {
-                object.insert(
-                    property.name.clone(),
-                    snapshot_to_toml_json_scalar(&property.value, max_depth, 1),
-                );
-            }
-            Ok(Value::Object(object))
-        }
-        _ => Err(STATUS_PARSE),
-    }
-}
-
 fn snapshots_to_toml_text(
     snapshots: &[PowerShellObjectSnapshot],
     max_depth: i32,
 ) -> RuntimeResult<String> {
-    let value = snapshots_to_toml_json_value(snapshots, max_depth)?;
-    let object = value.as_object().ok_or(STATUS_PARSE)?;
+    let [snapshot] = snapshots else {
+        return Err(STATUS_PARSE);
+    };
+    if !matches!(snapshot.kind.as_str(), "dictionary" | "psobject") {
+        return Err(STATUS_PARSE);
+    }
+
     let mut output = String::new();
-    for (key, value) in object {
-        write_toml_key(&mut output, key);
+    for property in &snapshot.properties {
+        write_toml_key(&mut output, &property.name);
         output.push_str(" = ");
-        write_json_value_as_toml(&mut output, value)?;
+        let value = snapshot_to_toml_json_scalar(&property.value, max_depth, 1);
+        write_json_value_as_toml(&mut output, &value)?;
         output.push('\n');
     }
     Ok(output)
@@ -3143,6 +3419,10 @@ fn csv_field_needs_quotes(value: &str, delimiter: char) -> bool {
 }
 
 fn parse_snapshot_json(input: &str) -> RuntimeResult<PowerShellObjectSnapshot> {
+    parse_snapshot_bytes(input.as_bytes())
+}
+
+fn parse_snapshot_bytes(input: &[u8]) -> RuntimeResult<PowerShellObjectSnapshot> {
     SnapshotJsonParser::new(input).parse_snapshot()
 }
 
@@ -3152,9 +3432,9 @@ struct SnapshotJsonParser<'a> {
 }
 
 impl<'a> SnapshotJsonParser<'a> {
-    fn new(input: &'a str) -> Self {
+    fn new(input: &'a [u8]) -> Self {
         Self {
-            bytes: input.as_bytes(),
+            bytes: input,
             index: 0,
         }
     }
@@ -3171,40 +3451,28 @@ impl<'a> SnapshotJsonParser<'a> {
 
     fn parse_snapshot_object(&mut self) -> RuntimeResult<PowerShellObjectSnapshot> {
         self.expect_char('{')?;
-        let mut kind = None;
+        self.expect_member_name_first(b"kind")?;
+        let kind = self.parse_string()?;
         let mut type_name = None;
         let mut scalar_value = None;
         let mut scalar_type = None;
-        let mut items = Vec::new();
-        let mut properties = Vec::new();
-
-        loop {
-            self.skip_whitespace();
-            if self.consume_char('}') {
-                break;
-            }
-
-            let name = self.parse_string()?;
-            self.expect_char(':')?;
-            match name.as_str() {
-                "kind" => kind = Some(self.parse_string()?),
-                "typeName" => type_name = self.parse_nullable_string()?,
-                "scalarValue" => scalar_value = self.parse_nullable_string()?,
-                "scalarType" => scalar_type = self.parse_nullable_string()?,
-                "items" => items = self.parse_snapshot_array()?,
-                "properties" => properties = self.parse_property_array()?,
-                _ => return Err(STATUS_PARSE),
-            }
-
-            self.skip_whitespace();
-            if self.consume_char('}') {
-                break;
-            }
-            self.expect_char(',')?;
+        if self.consume_optional_member_name(b"typeName")? {
+            type_name = self.parse_nullable_string()?;
         }
+        if self.consume_optional_member_name(b"scalarValue")? {
+            scalar_value = self.parse_nullable_string()?;
+        }
+        if self.consume_optional_member_name(b"scalarType")? {
+            scalar_type = self.parse_nullable_string()?;
+        }
+        self.expect_member_name_next(b"items")?;
+        let items = self.parse_snapshot_array()?;
+        self.expect_member_name_next(b"properties")?;
+        let properties = self.parse_property_array()?;
+        self.expect_char('}')?;
 
         Ok(PowerShellObjectSnapshot {
-            kind: kind.ok_or(STATUS_PARSE)?,
+            kind,
             type_name,
             scalar_value,
             scalar_type,
@@ -3215,33 +3483,15 @@ impl<'a> SnapshotJsonParser<'a> {
 
     fn parse_property_object(&mut self) -> RuntimeResult<PowerShellPropertySnapshot> {
         self.expect_char('{')?;
-        let mut name = None;
-        let mut value = None;
-
-        loop {
-            self.skip_whitespace();
-            if self.consume_char('}') {
-                break;
-            }
-
-            let field = self.parse_string()?;
-            self.expect_char(':')?;
-            match field.as_str() {
-                "name" => name = Some(self.parse_string()?),
-                "value" => value = Some(self.parse_snapshot_object()?),
-                _ => return Err(STATUS_PARSE),
-            }
-
-            self.skip_whitespace();
-            if self.consume_char('}') {
-                break;
-            }
-            self.expect_char(',')?;
-        }
+        self.expect_member_name_first(b"name")?;
+        let name = self.parse_string()?;
+        self.expect_member_name_next(b"value")?;
+        let value = self.parse_snapshot_object()?;
+        self.expect_char('}')?;
 
         Ok(PowerShellPropertySnapshot {
-            name: name.ok_or(STATUS_PARSE)?,
-            value: value.ok_or(STATUS_PARSE)?,
+            name,
+            value,
         })
     }
 
@@ -3291,31 +3541,39 @@ impl<'a> SnapshotJsonParser<'a> {
 
     fn parse_string(&mut self) -> RuntimeResult<String> {
         self.expect_byte(b'"')?;
-        let mut output = String::new();
+        let start = self.index;
         loop {
-            let Some(byte) = self.peek_byte() else {
+            let Some(byte) = self.next_byte() else {
                 return Err(STATUS_PARSE);
             };
             match byte {
                 b'"' => {
-                    self.index += 1;
-                    return Ok(output);
+                    let text = std::str::from_utf8(&self.bytes[start..self.index - 1])
+                        .map_err(|_| STATUS_PARSE)?;
+                    return Ok(text.to_owned());
                 }
-                b'\\' => {
-                    self.index += 1;
-                    output.push(self.parse_escape_sequence()?);
-                }
+                b'\\' => break,
                 0x00..=0x1f => return Err(STATUS_PARSE),
-                0x20..=0x7f => {
-                    self.index += 1;
-                    output.push(byte as char);
-                }
-                _ => {
-                    let remaining = std::str::from_utf8(&self.bytes[self.index..]).map_err(|_| STATUS_PARSE)?;
-                    let ch = remaining.chars().next().ok_or(STATUS_PARSE)?;
-                    self.index += ch.len_utf8();
-                    output.push(ch);
-                }
+                0x20..=0x7e => {}
+                _ => return Err(STATUS_PARSE),
+            }
+        }
+
+        let mut output = std::str::from_utf8(&self.bytes[start..self.index - 1])
+            .map_err(|_| STATUS_PARSE)?
+            .to_owned();
+        output.push(self.parse_escape_sequence()?);
+
+        loop {
+            let Some(byte) = self.next_byte() else {
+                return Err(STATUS_PARSE);
+            };
+            match byte {
+                b'"' => return Ok(output),
+                b'\\' => output.push(self.parse_escape_sequence()?),
+                0x00..=0x1f => return Err(STATUS_PARSE),
+                0x20..=0x7e => output.push(byte as char),
+                _ => return Err(STATUS_PARSE),
             }
         }
     }
@@ -3363,10 +3621,13 @@ impl<'a> SnapshotJsonParser<'a> {
             let Some(ch) = self.next_byte() else {
                 return Err(STATUS_PARSE);
             };
-            let Some(digit) = (ch as char).to_digit(16) else {
-                return Err(STATUS_PARSE);
+            let digit = match ch {
+                b'0'..=b'9' => (ch - b'0') as u16,
+                b'a'..=b'f' => (ch - b'a' + 10) as u16,
+                b'A'..=b'F' => (ch - b'A' + 10) as u16,
+                _ => return Err(STATUS_PARSE),
             };
-            value = (value << 4) | digit as u16;
+            value = (value << 4) | digit;
         }
         Ok(value)
     }
@@ -3383,15 +3644,53 @@ impl<'a> SnapshotJsonParser<'a> {
         true
     }
 
+    fn expect_member_name_first(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_quoted_ascii(expected)?;
+        self.expect_char(':')
+    }
+
+    fn expect_member_name_next(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_char(',')?;
+        self.expect_member_name_first(expected)
+    }
+
+    fn consume_optional_member_name(&mut self, expected: &[u8]) -> RuntimeResult<bool> {
+        self.skip_whitespace();
+        let checkpoint = self.index;
+        if !self.consume_byte(b',') {
+            return Ok(false);
+        }
+        if self.expect_quoted_ascii(expected).is_err() {
+            self.index = checkpoint;
+            return Ok(false);
+        }
+        self.expect_char(':')?;
+        Ok(true)
+    }
+
+    fn expect_quoted_ascii(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_byte(b'"')?;
+        for &byte in expected {
+            if self.next_byte() != Some(byte) {
+                return Err(STATUS_PARSE);
+            }
+        }
+        self.expect_byte(b'"')
+    }
+
     fn expect_char(&mut self, expected: char) -> RuntimeResult<()> {
         self.expect_byte(expected as u8)
     }
 
     fn expect_byte(&mut self, expected: u8) -> RuntimeResult<()> {
         self.skip_whitespace();
-        match self.next_byte() {
-            Some(ch) if ch == expected => Ok(()),
-            _ => Err(STATUS_PARSE),
+        let Some(ch) = self.next_byte() else {
+            return Err(STATUS_PARSE);
+        };
+        if ch == expected {
+            Ok(())
+        } else {
+            Err(STATUS_PARSE)
         }
     }
 
@@ -3401,11 +3700,12 @@ impl<'a> SnapshotJsonParser<'a> {
 
     fn consume_byte(&mut self, expected: u8) -> bool {
         self.skip_whitespace();
-        matches!(self.peek_byte(), Some(ch) if ch == expected)
-            .then(|| {
-                self.index += 1;
-            })
-            .is_some()
+        if self.peek_byte() == Some(expected) {
+            self.index += 1;
+            true
+        } else {
+            false
+        }
     }
 
     fn peek_byte(&self) -> Option<u8> {
@@ -3817,6 +4117,23 @@ mod tests {
             .expect("json text snapshot should parse");
 
         assert_eq!(snapshot_scalar_text(&snapshot).as_deref(), Some(json_text));
+    }
+
+    #[test]
+    fn snapshot_parser_accepts_managed_ordered_dictionary_shape() {
+        let snapshot_json = r#"{"kind":"dictionary","typeName":"System.Collections.Specialized.OrderedDictionary","items":[],"properties":[{"name":"name","value":{"kind":"scalar","typeName":"System.String","scalarValue":"rustlyn","items":[],"properties":[]}},{"name":"count","value":{"kind":"scalar","typeName":"System.Int32","scalarValue":"3","scalarType":"i","items":[],"properties":[]}}]}"#;
+
+        let snapshot = parse_snapshot_json(snapshot_json)
+            .expect("ordered dictionary snapshot should parse");
+
+        assert_eq!(snapshot.kind, "dictionary");
+        assert_eq!(snapshot.type_name.as_deref(), Some("System.Collections.Specialized.OrderedDictionary"));
+        assert_eq!(snapshot.properties.len(), 2);
+        assert_eq!(snapshot.properties[0].name, "name");
+        assert_eq!(snapshot.properties[0].value.scalar_value.as_deref(), Some("rustlyn"));
+        assert_eq!(snapshot.properties[1].name, "count");
+        assert_eq!(snapshot.properties[1].value.scalar_value.as_deref(), Some("3"));
+        assert_eq!(snapshot.properties[1].value.scalar_type.as_deref(), Some(SCALAR_TYPE_SIGNED_INTEGER));
     }
 
     #[test]

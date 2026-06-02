@@ -262,6 +262,66 @@ public static class PowerShellCmdletBridge
         return context.GetInputObjectSnapshotJson();
     }
 
+    public static PowerShellObjectSnapshot GetInputSnapshot(PowerShellCmdletContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return PowerShellObjectSnapshot.FromObject(context.InputObject);
+    }
+
+    public static string GetSnapshotKind(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Kind;
+    }
+
+    public static string? GetSnapshotTypeName(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.TypeName;
+    }
+
+    public static string? GetSnapshotScalarValue(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.ScalarValue;
+    }
+
+    public static string? GetSnapshotScalarType(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.ScalarType;
+    }
+
+    public static int GetSnapshotItemCount(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Items.Count;
+    }
+
+    public static PowerShellObjectSnapshot GetSnapshotItem(PowerShellObjectSnapshot snapshot, int index)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Items[index];
+    }
+
+    public static int GetSnapshotPropertyCount(PowerShellObjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Properties.Count;
+    }
+
+    public static string GetSnapshotPropertyName(PowerShellObjectSnapshot snapshot, int index)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Properties[index].Name;
+    }
+
+    public static PowerShellObjectSnapshot GetSnapshotPropertyValue(PowerShellObjectSnapshot snapshot, int index)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Properties[index].Value;
+    }
+
     public static string GetBoundParameterSnapshotJson(PowerShellCmdletContext context, string name)
     {
         ArgumentNullException.ThrowIfNull(context);
