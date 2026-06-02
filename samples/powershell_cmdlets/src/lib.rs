@@ -3145,7 +3145,7 @@ fn csv_field_needs_quotes(value: &str, delimiter: char) -> bool {
 }
 
 fn parse_snapshot_json(input: &str) -> RuntimeResult<PowerShellObjectSnapshot> {
-    SnapshotJsonParser::new(input).parse_snapshot()
+    serde_json::from_str(input).map_err(|_| STATUS_PARSE)
 }
 
 struct SnapshotJsonParser<'a> {
