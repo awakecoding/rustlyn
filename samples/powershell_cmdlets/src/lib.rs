@@ -1419,14 +1419,300 @@ fn snapshots_to_json_text(
     enums_as_strings: bool,
     pretty: bool,
 ) -> String {
-    let value = snapshots_to_json_value(snapshots, max_depth, enums_as_strings);
-    let serialized = if pretty {
-        serde_json::to_string_pretty(&value)
-    } else {
-        serde_json::to_string(&value)
-    };
+    let mut output = String::with_capacity(snapshots.len().saturating_mul(128).max(4));
+    match snapshots {
+        [] => output.push_str("null"),
+        [single] => write_snapshot_json_iterative(
+            &mut output,
+            single,
+            max_depth,
+            enums_as_strings,
+            pretty,
+            0,
+        ),
+        _ => write_snapshot_array_iterative(
+            &mut output,
+            snapshots,
+            max_depth,
+            0,
+            enums_as_strings,
+            pretty,
+            0,
+        ),
+    }
 
-    serialized.unwrap_or_else(|_| "null".to_owned())
+    output
+}
+
+enum JsonWriteFrame<'a> {
+    Value {
+        snapshot: &'a PowerShellObjectSnapshot,
+        depth: i32,
+        indent: usize,
+    },
+    ArrayItems {
+        items: &'a [PowerShellObjectSnapshot],
+        index: usize,
+        item_depth: i32,
+        indent: usize,
+    },
+    ObjectProperties {
+        properties: &'a [PowerShellPropertySnapshot],
+        index: usize,
+        property_depth: i32,
+        indent: usize,
+    },
+    CloseArray {
+        has_items: bool,
+        indent: usize,
+    },
+    CloseObject {
+        has_items: bool,
+        indent: usize,
+    },
+}
+
+fn write_snapshot_json_iterative(
+    output: &mut String,
+    snapshot: &PowerShellObjectSnapshot,
+    max_depth: i32,
+    enums_as_strings: bool,
+    pretty: bool,
+    indent: usize,
+) {
+    let mut frames = vec![JsonWriteFrame::Value {
+        snapshot,
+        depth: 0,
+        indent,
+    }];
+
+    while let Some(frame) = frames.pop() {
+        match frame {
+            JsonWriteFrame::Value {
+                snapshot,
+                depth,
+                indent,
+            } => {
+                if depth > max_depth.max(0) {
+                    write_json_string(output, &snapshot_to_string(snapshot));
+                    continue;
+                }
+
+                match snapshot.kind.as_str() {
+                    "null" => output.push_str("null"),
+                    "datetime" => write_datetime_json(output, snapshot),
+                    "scalar" => write_scalar_json(output, snapshot),
+                    "enum" if enums_as_strings => {
+                        write_json_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
+                    }
+                    "enum" => write_scalar_json(output, snapshot),
+                    "bytes" => {
+                        let bytes = decode_base64(snapshot.scalar_value.as_deref().unwrap_or_default());
+                        write_json_array_start(output, pretty);
+                        for (index, byte) in bytes.iter().enumerate() {
+                            write_json_item_prefix(output, index, pretty, indent + 1);
+                            output.push_str(&byte.to_string());
+                        }
+                        write_json_array_end(output, !bytes.is_empty(), pretty, indent);
+                    }
+                    "array" => {
+                        write_snapshot_array_iterative(
+                            output,
+                            &snapshot.items,
+                            max_depth,
+                            depth + 1,
+                            enums_as_strings,
+                            pretty,
+                            indent,
+                        );
+                    }
+                    "dictionary" | "psobject" => {
+                        write_json_object_start(output, pretty);
+                        let properties = snapshot.properties.as_slice();
+                        if properties.is_empty() {
+                            write_json_object_end(output, false, pretty, indent);
+                        } else {
+                            frames.push(JsonWriteFrame::CloseObject {
+                                has_items: true,
+                                indent,
+                            });
+                            frames.push(JsonWriteFrame::ObjectProperties {
+                                properties,
+                                index: 0,
+                                property_depth: depth + 1,
+                                indent,
+                            });
+                        }
+                    }
+                    "cycle" | "truncated" => {
+                        write_json_string(output, &snapshot_to_string(snapshot))
+                    }
+                    _ => write_json_string(output, &snapshot_to_string(snapshot)),
+                }
+            }
+            JsonWriteFrame::ArrayItems {
+                items,
+                index,
+                item_depth,
+                indent,
+            } => {
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                if index + 1 < items.len() {
+                    frames.push(JsonWriteFrame::ArrayItems {
+                        items,
+                        index: index + 1,
+                        item_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &items[index],
+                    depth: item_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::ObjectProperties {
+                properties,
+                index,
+                property_depth,
+                indent,
+            } => {
+                let property = &properties[index];
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                write_json_string(output, &property.name);
+                if pretty {
+                    output.push_str(": ");
+                } else {
+                    output.push(':');
+                }
+                if index + 1 < properties.len() {
+                    frames.push(JsonWriteFrame::ObjectProperties {
+                        properties,
+                        index: index + 1,
+                        property_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &property.value,
+                    depth: property_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::CloseArray { has_items, indent } => {
+                write_json_array_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::CloseObject { has_items, indent } => {
+                write_json_object_end(output, has_items, pretty, indent);
+            }
+        }
+    }
+}
+
+fn write_snapshot_array_iterative(
+    output: &mut String,
+    snapshots: &[PowerShellObjectSnapshot],
+    max_depth: i32,
+    depth: i32,
+    enums_as_strings: bool,
+    pretty: bool,
+    indent: usize,
+) {
+    write_json_array_start(output, pretty);
+    if snapshots.is_empty() {
+        write_json_array_end(output, false, pretty, indent);
+        return;
+    }
+
+    let mut frames = vec![
+        JsonWriteFrame::CloseArray {
+            has_items: true,
+            indent,
+        },
+        JsonWriteFrame::ArrayItems {
+            items: snapshots,
+            index: 0,
+            item_depth: depth,
+            indent,
+        },
+    ];
+
+    while let Some(frame) = frames.pop() {
+        match frame {
+            JsonWriteFrame::ArrayItems {
+                items,
+                index,
+                item_depth,
+                indent,
+            } => {
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                if index + 1 < items.len() {
+                    frames.push(JsonWriteFrame::ArrayItems {
+                        items,
+                        index: index + 1,
+                        item_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &items[index],
+                    depth: item_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::Value {
+                snapshot,
+                depth,
+                indent,
+            } => {
+                write_snapshot_json_iterative(
+                    output,
+                    snapshot,
+                    max_depth,
+                    enums_as_strings,
+                    pretty,
+                    indent,
+                );
+                if depth > max_depth.max(0) {
+                    let _ = depth;
+                }
+            }
+            JsonWriteFrame::CloseArray { has_items, indent } => {
+                write_json_array_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::CloseObject { has_items, indent } => {
+                write_json_object_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::ObjectProperties {
+                properties,
+                index,
+                property_depth,
+                indent,
+            } => {
+                let property = &properties[index];
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                write_json_string(output, &property.name);
+                if pretty {
+                    output.push_str(": ");
+                } else {
+                    output.push(':');
+                }
+                if index + 1 < properties.len() {
+                    frames.push(JsonWriteFrame::ObjectProperties {
+                        properties,
+                        index: index + 1,
+                        property_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &property.value,
+                    depth: property_depth,
+                    indent: indent + 1,
+                });
+            }
+        }
+    }
 }
 
 fn write_snapshot_json(
