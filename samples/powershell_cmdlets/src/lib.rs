@@ -483,18 +483,18 @@ struct PowerShellObjectSnapshot {
     #[serde(rename = "scalarValue")]
     scalar_value: Option<String>,
     #[serde(rename = "scalarType")]
-    scalar_type: Option<i32>,
+    scalar_type: Option<String>,
     #[serde(default)]
     items: Vec<PowerShellObjectSnapshot>,
     #[serde(default)]
     properties: Vec<PowerShellPropertySnapshot>,
 }
 
-const SCALAR_TYPE_BOOLEAN: i32 = 1;
-const SCALAR_TYPE_SIGNED_INTEGER: i32 = 2;
-const SCALAR_TYPE_UNSIGNED_INTEGER: i32 = 3;
-const SCALAR_TYPE_FLOATING_POINT: i32 = 4;
-const SCALAR_TYPE_DECIMAL: i32 = 5;
+const SCALAR_TYPE_BOOLEAN: &str = "bool";
+const SCALAR_TYPE_SIGNED_INTEGER: &str = "i";
+const SCALAR_TYPE_UNSIGNED_INTEGER: &str = "u";
+const SCALAR_TYPE_FLOATING_POINT: &str = "f";
+const SCALAR_TYPE_DECIMAL: &str = "m";
 
 #[derive(Default)]
 struct FormatState {
@@ -1907,27 +1907,27 @@ fn snapshot_type_is_decimal(type_name: &str) -> bool {
 }
 
 fn snapshot_is_boolean(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type == Some(SCALAR_TYPE_BOOLEAN)
+    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_BOOLEAN)
         || (snapshot.scalar_type.is_none() && snapshot_type_is_boolean(type_name))
 }
 
 fn snapshot_is_signed_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type == Some(SCALAR_TYPE_SIGNED_INTEGER)
+    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_SIGNED_INTEGER)
         || (snapshot.scalar_type.is_none() && snapshot_type_is_signed_integer(type_name))
 }
 
 fn snapshot_is_unsigned_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
+    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
         || (snapshot.scalar_type.is_none() && snapshot_type_is_unsigned_integer(type_name))
 }
 
 fn snapshot_is_float(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type == Some(SCALAR_TYPE_FLOATING_POINT)
+    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_FLOATING_POINT)
         || (snapshot.scalar_type.is_none() && snapshot_type_is_float(type_name))
 }
 
 fn snapshot_is_decimal(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    snapshot.scalar_type == Some(SCALAR_TYPE_DECIMAL)
+    snapshot.scalar_type.as_deref() == Some(SCALAR_TYPE_DECIMAL)
         || (snapshot.scalar_type.is_none() && snapshot_type_is_decimal(type_name))
 }
 
@@ -3190,7 +3190,7 @@ impl<'a> SnapshotJsonParser<'a> {
                 "kind" => kind = Some(self.parse_string()?),
                 "typeName" => type_name = self.parse_nullable_string()?,
                 "scalarValue" => scalar_value = self.parse_nullable_string()?,
-                "scalarType" => scalar_type = self.parse_nullable_i32()?,
+                "scalarType" => scalar_type = self.parse_nullable_string()?,
                 "items" => items = self.parse_snapshot_array()?,
                 "properties" => properties = self.parse_property_array()?,
                 _ => return Err(STATUS_PARSE),
@@ -3287,39 +3287,6 @@ impl<'a> SnapshotJsonParser<'a> {
             return Ok(None);
         }
         Ok(Some(self.parse_string()?))
-    }
-
-    fn parse_nullable_i32(&mut self) -> RuntimeResult<Option<i32>> {
-        self.skip_whitespace();
-        if self.consume_literal("null") {
-            return Ok(None);
-        }
-        Ok(Some(self.parse_i32()?))
-    }
-
-    fn parse_i32(&mut self) -> RuntimeResult<i32> {
-        self.skip_whitespace();
-        let mut text = String::new();
-        if self.consume_char('-') {
-            text.push('-');
-        }
-
-        let mut saw_digit = false;
-        while let Some(ch) = self.chars.peek().copied() {
-            if ch.is_ascii_digit() {
-                saw_digit = true;
-                text.push(ch);
-                self.chars.next();
-            } else {
-                break;
-            }
-        }
-
-        if !saw_digit {
-            return Err(STATUS_PARSE);
-        }
-
-        text.parse::<i32>().map_err(|_| STATUS_PARSE)
     }
 
     fn parse_string(&mut self) -> RuntimeResult<String> {
@@ -3707,7 +3674,7 @@ mod tests {
             kind: "scalar".to_owned(),
             type_name: Some("System.Double".to_owned()),
             scalar_value: Some("-0".to_owned()),
-            scalar_type: Some(SCALAR_TYPE_FLOATING_POINT),
+            scalar_type: Some(SCALAR_TYPE_FLOATING_POINT.to_owned()),
             items: Vec::new(),
             properties: Vec::new(),
         };
@@ -3728,7 +3695,7 @@ mod tests {
                     kind: "scalar".to_owned(),
                     type_name: Some("Deserialized.System.Int32".to_owned()),
                     scalar_value: Some("3".to_owned()),
-                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER),
+                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
                     items: Vec::new(),
                     properties: Vec::new(),
                 },
@@ -3750,7 +3717,7 @@ mod tests {
                     kind: "scalar".to_owned(),
                     type_name: Some("Deserialized.Deserialized.System.Int32".to_owned()),
                     scalar_value: Some("3".to_owned()),
-                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER),
+                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
                     items: Vec::new(),
                     properties: Vec::new(),
                 },
@@ -3868,7 +3835,7 @@ mod tests {
                         kind: "scalar".to_owned(),
                         type_name: Some("System.Int32".to_owned()),
                         scalar_value: Some("3".to_owned()),
-                        scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER),
+                        scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
                         items: Vec::new(),
                         properties: Vec::new(),
                     },

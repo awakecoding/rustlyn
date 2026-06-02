@@ -12,16 +12,16 @@ public sealed record PowerShellObjectSnapshot(
     string Kind,
     string? TypeName,
     string? ScalarValue,
-    int? ScalarType,
+    string? ScalarType,
     IReadOnlyList<PowerShellObjectSnapshot> Items,
     IReadOnlyList<PowerShellPropertySnapshot> Properties)
 {
     private const int DefaultMaxDepth = 8;
-    private const int ScalarTypeBoolean = 1;
-    private const int ScalarTypeSignedInteger = 2;
-    private const int ScalarTypeUnsignedInteger = 3;
-    private const int ScalarTypeFloatingPoint = 4;
-    private const int ScalarTypeDecimal = 5;
+    private const string ScalarTypeBoolean = "bool";
+    private const string ScalarTypeSignedInteger = "i";
+    private const string ScalarTypeUnsignedInteger = "u";
+    private const string ScalarTypeFloatingPoint = "f";
+    private const string ScalarTypeDecimal = "m";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -161,10 +161,10 @@ public sealed record PowerShellObjectSnapshot(
             && (baseObject is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or DateTime or DateTimeOffset or Guid or Enum or byte[] or IDictionary
                 || (baseObject is IEnumerable && baseObject is not string));
 
-    private static PowerShellObjectSnapshot Create(string kind, string? typeName, string? scalarValue, int? scalarType)
+    private static PowerShellObjectSnapshot Create(string kind, string? typeName, string? scalarValue, string? scalarType)
         => new(kind, typeName, scalarValue, scalarType, [], []);
 
-    private static int? ResolveScalarType(object? value)
+    private static string? ResolveScalarType(object? value)
         => value switch
         {
             bool => ScalarTypeBoolean,
