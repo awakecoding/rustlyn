@@ -1842,6 +1842,7 @@ fn write_snapshot_json_iterative(
                             });
                         }
                     }
+                    _ if snapshot_has_scalar_shape(snapshot) => write_scalar_json(output, snapshot),
                     "cycle" | "truncated" => {
                         write_json_string(output, &snapshot_to_string(snapshot))
                     }
@@ -2075,6 +2076,7 @@ fn write_snapshot_json(
             }
             write_json_object_end(output, !snapshot.properties.is_empty(), pretty, indent);
         }
+        _ if snapshot_has_scalar_shape(snapshot) => write_scalar_json(output, snapshot),
         "cycle" | "truncated" => write_json_string(output, &snapshot_to_string(snapshot)),
         _ => write_json_string(output, &snapshot_to_string(snapshot)),
     }
@@ -2368,6 +2370,7 @@ fn snapshot_to_json_value(
             }
             Value::Object(object)
         }
+        _ if snapshot_has_scalar_shape(snapshot) => scalar_snapshot_to_json(snapshot),
         "cycle" | "truncated" => Value::String(snapshot_to_string(snapshot)),
         _ => Value::String(snapshot_to_string(snapshot)),
     }
@@ -2398,6 +2401,10 @@ fn scalar_snapshot_to_json(snapshot: &PowerShellObjectSnapshot) -> Value {
     } else {
         Value::String(value.to_owned())
     }
+}
+
+fn snapshot_has_scalar_shape(snapshot: &PowerShellObjectSnapshot) -> bool {
+    snapshot.items.is_empty() && snapshot.properties.is_empty() && snapshot.scalar_value.is_some()
 }
 
 fn snapshots_to_object_stream(
@@ -4069,6 +4076,21 @@ mod tests {
                 .expect("toml transform should succeed"),
             "count = 3\n"
         );
+    }
+
+    #[test]
+    fn scalar_shaped_unknown_kind_stays_numeric_in_json() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: String::new(),
+            type_name: Some("System.Int32".to_owned()),
+            scalar_value: Some("3".to_owned()),
+            scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
+            items: vec![],
+            properties: vec![],
+        };
+
+        assert_eq!(snapshots_to_json_text(&[snapshot.clone()], 8, false, false), "3");
+        assert_eq!(snapshots_to_json_value(&[snapshot], 8, false), serde_json::json!(3));
     }
 
     #[test]
