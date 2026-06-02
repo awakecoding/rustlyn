@@ -164,6 +164,130 @@ function New-DeepRows {
     return $rows.ToArray()
 }
 
+function New-TomlFlatDocument {
+    param([int]$Count)
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        $document["item$index"] = "value-$index"
+    }
+
+    return $document
+}
+
+function New-TomlDeepValue {
+    param(
+        [int]$Depth,
+        [int]$Seed
+    )
+
+    if ($Depth -le 0) {
+        return "leaf-$Seed"
+    }
+
+    return @((New-TomlDeepValue -Depth ($Depth - 1) -Seed $Seed))
+}
+
+function New-TomlDeepDocument {
+    param(
+        [int]$Count,
+        [int]$Depth
+    )
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        $document["item$index"] = New-TomlDeepValue -Depth $Depth -Seed $index
+    }
+
+    return $document
+}
+
+function New-YamlFlatDocument {
+    param([int]$Count)
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        $document["item$index"] = "value-$index"
+    }
+
+    return $document
+}
+
+function New-YamlDeepNode {
+    param(
+        [int]$Depth,
+        [int]$Seed
+    )
+
+    if ($Depth -le 0) {
+        return [ordered]@{ label = "leaf-$Seed" }
+    }
+
+    return [ordered]@{
+        name = "node-$Depth-$Seed"
+        child = New-YamlDeepNode -Depth ($Depth - 1) -Seed $Seed
+    }
+}
+
+function New-YamlDeepDocument {
+    param(
+        [int]$Count,
+        [int]$Depth
+    )
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        $document["item$index"] = New-YamlDeepNode -Depth $Depth -Seed $index
+    }
+
+    return $document
+}
+
+function New-BinaryFlatDocument {
+    param([int]$Count)
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        switch ($index % 3) {
+            0 { $document["item$index"] = $index }
+            1 { $document["item$index"] = "value-$index" }
+            default { $document["item$index"] = (($index % 2) -eq 0) }
+        }
+    }
+
+    return $document
+}
+
+function New-BinaryDeepNode {
+    param(
+        [int]$Depth,
+        [int]$Seed
+    )
+
+    if ($Depth -le 0) {
+        return [ordered]@{ value = "leaf-$Seed" }
+    }
+
+    return [ordered]@{
+        name = "node-$Depth-$Seed"
+        child = New-BinaryDeepNode -Depth ($Depth - 1) -Seed $Seed
+    }
+}
+
+function New-BinaryDeepDocument {
+    param(
+        [int]$Count,
+        [int]$Depth
+    )
+
+    $document = [ordered]@{}
+    for ($index = 0; $index -lt $Count; $index++) {
+        $document["item$index"] = New-BinaryDeepNode -Depth $Depth -Seed $index
+    }
+
+    return $document
+}
+
 function Invoke-RustBenchmark {
     param(
         [string]$FormatName,
@@ -251,7 +375,7 @@ function New-RustFormatDocument {
     param(
         [string]$FormatName,
         [hashtable]$FormatInfo,
-        [object[]]$InputRows,
+        [object]$InputValue,
         [int]$Depth
     )
 
@@ -264,11 +388,92 @@ function New-RustFormatDocument {
         $parameters['Depth'] = $Depth
     }
 
-    $result = @($InputRows | & $toCommand @parameters)
     switch ($FormatName) {
-        'Bson' { return ,([byte[]]$result[0]) }
-        'Cbor' { return ,([byte[]]$result[0]) }
-        default { return $result }
+        'Bson' { Write-Output -NoEnumerate (& $toCommand -InputObject $InputValue @parameters); return }
+        'Cbor' { Write-Output -NoEnumerate (& $toCommand -InputObject $InputValue @parameters); return }
+        'Yaml' { return (& $toCommand -InputObject $InputValue @parameters) }
+        'Toml' { return (& $toCommand -InputObject $InputValue @parameters) }
+        default { return @($InputValue | & $toCommand @parameters) }
+    }
+}
+
+function New-BenchmarkInputValue {
+    param(
+        [string]$FormatName,
+        [ValidateSet('Flat', 'Deep')]
+        [string]$Shape,
+        [object[]]$FlatRows,
+        [object[]]$DeepRows,
+        [int]$RequestedDeepDepth
+    )
+
+    switch ($FormatName) {
+        'Yaml' {
+            if ($Shape -eq 'Flat') {
+                return (New-YamlFlatDocument -Count $FlatRows.Count)
+            }
+
+            return (New-YamlDeepDocument -Count $DeepRows.Count -Depth $RequestedDeepDepth)
+        }
+        'Toml' {
+            if ($Shape -eq 'Flat') {
+                return (New-TomlFlatDocument -Count $FlatRows.Count)
+            }
+
+            return (New-TomlDeepDocument -Count $DeepRows.Count -Depth $RequestedDeepDepth)
+        }
+        'Bson' {
+            if ($Shape -eq 'Flat') {
+                return (New-BinaryFlatDocument -Count $FlatRows.Count)
+            }
+
+            return (New-BinaryDeepDocument -Count $DeepRows.Count -Depth $RequestedDeepDepth)
+        }
+        'Cbor' {
+            if ($Shape -eq 'Flat') {
+                return (New-BinaryFlatDocument -Count $FlatRows.Count)
+            }
+
+            return (New-BinaryDeepDocument -Count $DeepRows.Count -Depth $RequestedDeepDepth)
+        }
+        default {
+            if ($Shape -eq 'Flat') {
+                return $FlatRows
+            }
+
+            return $DeepRows
+        }
+    }
+}
+
+function Invoke-RustFormatConvertTo {
+    param(
+        [string]$FormatName,
+        [System.Management.Automation.CommandInfo]$Command,
+        [hashtable]$Parameters,
+        [object]$InputValue
+    )
+
+    switch ($FormatName) {
+        'Yaml' { return (& $Command -InputObject $InputValue @Parameters) }
+        'Toml' { return (& $Command -InputObject $InputValue @Parameters) }
+        'Bson' { return (& $Command -InputObject $InputValue @Parameters) }
+        'Cbor' { return (& $Command -InputObject $InputValue @Parameters) }
+        default { return ($InputValue | & $Command @Parameters) }
+    }
+}
+
+function Invoke-RustFormatConvertFrom {
+    param(
+        [string]$FormatName,
+        [System.Management.Automation.CommandInfo]$Command,
+        [object]$InputValue
+    )
+
+    switch ($FormatName) {
+        'Bson' { return (& $Command -InputObject $InputValue) }
+        'Cbor' { return (& $Command -InputObject $InputValue) }
+        default { return ($InputValue | & $Command) }
     }
 }
 
@@ -304,6 +509,8 @@ function Invoke-ChildBenchmarkScenario {
     $fromCommand = Get-Command $formatInfo.FromCommand -ErrorAction Stop
     $flatRows = New-FlatRows -Count $FlatCount
     $deepRows = New-DeepRows -Count $DeepCount -Depth $RequestedDeepDepth
+    $flatInputValue = New-BenchmarkInputValue -FormatName $FormatName -Shape Flat -FlatRows $flatRows -DeepRows $deepRows -RequestedDeepDepth $RequestedDeepDepth
+    $deepInputValue = New-BenchmarkInputValue -FormatName $FormatName -Shape Deep -FlatRows $flatRows -DeepRows $deepRows -RequestedDeepDepth $RequestedDeepDepth
     $flatDepth = [Math]::Max(4, [Math]::Min($RequestedDeepDepth, 8))
 
     $flatToArgs = @{}
@@ -325,32 +532,24 @@ function Invoke-ChildBenchmarkScenario {
     switch ($Scenario) {
         'ConvertTo-Flat' {
             return Invoke-RustBenchmarkSafely -FormatName $FormatName -Scenario $Scenario -Action {
-                $flatRows | & $toCommand @flatToArgs | Out-Null
+                Invoke-RustFormatConvertTo -FormatName $FormatName -Command $toCommand -Parameters $flatToArgs -InputValue $flatInputValue | Out-Null
             } -WarmupCount $WarmupCount -IterationCount $IterationCount -InputCount $FlatCount -Depth (Get-DepthForCommand -Command $toCommand -RequestedDepth $flatDepth)
         }
         'ConvertFrom-Flat' {
-            $flatDocument = New-RustFormatDocument -FormatName $FormatName -FormatInfo $formatInfo -InputRows $flatRows -Depth $flatDepth
+            $flatDocument = New-RustFormatDocument -FormatName $FormatName -FormatInfo $formatInfo -InputValue $flatInputValue -Depth $flatDepth
             return Invoke-RustBenchmarkSafely -FormatName $FormatName -Scenario $Scenario -Action {
-                switch ($FormatName) {
-                    'Bson' { & $fromCommand -InputObject $flatDocument | Out-Null }
-                    'Cbor' { & $fromCommand -InputObject $flatDocument | Out-Null }
-                    default { $flatDocument | & $fromCommand | Out-Null }
-                }
+                Invoke-RustFormatConvertFrom -FormatName $FormatName -Command $fromCommand -InputValue $flatDocument | Out-Null
             } -WarmupCount $WarmupCount -IterationCount $IterationCount -InputCount $FlatCount -Depth (Get-DepthForCommand -Command $toCommand -RequestedDepth $flatDepth)
         }
         'ConvertTo-Deep' {
             return Invoke-RustBenchmarkSafely -FormatName $FormatName -Scenario $Scenario -Action {
-                $deepRows | & $toCommand @deepToArgs | Out-Null
+                Invoke-RustFormatConvertTo -FormatName $FormatName -Command $toCommand -Parameters $deepToArgs -InputValue $deepInputValue | Out-Null
             } -WarmupCount $WarmupCount -IterationCount $IterationCount -InputCount $DeepCount -Depth (Get-DepthForCommand -Command $toCommand -RequestedDepth $RequestedDeepDepth)
         }
         'ConvertFrom-Deep' {
-            $deepDocument = New-RustFormatDocument -FormatName $FormatName -FormatInfo $formatInfo -InputRows $deepRows -Depth $RequestedDeepDepth
+            $deepDocument = New-RustFormatDocument -FormatName $FormatName -FormatInfo $formatInfo -InputValue $deepInputValue -Depth $RequestedDeepDepth
             return Invoke-RustBenchmarkSafely -FormatName $FormatName -Scenario $Scenario -Action {
-                switch ($FormatName) {
-                    'Bson' { & $fromCommand -InputObject $deepDocument | Out-Null }
-                    'Cbor' { & $fromCommand -InputObject $deepDocument | Out-Null }
-                    default { $deepDocument | & $fromCommand | Out-Null }
-                }
+                Invoke-RustFormatConvertFrom -FormatName $FormatName -Command $fromCommand -InputValue $deepDocument | Out-Null
             } -WarmupCount $WarmupCount -IterationCount $IterationCount -InputCount $DeepCount -Depth (Get-DepthForCommand -Command $toCommand -RequestedDepth $RequestedDeepDepth)
         }
         default {

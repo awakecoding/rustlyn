@@ -50,6 +50,10 @@ unsafe extern "C" {
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_parameter_string(
         cmdlet_context_handle: i32,
         name_handle: i32,
@@ -98,6 +102,21 @@ unsafe extern "C" {
     fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
         cmdlet_context_handle: i32,
         json_handle: i32,
+        as_hashtable: i32,
+        no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+        cmdlet_context_handle: i32,
+        bytes_ptr: *const u8,
+        byte_len: i64,
+        as_hashtable: i32,
+        no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+        cmdlet_context_handle: i32,
+        stream_handle: i32,
         as_hashtable: i32,
         no_enumerate: i32,
         exception_out: *mut i32,
@@ -184,6 +203,17 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
 
 #[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
     _cmdlet_context_handle: i32,
     exception_out: *mut i32,
 ) -> i32 {
@@ -305,6 +335,35 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_object_bytes(
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
     _cmdlet_context_handle: i32,
     _json_handle: i32,
+    _as_hashtable: i32,
+    _no_enumerate: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+    _cmdlet_context_handle: i32,
+    _bytes_ptr: *const u8,
+    _byte_len: i64,
+    _as_hashtable: i32,
+    _no_enumerate: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+    _cmdlet_context_handle: i32,
+    _stream_handle: i32,
     _as_hashtable: i32,
     _no_enumerate: i32,
     exception_out: *mut i32,
@@ -490,7 +549,7 @@ impl ManagedString {
         }
 
         buffer.truncate(copied as usize);
-        String::from_utf8(buffer).map_err(|_| STATUS_PARSE)
+        Ok(String::from_utf8_lossy(&buffer).into_owned())
     }
 
     fn release(self) -> RuntimeResult<()> {
@@ -561,9 +620,17 @@ impl CmdletContext {
     }
 
     fn input_string(&self) -> RuntimeResult<String> {
+        let bytes = self.input_bytes()?;
+        Ok(String::from_utf8_lossy(&bytes).into_owned())
+    }
+
+    fn input_bytes(&self) -> RuntimeResult<Vec<u8>> {
         let mut exception_handle = 0;
         let string_handle = unsafe {
-            rustlyn_bindgen_powershell_cmdlet_get_input_string(self.handle, &mut exception_handle)
+            rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
+                self.handle,
+                &mut exception_handle,
+            )
         };
         exception_to_result(exception_handle)?;
         if string_handle == 0 {
@@ -574,7 +641,13 @@ impl CmdletContext {
         let text = value.to_utf8_string();
         let release = value.release();
         release?;
-        text
+        let base64 = text?;
+        let bytes = decode_base64(&base64);
+        if !base64.is_empty() && bytes.is_empty() {
+            return Err(STATUS_PARSE);
+        }
+
+        Ok(bytes)
     }
 
     fn input_text(&self) -> RuntimeResult<String> {
@@ -759,6 +832,52 @@ impl CmdletContext {
         })
     }
 
+    fn write_json_bytes(
+        &self,
+        bytes: &[u8],
+        as_hashtable: bool,
+        no_enumerate: bool,
+    ) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        let bytes_ptr = if bytes.is_empty() {
+            std::ptr::null()
+        } else {
+            bytes.as_ptr()
+        };
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+                self.handle,
+                bytes_ptr,
+                bytes.len() as i64,
+                if as_hashtable { 1 } else { 0 },
+                if no_enumerate { 1 } else { 0 },
+                &mut exception_handle,
+            );
+        }
+        exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+    }
+
+    fn write_object_stream(
+        &self,
+        stream: &str,
+        as_hashtable: bool,
+        no_enumerate: bool,
+    ) -> RuntimeResult<()> {
+        with_managed_string(stream, |stream| {
+            let mut exception_handle = 0;
+            unsafe {
+                rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+                    self.handle,
+                    stream.handle,
+                    if as_hashtable { 1 } else { 0 },
+                    if no_enumerate { 1 } else { 0 },
+                    &mut exception_handle,
+                );
+            }
+            exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+        })
+    }
+
     fn add_xml_input(&self) -> RuntimeResult<()> {
         let mut exception_handle = 0;
         unsafe {
@@ -849,18 +968,18 @@ pub extern "C" fn convert_to_rust_json_end_processing(cmdlet_context_handle: i32
 
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_from_rust_json_process_record(cmdlet_context_handle: i32) -> i32 {
-    collect_text(cmdlet_context_handle)
+    collect_text_bytes(cmdlet_context_handle)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_from_rust_json_end_processing(cmdlet_context_handle: i32) -> i32 {
-    finish_with_text(cmdlet_context_handle, |context, text| {
-        let json = transform_utf8(
-            &text,
+    finish_with_bytes(cmdlet_context_handle, |context, bytes| {
+        let json = transform_bytes(
+            &bytes,
             simd_json_engine::simd_json_echo_utf8_len,
             simd_json_engine::simd_json_echo_utf8_copy,
         )?;
-        context.write_json(
+        context.write_json_bytes(
             &json,
             context.parameter_bool("AsHashtable")?,
             context.parameter_bool("NoEnumerate")?,
@@ -1101,7 +1220,8 @@ pub extern "C" fn convert_from_rust_csv_end_processing(cmdlet_context_handle: i3
             csv_engine::csv_to_json_len,
             csv_engine::csv_to_json_copy,
         )?;
-        context.write_json(&json, false, false)
+        let stream = json_to_object_stream(&json)?;
+        context.write_object_stream(&stream, false, false)
     })
 }
 
@@ -1154,6 +1274,17 @@ fn collect_snapshot(cmdlet_context_handle: i32) -> i32 {
 fn collect_text(cmdlet_context_handle: i32) -> i32 {
     run_collect(cmdlet_context_handle, |context, state| {
         state.text_items.push(context.input_text()?);
+        Ok(())
+    })
+}
+
+fn collect_text_bytes(cmdlet_context_handle: i32) -> i32 {
+    run_collect(cmdlet_context_handle, |context, state| {
+        let bytes = context.input_bytes()?;
+        if !state.bytes.is_empty() {
+            state.bytes.extend_from_slice(b"\r\n");
+        }
+        state.bytes.extend_from_slice(&bytes);
         Ok(())
     })
 }
@@ -1649,6 +1780,65 @@ fn snapshots_to_object_stream(
         }
     }
     output
+}
+
+fn json_to_object_stream(input: &str) -> RuntimeResult<String> {
+    let value: Value = serde_json::from_str(input).map_err(|_| STATUS_PARSE)?;
+    let mut output = String::new();
+    write_json_value_as_object_stream(&mut output, &value)?;
+    Ok(output)
+}
+
+fn write_json_value_as_object_stream(output: &mut String, value: &Value) -> RuntimeResult<()> {
+    match value {
+        Value::Null => output.push_str("N;"),
+        Value::Bool(true) => output.push_str("T;"),
+        Value::Bool(false) => output.push_str("F;"),
+        Value::Number(number) => write_json_number_as_object_stream(output, number)?,
+        Value::String(text) => write_object_stream_string(output, text),
+        Value::Array(items) => {
+            output.push('A');
+            output.push_str(&items.len().to_string());
+            output.push(':');
+            for item in items {
+                write_json_value_as_object_stream(output, item)?;
+            }
+        }
+        Value::Object(object) => {
+            output.push('O');
+            output.push_str(&object.len().to_string());
+            output.push(':');
+            for (name, item) in object {
+                write_raw_object_stream_string(output, name);
+                write_json_value_as_object_stream(output, item)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn write_json_number_as_object_stream(
+    output: &mut String,
+    number: &serde_json::Number,
+) -> RuntimeResult<()> {
+    let value = number.to_string();
+
+    if is_integer_literal(&value) || is_unsigned_integer_literal(&value) {
+        output.push('I');
+        output.push_str(&value);
+        output.push(';');
+        return Ok(());
+    }
+
+    if !is_float_literal(&value) {
+        return Err(STATUS_PARSE);
+    }
+
+    output.push('D');
+    output.push_str(&value);
+    output.push(';');
+    Ok(())
 }
 
 fn write_object_stream_value(
@@ -3082,6 +3272,14 @@ mod tests {
     }
 
     #[test]
+    fn json_number_object_stream_preserves_negative_decimal_text() {
+        assert_eq!(
+            json_to_object_stream("-3.5").expect("decimal stream should succeed"),
+            "D-3.5;"
+        );
+    }
+
+    #[test]
     fn roundtrip_datetime_text_trims_only_insignificant_fractional_zeros() {
         assert_eq!(
             normalize_roundtrip_datetime_text("2024-01-01T22:04:05.0000000-05:00"),
@@ -3168,6 +3366,17 @@ mod tests {
             Some("name = \"rustlyn\"\ncount = 3\n")
         );
         assert!(snapshot_scalar_text(&sample_snapshot()).is_none());
+    }
+
+    #[test]
+    fn snapshot_parser_preserves_json_text_with_unicode_and_escapes() {
+        let json_text = "{\"unicode\":\"emoji 🚀 café\",\"escaped\":\"quote \\\" slash \\\\ newline\\n\"}";
+        let snapshot_json = r#"{"kind":"scalar","typeName":"System.String","scalarValue":"{\u0022unicode\u0022:\u0022emoji \uD83D\uDE80 caf\u00E9\u0022,\u0022escaped\u0022:\u0022quote \\\u0022 slash \\\\ newline\\n\u0022}","items":[],"properties":[]}"#;
+
+        let snapshot = parse_snapshot_json(&snapshot_json)
+            .expect("json text snapshot should parse");
+
+        assert_eq!(snapshot_scalar_text(&snapshot).as_deref(), Some(json_text));
     }
 
     #[test]

@@ -50,6 +50,34 @@ public static class PowerShellCmdletBridge
         PowerShellJsonProjection.WriteFromJson(context, json, asHashtable, noEnumerate);
     }
 
+    public static void WriteJsonBytes(PowerShellCmdletContext context, IntPtr bytesPointer, long byteLength, bool asHashtable, bool noEnumerate)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentOutOfRangeException.ThrowIfNegative(byteLength);
+        if (byteLength > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(byteLength), "PowerShell JSON output exceeds the maximum managed array length.");
+        }
+        if (byteLength > 0 && bytesPointer == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(bytesPointer));
+        }
+
+        var bytes = new byte[(int)byteLength];
+        if (bytes.Length > 0)
+        {
+            System.Runtime.InteropServices.Marshal.Copy(bytesPointer, bytes, 0, bytes.Length);
+        }
+
+        PowerShellJsonProjection.WriteFromJson(context, Encoding.UTF8.GetString(bytes), asHashtable, noEnumerate);
+    }
+
+    public static void WriteObjectStream(PowerShellCmdletContext context, string stream, bool asHashtable, bool noEnumerate)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        PowerShellObjectStreamProjection.WriteFromObjectStream(context, stream, asHashtable, noEnumerate);
+    }
+
     public static void AddXmlInput(PowerShellCmdletContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -214,6 +242,12 @@ public static class PowerShellCmdletBridge
     {
         ArgumentNullException.ThrowIfNull(context);
         return context.GetInputObjectString();
+    }
+
+    public static string GetInputStringBase64(PowerShellCmdletContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(context.GetInputObjectString()));
     }
 
     public static string GetCurrentCultureListSeparator(PowerShellCmdletContext context)

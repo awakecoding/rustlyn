@@ -224,6 +224,16 @@ public static class ExternalPackageBindingSurfaces
                 [I32("cmdletContextHandle"), I32("jsonHandle"), I32("asHashtable"), I32("noEnumerate")],
                 "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJson(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(jsonHandle), asHashtable != 0, noEnumerate != 0)"),
             VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_json_bytes",
+                "BindgenPowerShellCmdletWriteJsonBytes",
+                [I32("cmdletContextHandle"), Pointer("bytesPointer"), I64("byteLength"), I32("asHashtable"), I32("noEnumerate")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteJsonBytes(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), bytesPointer, byteLength, asHashtable != 0, noEnumerate != 0)"),
+            VoidBinding(
+                "rustlyn_bindgen_powershell_cmdlet_write_object_stream_string",
+                "BindgenPowerShellCmdletWriteObjectStreamString",
+                [I32("cmdletContextHandle"), I32("streamHandle"), I32("asHashtable"), I32("noEnumerate")],
+                "Rustlyn.PowerShellSupport.PowerShellCmdletBridge.WriteObjectStream(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle), ManagedInteropRuntime.GetObject<string>(streamHandle), asHashtable != 0, noEnumerate != 0)"),
+            VoidBinding(
                 "rustlyn_bindgen_powershell_cmdlet_add_xml_input",
                 "BindgenPowerShellCmdletAddXmlInput",
                 [I32("cmdletContextHandle")],
@@ -313,6 +323,11 @@ public static class ExternalPackageBindingSurfaces
                 "BindgenPowerShellCmdletGetInputString",
                 [I32("cmdletContextHandle")],
                 ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputString(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
+            ObjectBinding(
+                "rustlyn_bindgen_powershell_cmdlet_get_input_string_base64",
+                "BindgenPowerShellCmdletGetInputStringBase64",
+                [I32("cmdletContextHandle")],
+                ManagedGlueExpression.Raw("Rustlyn.PowerShellSupport.PowerShellCmdletBridge.GetInputStringBase64(ManagedInteropRuntime.GetObject<Rustlyn.PowerShellSupport.PowerShellCmdletContext>(cmdletContextHandle))")),
             ObjectBinding(
                 "rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator",
                 "BindgenPowerShellCmdletGetCurrentCultureListSeparator",
