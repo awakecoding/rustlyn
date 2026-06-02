@@ -495,6 +495,15 @@ struct FormatState {
     bytes: Vec<u8>,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum SnapshotScalarType {
+    Boolean,
+    SignedInteger,
+    UnsignedInteger,
+    FloatingPoint,
+    Other,
+}
+
 struct StateEntry {
     handle: i32,
     state: FormatState,
@@ -1396,6 +1405,29 @@ fn clear_state(handle: i32) {
     }
 }
 
+fn classify_snapshot_scalar_type(snapshot: &PowerShellObjectSnapshot) -> SnapshotScalarType {
+    match normalize_snapshot_type_name(snapshot.type_name.as_deref()) {
+        "System.Boolean" => SnapshotScalarType::Boolean,
+        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16"
+        | "System.Int32" | "System.UInt32" | "System.Int64" => {
+            SnapshotScalarType::SignedInteger
+        }
+        "System.UInt64" => SnapshotScalarType::UnsignedInteger,
+        "System.Single" | "System.Double" | "System.Decimal" => {
+            SnapshotScalarType::FloatingPoint
+        }
+        _ => SnapshotScalarType::Other,
+    }
+}
+
+fn normalize_snapshot_type_name<'a>(type_name: Option<&'a str>) -> &'a str {
+    let mut normalized = type_name.unwrap_or_default();
+    while let Some(rest) = normalized.strip_prefix("Deserialized.") {
+        normalized = rest;
+    }
+    normalized
+}
+
 fn snapshots_to_json_value(
     snapshots: &[PowerShellObjectSnapshot],
     max_depth: i32,
@@ -1539,23 +1571,25 @@ fn write_snapshot_array(
 
 fn write_scalar_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if is_true_text(value) => output.push_str("true"),
-        "System.Boolean" if is_false_text(value) => output.push_str("false"),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64" | "System.UInt64"
-            if is_json_integer_literal(value) =>
-        {
+    match classify_snapshot_scalar_type(snapshot) {
+        SnapshotScalarType::Boolean if is_true_text(value) => output.push_str("true"),
+        SnapshotScalarType::Boolean if is_false_text(value) => output.push_str("false"),
+        SnapshotScalarType::SignedInteger if is_json_integer_literal(value) => output.push_str(value),
+        SnapshotScalarType::UnsignedInteger if is_unsigned_integer_literal(value) => {
             output.push_str(value)
         }
-        "System.Single" | "System.Double" if !is_non_finite_float_text(value) => {
+        SnapshotScalarType::FloatingPoint
+            if normalize_snapshot_type_name(snapshot.type_name.as_deref())
+                != "System.Decimal"
+                && !is_non_finite_float_text(value) =>
+        {
             if trim_ascii(value) == "-0" {
                 output.push_str("-0.0")
             } else {
                 output.push_str(value)
             }
         }
-        "System.Decimal" if !is_non_finite_float_text(value) => {
+        SnapshotScalarType::FloatingPoint if !is_non_finite_float_text(value) => {
             output.push_str(value)
         }
         _ => write_json_string(output, value),
@@ -1744,18 +1778,17 @@ fn snapshot_to_json_value(
 
 fn scalar_snapshot_to_json(snapshot: &PowerShellObjectSnapshot) -> Value {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" => Value::Bool(value.eq_ignore_ascii_case("true")),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64" => value
+    match classify_snapshot_scalar_type(snapshot) {
+        SnapshotScalarType::Boolean => Value::Bool(value.eq_ignore_ascii_case("true")),
+        SnapshotScalarType::SignedInteger => value
             .parse::<i64>()
             .map(|number| Value::Number(number.into()))
             .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.UInt64" => value
+        SnapshotScalarType::UnsignedInteger => value
             .parse::<u64>()
             .map(|number| Value::Number(number.into()))
             .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.Single" | "System.Double" | "System.Decimal" => value
+        SnapshotScalarType::FloatingPoint => value
             .parse::<f64>()
             .ok()
             .and_then(serde_json::Number::from_f64)
@@ -1910,16 +1943,15 @@ fn write_object_stream_value(
 
 fn write_scalar_object_stream(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if is_true_text(value) => output.push_str("T;"),
-        "System.Boolean" if is_false_text(value) => output.push_str("F;"),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64" | "System.UInt64" => {
+    match classify_snapshot_scalar_type(snapshot) {
+        SnapshotScalarType::Boolean if is_true_text(value) => output.push_str("T;"),
+        SnapshotScalarType::Boolean if is_false_text(value) => output.push_str("F;"),
+        SnapshotScalarType::SignedInteger | SnapshotScalarType::UnsignedInteger => {
             output.push('I');
             output.push_str(value);
             output.push(';');
         }
-        "System.Single" | "System.Double" | "System.Decimal" => {
+        SnapshotScalarType::FloatingPoint => {
             output.push('D');
             output.push_str(value);
             output.push(';');
@@ -2013,21 +2045,16 @@ fn snapshot_to_toml_json_scalar(
 
 fn snapshot_scalar_toml_value(snapshot: &PowerShellObjectSnapshot) -> Value {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => Value::Bool(true),
-        "System.Boolean" if value.eq_ignore_ascii_case("false") => Value::Bool(false),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64"
-            if value.parse::<i64>().is_ok() =>
-        {
+    match classify_snapshot_scalar_type(snapshot) {
+        SnapshotScalarType::Boolean if value.eq_ignore_ascii_case("true") => Value::Bool(true),
+        SnapshotScalarType::Boolean if value.eq_ignore_ascii_case("false") => Value::Bool(false),
+        SnapshotScalarType::SignedInteger if value.parse::<i64>().is_ok() => {
             Value::Number(serde_json::Number::from(value.parse::<i64>().unwrap_or_default()))
         }
-        "System.UInt64" if value.parse::<u64>().is_ok() => Value::Number(
+        SnapshotScalarType::UnsignedInteger if value.parse::<u64>().is_ok() => Value::Number(
             serde_json::Number::from(value.parse::<u64>().unwrap_or_default()),
         ),
-        "System.Single" | "System.Double" | "System.Decimal"
-            if value.parse::<f64>().is_ok_and(f64::is_finite) =>
-        {
+        SnapshotScalarType::FloatingPoint if value.parse::<f64>().is_ok_and(f64::is_finite) => {
             serde_json::Number::from_f64(value.parse::<f64>().unwrap_or_default())
                 .map(Value::Number)
                 .unwrap_or_else(|| Value::String(value.to_owned()))
@@ -2095,17 +2122,20 @@ fn write_toml_snapshot_value(
         }
         "scalar" | "enum" => {
             let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-            match snapshot.type_name.as_deref().unwrap_or_default() {
-                "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("true"),
-                "System.Boolean" if value.eq_ignore_ascii_case("false") => output.push_str("false"),
-                "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16"
-                | "System.Int32" | "System.UInt32" | "System.Int64"
-                    if is_integer_literal(value) =>
-                {
+            match classify_snapshot_scalar_type(snapshot) {
+                SnapshotScalarType::Boolean if value.eq_ignore_ascii_case("true") => {
+                    output.push_str("true")
+                }
+                SnapshotScalarType::Boolean if value.eq_ignore_ascii_case("false") => {
+                    output.push_str("false")
+                }
+                SnapshotScalarType::SignedInteger if is_integer_literal(value) => {
                     output.push_str(value);
                 }
-                "System.UInt64" if is_unsigned_integer_literal(value) => output.push_str(value),
-                "System.Single" | "System.Double" | "System.Decimal"
+                SnapshotScalarType::UnsignedInteger if is_unsigned_integer_literal(value) => {
+                    output.push_str(value)
+                }
+                SnapshotScalarType::FloatingPoint
                     if is_float_literal(value) || is_integer_literal(value) =>
                 {
                     output.push_str(value);
@@ -3334,6 +3364,29 @@ mod tests {
             properties: Vec::new(),
         };
         assert_eq!(snapshots_to_json_text(&[negative_zero], 8, false, false), "-0.0");
+    }
+
+    #[test]
+    fn deserialized_numeric_scalar_types_stay_numeric() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: "dictionary".to_owned(),
+            type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
+            scalar_value: None,
+            items: Vec::new(),
+            properties: vec![PowerShellPropertySnapshot {
+                name: "count".to_owned(),
+                value: PowerShellObjectSnapshot {
+                    kind: "scalar".to_owned(),
+                    type_name: Some("Deserialized.System.Int32".to_owned()),
+                    scalar_value: Some("3".to_owned()),
+                    items: Vec::new(),
+                    properties: Vec::new(),
+                },
+            }],
+        };
+
+        assert_eq!(snapshots_to_json_text(&[snapshot.clone()], 8, false, false), r#"{"count":3}"#);
+        assert_eq!(snapshots_to_toml_text(&[snapshot], 8).expect("toml transform should succeed"), "count = 3\n");
     }
 
     #[test]

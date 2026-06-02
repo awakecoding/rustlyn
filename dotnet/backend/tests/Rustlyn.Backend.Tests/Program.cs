@@ -5365,7 +5365,7 @@ static void PowerShellRustFormatRuntimeMigratesFormatGlue()
                 ["Compress"] = new SwitchParameter(true),
                 ["Depth"] = 8
             });
-        Assert(outputs.Count == 1 && Equals(outputs[0], "{\"name\":\"rustlyn\",\"count\":3}"), $"Expected generated Rust JSON lifecycle to emit compressed JSON, but got '{string.Join(", ", outputs)}'.");
+        Assert(outputs.Count == 1 && Equals(outputs[0], "{\"name\":\"rustlyn\",\"count\":3}"), $"Expected generated Rust JSON lifecycle to emit compressed JSON with numeric scalars preserved, but got '{string.Join(", ", outputs)}'.");
 
         outputs = InvokeGeneratedLifecycle(
             "convert_to_rust_toml",
