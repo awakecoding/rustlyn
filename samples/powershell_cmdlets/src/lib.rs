@@ -22,8 +22,6 @@ mod cbor_engine {
 
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::iter::Peekable;
-use std::str::Chars;
 
 #[cfg(not(test))]
 unsafe extern "C" {
@@ -3145,17 +3143,19 @@ fn csv_field_needs_quotes(value: &str, delimiter: char) -> bool {
 }
 
 fn parse_snapshot_json(input: &str) -> RuntimeResult<PowerShellObjectSnapshot> {
-    serde_json::from_str(input).map_err(|_| STATUS_PARSE)
+    SnapshotJsonParser::new(input).parse_snapshot()
 }
 
 struct SnapshotJsonParser<'a> {
-    chars: Peekable<Chars<'a>>,
+    bytes: &'a [u8],
+    index: usize,
 }
 
 impl<'a> SnapshotJsonParser<'a> {
     fn new(input: &'a str) -> Self {
         Self {
-            chars: input.chars().peekable(),
+            bytes: input.as_bytes(),
+            index: 0,
         }
     }
 
@@ -3163,7 +3163,7 @@ impl<'a> SnapshotJsonParser<'a> {
         self.skip_whitespace();
         let snapshot = self.parse_snapshot_object()?;
         self.skip_whitespace();
-        if self.chars.next().is_some() {
+        if self.index != self.bytes.len() {
             return Err(STATUS_PARSE);
         }
         Ok(snapshot)
@@ -3290,35 +3290,50 @@ impl<'a> SnapshotJsonParser<'a> {
     }
 
     fn parse_string(&mut self) -> RuntimeResult<String> {
-        self.expect_char('"')?;
+        self.expect_byte(b'"')?;
         let mut output = String::new();
         loop {
-            let Some(ch) = self.chars.next() else {
+            let Some(byte) = self.peek_byte() else {
                 return Err(STATUS_PARSE);
             };
-            match ch {
-                '"' => return Ok(output),
-                '\\' => output.push(self.parse_escape_sequence()?),
-                ch if (ch as u32) < 0x20 => return Err(STATUS_PARSE),
-                ch => output.push(ch),
+            match byte {
+                b'"' => {
+                    self.index += 1;
+                    return Ok(output);
+                }
+                b'\\' => {
+                    self.index += 1;
+                    output.push(self.parse_escape_sequence()?);
+                }
+                0x00..=0x1f => return Err(STATUS_PARSE),
+                0x20..=0x7f => {
+                    self.index += 1;
+                    output.push(byte as char);
+                }
+                _ => {
+                    let remaining = std::str::from_utf8(&self.bytes[self.index..]).map_err(|_| STATUS_PARSE)?;
+                    let ch = remaining.chars().next().ok_or(STATUS_PARSE)?;
+                    self.index += ch.len_utf8();
+                    output.push(ch);
+                }
             }
         }
     }
 
     fn parse_escape_sequence(&mut self) -> RuntimeResult<char> {
-        let Some(escape) = self.chars.next() else {
+        let Some(escape) = self.next_byte() else {
             return Err(STATUS_PARSE);
         };
         match escape {
-            '"' => Ok('"'),
-            '\\' => Ok('\\'),
-            '/' => Ok('/'),
-            'b' => Ok('\u{08}'),
-            'f' => Ok('\u{0c}'),
-            'n' => Ok('\n'),
-            'r' => Ok('\r'),
-            't' => Ok('\t'),
-            'u' => self.parse_unicode_escape(),
+            b'"' => Ok('"'),
+            b'\\' => Ok('\\'),
+            b'/' => Ok('/'),
+            b'b' => Ok('\u{08}'),
+            b'f' => Ok('\u{0c}'),
+            b'n' => Ok('\n'),
+            b'r' => Ok('\r'),
+            b't' => Ok('\t'),
+            b'u' => self.parse_unicode_escape(),
             _ => Err(STATUS_PARSE),
         }
     }
@@ -3326,7 +3341,7 @@ impl<'a> SnapshotJsonParser<'a> {
     fn parse_unicode_escape(&mut self) -> RuntimeResult<char> {
         let first = self.parse_hex_u16()?;
         if (0xd800..=0xdbff).contains(&first) {
-            if self.chars.next() != Some('\\') || self.chars.next() != Some('u') {
+            if self.next_byte() != Some(b'\\') || self.next_byte() != Some(b'u') {
                 return Err(STATUS_PARSE);
             }
             let second = self.parse_hex_u16()?;
@@ -3345,10 +3360,10 @@ impl<'a> SnapshotJsonParser<'a> {
     fn parse_hex_u16(&mut self) -> RuntimeResult<u16> {
         let mut value = 0u16;
         for _ in 0..4 {
-            let Some(ch) = self.chars.next() else {
+            let Some(ch) = self.next_byte() else {
                 return Err(STATUS_PARSE);
             };
-            let Some(digit) = ch.to_digit(16) else {
+            let Some(digit) = (ch as char).to_digit(16) else {
                 return Err(STATUS_PARSE);
             };
             value = (value << 4) | digit as u16;
@@ -3357,34 +3372,55 @@ impl<'a> SnapshotJsonParser<'a> {
     }
 
     fn consume_literal(&mut self, expected: &str) -> bool {
-        let mut clone = self.chars.clone();
-        for expected_char in expected.chars() {
-            if clone.next() != Some(expected_char) {
-                return false;
-            }
+        let expected_bytes = expected.as_bytes();
+        if self.bytes.len().saturating_sub(self.index) < expected_bytes.len() {
+            return false;
         }
-        self.chars = clone;
+        if self.bytes[self.index..self.index + expected_bytes.len()] != *expected_bytes {
+            return false;
+        }
+        self.index += expected_bytes.len();
         true
     }
 
     fn expect_char(&mut self, expected: char) -> RuntimeResult<()> {
+        self.expect_byte(expected as u8)
+    }
+
+    fn expect_byte(&mut self, expected: u8) -> RuntimeResult<()> {
         self.skip_whitespace();
-        match self.chars.next() {
+        match self.next_byte() {
             Some(ch) if ch == expected => Ok(()),
             _ => Err(STATUS_PARSE),
         }
     }
 
     fn consume_char(&mut self, expected: char) -> bool {
+        self.consume_byte(expected as u8)
+    }
+
+    fn consume_byte(&mut self, expected: u8) -> bool {
         self.skip_whitespace();
-        matches!(self.chars.peek().copied(), Some(ch) if ch == expected)
-            .then(|| self.chars.next())
+        matches!(self.peek_byte(), Some(ch) if ch == expected)
+            .then(|| {
+                self.index += 1;
+            })
             .is_some()
     }
 
+    fn peek_byte(&self) -> Option<u8> {
+        self.bytes.get(self.index).copied()
+    }
+
+    fn next_byte(&mut self) -> Option<u8> {
+        let byte = self.peek_byte()?;
+        self.index += 1;
+        Some(byte)
+    }
+
     fn skip_whitespace(&mut self) {
-        while matches!(self.chars.peek(), Some(ch) if ch.is_ascii_whitespace()) {
-            self.chars.next();
+        while matches!(self.peek_byte(), Some(b' ' | b'\t' | b'\r' | b'\n')) {
+            self.index += 1;
         }
     }
 }
