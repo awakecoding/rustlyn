@@ -44,7 +44,54 @@ unsafe extern "C" {
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_kind(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_type_name(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_scalar_value(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_scalar_type(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_item_count(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_item(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_count(
+        snapshot_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_name(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_snapshot_get_property_value(
+        snapshot_handle: i32,
+        index: i32,
+        exception_out: *mut i32,
+    ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
@@ -96,6 +143,21 @@ unsafe extern "C" {
     fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
         cmdlet_context_handle: i32,
         json_handle: i32,
+        as_hashtable: i32,
+        no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+        cmdlet_context_handle: i32,
+        bytes_ptr: *const u8,
+        byte_len: i64,
+        as_hashtable: i32,
+        no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+        cmdlet_context_handle: i32,
+        stream_handle: i32,
         as_hashtable: i32,
         no_enumerate: i32,
         exception_out: *mut i32,
@@ -181,7 +243,131 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
 }
 
 #[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_kind(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_type_name(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_scalar_value(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_scalar_type(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_item_count(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_item(
+    _snapshot_handle: i32,
+    _index: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_count(
+    _snapshot_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_name(
+    _snapshot_handle: i32,
+    _index: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_snapshot_get_property_value(
+    _snapshot_handle: i32,
+    _index: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+    _cmdlet_context_handle: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
     _cmdlet_context_handle: i32,
     exception_out: *mut i32,
 ) -> i32 {
@@ -314,6 +500,35 @@ unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
 }
 
 #[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+    _cmdlet_context_handle: i32,
+    _bytes_ptr: *const u8,
+    _byte_len: i64,
+    _as_hashtable: i32,
+    _no_enumerate: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
+unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+    _cmdlet_context_handle: i32,
+    _stream_handle: i32,
+    _as_hashtable: i32,
+    _no_enumerate: i32,
+    exception_out: *mut i32,
+) -> i32 {
+    unsafe {
+        *exception_out = 0;
+    }
+    0
+}
+
+#[cfg(test)]
 unsafe extern "C" fn rustlyn_bindgen_powershell_cmdlet_add_xml_input(
     _cmdlet_context_handle: i32,
     exception_out: *mut i32,
@@ -404,6 +619,10 @@ const STATUS_TRANSFORM: i32 = -6;
 const XML_OUTPUT_STRING: i32 = 0;
 const XML_OUTPUT_DOCUMENT: i32 = 1;
 
+fn utf8_string_from_bytes(bytes: Vec<u8>) -> RuntimeResult<String> {
+    String::from_utf8(bytes).map_err(|_| STATUS_PARSE)
+}
+
 #[derive(Clone, Debug, Deserialize)]
 struct PowerShellPropertySnapshot {
     name: String,
@@ -417,11 +636,19 @@ struct PowerShellObjectSnapshot {
     type_name: Option<String>,
     #[serde(rename = "scalarValue")]
     scalar_value: Option<String>,
+    #[serde(rename = "scalarType")]
+    scalar_type: Option<String>,
     #[serde(default)]
     items: Vec<PowerShellObjectSnapshot>,
     #[serde(default)]
     properties: Vec<PowerShellPropertySnapshot>,
 }
+
+const SCALAR_TYPE_BOOLEAN: &str = "bool";
+const SCALAR_TYPE_SIGNED_INTEGER: &str = "i";
+const SCALAR_TYPE_UNSIGNED_INTEGER: &str = "u";
+const SCALAR_TYPE_FLOATING_POINT: &str = "f";
+const SCALAR_TYPE_DECIMAL: &str = "m";
 
 #[derive(Default)]
 struct FormatState {
@@ -463,7 +690,7 @@ impl ManagedString {
         Self { handle }
     }
 
-    fn to_utf8_string(&self) -> RuntimeResult<String> {
+    fn to_utf8_bytes(&self) -> RuntimeResult<Vec<u8>> {
         let mut exception_handle = 0;
         let length = unsafe {
             rustlyn_bindgen_powershell_string_utf8_len(self.handle, &mut exception_handle)
@@ -488,11 +715,151 @@ impl ManagedString {
         }
 
         buffer.truncate(copied as usize);
-        String::from_utf8(buffer).map_err(|_| STATUS_PARSE)
+        Ok(buffer)
+    }
+
+    fn to_utf8_string(&self) -> RuntimeResult<String> {
+        utf8_string_from_bytes(self.to_utf8_bytes()?)
     }
 
     fn release(self) -> RuntimeResult<()> {
         release_handle(self.handle)
+    }
+}
+
+struct ManagedSnapshot {
+    handle: i32,
+}
+
+impl ManagedSnapshot {
+    unsafe fn from_handle(handle: i32) -> Self {
+        Self { handle }
+    }
+
+    fn release(self) -> RuntimeResult<()> {
+        release_handle(self.handle)
+    }
+
+    fn into_snapshot(self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        let result = (|| {
+            let kind = self.required_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_kind(self.handle, exception_out)
+            })?;
+            let type_name = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_type_name(self.handle, exception_out)
+            })?;
+            let scalar_value = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_scalar_value(self.handle, exception_out)
+            })?;
+            let scalar_type = self.optional_string(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_scalar_type(self.handle, exception_out)
+            })?;
+
+            let item_count = self.get_count(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_item_count(self.handle, exception_out)
+            })?;
+            let mut items = Vec::with_capacity(item_count as usize);
+            for index in 0..item_count {
+                let child = self.required_snapshot(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_item(self.handle, index, exception_out)
+                })?;
+                items.push(child.into_snapshot()?);
+            }
+
+            let property_count = self.get_count(|exception_out| unsafe {
+                rustlyn_bindgen_powershell_snapshot_get_property_count(self.handle, exception_out)
+            })?;
+            let mut properties = Vec::with_capacity(property_count as usize);
+            for index in 0..property_count {
+                let name = self.required_string(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_property_name(
+                        self.handle,
+                        index,
+                        exception_out,
+                    )
+                })?;
+                let value = self.required_snapshot(|exception_out| unsafe {
+                    rustlyn_bindgen_powershell_snapshot_get_property_value(
+                        self.handle,
+                        index,
+                        exception_out,
+                    )
+                })?;
+                properties.push(PowerShellPropertySnapshot {
+                    name,
+                    value: value.into_snapshot()?,
+                });
+            }
+
+            Ok(PowerShellObjectSnapshot {
+                kind,
+                type_name,
+                scalar_value,
+                scalar_type,
+                items,
+                properties,
+            })
+        })();
+
+        let release = self.release();
+        release?;
+        result
+    }
+
+    fn required_string(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<String> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Err(STATUS_PARSE);
+        }
+        let value = unsafe { ManagedString::from_handle(handle) };
+        let text = value.to_utf8_string();
+        let release = value.release();
+        release?;
+        text
+    }
+
+    fn optional_string(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<Option<String>> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Ok(None);
+        }
+        let value = unsafe { ManagedString::from_handle(handle) };
+        let text = value.to_utf8_string();
+        let release = value.release();
+        release?;
+        Ok(Some(text?))
+    }
+
+    fn required_snapshot(
+        &self,
+        get_handle: impl FnOnce(*mut i32) -> i32,
+    ) -> RuntimeResult<ManagedSnapshot> {
+        let handle = self.get_handle(get_handle)?;
+        if handle == 0 {
+            return Err(STATUS_PARSE);
+        }
+        Ok(unsafe { ManagedSnapshot::from_handle(handle) })
+    }
+
+    fn get_count(&self, get_count: impl FnOnce(*mut i32) -> i32) -> RuntimeResult<i32> {
+        let count = self.get_handle(get_count)?;
+        if count < 0 {
+            return Err(STATUS_EXCEPTION);
+        }
+        Ok(count)
+    }
+
+    fn get_handle(&self, get_handle: impl FnOnce(*mut i32) -> i32) -> RuntimeResult<i32> {
+        let mut exception_handle = 0;
+        let handle = get_handle(&mut exception_handle);
+        exception_to_result(exception_handle)?;
+        Ok(handle)
     }
 }
 
@@ -541,7 +908,7 @@ impl CmdletContext {
     fn input_snapshot(&self) -> RuntimeResult<PowerShellObjectSnapshot> {
         let mut exception_handle = 0;
         let snapshot_handle = unsafe {
-            rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json(
+            rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_handle(
                 self.handle,
                 &mut exception_handle,
             )
@@ -551,17 +918,21 @@ impl CmdletContext {
             return Err(STATUS_EXCEPTION);
         }
 
-        let snapshot = unsafe { ManagedString::from_handle(snapshot_handle) };
-        let json = snapshot.to_utf8_string();
-        let release = snapshot.release();
-        release?;
-        serde_json::from_str(&json?).map_err(|_| STATUS_PARSE)
+        unsafe { ManagedSnapshot::from_handle(snapshot_handle) }.into_snapshot()
     }
 
     fn input_string(&self) -> RuntimeResult<String> {
+        let bytes = self.input_bytes()?;
+        utf8_string_from_bytes(bytes)
+    }
+
+    fn input_bytes(&self) -> RuntimeResult<Vec<u8>> {
         let mut exception_handle = 0;
         let string_handle = unsafe {
-            rustlyn_bindgen_powershell_cmdlet_get_input_string(self.handle, &mut exception_handle)
+            rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
+                self.handle,
+                &mut exception_handle,
+            )
         };
         exception_to_result(exception_handle)?;
         if string_handle == 0 {
@@ -572,11 +943,21 @@ impl CmdletContext {
         let text = value.to_utf8_string();
         let release = value.release();
         release?;
-        text
+        let base64 = text?;
+        let bytes = decode_base64(&base64);
+        if !base64.is_empty() && bytes.is_empty() {
+            return Err(STATUS_PARSE);
+        }
+
+        Ok(bytes)
     }
 
     fn input_text(&self) -> RuntimeResult<String> {
         let snapshot = self.input_snapshot()?;
+        if snapshot.kind == "array" {
+            return Ok(join_text_items(&snapshot_to_string_array(&snapshot)));
+        }
+
         if let Some(text) = snapshot_scalar_text(&snapshot) {
             return Ok(text);
         }
@@ -699,11 +1080,10 @@ impl CmdletContext {
             }
 
             let value = unsafe { ManagedString::from_handle(result) };
-            let text = value.to_utf8_string();
+            let text = value.to_utf8_bytes();
             let release = value.release();
             release?;
-            let snapshot: PowerShellObjectSnapshot =
-                serde_json::from_str(&text?).map_err(|_| STATUS_PARSE)?;
+            let snapshot = parse_snapshot_bytes(&text?)?;
             Ok(snapshot_to_string_array(&snapshot))
         })
     }
@@ -745,6 +1125,52 @@ impl CmdletContext {
                 rustlyn_bindgen_powershell_cmdlet_write_json_string(
                     self.handle,
                     json.handle,
+                    if as_hashtable { 1 } else { 0 },
+                    if no_enumerate { 1 } else { 0 },
+                    &mut exception_handle,
+                );
+            }
+            exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+        })
+    }
+
+    fn write_json_bytes(
+        &self,
+        bytes: &[u8],
+        as_hashtable: bool,
+        no_enumerate: bool,
+    ) -> RuntimeResult<()> {
+        let mut exception_handle = 0;
+        let bytes_ptr = if bytes.is_empty() {
+            std::ptr::null()
+        } else {
+            bytes.as_ptr()
+        };
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_json_bytes(
+                self.handle,
+                bytes_ptr,
+                bytes.len() as i64,
+                if as_hashtable { 1 } else { 0 },
+                if no_enumerate { 1 } else { 0 },
+                &mut exception_handle,
+            );
+        }
+        exception_to_result(exception_handle).map_err(|_| STATUS_HOST_WRITE)
+    }
+
+    fn write_object_stream(
+        &self,
+        stream: &str,
+        as_hashtable: bool,
+        no_enumerate: bool,
+    ) -> RuntimeResult<()> {
+        with_managed_string(stream, |stream| {
+            let mut exception_handle = 0;
+            unsafe {
+                rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+                    self.handle,
+                    stream.handle,
                     if as_hashtable { 1 } else { 0 },
                     if no_enumerate { 1 } else { 0 },
                     &mut exception_handle,
@@ -844,18 +1270,18 @@ pub extern "C" fn convert_to_rust_json_end_processing(cmdlet_context_handle: i32
 
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_from_rust_json_process_record(cmdlet_context_handle: i32) -> i32 {
-    collect_text(cmdlet_context_handle)
+    collect_text_bytes(cmdlet_context_handle)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_from_rust_json_end_processing(cmdlet_context_handle: i32) -> i32 {
-    finish_with_text(cmdlet_context_handle, |context, text| {
-        let json = transform_utf8(
-            &text,
+    finish_with_bytes(cmdlet_context_handle, |context, bytes| {
+        let json = transform_bytes(
+            &bytes,
             simd_json_engine::simd_json_echo_utf8_len,
             simd_json_engine::simd_json_echo_utf8_copy,
         )?;
-        context.write_json(
+        context.write_json_bytes(
             &json,
             context.parameter_bool("AsHashtable")?,
             context.parameter_bool("NoEnumerate")?,
@@ -1074,13 +1500,7 @@ pub extern "C" fn convert_to_rust_csv_process_record(cmdlet_context_handle: i32)
 #[unsafe(no_mangle)]
 pub extern "C" fn convert_to_rust_csv_end_processing(cmdlet_context_handle: i32) -> i32 {
     finish_with_snapshots(cmdlet_context_handle, |context, snapshots| {
-        let request = create_to_csv_request(context, &snapshots)?;
-        let lines_json = transform_utf8(
-            &request,
-            csv_engine::csv_json_to_csv_len,
-            csv_engine::csv_json_to_csv_copy,
-        )?;
-        let lines: Vec<String> = serde_json::from_str(&lines_json).map_err(|_| STATUS_PARSE)?;
+        let lines = snapshots_to_csv_lines(&context, &snapshots)?;
         for line in lines {
             context.write_string(&line)?;
         }
@@ -1102,7 +1522,8 @@ pub extern "C" fn convert_from_rust_csv_end_processing(cmdlet_context_handle: i3
             csv_engine::csv_to_json_len,
             csv_engine::csv_to_json_copy,
         )?;
-        context.write_json(&json, false, false)
+        let stream = json_to_object_stream(&json)?;
+        context.write_object_stream(&stream, false, false)
     })
 }
 
@@ -1155,6 +1576,17 @@ fn collect_snapshot(cmdlet_context_handle: i32) -> i32 {
 fn collect_text(cmdlet_context_handle: i32) -> i32 {
     run_collect(cmdlet_context_handle, |context, state| {
         state.text_items.push(context.input_text()?);
+        Ok(())
+    })
+}
+
+fn collect_text_bytes(cmdlet_context_handle: i32) -> i32 {
+    run_collect(cmdlet_context_handle, |context, state| {
+        let bytes = context.input_bytes()?;
+        if !state.bytes.is_empty() {
+            state.bytes.extend_from_slice(b"\r\n");
+        }
+        state.bytes.extend_from_slice(&bytes);
         Ok(())
     })
 }
@@ -1285,19 +1717,18 @@ fn snapshots_to_json_text(
     enums_as_strings: bool,
     pretty: bool,
 ) -> String {
-    let mut output = String::new();
+    let mut output = String::with_capacity(snapshots.len().saturating_mul(128).max(4));
     match snapshots {
         [] => output.push_str("null"),
-        [single] => write_snapshot_json(
+        [single] => write_snapshot_json_iterative(
             &mut output,
             single,
             max_depth,
-            0,
             enums_as_strings,
             pretty,
             0,
         ),
-        _ => write_snapshot_array(
+        _ => write_snapshot_array_iterative(
             &mut output,
             snapshots,
             max_depth,
@@ -1307,7 +1738,280 @@ fn snapshots_to_json_text(
             0,
         ),
     }
+
     output
+}
+
+enum JsonWriteFrame<'a> {
+    Value {
+        snapshot: &'a PowerShellObjectSnapshot,
+        depth: i32,
+        indent: usize,
+    },
+    ArrayItems {
+        items: &'a [PowerShellObjectSnapshot],
+        index: usize,
+        item_depth: i32,
+        indent: usize,
+    },
+    ObjectProperties {
+        properties: &'a [PowerShellPropertySnapshot],
+        index: usize,
+        property_depth: i32,
+        indent: usize,
+    },
+    CloseArray {
+        has_items: bool,
+        indent: usize,
+    },
+    CloseObject {
+        has_items: bool,
+        indent: usize,
+    },
+}
+
+fn write_snapshot_json_iterative(
+    output: &mut String,
+    snapshot: &PowerShellObjectSnapshot,
+    max_depth: i32,
+    enums_as_strings: bool,
+    pretty: bool,
+    indent: usize,
+) {
+    let mut frames = vec![JsonWriteFrame::Value {
+        snapshot,
+        depth: 0,
+        indent,
+    }];
+
+    while let Some(frame) = frames.pop() {
+        match frame {
+            JsonWriteFrame::Value {
+                snapshot,
+                depth,
+                indent,
+            } => {
+                if depth > max_depth.max(0) {
+                    write_json_string(output, &snapshot_to_string(snapshot));
+                    continue;
+                }
+
+                match snapshot.kind.as_str() {
+                    "null" => output.push_str("null"),
+                    "datetime" => write_datetime_json(output, snapshot),
+                    "scalar" => write_scalar_json(output, snapshot),
+                    "enum" if enums_as_strings => {
+                        write_json_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
+                    }
+                    "enum" => write_scalar_json(output, snapshot),
+                    "bytes" => {
+                        let bytes = decode_base64(snapshot.scalar_value.as_deref().unwrap_or_default());
+                        write_json_array_start(output, pretty);
+                        for (index, byte) in bytes.iter().enumerate() {
+                            write_json_item_prefix(output, index, pretty, indent + 1);
+                            output.push_str(&byte.to_string());
+                        }
+                        write_json_array_end(output, !bytes.is_empty(), pretty, indent);
+                    }
+                    "array" => {
+                        write_snapshot_array_iterative(
+                            output,
+                            &snapshot.items,
+                            max_depth,
+                            depth + 1,
+                            enums_as_strings,
+                            pretty,
+                            indent,
+                        );
+                    }
+                    "dictionary" | "psobject" => {
+                        write_json_object_start(output, pretty);
+                        let properties = snapshot.properties.as_slice();
+                        if properties.is_empty() {
+                            write_json_object_end(output, false, pretty, indent);
+                        } else {
+                            frames.push(JsonWriteFrame::CloseObject {
+                                has_items: true,
+                                indent,
+                            });
+                            frames.push(JsonWriteFrame::ObjectProperties {
+                                properties,
+                                index: 0,
+                                property_depth: depth + 1,
+                                indent,
+                            });
+                        }
+                    }
+                    _ if snapshot_has_scalar_shape(snapshot) => write_scalar_json(output, snapshot),
+                    "cycle" | "truncated" => {
+                        write_json_string(output, &snapshot_to_string(snapshot))
+                    }
+                    _ => write_json_string(output, &snapshot_to_string(snapshot)),
+                }
+            }
+            JsonWriteFrame::ArrayItems {
+                items,
+                index,
+                item_depth,
+                indent,
+            } => {
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                if index + 1 < items.len() {
+                    frames.push(JsonWriteFrame::ArrayItems {
+                        items,
+                        index: index + 1,
+                        item_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &items[index],
+                    depth: item_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::ObjectProperties {
+                properties,
+                index,
+                property_depth,
+                indent,
+            } => {
+                let property = &properties[index];
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                write_json_string(output, &property.name);
+                if pretty {
+                    output.push_str(": ");
+                } else {
+                    output.push(':');
+                }
+                if index + 1 < properties.len() {
+                    frames.push(JsonWriteFrame::ObjectProperties {
+                        properties,
+                        index: index + 1,
+                        property_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &property.value,
+                    depth: property_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::CloseArray { has_items, indent } => {
+                write_json_array_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::CloseObject { has_items, indent } => {
+                write_json_object_end(output, has_items, pretty, indent);
+            }
+        }
+    }
+}
+
+fn write_snapshot_array_iterative(
+    output: &mut String,
+    snapshots: &[PowerShellObjectSnapshot],
+    max_depth: i32,
+    depth: i32,
+    enums_as_strings: bool,
+    pretty: bool,
+    indent: usize,
+) {
+    write_json_array_start(output, pretty);
+    if snapshots.is_empty() {
+        write_json_array_end(output, false, pretty, indent);
+        return;
+    }
+
+    let mut frames = vec![
+        JsonWriteFrame::CloseArray {
+            has_items: true,
+            indent,
+        },
+        JsonWriteFrame::ArrayItems {
+            items: snapshots,
+            index: 0,
+            item_depth: depth,
+            indent,
+        },
+    ];
+
+    while let Some(frame) = frames.pop() {
+        match frame {
+            JsonWriteFrame::ArrayItems {
+                items,
+                index,
+                item_depth,
+                indent,
+            } => {
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                if index + 1 < items.len() {
+                    frames.push(JsonWriteFrame::ArrayItems {
+                        items,
+                        index: index + 1,
+                        item_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &items[index],
+                    depth: item_depth,
+                    indent: indent + 1,
+                });
+            }
+            JsonWriteFrame::Value {
+                snapshot,
+                depth,
+                indent,
+            } => {
+                write_snapshot_json_iterative(
+                    output,
+                    snapshot,
+                    max_depth,
+                    enums_as_strings,
+                    pretty,
+                    indent,
+                );
+                if depth > max_depth.max(0) {
+                    let _ = depth;
+                }
+            }
+            JsonWriteFrame::CloseArray { has_items, indent } => {
+                write_json_array_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::CloseObject { has_items, indent } => {
+                write_json_object_end(output, has_items, pretty, indent);
+            }
+            JsonWriteFrame::ObjectProperties {
+                properties,
+                index,
+                property_depth,
+                indent,
+            } => {
+                let property = &properties[index];
+                write_json_item_prefix(output, index, pretty, indent + 1);
+                write_json_string(output, &property.name);
+                if pretty {
+                    output.push_str(": ");
+                } else {
+                    output.push(':');
+                }
+                if index + 1 < properties.len() {
+                    frames.push(JsonWriteFrame::ObjectProperties {
+                        properties,
+                        index: index + 1,
+                        property_depth,
+                        indent,
+                    });
+                }
+                frames.push(JsonWriteFrame::Value {
+                    snapshot: &property.value,
+                    depth: property_depth,
+                    indent: indent + 1,
+                });
+            }
+        }
+    }
 }
 
 fn write_snapshot_json(
@@ -1326,6 +2030,7 @@ fn write_snapshot_json(
 
     match snapshot.kind.as_str() {
         "null" => output.push_str("null"),
+        "datetime" => write_datetime_json(output, snapshot),
         "scalar" => write_scalar_json(output, snapshot),
         "enum" if enums_as_strings => {
             write_json_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
@@ -1371,6 +2076,7 @@ fn write_snapshot_json(
             }
             write_json_object_end(output, !snapshot.properties.is_empty(), pretty, indent);
         }
+        _ if snapshot_has_scalar_shape(snapshot) => write_scalar_json(output, snapshot),
         "cycle" | "truncated" => write_json_string(output, &snapshot_to_string(snapshot)),
         _ => write_json_string(output, &snapshot_to_string(snapshot)),
     }
@@ -1403,23 +2109,183 @@ fn write_snapshot_array(
 
 fn write_scalar_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("true"),
-        "System.Boolean" if value.eq_ignore_ascii_case("false") => output.push_str("false"),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64"
-            if value.parse::<i64>().is_ok() =>
-        {
-            output.push_str(value)
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_is_boolean(snapshot, type_name) && is_true_text(value) {
+        output.push_str("true");
+    } else if snapshot_is_boolean(snapshot, type_name) && is_false_text(value) {
+        output.push_str("false");
+    } else if snapshot_is_signed_integer(snapshot, type_name) && is_json_integer_literal(value) {
+        output.push_str(value);
+    } else if snapshot_is_unsigned_integer(snapshot, type_name) && is_unsigned_integer_literal(value) {
+        output.push_str(value);
+    } else if snapshot_is_float(snapshot, type_name) && !is_non_finite_float_text(value) {
+        if trim_ascii(value) == "-0" {
+            output.push_str("-0.0");
+        } else {
+            output.push_str(value);
         }
-        "System.UInt64" if value.parse::<u64>().is_ok() => output.push_str(value),
-        "System.Single" | "System.Double" | "System.Decimal"
-            if value.parse::<f64>().is_ok_and(f64::is_finite) =>
-        {
-            output.push_str(value)
-        }
-        _ => write_json_string(output, value),
+    } else if snapshot_is_decimal(snapshot, type_name) && !is_non_finite_float_text(value) {
+        output.push_str(value);
+    } else {
+        write_json_string(output, value);
     }
+}
+
+fn write_datetime_json(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
+    let value = snapshot.scalar_value.as_deref().unwrap_or_default();
+    write_json_string(output, &normalize_roundtrip_datetime_text(value));
+}
+
+fn is_json_integer_literal(value: &str) -> bool {
+    let text = trim_ascii(value);
+    if text.is_empty() {
+        return false;
+    }
+
+    let digits = if let Some(rest) = text.strip_prefix('-') {
+        rest
+    } else {
+        text
+    };
+
+    !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+}
+
+fn is_true_text(value: &str) -> bool {
+    matches!(value, "True" | "true")
+}
+
+fn is_false_text(value: &str) -> bool {
+    matches!(value, "False" | "false")
+}
+
+fn normalize_snapshot_type_name(mut type_name: &str) -> &str {
+    while let Some(rest) = type_name.strip_prefix("Deserialized.") {
+        type_name = rest;
+    }
+
+    type_name
+}
+
+fn normalized_snapshot_scalar_type(snapshot: &PowerShellObjectSnapshot) -> Option<&str> {
+    snapshot
+        .scalar_type
+        .as_deref()
+        .map(trim_ascii)
+        .filter(|value| !value.is_empty())
+}
+
+fn snapshot_scalar_type_is_known(value: &str) -> bool {
+    matches!(
+        value,
+        SCALAR_TYPE_BOOLEAN
+            | SCALAR_TYPE_SIGNED_INTEGER
+            | SCALAR_TYPE_UNSIGNED_INTEGER
+            | SCALAR_TYPE_FLOATING_POINT
+            | SCALAR_TYPE_DECIMAL
+    )
+}
+
+fn snapshot_should_fallback_to_type_name(snapshot: &PowerShellObjectSnapshot) -> bool {
+    match normalized_snapshot_scalar_type(snapshot) {
+        None => true,
+        Some(value) => !snapshot_scalar_type_is_known(value),
+    }
+}
+
+fn snapshot_type_ends_with(type_name: &str, suffix: &str) -> bool {
+    type_name == suffix || type_name.ends_with(suffix)
+}
+
+fn snapshot_type_is_boolean(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Boolean")
+}
+
+fn snapshot_type_is_signed_integer(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Byte")
+        || snapshot_type_ends_with(type_name, "System.SByte")
+        || snapshot_type_ends_with(type_name, "System.Int16")
+        || snapshot_type_ends_with(type_name, "System.UInt16")
+        || snapshot_type_ends_with(type_name, "System.Int32")
+        || snapshot_type_ends_with(type_name, "System.UInt32")
+        || snapshot_type_ends_with(type_name, "System.Int64")
+}
+
+fn snapshot_type_is_unsigned_integer(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.UInt64")
+}
+
+fn snapshot_type_is_float(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Single")
+        || snapshot_type_ends_with(type_name, "System.Double")
+}
+
+fn snapshot_type_is_decimal(type_name: &str) -> bool {
+    snapshot_type_ends_with(type_name, "System.Decimal")
+}
+
+fn snapshot_is_boolean(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
+    snapshot_type_is_boolean(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_BOOLEAN)
+}
+
+fn snapshot_is_signed_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
+    snapshot_type_is_signed_integer(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_SIGNED_INTEGER)
+}
+
+fn snapshot_is_unsigned_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
+    snapshot_type_is_unsigned_integer(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
+}
+
+fn snapshot_is_float(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
+    snapshot_type_is_float(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_FLOATING_POINT)
+}
+
+fn snapshot_is_decimal(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
+    snapshot_type_is_decimal(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_DECIMAL)
+}
+
+fn is_non_finite_float_text(value: &str) -> bool {
+    matches!(trim_ascii(value), "NaN" | "nan" | "Infinity" | "infinity" | "-Infinity" | "-infinity")
+}
+
+fn normalize_roundtrip_datetime_text(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let Some(dot_index) = bytes.iter().position(|byte| *byte == b'.') else {
+        return value.to_owned();
+    };
+
+    let mut timezone_index = bytes.len();
+    let mut scan_index = dot_index + 1;
+    while scan_index < bytes.len() {
+        if matches!(bytes[scan_index], b'Z' | b'+' | b'-') {
+            timezone_index = scan_index;
+            break;
+        }
+        scan_index += 1;
+    }
+
+    let mut fractional_end = timezone_index;
+    while fractional_end > dot_index + 1 && bytes[fractional_end - 1] == b'0' {
+        fractional_end -= 1;
+    }
+
+    if fractional_end == timezone_index {
+        return value.to_owned();
+    }
+
+    let mut normalized = String::with_capacity(value.len());
+    normalized.push_str(&value[..dot_index]);
+    if fractional_end > dot_index + 1 {
+        normalized.push('.');
+        normalized.push_str(&value[dot_index + 1..fractional_end]);
+    }
+    normalized.push_str(&value[timezone_index..]);
+    normalized
 }
 
 fn write_json_array_start(output: &mut String, _pretty: bool) {
@@ -1473,6 +2339,8 @@ fn write_json_string(output: &mut String, value: &str) {
             '\t' => output.push_str("\\t"),
             '\u{08}' => output.push_str("\\b"),
             '\u{0c}' => output.push_str("\\f"),
+            '\u{2028}' => output.push_str("\\u2028"),
+            '\u{2029}' => output.push_str("\\u2029"),
             ch if (ch as u32) < 0x20 => {
                 let value = ch as u32;
                 output.push_str("\\u00");
@@ -1497,6 +2365,9 @@ fn snapshot_to_json_value(
 
     match snapshot.kind.as_str() {
         "null" => Value::Null,
+        "datetime" => Value::String(normalize_roundtrip_datetime_text(
+            snapshot.scalar_value.as_deref().unwrap_or_default(),
+        )),
         "scalar" => scalar_snapshot_to_json(snapshot),
         "enum" if enums_as_strings => {
             Value::String(snapshot.scalar_value.clone().unwrap_or_default())
@@ -1525,6 +2396,7 @@ fn snapshot_to_json_value(
             }
             Value::Object(object)
         }
+        _ if snapshot_has_scalar_shape(snapshot) => scalar_snapshot_to_json(snapshot),
         "cycle" | "truncated" => Value::String(snapshot_to_string(snapshot)),
         _ => Value::String(snapshot_to_string(snapshot)),
     }
@@ -1532,25 +2404,33 @@ fn snapshot_to_json_value(
 
 fn scalar_snapshot_to_json(snapshot: &PowerShellObjectSnapshot) -> Value {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" => Value::Bool(value.eq_ignore_ascii_case("true")),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64" => value
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_is_boolean(snapshot, type_name) {
+        Value::Bool(value.eq_ignore_ascii_case("true"))
+    } else if snapshot_is_signed_integer(snapshot, type_name) {
+        value
             .parse::<i64>()
             .map(|number| Value::Number(number.into()))
-            .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.UInt64" => value
+            .unwrap_or_else(|_| Value::String(value.to_owned()))
+    } else if snapshot_is_unsigned_integer(snapshot, type_name) {
+        value
             .parse::<u64>()
             .map(|number| Value::Number(number.into()))
-            .unwrap_or_else(|_| Value::String(value.to_owned())),
-        "System.Single" | "System.Double" | "System.Decimal" => value
+            .unwrap_or_else(|_| Value::String(value.to_owned()))
+    } else if snapshot_is_float(snapshot, type_name) || snapshot_is_decimal(snapshot, type_name) {
+        value
             .parse::<f64>()
             .ok()
             .and_then(serde_json::Number::from_f64)
             .map(Value::Number)
-            .unwrap_or_else(|| Value::String(value.to_owned())),
-        _ => Value::String(value.to_owned()),
+            .unwrap_or_else(|| Value::String(value.to_owned()))
+    } else {
+        Value::String(value.to_owned())
     }
+}
+
+fn snapshot_has_scalar_shape(snapshot: &PowerShellObjectSnapshot) -> bool {
+    snapshot.items.is_empty() && snapshot.properties.is_empty() && snapshot.scalar_value.is_some()
 }
 
 fn snapshots_to_object_stream(
@@ -1574,6 +2454,65 @@ fn snapshots_to_object_stream(
     output
 }
 
+fn json_to_object_stream(input: &str) -> RuntimeResult<String> {
+    let value: Value = serde_json::from_str(input).map_err(|_| STATUS_PARSE)?;
+    let mut output = String::new();
+    write_json_value_as_object_stream(&mut output, &value)?;
+    Ok(output)
+}
+
+fn write_json_value_as_object_stream(output: &mut String, value: &Value) -> RuntimeResult<()> {
+    match value {
+        Value::Null => output.push_str("N;"),
+        Value::Bool(true) => output.push_str("T;"),
+        Value::Bool(false) => output.push_str("F;"),
+        Value::Number(number) => write_json_number_as_object_stream(output, number)?,
+        Value::String(text) => write_object_stream_string(output, text),
+        Value::Array(items) => {
+            output.push('A');
+            output.push_str(&items.len().to_string());
+            output.push(':');
+            for item in items {
+                write_json_value_as_object_stream(output, item)?;
+            }
+        }
+        Value::Object(object) => {
+            output.push('O');
+            output.push_str(&object.len().to_string());
+            output.push(':');
+            for (name, item) in object {
+                write_raw_object_stream_string(output, name);
+                write_json_value_as_object_stream(output, item)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn write_json_number_as_object_stream(
+    output: &mut String,
+    number: &serde_json::Number,
+) -> RuntimeResult<()> {
+    let value = number.to_string();
+
+    if is_integer_literal(&value) || is_unsigned_integer_literal(&value) {
+        output.push('I');
+        output.push_str(&value);
+        output.push(';');
+        return Ok(());
+    }
+
+    if !is_float_literal(&value) {
+        return Err(STATUS_PARSE);
+    }
+
+    output.push('D');
+    output.push_str(&value);
+    output.push(';');
+    Ok(())
+}
+
 fn write_object_stream_value(
     output: &mut String,
     snapshot: &PowerShellObjectSnapshot,
@@ -1588,6 +2527,12 @@ fn write_object_stream_value(
 
     match snapshot.kind.as_str() {
         "null" => output.push_str("N;"),
+        "datetime" => write_object_stream_string(
+            output,
+            &normalize_roundtrip_datetime_text(
+                snapshot.scalar_value.as_deref().unwrap_or_default(),
+            ),
+        ),
         "scalar" => write_scalar_object_stream(output, snapshot),
         "enum" if enums_as_strings => {
             write_object_stream_string(output, snapshot.scalar_value.as_deref().unwrap_or_default())
@@ -1633,21 +2578,21 @@ fn write_object_stream_value(
 
 fn write_scalar_object_stream(output: &mut String, snapshot: &PowerShellObjectSnapshot) {
     let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-    match snapshot.type_name.as_deref().unwrap_or_default() {
-        "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("T;"),
-        "System.Boolean" => output.push_str("F;"),
-        "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16" | "System.Int32"
-        | "System.UInt32" | "System.Int64" | "System.UInt64" => {
-            output.push('I');
-            output.push_str(value);
-            output.push(';');
-        }
-        "System.Single" | "System.Double" | "System.Decimal" => {
-            output.push('D');
-            output.push_str(value);
-            output.push(';');
-        }
-        _ => write_object_stream_string(output, value),
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_is_boolean(snapshot, type_name) && is_true_text(value) {
+        output.push_str("T;");
+    } else if snapshot_is_boolean(snapshot, type_name) && is_false_text(value) {
+        output.push_str("F;");
+    } else if snapshot_is_signed_integer(snapshot, type_name) || snapshot_is_unsigned_integer(snapshot, type_name) {
+        output.push('I');
+        output.push_str(value);
+        output.push(';');
+    } else if snapshot_is_float(snapshot, type_name) || snapshot_is_decimal(snapshot, type_name) {
+        output.push('D');
+        output.push_str(value);
+        output.push(';');
+    } else {
+        write_object_stream_string(output, value);
     }
 }
 
@@ -1677,10 +2622,103 @@ fn snapshots_to_toml_text(
     for property in &snapshot.properties {
         write_toml_key(&mut output, &property.name);
         output.push_str(" = ");
-        write_toml_snapshot_value(&mut output, &property.value, max_depth, 1)?;
+        let value = snapshot_to_toml_json_scalar(&property.value, max_depth, 1);
+        write_json_value_as_toml(&mut output, &value)?;
         output.push('\n');
     }
     Ok(output)
+}
+
+fn snapshot_to_toml_json_scalar(
+    snapshot: &PowerShellObjectSnapshot,
+    max_depth: i32,
+    depth: i32,
+) -> Value {
+    if depth > max_depth.max(0) {
+        return Value::String(snapshot_to_string(snapshot));
+    }
+
+    match snapshot.kind.as_str() {
+        "null" => Value::String(String::new()),
+        "datetime" => Value::String(normalize_roundtrip_datetime_text(
+            snapshot.scalar_value.as_deref().unwrap_or_default(),
+        )),
+        "scalar" | "enum" => snapshot_scalar_toml_value(snapshot),
+        "bytes" => Value::Array(
+            decode_base64(snapshot.scalar_value.as_deref().unwrap_or_default())
+                .into_iter()
+                .map(|byte| Value::Number(serde_json::Number::from(byte)))
+                .collect(),
+        ),
+        "array" => Value::Array(
+            snapshot
+                .items
+                .iter()
+                .map(|item| snapshot_to_toml_json_scalar(item, max_depth, depth + 1))
+                .collect(),
+        ),
+        "dictionary" | "psobject" => Value::String(snapshot_to_string(snapshot)),
+        "cycle" | "truncated" => Value::String(snapshot_to_string(snapshot)),
+        _ => Value::String(snapshot_to_string(snapshot)),
+    }
+}
+
+fn snapshot_scalar_toml_value(snapshot: &PowerShellObjectSnapshot) -> Value {
+    let value = snapshot.scalar_value.as_deref().unwrap_or_default();
+    let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+    if snapshot_is_boolean(snapshot, type_name) && value.eq_ignore_ascii_case("true") {
+        Value::Bool(true)
+    } else if snapshot_is_boolean(snapshot, type_name) && value.eq_ignore_ascii_case("false") {
+        Value::Bool(false)
+    } else if snapshot_is_signed_integer(snapshot, type_name) && value.parse::<i64>().is_ok() {
+        Value::Number(serde_json::Number::from(value.parse::<i64>().unwrap_or_default()))
+    } else if snapshot_is_unsigned_integer(snapshot, type_name) && value.parse::<u64>().is_ok() {
+        Value::Number(serde_json::Number::from(value.parse::<u64>().unwrap_or_default()))
+    } else if (snapshot_is_float(snapshot, type_name) || snapshot_is_decimal(snapshot, type_name))
+        && value.parse::<f64>().is_ok_and(f64::is_finite)
+    {
+        serde_json::Number::from_f64(value.parse::<f64>().unwrap_or_default())
+            .map(Value::Number)
+            .unwrap_or_else(|| Value::String(value.to_owned()))
+    } else {
+        Value::String(value.to_owned())
+    }
+}
+
+fn write_json_value_as_toml(output: &mut String, value: &Value) -> RuntimeResult<()> {
+    match value {
+        Value::Null => {
+            write_json_string(output, "");
+            Ok(())
+        }
+        Value::Bool(flag) => {
+            output.push_str(if *flag { "true" } else { "false" });
+            Ok(())
+        }
+        Value::Number(number) => {
+            output.push_str(&number.to_string());
+            Ok(())
+        }
+        Value::String(text) => {
+            write_json_string(output, text);
+            Ok(())
+        }
+        Value::Array(items) => {
+            output.push('[');
+            for (index, item) in items.iter().enumerate() {
+                if index > 0 {
+                    output.push_str(", ");
+                }
+                write_json_value_as_toml(output, item)?;
+            }
+            output.push(']');
+            Ok(())
+        }
+        Value::Object(_) => {
+            write_json_string(output, &value.to_string());
+            Ok(())
+        }
+    }
 }
 
 fn write_toml_snapshot_value(
@@ -1695,24 +2733,32 @@ fn write_toml_snapshot_value(
     }
 
     match snapshot.kind.as_str() {
+        "datetime" => {
+            write_json_string(
+                output,
+                &normalize_roundtrip_datetime_text(
+                    snapshot.scalar_value.as_deref().unwrap_or_default(),
+                ),
+            );
+            Ok(())
+        }
         "scalar" | "enum" => {
             let value = snapshot.scalar_value.as_deref().unwrap_or_default();
-            match snapshot.type_name.as_deref().unwrap_or_default() {
-                "System.Boolean" if value.eq_ignore_ascii_case("true") => output.push_str("true"),
-                "System.Boolean" if value.eq_ignore_ascii_case("false") => output.push_str("false"),
-                "System.Byte" | "System.SByte" | "System.Int16" | "System.UInt16"
-                | "System.Int32" | "System.UInt32" | "System.Int64"
-                    if is_integer_literal(value) =>
-                {
-                    output.push_str(value);
-                }
-                "System.UInt64" if is_unsigned_integer_literal(value) => output.push_str(value),
-                "System.Single" | "System.Double" | "System.Decimal"
-                    if is_float_literal(value) || is_integer_literal(value) =>
-                {
-                    output.push_str(value);
-                }
-                _ => write_json_string(output, value),
+            let type_name = normalize_snapshot_type_name(snapshot.type_name.as_deref().unwrap_or_default());
+            if snapshot_is_boolean(snapshot, type_name) && value.eq_ignore_ascii_case("true") {
+                output.push_str("true");
+            } else if snapshot_is_boolean(snapshot, type_name) && value.eq_ignore_ascii_case("false") {
+                output.push_str("false");
+            } else if snapshot_is_signed_integer(snapshot, type_name) && is_integer_literal(value) {
+                output.push_str(value);
+            } else if snapshot_is_unsigned_integer(snapshot, type_name) && is_unsigned_integer_literal(value) {
+                output.push_str(value);
+            } else if (snapshot_is_float(snapshot, type_name) || snapshot_is_decimal(snapshot, type_name))
+                && (is_float_literal(value) || is_integer_literal(value))
+            {
+                output.push_str(value);
+            } else {
+                write_json_string(output, value);
             }
             Ok(())
         }
@@ -2069,7 +3115,7 @@ fn append_bytes(snapshot: &PowerShellObjectSnapshot, bytes: &mut Vec<u8>) -> Run
 fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
     match snapshot.kind.as_str() {
         "null" => String::new(),
-        "scalar" | "enum" | "truncated" | "cycle" => {
+        "scalar" | "enum" | "datetime" | "truncated" | "cycle" => {
             snapshot.scalar_value.clone().unwrap_or_default()
         }
         "bytes" => snapshot.scalar_value.clone().unwrap_or_default(),
@@ -2079,12 +3125,24 @@ fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
             .map(snapshot_to_string)
             .collect::<Vec<_>>()
             .join(" "),
-        "dictionary" | "psobject" => snapshot
-            .properties
-            .iter()
-            .map(|property| format!("{}={}", property.name, snapshot_to_string(&property.value)))
-            .collect::<Vec<_>>()
-            .join("; "),
+        "dictionary" | "psobject" => {
+            let content = snapshot
+                .properties
+                .iter()
+                .map(|property| {
+                    let value = match property.value.kind.as_str() {
+                        "null" => String::new(),
+                        "scalar" | "enum" | "datetime" | "bytes" | "truncated" | "cycle" => {
+                            snapshot_to_string(&property.value)
+                        }
+                        _ => String::new(),
+                    };
+                    format!("{}={}", property.name, value)
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            format!("@{{{}}}", content)
+        }
         _ => snapshot.scalar_value.clone().unwrap_or_default(),
     }
 }
@@ -2092,7 +3150,7 @@ fn snapshot_to_string(snapshot: &PowerShellObjectSnapshot) -> String {
 fn snapshot_scalar_text(snapshot: &PowerShellObjectSnapshot) -> Option<String> {
     match snapshot.kind.as_str() {
         "null" => Some(String::new()),
-        "scalar" | "enum" | "bytes" | "truncated" | "cycle" => {
+        "scalar" | "enum" | "datetime" | "bytes" | "truncated" | "cycle" => {
             Some(snapshot.scalar_value.clone().unwrap_or_default())
         }
         _ => None,
@@ -2122,7 +3180,7 @@ fn create_to_csv_request(
     context: CmdletContext,
     snapshots: &[PowerShellObjectSnapshot],
 ) -> RuntimeResult<String> {
-    let delimiter = resolve_delimiter(context)?;
+    let delimiter = resolve_delimiter(&context)?;
     let rows = snapshots
         .iter()
         .map(csv_row_from_snapshot)
@@ -2145,11 +3203,11 @@ fn create_to_csv_request(
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+
     let type_name = snapshots
         .first()
         .and_then(|snapshot| snapshot.type_name.clone())
         .unwrap_or_default();
-
     let mut request = Map::new();
     request.insert("delimiter".to_owned(), Value::String(delimiter.to_string()));
     request.insert(
@@ -2187,8 +3245,521 @@ fn create_to_csv_request(
     serde_json::to_string(&Value::Object(request)).map_err(|_| STATUS_PARSE)
 }
 
-fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<String> {
+fn snapshots_to_csv_lines(
+    context: &CmdletContext,
+    snapshots: &[PowerShellObjectSnapshot],
+) -> RuntimeResult<Vec<String>> {
     let delimiter = resolve_delimiter(context)?;
+    let include_type_information = context.parameter_bool("IncludeTypeInformation")?;
+    let no_header = context.parameter_bool("NoHeader")?;
+    let quote_fields = context.parameter_string_array("QuoteFields")?;
+    let use_quotes = if context.has_parameter("UseQuotes")? {
+        context.parameter_string_or("UseQuotes", "Always")?
+    } else if quote_fields.is_empty() {
+        String::from("Always")
+    } else {
+        String::from("Never")
+    };
+
+    let mut headers = Vec::new();
+    if !snapshots.is_empty() {
+        let first_row = csv_row_values_from_snapshot(&snapshots[0]);
+        for field in first_row {
+            headers.push(field.0.clone());
+        }
+    }
+
+    let mut lines = Vec::new();
+    if include_type_information {
+        let mut line = String::from("#TYPE ");
+        if !snapshots.is_empty() {
+            if let Some(type_name) = snapshots[0].type_name.as_deref() {
+                line.push_str(type_name);
+            }
+        }
+        lines.push(line);
+    }
+
+    if !no_header {
+        let mut header_values = Vec::new();
+        for header in &headers {
+            header_values.push(CsvFieldValue::new(header.clone(), false));
+        }
+        lines.push(format_csv_record(
+            &header_values,
+            delimiter,
+            &use_quotes,
+            &quote_fields,
+        ));
+    }
+
+    let quote_field_indexes = csv_quote_field_indexes(&headers, &quote_fields);
+    for snapshot in snapshots {
+        let row = csv_row_values_from_snapshot(snapshot);
+        let mut values: Vec<CsvFieldValue> = Vec::new();
+        for header in &headers {
+            let mut value = CsvFieldValue::new(String::new(), true);
+            for field in &row {
+                if &field.0 == header {
+                    value = field.1.clone();
+                    break;
+                }
+            }
+            values.push(value);
+        }
+        lines.push(format_csv_record(
+            &values,
+            delimiter,
+            &use_quotes,
+            &quote_field_indexes,
+        ));
+    }
+
+    Ok(lines)
+}
+
+fn csv_quote_field_indexes(headers: &[String], quote_fields: &[String]) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut index = 0usize;
+    while index < headers.len() {
+        let mut quote_index = 0usize;
+        while quote_index < quote_fields.len() {
+            if quote_fields[quote_index] == headers[index] {
+                values.push(index.to_string());
+                break;
+            }
+            quote_index += 1;
+        }
+        index += 1;
+    }
+    values
+}
+
+#[derive(Clone)]
+struct CsvFieldValue {
+    text: String,
+    is_null: bool,
+}
+
+impl CsvFieldValue {
+    fn new(text: String, is_null: bool) -> Self {
+        Self { text, is_null }
+    }
+}
+
+fn csv_row_values_from_snapshot(snapshot: &PowerShellObjectSnapshot) -> Vec<(String, CsvFieldValue)> {
+    match snapshot.kind.as_str() {
+        "null" => vec![(
+            "Length".to_owned(),
+            CsvFieldValue::new(String::new(), true),
+        )],
+        "dictionary" | "psobject" if !snapshot.properties.is_empty() => {
+            let mut values = Vec::new();
+            for property in &snapshot.properties {
+                values.push((
+                    property.name.clone(),
+                    csv_field_value_from_snapshot(&property.value),
+                ));
+            }
+            values
+        }
+        _ => vec![(
+            "Length".to_owned(),
+            csv_field_value_from_snapshot(snapshot),
+        )],
+    }
+}
+
+fn csv_field_value_from_snapshot(snapshot: &PowerShellObjectSnapshot) -> CsvFieldValue {
+    CsvFieldValue::new(snapshot_to_string(snapshot), snapshot.kind == "null")
+}
+
+fn format_csv_record(
+    values: &[CsvFieldValue],
+    delimiter: char,
+    use_quotes: &str,
+    quote_fields: &[String],
+) -> String {
+    let mut output = String::new();
+    let mut index = 0usize;
+    while index < values.len() {
+        if index > 0 {
+            output.push(delimiter);
+        }
+
+        let mut force_quote = false;
+        let index_text = index.to_string();
+        let mut quote_index = 0usize;
+        while quote_index < quote_fields.len() {
+            if quote_fields[quote_index] == index_text
+                || quote_fields[quote_index] == values[index].text
+            {
+                force_quote = true;
+                break;
+            }
+            quote_index += 1;
+        }
+
+        write_csv_field(&mut output, &values[index], delimiter, use_quotes, force_quote);
+        index += 1;
+    }
+    output
+}
+
+fn write_csv_field(
+    output: &mut String,
+    value: &CsvFieldValue,
+    delimiter: char,
+    use_quotes: &str,
+    force_quote: bool,
+) {
+    let should_quote = if force_quote {
+        true
+    } else if value.is_null {
+        false
+    } else {
+        match use_quotes {
+            "Never" => false,
+            "AsNeeded" => csv_field_needs_quotes(&value.text, delimiter),
+            _ => true,
+        }
+    };
+
+    if !should_quote {
+        output.push_str(&value.text);
+        return;
+    }
+
+    output.push('"');
+    for ch in value.text.chars() {
+        if ch == '"' {
+            output.push('"');
+            output.push('"');
+        } else {
+            output.push(ch);
+        }
+    }
+    output.push('"');
+}
+
+fn csv_field_needs_quotes(value: &str, delimiter: char) -> bool {
+    for ch in value.chars() {
+        if ch == delimiter || ch == '"' || ch == '\r' || ch == '\n' {
+            return true;
+        }
+    }
+    false
+}
+
+fn parse_snapshot_json(input: &str) -> RuntimeResult<PowerShellObjectSnapshot> {
+    parse_snapshot_bytes(input.as_bytes())
+}
+
+fn parse_snapshot_bytes(input: &[u8]) -> RuntimeResult<PowerShellObjectSnapshot> {
+    SnapshotJsonParser::new(input).parse_snapshot()
+}
+
+struct SnapshotJsonParser<'a> {
+    bytes: &'a [u8],
+    index: usize,
+}
+
+impl<'a> SnapshotJsonParser<'a> {
+    fn new(input: &'a [u8]) -> Self {
+        Self {
+            bytes: input,
+            index: 0,
+        }
+    }
+
+    fn parse_snapshot(mut self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        self.skip_whitespace();
+        let snapshot = self.parse_snapshot_object()?;
+        self.skip_whitespace();
+        if self.index != self.bytes.len() {
+            return Err(STATUS_PARSE);
+        }
+        Ok(snapshot)
+    }
+
+    fn parse_snapshot_object(&mut self) -> RuntimeResult<PowerShellObjectSnapshot> {
+        self.expect_char('{')?;
+        self.expect_member_name_first(b"kind")?;
+        let kind = self.parse_string()?;
+        let mut type_name = None;
+        let mut scalar_value = None;
+        let mut scalar_type = None;
+        if self.consume_optional_member_name(b"typeName")? {
+            type_name = self.parse_nullable_string()?;
+        }
+        if self.consume_optional_member_name(b"scalarValue")? {
+            scalar_value = self.parse_nullable_string()?;
+        }
+        if self.consume_optional_member_name(b"scalarType")? {
+            scalar_type = self.parse_nullable_string()?;
+        }
+        self.expect_member_name_next(b"items")?;
+        let items = self.parse_snapshot_array()?;
+        self.expect_member_name_next(b"properties")?;
+        let properties = self.parse_property_array()?;
+        self.expect_char('}')?;
+
+        Ok(PowerShellObjectSnapshot {
+            kind,
+            type_name,
+            scalar_value,
+            scalar_type,
+            items,
+            properties,
+        })
+    }
+
+    fn parse_property_object(&mut self) -> RuntimeResult<PowerShellPropertySnapshot> {
+        self.expect_char('{')?;
+        self.expect_member_name_first(b"name")?;
+        let name = self.parse_string()?;
+        self.expect_member_name_next(b"value")?;
+        let value = self.parse_snapshot_object()?;
+        self.expect_char('}')?;
+
+        Ok(PowerShellPropertySnapshot {
+            name,
+            value,
+        })
+    }
+
+    fn parse_snapshot_array(&mut self) -> RuntimeResult<Vec<PowerShellObjectSnapshot>> {
+        self.expect_char('[')?;
+        let mut items = Vec::new();
+        loop {
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            items.push(self.parse_snapshot_object()?);
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+        Ok(items)
+    }
+
+    fn parse_property_array(&mut self) -> RuntimeResult<Vec<PowerShellPropertySnapshot>> {
+        self.expect_char('[')?;
+        let mut properties = Vec::new();
+        loop {
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            properties.push(self.parse_property_object()?);
+            self.skip_whitespace();
+            if self.consume_char(']') {
+                break;
+            }
+            self.expect_char(',')?;
+        }
+        Ok(properties)
+    }
+
+    fn parse_nullable_string(&mut self) -> RuntimeResult<Option<String>> {
+        self.skip_whitespace();
+        if self.consume_literal("null") {
+            return Ok(None);
+        }
+        Ok(Some(self.parse_string()?))
+    }
+
+    fn parse_string(&mut self) -> RuntimeResult<String> {
+        self.expect_byte(b'"')?;
+        let start = self.index;
+        loop {
+            let Some(byte) = self.next_byte() else {
+                return Err(STATUS_PARSE);
+            };
+            match byte {
+                b'"' => {
+                    let text = std::str::from_utf8(&self.bytes[start..self.index - 1])
+                        .map_err(|_| STATUS_PARSE)?;
+                    return Ok(text.to_owned());
+                }
+                b'\\' => break,
+                0x00..=0x1f => return Err(STATUS_PARSE),
+                0x20..=0x7e => {}
+                _ => return Err(STATUS_PARSE),
+            }
+        }
+
+        let mut output = std::str::from_utf8(&self.bytes[start..self.index - 1])
+            .map_err(|_| STATUS_PARSE)?
+            .to_owned();
+        output.push(self.parse_escape_sequence()?);
+
+        loop {
+            let Some(byte) = self.next_byte() else {
+                return Err(STATUS_PARSE);
+            };
+            match byte {
+                b'"' => return Ok(output),
+                b'\\' => output.push(self.parse_escape_sequence()?),
+                0x00..=0x1f => return Err(STATUS_PARSE),
+                0x20..=0x7e => output.push(byte as char),
+                _ => return Err(STATUS_PARSE),
+            }
+        }
+    }
+
+    fn parse_escape_sequence(&mut self) -> RuntimeResult<char> {
+        let Some(escape) = self.next_byte() else {
+            return Err(STATUS_PARSE);
+        };
+        match escape {
+            b'"' => Ok('"'),
+            b'\\' => Ok('\\'),
+            b'/' => Ok('/'),
+            b'b' => Ok('\u{08}'),
+            b'f' => Ok('\u{0c}'),
+            b'n' => Ok('\n'),
+            b'r' => Ok('\r'),
+            b't' => Ok('\t'),
+            b'u' => self.parse_unicode_escape(),
+            _ => Err(STATUS_PARSE),
+        }
+    }
+
+    fn parse_unicode_escape(&mut self) -> RuntimeResult<char> {
+        let first = self.parse_hex_u16()?;
+        if (0xd800..=0xdbff).contains(&first) {
+            if self.next_byte() != Some(b'\\') || self.next_byte() != Some(b'u') {
+                return Err(STATUS_PARSE);
+            }
+            let second = self.parse_hex_u16()?;
+            if !(0xdc00..=0xdfff).contains(&second) {
+                return Err(STATUS_PARSE);
+            }
+            let scalar = 0x10000 + (((first as u32 - 0xd800) << 10) | (second as u32 - 0xdc00));
+            return char::from_u32(scalar).ok_or(STATUS_PARSE);
+        }
+        if (0xdc00..=0xdfff).contains(&first) {
+            return Err(STATUS_PARSE);
+        }
+        char::from_u32(first as u32).ok_or(STATUS_PARSE)
+    }
+
+    fn parse_hex_u16(&mut self) -> RuntimeResult<u16> {
+        let mut value = 0u16;
+        for _ in 0..4 {
+            let Some(ch) = self.next_byte() else {
+                return Err(STATUS_PARSE);
+            };
+            let digit = match ch {
+                b'0'..=b'9' => (ch - b'0') as u16,
+                b'a'..=b'f' => (ch - b'a' + 10) as u16,
+                b'A'..=b'F' => (ch - b'A' + 10) as u16,
+                _ => return Err(STATUS_PARSE),
+            };
+            value = (value << 4) | digit;
+        }
+        Ok(value)
+    }
+
+    fn consume_literal(&mut self, expected: &str) -> bool {
+        let expected_bytes = expected.as_bytes();
+        if self.bytes.len().saturating_sub(self.index) < expected_bytes.len() {
+            return false;
+        }
+        if self.bytes[self.index..self.index + expected_bytes.len()] != *expected_bytes {
+            return false;
+        }
+        self.index += expected_bytes.len();
+        true
+    }
+
+    fn expect_member_name_first(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_quoted_ascii(expected)?;
+        self.expect_char(':')
+    }
+
+    fn expect_member_name_next(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_char(',')?;
+        self.expect_member_name_first(expected)
+    }
+
+    fn consume_optional_member_name(&mut self, expected: &[u8]) -> RuntimeResult<bool> {
+        self.skip_whitespace();
+        let checkpoint = self.index;
+        if !self.consume_byte(b',') {
+            return Ok(false);
+        }
+        if self.expect_quoted_ascii(expected).is_err() {
+            self.index = checkpoint;
+            return Ok(false);
+        }
+        self.expect_char(':')?;
+        Ok(true)
+    }
+
+    fn expect_quoted_ascii(&mut self, expected: &[u8]) -> RuntimeResult<()> {
+        self.expect_byte(b'"')?;
+        for &byte in expected {
+            if self.next_byte() != Some(byte) {
+                return Err(STATUS_PARSE);
+            }
+        }
+        self.expect_byte(b'"')
+    }
+
+    fn expect_char(&mut self, expected: char) -> RuntimeResult<()> {
+        self.expect_byte(expected as u8)
+    }
+
+    fn expect_byte(&mut self, expected: u8) -> RuntimeResult<()> {
+        self.skip_whitespace();
+        let Some(ch) = self.next_byte() else {
+            return Err(STATUS_PARSE);
+        };
+        if ch == expected {
+            Ok(())
+        } else {
+            Err(STATUS_PARSE)
+        }
+    }
+
+    fn consume_char(&mut self, expected: char) -> bool {
+        self.consume_byte(expected as u8)
+    }
+
+    fn consume_byte(&mut self, expected: u8) -> bool {
+        self.skip_whitespace();
+        if self.peek_byte() == Some(expected) {
+            self.index += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn peek_byte(&self) -> Option<u8> {
+        self.bytes.get(self.index).copied()
+    }
+
+    fn next_byte(&mut self) -> Option<u8> {
+        let byte = self.peek_byte()?;
+        self.index += 1;
+        Some(byte)
+    }
+
+    fn skip_whitespace(&mut self) {
+        while matches!(self.peek_byte(), Some(b' ' | b'\t' | b'\r' | b'\n')) {
+            self.index += 1;
+        }
+    }
+}
+
+fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<String> {
+    let delimiter = resolve_delimiter(&context)?;
     let header = context.parameter_string_array("Header")?;
     let mut request = Map::new();
     request.insert("csv".to_owned(), Value::String(csv.to_owned()));
@@ -2205,7 +3776,7 @@ fn create_from_csv_request(context: CmdletContext, csv: &str) -> RuntimeResult<S
     serde_json::to_string(&Value::Object(request)).map_err(|_| STATUS_PARSE)
 }
 
-fn resolve_delimiter(context: CmdletContext) -> RuntimeResult<char> {
+fn resolve_delimiter(context: &CmdletContext) -> RuntimeResult<char> {
     if context.has_parameter("Delimiter")? {
         return context.parameter_char_or("Delimiter", ',');
     }
@@ -2418,6 +3989,181 @@ mod tests {
     }
 
     #[test]
+    fn json_number_object_stream_preserves_negative_decimal_text() {
+        assert_eq!(
+            json_to_object_stream("-3.5").expect("decimal stream should succeed"),
+            "D-3.5;"
+        );
+    }
+
+    #[test]
+    fn roundtrip_datetime_text_trims_only_insignificant_fractional_zeros() {
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-01T22:04:05.0000000-05:00"),
+            "2024-01-01T22:04:05-05:00"
+        );
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-02T03:04:05.1200000+02:30"),
+            "2024-01-02T03:04:05.12+02:30"
+        );
+        assert_eq!(
+            normalize_roundtrip_datetime_text("2024-01-02T03:04:05.1234567+02:30"),
+            "2024-01-02T03:04:05.1234567+02:30"
+        );
+    }
+
+    #[test]
+    fn snapshot_parser_preserves_literal_and_escaped_astral_unicode() {
+        let literal = parse_snapshot_json(
+            r#"{"kind":"scalar","typeName":"System.String","scalarValue":"emoji 🚀 𐐷 𝄞","items":[],"properties":[]}"#,
+        )
+        .expect("literal astral snapshot should parse");
+        assert_eq!(
+            literal.scalar_value.as_deref(),
+            Some("emoji 🚀 𐐷 𝄞")
+        );
+
+        let escaped = parse_snapshot_json(
+            r#"{"kind":"scalar","typeName":"System.String","scalarValue":"emoji \uD83D\uDE80 \uD801\uDC37 \uD834\uDD1E","items":[],"properties":[]}"#,
+        )
+        .expect("escaped astral snapshot should parse");
+        assert_eq!(
+            escaped.scalar_value.as_deref(),
+            Some("emoji 🚀 𐐷 𝄞")
+        );
+    }
+
+    #[test]
+    fn json_writer_matches_negative_zero_and_separator_escaping() {
+        let mut output = String::new();
+        write_json_string(&mut output, "\u{2028}line\u{2029}para");
+        assert_eq!(output, r#""\u2028line\u2029para""#);
+
+        let negative_zero = PowerShellObjectSnapshot {
+            kind: "scalar".to_owned(),
+            type_name: Some("System.Double".to_owned()),
+            scalar_value: Some("-0".to_owned()),
+            scalar_type: Some(SCALAR_TYPE_FLOATING_POINT.to_owned()),
+            items: Vec::new(),
+            properties: Vec::new(),
+        };
+        assert_eq!(snapshots_to_json_text(&[negative_zero], 8, false, false), "-0.0");
+    }
+
+    #[test]
+    fn deserialized_numeric_scalar_types_stay_numeric() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: "dictionary".to_owned(),
+            type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
+            scalar_value: None,
+            scalar_type: None,
+            items: Vec::new(),
+            properties: vec![PowerShellPropertySnapshot {
+                name: "count".to_owned(),
+                value: PowerShellObjectSnapshot {
+                    kind: "scalar".to_owned(),
+                    type_name: Some("Deserialized.System.Int32".to_owned()),
+                    scalar_value: Some("3".to_owned()),
+                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
+                    items: Vec::new(),
+                    properties: Vec::new(),
+                },
+            }],
+        };
+
+        assert_eq!(snapshots_to_json_text(&[snapshot.clone()], 8, false, false), r#"{"count":3}"#);
+        assert_eq!(snapshots_to_toml_text(&[snapshot], 8).expect("toml transform should succeed"), "count = 3\n");
+
+        let repeated_prefix_snapshot = PowerShellObjectSnapshot {
+            kind: "dictionary".to_owned(),
+            type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
+            scalar_value: None,
+            scalar_type: None,
+            items: Vec::new(),
+            properties: vec![PowerShellPropertySnapshot {
+                name: "count".to_owned(),
+                value: PowerShellObjectSnapshot {
+                    kind: "scalar".to_owned(),
+                    type_name: Some("Deserialized.Deserialized.System.Int32".to_owned()),
+                    scalar_value: Some("3".to_owned()),
+                    scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
+                    items: Vec::new(),
+                    properties: Vec::new(),
+                },
+            }],
+        };
+
+        assert_eq!(
+            snapshots_to_json_text(&[repeated_prefix_snapshot.clone()], 8, false, false),
+            r#"{"count":3}"#
+        );
+        assert_eq!(
+            snapshots_to_toml_text(&[repeated_prefix_snapshot], 8)
+                .expect("toml transform should succeed"),
+            "count = 3\n"
+        );
+    }
+
+    #[test]
+    fn scalar_shaped_unknown_kind_stays_numeric_in_json() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: String::new(),
+            type_name: Some("System.Int32".to_owned()),
+            scalar_value: Some("3".to_owned()),
+            scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
+            items: vec![],
+            properties: vec![],
+        };
+
+        assert_eq!(snapshots_to_json_text(&[snapshot.clone()], 8, false, false), "3");
+        assert_eq!(snapshots_to_json_value(&[snapshot], 8, false), serde_json::json!(3));
+    }
+
+    #[test]
+    fn degraded_scalar_type_falls_back_to_type_name_in_json() {
+        let snapshot = PowerShellObjectSnapshot {
+            kind: "dictionary".to_owned(),
+            type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
+            scalar_value: None,
+            scalar_type: None,
+            items: vec![],
+            properties: vec![
+                PowerShellPropertySnapshot {
+                    name: "name".to_owned(),
+                    value: PowerShellObjectSnapshot {
+                        kind: "scalar".to_owned(),
+                        type_name: Some("System.String".to_owned()),
+                        scalar_value: Some("rustlyn".to_owned()),
+                        scalar_type: Some(String::new()),
+                        items: vec![],
+                        properties: vec![],
+                    },
+                },
+                PowerShellPropertySnapshot {
+                    name: "count".to_owned(),
+                    value: PowerShellObjectSnapshot {
+                        kind: "scalar".to_owned(),
+                        type_name: Some("System.Int32".to_owned()),
+                        scalar_value: Some("3".to_owned()),
+                        scalar_type: Some(String::new()),
+                        items: vec![],
+                        properties: vec![],
+                    },
+                },
+            ],
+        };
+
+        assert_eq!(
+            snapshots_to_json_text(&[snapshot.clone()], 8, false, false),
+            r#"{"name":"rustlyn","count":3}"#
+        );
+        assert_eq!(
+            snapshots_to_json_value(&[snapshot], 8, false),
+            serde_json::json!({"name":"rustlyn","count":3})
+        );
+    }
+
+    #[test]
     fn text_format_engines_round_trip_through_json_projection() {
         let toml =
             snapshots_to_toml_text(&[sample_snapshot()], 8).expect("toml transform should succeed");
@@ -2442,6 +4188,7 @@ mod tests {
             kind: "scalar".to_owned(),
             type_name: Some("System.String".to_owned()),
             scalar_value: Some("name = \"rustlyn\"\ncount = 3\n".to_owned()),
+            scalar_type: None,
             items: Vec::new(),
             properties: Vec::new(),
         };
@@ -2451,6 +4198,34 @@ mod tests {
             Some("name = \"rustlyn\"\ncount = 3\n")
         );
         assert!(snapshot_scalar_text(&sample_snapshot()).is_none());
+    }
+
+    #[test]
+    fn snapshot_parser_preserves_json_text_with_unicode_and_escapes() {
+        let json_text = "{\"unicode\":\"emoji 🚀 café\",\"escaped\":\"quote \\\" slash \\\\ newline\\n\"}";
+        let snapshot_json = r#"{"kind":"scalar","typeName":"System.String","scalarValue":"{\u0022unicode\u0022:\u0022emoji \uD83D\uDE80 caf\u00E9\u0022,\u0022escaped\u0022:\u0022quote \\\u0022 slash \\\\ newline\\n\u0022}","items":[],"properties":[]}"#;
+
+        let snapshot = parse_snapshot_json(&snapshot_json)
+            .expect("json text snapshot should parse");
+
+        assert_eq!(snapshot_scalar_text(&snapshot).as_deref(), Some(json_text));
+    }
+
+    #[test]
+    fn snapshot_parser_accepts_managed_ordered_dictionary_shape() {
+        let snapshot_json = r#"{"kind":"dictionary","typeName":"System.Collections.Specialized.OrderedDictionary","items":[],"properties":[{"name":"name","value":{"kind":"scalar","typeName":"System.String","scalarValue":"rustlyn","items":[],"properties":[]}},{"name":"count","value":{"kind":"scalar","typeName":"System.Int32","scalarValue":"3","scalarType":"i","items":[],"properties":[]}}]}"#;
+
+        let snapshot = parse_snapshot_json(snapshot_json)
+            .expect("ordered dictionary snapshot should parse");
+
+        assert_eq!(snapshot.kind, "dictionary");
+        assert_eq!(snapshot.type_name.as_deref(), Some("System.Collections.Specialized.OrderedDictionary"));
+        assert_eq!(snapshot.properties.len(), 2);
+        assert_eq!(snapshot.properties[0].name, "name");
+        assert_eq!(snapshot.properties[0].value.scalar_value.as_deref(), Some("rustlyn"));
+        assert_eq!(snapshot.properties[1].name, "count");
+        assert_eq!(snapshot.properties[1].value.scalar_value.as_deref(), Some("3"));
+        assert_eq!(snapshot.properties[1].value.scalar_type.as_deref(), Some(SCALAR_TYPE_SIGNED_INTEGER));
     }
 
     #[test]
@@ -2485,6 +4260,7 @@ mod tests {
             kind: "dictionary".to_owned(),
             type_name: Some("System.Collections.Specialized.OrderedDictionary".to_owned()),
             scalar_value: None,
+            scalar_type: None,
             items: Vec::new(),
             properties: vec![
                 PowerShellPropertySnapshot {
@@ -2493,6 +4269,7 @@ mod tests {
                         kind: "scalar".to_owned(),
                         type_name: Some("System.String".to_owned()),
                         scalar_value: Some("rustlyn".to_owned()),
+                        scalar_type: None,
                         items: Vec::new(),
                         properties: Vec::new(),
                     },
@@ -2503,6 +4280,7 @@ mod tests {
                         kind: "scalar".to_owned(),
                         type_name: Some("System.Int32".to_owned()),
                         scalar_value: Some("3".to_owned()),
+                        scalar_type: Some(SCALAR_TYPE_SIGNED_INTEGER.to_owned()),
                         items: Vec::new(),
                         properties: Vec::new(),
                     },

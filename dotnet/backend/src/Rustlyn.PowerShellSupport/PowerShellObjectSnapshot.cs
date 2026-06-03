@@ -12,10 +12,16 @@ public sealed record PowerShellObjectSnapshot(
     string Kind,
     string? TypeName,
     string? ScalarValue,
+    string? ScalarType,
     IReadOnlyList<PowerShellObjectSnapshot> Items,
     IReadOnlyList<PowerShellPropertySnapshot> Properties)
 {
     private const int DefaultMaxDepth = 8;
+    private const string ScalarTypeBoolean = "bool";
+    private const string ScalarTypeSignedInteger = "i";
+    private const string ScalarTypeUnsignedInteger = "u";
+    private const string ScalarTypeFloatingPoint = "f";
+    private const string ScalarTypeDecimal = "m";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -32,12 +38,12 @@ public sealed record PowerShellObjectSnapshot(
     {
         if (value is null)
         {
-            return Create("null", null, null);
+            return Create("null", null, null, null);
         }
 
         if (depth >= maxDepth)
         {
-            return Create("truncated", value.GetType().FullName, ConvertToInvariantString(value));
+            return Create("truncated", value.GetType().FullName, ConvertToInvariantString(value), null);
         }
 
         if (value is PSObject psObject)
@@ -49,24 +55,29 @@ public sealed record PowerShellObjectSnapshot(
         var trackReference = !type.IsValueType && value is not string;
         if (trackReference && !seen.Add(value))
         {
-            return Create("cycle", type.FullName, null);
+            return Create("cycle", type.FullName, null, null);
         }
 
         try
         {
-            if (value is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or DateTime or DateTimeOffset or Guid)
+            if (value is DateTime or DateTimeOffset)
             {
-                return Create("scalar", type.FullName, ConvertToInvariantString(value));
+                return Create("datetime", type.FullName, ConvertToInvariantString(value), null);
+            }
+
+            if (value is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or Guid)
+            {
+                return Create("scalar", type.FullName, ConvertToInvariantString(value), ResolveScalarType(value));
             }
 
             if (value is Enum)
             {
-                return Create("enum", type.FullName, ConvertToInvariantString(value));
+                return Create("enum", type.FullName, ConvertToInvariantString(value), ResolveScalarType(Convert.ChangeType(value, Enum.GetUnderlyingType(type), CultureInfo.InvariantCulture)));
             }
 
             if (value is byte[] bytes)
             {
-                return Create("bytes", type.FullName, Convert.ToBase64String(bytes));
+                return Create("bytes", type.FullName, Convert.ToBase64String(bytes), null);
             }
 
             if (value is IDictionary dictionary)
@@ -79,7 +90,7 @@ public sealed record PowerShellObjectSnapshot(
                         FromObject(entry.Value, maxDepth, depth + 1, seen)));
                 }
 
-                return new PowerShellObjectSnapshot("dictionary", type.FullName, null, [], properties);
+                return new PowerShellObjectSnapshot("dictionary", type.FullName, null, null, [], properties);
             }
 
             if (value is IEnumerable enumerable)
@@ -90,10 +101,10 @@ public sealed record PowerShellObjectSnapshot(
                     items.Add(FromObject(item, maxDepth, depth + 1, seen));
                 }
 
-                return new PowerShellObjectSnapshot("array", type.FullName, null, items, []);
+                return new PowerShellObjectSnapshot("array", type.FullName, null, null, items, []);
             }
 
-            return Create("object", type.FullName, ConvertToInvariantString(value));
+            return Create("object", type.FullName, ConvertToInvariantString(value), null);
         }
         finally
         {
@@ -108,7 +119,7 @@ public sealed record PowerShellObjectSnapshot(
     {
         if (!seen.Add(psObject))
         {
-            return Create("cycle", typeof(PSObject).FullName, null);
+            return Create("cycle", typeof(PSObject).FullName, null, null);
         }
 
         try
@@ -133,7 +144,7 @@ public sealed record PowerShellObjectSnapshot(
 
             if (properties.Count > 0)
             {
-                return new PowerShellObjectSnapshot("psobject", psObject.BaseObject?.GetType().FullName, null, [], properties);
+                return new PowerShellObjectSnapshot("psobject", psObject.BaseObject?.GetType().FullName, null, null, [], properties);
             }
 
             return FromObject(psObject.BaseObject, maxDepth, depth + 1, seen);
@@ -150,8 +161,19 @@ public sealed record PowerShellObjectSnapshot(
             && (baseObject is string or char or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or DateTime or DateTimeOffset or Guid or Enum or byte[] or IDictionary
                 || (baseObject is IEnumerable && baseObject is not string));
 
-    private static PowerShellObjectSnapshot Create(string kind, string? typeName, string? scalarValue)
-        => new(kind, typeName, scalarValue, [], []);
+    private static PowerShellObjectSnapshot Create(string kind, string? typeName, string? scalarValue, string? scalarType)
+        => new(kind, typeName, scalarValue, scalarType, [], []);
+
+    private static string? ResolveScalarType(object? value)
+        => value switch
+        {
+            bool => ScalarTypeBoolean,
+            byte or sbyte or short or ushort or int or uint or long => ScalarTypeSignedInteger,
+            ulong => ScalarTypeUnsignedInteger,
+            float or double => ScalarTypeFloatingPoint,
+            decimal => ScalarTypeDecimal,
+            _ => null
+        };
 
     private static string ConvertToInvariantString(object? value)
     {
@@ -163,6 +185,16 @@ public sealed record PowerShellObjectSnapshot(
         if (value is string text)
         {
             return text;
+        }
+
+        if (value is DateTime dateTime)
+        {
+            return dateTime.ToString("o", CultureInfo.InvariantCulture);
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            return dateTimeOffset.ToString("o", CultureInfo.InvariantCulture);
         }
 
         return value is IFormattable formattable

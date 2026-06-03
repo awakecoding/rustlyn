@@ -448,6 +448,27 @@ public static partial class LoweredIrLowerer
             return new LoweredJumpInstruction(NormalizeBlockName(jumpMatch.Groups["target"].Value));
         }
 
+        var arrayElementGetElementPointerMatch = ArrayElementGetElementPointerInstructionRegex().Match(line);
+        if (arrayElementGetElementPointerMatch.Success)
+        {
+            return new LoweredGetElementPointerInstruction(
+                NormalizeResultName(arrayElementGetElementPointerMatch.Groups["result"].Value),
+                arrayElementGetElementPointerMatch.Groups["elementType"].Value.Trim(),
+                NormalizeValue(arrayElementGetElementPointerMatch.Groups["base"].Value),
+                int.Parse(arrayElementGetElementPointerMatch.Groups["index"].Value));
+        }
+
+        var dynamicArrayElementGepMatch = DynamicArrayElementGetElementPointerInstructionRegex().Match(line);
+        if (dynamicArrayElementGepMatch.Success)
+        {
+            return new LoweredGetElementPointerInstruction(
+                NormalizeResultName(dynamicArrayElementGepMatch.Groups["result"].Value),
+                dynamicArrayElementGepMatch.Groups["elementType"].Value.Trim(),
+                NormalizeValue(dynamicArrayElementGepMatch.Groups["base"].Value),
+                0,
+                NormalizeValue(dynamicArrayElementGepMatch.Groups["indexVar"].Value));
+        }
+
         var getElementPointerMatch = GetElementPointerInstructionRegex().Match(line);
         if (getElementPointerMatch.Success)
         {
@@ -2033,8 +2054,14 @@ public static partial class LoweredIrLowerer
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>.+),\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GetElementPointerInstructionRegex();
 
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+\\[(?<count>\\d+)\\s+x\\s+(?<elementType>.+)\\],\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+0,\\s+i64\\s+(?<index>-?\\d+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex ArrayElementGetElementPointerInstructionRegex();
+
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+(?<elementType>.+),\\s+ptr\\s+(?<base>[^,]+),\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
     private static partial Regex DynamicGetElementPointerInstructionRegex();
+
+    [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s+\\[(?<count>\\d+)\\s+x\\s+(?<elementType>.+)\\],\\s+ptr\\s+(?<base>[^,]+),\\s+i64\\s+0,\\s+i(?:32|64)\\s+(?<indexVar>%[^\\s,]+).*$", RegexOptions.CultureInvariant)]
+    private static partial Regex DynamicArrayElementGetElementPointerInstructionRegex();
 
     [GeneratedRegex("^%(?<result>[^\\s=]+)\\s*=\\s*load\\s+(?:atomic\\s+)?(?<type>[^,]+),\\s+ptr\\s+getelementptr(?:\\s+[A-Za-z0-9_]+)*\\s*\\((?<elementType>.+),\\s+ptr\\s+@(?<source>[^,]+),\\s+i64\\s+(?<index>-?\\d+)\\).*$", RegexOptions.CultureInvariant)]
     private static partial Regex GlobalElementLoadInstructionRegex();

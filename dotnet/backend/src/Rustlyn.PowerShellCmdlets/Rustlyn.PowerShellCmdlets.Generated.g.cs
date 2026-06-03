@@ -10,6 +10,16 @@ namespace Rustlyn.PowerShellCmdlets;
 public sealed class ConvertToRustJsonCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -23,6 +33,61 @@ public sealed class ConvertToRustJsonCommand : PSCmdlet
 
     [Parameter]
     public SwitchParameter EnumsAsStrings { get; set; }
+
+    public ConvertToRustJsonCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -54,22 +119,8 @@ public sealed class ConvertToRustJsonCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -110,6 +161,16 @@ public sealed class ConvertToRustJsonCommand : PSCmdlet
 public sealed class ConvertFromRustJsonCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
@@ -120,6 +181,61 @@ public sealed class ConvertFromRustJsonCommand : PSCmdlet
 
     [Parameter]
     public SwitchParameter NoEnumerate { get; set; }
+
+    public ConvertFromRustJsonCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -151,22 +267,8 @@ public sealed class ConvertFromRustJsonCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -207,6 +309,16 @@ public sealed class ConvertFromRustJsonCommand : PSCmdlet
 public sealed class ConvertToRustCsvCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -233,6 +345,61 @@ public sealed class ConvertToRustCsvCommand : PSCmdlet
     [Parameter]
     [ValidateSet("Always", "AsNeeded", "Never")]
     public string? UseQuotes { get; set; }
+
+    public ConvertToRustCsvCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -264,22 +431,8 @@ public sealed class ConvertToRustCsvCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -320,6 +473,16 @@ public sealed class ConvertToRustCsvCommand : PSCmdlet
 public sealed class ConvertFromRustCsvCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
@@ -334,6 +497,61 @@ public sealed class ConvertFromRustCsvCommand : PSCmdlet
 
     [Parameter]
     public string[]? Header { get; set; }
+
+    public ConvertFromRustCsvCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -365,22 +583,8 @@ public sealed class ConvertFromRustCsvCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -421,6 +625,16 @@ public sealed class ConvertFromRustCsvCommand : PSCmdlet
 public sealed class ConvertToRustTomlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -428,6 +642,61 @@ public sealed class ConvertToRustTomlCommand : PSCmdlet
 
     [Parameter]
     public int Depth { get; set; } = 8;
+
+    public ConvertToRustTomlCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -459,22 +728,8 @@ public sealed class ConvertToRustTomlCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -515,10 +770,75 @@ public sealed class ConvertToRustTomlCommand : PSCmdlet
 public sealed class ConvertFromRustTomlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
     public object? InputObject { get; set; }
+
+    public ConvertFromRustTomlCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -550,22 +870,8 @@ public sealed class ConvertFromRustTomlCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -606,6 +912,13 @@ public sealed class ConvertFromRustTomlCommand : PSCmdlet
 public sealed class ConvertToRustXmlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -620,6 +933,26 @@ public sealed class ConvertToRustXmlCommand : PSCmdlet
     [Parameter]
     [ValidateSet("String", "Document", "Stream")]
     public string As { get; set; } = "Document";
+
+    public ConvertToRustXmlCommand()
+    {
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
 
     protected override void ProcessRecord()
     {
@@ -652,54 +985,46 @@ public sealed class ConvertToRustXmlCommand : PSCmdlet
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
         var captureXmlStream = string.Equals(As, "Stream", StringComparison.OrdinalIgnoreCase) && methodName.EndsWith("_end_processing", StringComparison.Ordinal);
-        var capturedOutput = captureXmlStream ? new System.Collections.Generic.List<object?>() : null;
         var boundParameters = captureXmlStream
             ? new System.Collections.Generic.Dictionary<string, object?>(MyInvocation.BoundParameters, StringComparer.OrdinalIgnoreCase) { ["As"] = "String" }
             : MyInvocation.BoundParameters;
         var context = new PowerShellCmdletContext(
             value =>
             {
-                if (capturedOutput is null)
+                if (!captureXmlStream)
                 {
                     WriteObject(value);
                 }
                 else
                 {
-                    capturedOutput.Add(value);
+                    var xml = value?.ToString() ?? string.Empty;
+                    WriteObject(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);
                 }
             },
             (value, enumerateCollection) =>
             {
-                if (capturedOutput is null)
+                if (!captureXmlStream)
                 {
                     WriteObject(value, enumerateCollection);
                 }
                 else
                 {
-                    capturedOutput.Add(value);
+                    var xml = value?.ToString() ?? string.Empty;
+                    WriteObject(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);
                 }
             },
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
+            _writeVerboseCallback,
+            _writeWarningCallback,
+            _writeErrorStringCallback,
+            _writeErrorCallback,
+            _throwTerminatingErrorCallback,
+            _shouldProcessCallback,
+            _shouldProcessWithActionCallback,
             boundParameters,
             inputObject,
             _cancellation,
             EnsureLifecycleStateHandle());
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
-        if (capturedOutput is not null)
-        {
-            foreach (var output in capturedOutput)
-            {
-                var xml = output?.ToString() ?? string.Empty;
-                WriteObject(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)), enumerateCollection: false);
-            }
-        }
     }
 
     private int EnsureLifecycleStateHandle()
@@ -740,10 +1065,75 @@ public sealed class ConvertToRustXmlCommand : PSCmdlet
 public sealed class ConvertFromRustXmlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
     public object? InputObject { get; set; }
+
+    public ConvertFromRustXmlCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -775,22 +1165,8 @@ public sealed class ConvertFromRustXmlCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -831,10 +1207,75 @@ public sealed class ConvertFromRustXmlCommand : PSCmdlet
 public sealed class ConvertToRustYamlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
     public object? InputObject { get; set; }
+
+    public ConvertToRustYamlCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -866,22 +1307,8 @@ public sealed class ConvertToRustYamlCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -922,6 +1349,16 @@ public sealed class ConvertToRustYamlCommand : PSCmdlet
 public sealed class ConvertFromRustYamlCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
@@ -932,6 +1369,61 @@ public sealed class ConvertFromRustYamlCommand : PSCmdlet
 
     [Parameter]
     public SwitchParameter NoEnumerate { get; set; }
+
+    public ConvertFromRustYamlCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -963,22 +1455,8 @@ public sealed class ConvertFromRustYamlCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1019,6 +1497,16 @@ public sealed class ConvertFromRustYamlCommand : PSCmdlet
 public sealed class ConvertToRustBsonCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -1026,6 +1514,61 @@ public sealed class ConvertToRustBsonCommand : PSCmdlet
 
     [Parameter]
     public int Depth { get; set; } = 8;
+
+    public ConvertToRustBsonCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -1057,22 +1600,8 @@ public sealed class ConvertToRustBsonCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1113,6 +1642,16 @@ public sealed class ConvertToRustBsonCommand : PSCmdlet
 public sealed class ConvertFromRustBsonCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
@@ -1123,6 +1662,61 @@ public sealed class ConvertFromRustBsonCommand : PSCmdlet
 
     [Parameter]
     public SwitchParameter NoEnumerate { get; set; }
+
+    public ConvertFromRustBsonCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -1154,22 +1748,8 @@ public sealed class ConvertFromRustBsonCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1210,6 +1790,16 @@ public sealed class ConvertFromRustBsonCommand : PSCmdlet
 public sealed class ConvertToRustCborCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true)]
@@ -1217,6 +1807,61 @@ public sealed class ConvertToRustCborCommand : PSCmdlet
 
     [Parameter]
     public int Depth { get; set; } = 8;
+
+    public ConvertToRustCborCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -1248,22 +1893,8 @@ public sealed class ConvertToRustCborCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1304,6 +1935,16 @@ public sealed class ConvertToRustCborCommand : PSCmdlet
 public sealed class ConvertFromRustCborCommand : PSCmdlet
 {
     private readonly PowerShellCmdletCancellation _cancellation = new();
+    private PowerShellCmdletContext? _cachedContext;
+    private readonly Action<object?> _writeObjectCallback;
+    private readonly Action<object?, bool> _writeObjectEnumeratedCallback;
+    private readonly Action<string> _writeVerboseCallback;
+    private readonly Action<string> _writeWarningCallback;
+    private readonly Action<string> _writeErrorStringCallback;
+    private readonly Action<ErrorRecord> _writeErrorCallback;
+    private readonly Action<ErrorRecord> _throwTerminatingErrorCallback;
+    private readonly Func<string, bool> _shouldProcessCallback;
+    private readonly Func<string, string?, bool> _shouldProcessWithActionCallback;
     private int _lifecycleStateHandle;
 
     [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
@@ -1314,6 +1955,61 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
 
     [Parameter]
     public SwitchParameter NoEnumerate { get; set; }
+
+    public ConvertFromRustCborCommand()
+    {
+        _writeObjectCallback = HandleWriteObject;
+        _writeObjectEnumeratedCallback = HandleWriteObjectEnumerated;
+        _writeVerboseCallback = WriteVerbose;
+        _writeWarningCallback = WriteWarning;
+        _writeErrorStringCallback = HandleWriteErrorString;
+        _writeErrorCallback = WriteError;
+        _throwTerminatingErrorCallback = ThrowTerminatingError;
+        _shouldProcessCallback = HandleShouldProcess;
+        _shouldProcessWithActionCallback = HandleShouldProcessWithAction;
+    }
+
+    private void HandleWriteObject(object? value)
+        => WriteObject(value);
+
+    private void HandleWriteObjectEnumerated(object? value, bool enumerateCollection)
+        => WriteObject(value, enumerateCollection);
+
+    private void HandleWriteErrorString(string message)
+        => WriteError(CreateErrorRecord(message));
+
+    private bool HandleShouldProcess(string target)
+        => ShouldProcess(target);
+
+    private bool HandleShouldProcessWithAction(string target, string? action)
+        => ShouldProcess(target, action);
+
+    private PowerShellCmdletContext GetOrCreateContext(object? inputObject)
+    {
+        var context = _cachedContext;
+        if (context is null)
+        {
+            context = new PowerShellCmdletContext(
+                _writeObjectCallback,
+                _writeObjectEnumeratedCallback,
+                _writeVerboseCallback,
+                _writeWarningCallback,
+                _writeErrorStringCallback,
+                _writeErrorCallback,
+                _throwTerminatingErrorCallback,
+                _shouldProcessCallback,
+                _shouldProcessWithActionCallback,
+                MyInvocation.BoundParameters,
+                inputObject,
+                _cancellation,
+                EnsureLifecycleStateHandle());
+            _cachedContext = context;
+            return context;
+        }
+
+        context.SetInputObject(inputObject);
+        return context;
+    }
 
     protected override void ProcessRecord()
     {
@@ -1345,22 +2041,8 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
 
     private void InvokeRustEntrypoint(string engineAssemblyName, string typeName, string methodName, object? inputObject, bool checkCancellation = true)
     {
-        var context = new PowerShellCmdletContext(
-            value => WriteObject(value),
-            (value, enumerateCollection) => WriteObject(value, enumerateCollection),
-            WriteVerbose,
-            WriteWarning,
-            message => WriteError(CreateErrorRecord(message)),
-            WriteError,
-            ThrowTerminatingError,
-            target => ShouldProcess(target),
-            (target, action) => ShouldProcess(target, action),
-            MyInvocation.BoundParameters,
-            inputObject,
-            _cancellation,
-            EnsureLifecycleStateHandle());
+        var context = GetOrCreateContext(inputObject);
         PowerShellGeneratedCmdletInvoker.InvokeLifecycle(engineAssemblyName, typeName, methodName, context, checkCancellation);
-        PowerShellCmdletBridge.FlushPendingOutputs(context);
     }
 
     private int EnsureLifecycleStateHandle()
@@ -1395,3 +2077,4 @@ public sealed class ConvertFromRustCborCommand : PSCmdlet
     private static ErrorRecord CreateErrorRecord(string message)
         => new(new RuntimeException(message), "RustlynPowerShellCmdletError", ErrorCategory.NotSpecified, null);
 }
+

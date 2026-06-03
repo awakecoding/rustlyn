@@ -92,6 +92,8 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
 
       - name: Smoke test LLVM helper
         if: matrix.os == 'windows-latest'
@@ -177,6 +179,8 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
 
       - name: Smoke test extended samples
         shell: pwsh

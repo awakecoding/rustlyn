@@ -29,6 +29,7 @@ public static class PowerShellRustBindingGenerator
         "rustlyn_bindgen_powershell_cmdlet_write_object_handle",
         "rustlyn_bindgen_powershell_cmdlet_write_object_bytes",
         "rustlyn_bindgen_powershell_cmdlet_write_json_string",
+        "rustlyn_bindgen_powershell_cmdlet_write_object_stream_string",
         "rustlyn_bindgen_powershell_cmdlet_add_xml_input",
         "rustlyn_bindgen_powershell_cmdlet_add_xml_text_input",
         "rustlyn_bindgen_powershell_cmdlet_convert_xml_inputs_to_string",
@@ -47,6 +48,7 @@ public static class PowerShellRustBindingGenerator
         "rustlyn_bindgen_powershell_cmdlet_get_parameter_char",
         "rustlyn_bindgen_powershell_cmdlet_get_parameter_snapshot_json",
         "rustlyn_bindgen_powershell_cmdlet_get_input_string",
+        "rustlyn_bindgen_powershell_cmdlet_get_input_string_base64",
         "rustlyn_bindgen_powershell_cmdlet_get_current_culture_list_separator",
         "rustlyn_bindgen_powershell_cmdlet_get_input_snapshot_json",
         "rustlyn_bindgen_powershell_cmdlet_should_process_string",
@@ -96,6 +98,13 @@ unsafe extern "C" {
     fn rustlyn_bindgen_powershell_cmdlet_write_json_string(
         cmdlet_context_handle: i32,
         json_handle: i32,
+        as_hashtable: i32,
+        no_enumerate: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+        cmdlet_context_handle: i32,
+        stream_handle: i32,
         as_hashtable: i32,
         no_enumerate: i32,
         exception_out: *mut i32,
@@ -193,6 +202,10 @@ unsafe extern "C" {
         exception_out: *mut i32,
     ) -> i32;
     fn rustlyn_bindgen_powershell_cmdlet_get_input_string(
+        cmdlet_context_handle: i32,
+        exception_out: *mut i32,
+    ) -> i32;
+    fn rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
         cmdlet_context_handle: i32,
         exception_out: *mut i32,
     ) -> i32;
@@ -409,6 +422,20 @@ impl CmdletContext {
             rustlyn_bindgen_powershell_cmdlet_write_json_string(
                 self.handle,
                 json.handle(),
+                if as_hashtable { 1 } else { 0 },
+                if no_enumerate { 1 } else { 0 },
+                &mut exception_handle,
+            );
+        }
+        Exception::from_handle(exception_handle)
+    }
+
+    pub fn write_object_stream_string(&self, stream: &ManagedString, as_hashtable: bool, no_enumerate: bool) -> Result<(), Exception> {
+        let mut exception_handle = 0;
+        unsafe {
+            rustlyn_bindgen_powershell_cmdlet_write_object_stream_string(
+                self.handle,
+                stream.handle(),
                 if as_hashtable { 1 } else { 0 },
                 if no_enumerate { 1 } else { 0 },
                 &mut exception_handle,
@@ -654,6 +681,18 @@ impl CmdletContext {
         let mut exception_handle = 0;
         let result = unsafe {
             rustlyn_bindgen_powershell_cmdlet_get_input_string(
+                self.handle,
+                &mut exception_handle,
+            )
+        };
+        Exception::from_handle(exception_handle)?;
+        Ok(unsafe { ManagedString::from_borrowed_handle(result) })
+    }
+
+    pub fn get_input_string_base64(&self) -> Result<ManagedString, Exception> {
+        let mut exception_handle = 0;
+        let result = unsafe {
+            rustlyn_bindgen_powershell_cmdlet_get_input_string_base64(
                 self.handle,
                 &mut exception_handle,
             )

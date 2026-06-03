@@ -4,7 +4,6 @@ public sealed class PowerShellCmdletLifecycleState
 {
     private readonly List<object?> _xmlInputs = [];
     private readonly List<string> _xmlTextInputs = [];
-    private readonly List<byte[]> _pendingXmlStreams = [];
 
     public IReadOnlyList<object?> XmlInputs => _xmlInputs;
     public IReadOnlyList<string> XmlTextInputs => _xmlTextInputs;
@@ -20,14 +19,4 @@ public sealed class PowerShellCmdletLifecycleState
 
     public void ClearXmlTextInputs()
         => _xmlTextInputs.Clear();
-
-    public void AddPendingXmlStream(byte[] value)
-        => _pendingXmlStreams.Add(value);
-
-    public IReadOnlyList<byte[]> DrainPendingXmlStreams()
-    {
-        var outputs = _pendingXmlStreams.ToArray();
-        _pendingXmlStreams.Clear();
-        return outputs;
-    }
 }

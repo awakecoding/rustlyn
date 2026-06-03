@@ -1,4 +1,5 @@
 use std::ptr;
+use toml::{map::Map as TomlMap, Value as TomlValue};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn toml_parse_score() -> i32 {
@@ -7,7 +8,34 @@ pub extern "C" fn toml_parse_score() -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn toml_serialize_score() -> i32 {
-    7
+    let input = br#"{"name":"rustlyn","tags":["cli","toml"],"meta":{"count":3}}"#;
+    let Ok(toml_bytes) = json_to_toml(input) else {
+        return -1;
+    };
+    let Ok(toml_text) = String::from_utf8(toml_bytes.clone()) else {
+        return -2;
+    };
+    let Ok(roundtrip_json) = toml_to_json(&toml_bytes) else {
+        return -4;
+    };
+    let Ok(roundtrip_value) = serde_json::from_slice::<serde_json::Value>(&roundtrip_json) else {
+        return -8;
+    };
+
+    let mut score = 0;
+    if toml_text.contains("name = \"rustlyn\"") {
+        score += 1;
+    }
+    if toml_text.contains("tags = [\"cli\", \"toml\"]") {
+        score += 2;
+    }
+    if toml_text.contains("[meta]")
+        && roundtrip_value["meta"]["count"] == serde_json::Value::from(3)
+    {
+        score += 4;
+    }
+
+    score
 }
 
 #[unsafe(no_mangle)]
@@ -90,17 +118,20 @@ pub unsafe extern "C" fn toml_to_json_copy(
 }
 
 fn validate_toml(input: &[u8]) -> bool {
-    !input.is_empty()
+    std::str::from_utf8(input)
+        .ok()
+        .and_then(|text| toml::from_str::<TomlValue>(text).ok())
+        .is_some()
 }
 
 fn json_to_toml(input: &[u8]) -> Result<Vec<u8>, ()> {
-    let value = serde_json::from_slice::<serde_json::Value>(input).map_err(|_| ())?;
-    if !value.is_object() {
+    let json_value = serde_json::from_slice::<serde_json::Value>(input).map_err(|_| ())?;
+    let toml_value = json_to_toml_value(&json_value)?;
+    if !matches!(toml_value, TomlValue::Table(_)) {
         return Err(());
     }
 
-    let mut toml = String::new();
-    write_toml_table(&mut toml, value.as_object().ok_or(())?)?;
+    let toml = toml::to_string(&toml_value).map_err(|_| ())?;
     if !validate_toml(toml.as_bytes()) {
         return Err(());
     }
@@ -109,81 +140,42 @@ fn json_to_toml(input: &[u8]) -> Result<Vec<u8>, ()> {
 
 fn toml_to_json(input: &[u8]) -> Result<Vec<u8>, ()> {
     let text = std::str::from_utf8(input).map_err(|_| ())?;
-    let value = toml::from_str::<toml::Value>(text).map_err(|_| ())?;
+    let value = toml::from_str::<TomlValue>(text).map_err(|_| ())?;
     serde_json::to_vec(&value).map_err(|_| ())
 }
 
-fn write_toml_table(output: &mut String, table: &serde_json::Map<String, serde_json::Value>) -> Result<(), ()> {
-    for (key, value) in table {
-        output.push_str(&format_key(key));
-        output.push_str(" = ");
-        write_toml_value(output, value)?;
-        output.push('\n');
-    }
-
-    Ok(())
-}
-
-fn write_toml_value(output: &mut String, value: &serde_json::Value) -> Result<(), ()> {
+fn json_to_toml_value(value: &serde_json::Value) -> Result<TomlValue, ()> {
     match value {
         serde_json::Value::Null => Err(()),
-        serde_json::Value::Bool(value) => {
-            output.push_str(if *value { "true" } else { "false" });
-            Ok(())
-        }
+        serde_json::Value::Bool(value) => Ok(TomlValue::Boolean(*value)),
         serde_json::Value::Number(value) => {
-            output.push_str(&value.to_string());
-            Ok(())
-        }
-        serde_json::Value::String(value) => {
-            output.push('"');
-            for character in value.chars() {
-                match character {
-                    '"' => output.push_str("\\\""),
-                    '\\' => output.push_str("\\\\"),
-                    '\n' => output.push_str("\\n"),
-                    '\r' => output.push_str("\\r"),
-                    '\t' => output.push_str("\\t"),
-                    character => output.push(character),
-                }
+            if let Some(integer) = value.as_i64() {
+                return Ok(TomlValue::Integer(integer));
             }
-            output.push('"');
-            Ok(())
-        }
-        serde_json::Value::Array(values) => {
-            output.push('[');
-            for (index, item) in values.iter().enumerate() {
-                if index > 0 {
-                    output.push_str(", ");
-                }
-                write_toml_value(output, item)?;
+            if let Some(unsigned) = value.as_u64() {
+                let integer = i64::try_from(unsigned).map_err(|_| ())?;
+                return Ok(TomlValue::Integer(integer));
             }
-            output.push(']');
-            Ok(())
+            if let Some(float) = value.as_f64() {
+                return Ok(TomlValue::Float(float));
+            }
+
+            Err(())
         }
-        serde_json::Value::Object(_) => Err(()),
-    }
-}
-
-fn format_key(key: &str) -> String {
-    if key
-        .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
-    {
-        return key.to_owned();
-    }
-
-    let mut quoted = String::with_capacity(key.len() + 2);
-    quoted.push('"');
-    for character in key.chars() {
-        match character {
-            '"' => quoted.push_str("\\\""),
-            '\\' => quoted.push_str("\\\\"),
-            character => quoted.push(character),
+        serde_json::Value::String(value) => Ok(TomlValue::String(value.clone())),
+        serde_json::Value::Array(values) => values
+            .iter()
+            .map(json_to_toml_value)
+            .collect::<Result<Vec<_>, _>>()
+            .map(TomlValue::Array),
+        serde_json::Value::Object(values) => {
+            let mut table = TomlMap::new();
+            for (key, value) in values {
+                table.insert(key.clone(), json_to_toml_value(value)?);
+            }
+            Ok(TomlValue::Table(table))
         }
     }
-    quoted.push('"');
-    quoted
 }
 
 unsafe fn input_bytes<'a>(input_ptr: *const u8, input_len: i64) -> Option<&'a [u8]> {
@@ -250,4 +242,35 @@ unsafe fn copy_output(output: &[u8], destination_ptr: *mut u8, destination_capac
         unsafe { ptr::copy_nonoverlapping(output.as_ptr(), destination_ptr, output.len()) };
     }
     output_len
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn json_to_toml_uses_crate_backed_nested_tables() {
+        let json = br#"{"name":"rustlyn","meta":{"count":3},"tags":["cli","toml"]}"#;
+
+        let toml = String::from_utf8(json_to_toml(json).expect("json should serialize to toml"))
+            .expect("toml output should be utf8");
+
+        assert!(toml.contains("name = \"rustlyn\""));
+        assert!(toml.contains("tags = [\"cli\", \"toml\"]"));
+        assert!(toml.contains("[meta]"));
+        assert!(toml.contains("count = 3"));
+    }
+
+    #[test]
+    fn toml_roundtrip_preserves_nested_object() {
+        let json = br#"{"name":"rustlyn","meta":{"count":3}}"#;
+
+        let toml = json_to_toml(json).expect("json should serialize to toml");
+        let roundtrip = toml_to_json(&toml).expect("toml should deserialize to json");
+        let value: serde_json::Value =
+            serde_json::from_slice(&roundtrip).expect("roundtrip json should parse");
+
+        assert_eq!(value["name"], serde_json::Value::from("rustlyn"));
+        assert_eq!(value["meta"]["count"], serde_json::Value::from(3));
+    }
 }

@@ -116,12 +116,60 @@ function ConvertTo-CanonicalJson {
 
     end {
         if ($items.Count -eq 1) {
-            ConvertTo-Json -InputObject $items[0] -Depth 32 -Compress
+            ConvertTo-Json -InputObject (ConvertTo-NormalizedJsonValue $items[0]) -Depth 32 -Compress
             return
         }
 
-        ConvertTo-Json -InputObject $items.ToArray() -Depth 32 -Compress
+        ConvertTo-Json -InputObject (ConvertTo-NormalizedJsonValue $items.ToArray()) -Depth 32 -Compress
     }
+}
+
+function ConvertTo-NormalizedJsonValue {
+    param(
+        [AllowNull()]
+        [object]$InputObject
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    if ($InputObject -is [string] -or $InputObject -is [char] -or $InputObject -is [bool] -or
+        $InputObject -is [byte] -or $InputObject -is [sbyte] -or $InputObject -is [short] -or
+        $InputObject -is [ushort] -or $InputObject -is [int] -or $InputObject -is [uint] -or
+        $InputObject -is [long] -or $InputObject -is [ulong] -or $InputObject -is [float] -or
+        $InputObject -is [double] -or $InputObject -is [decimal] -or $InputObject -is [datetime] -or
+        $InputObject -is [datetimeoffset] -or $InputObject -is [guid]) {
+        return $InputObject
+    }
+
+    if ($InputObject -is [System.Collections.IDictionary]) {
+        $normalized = [ordered]@{}
+        foreach ($key in @($InputObject.Keys | Sort-Object)) {
+            $normalized[$key] = ConvertTo-NormalizedJsonValue $InputObject[$key]
+        }
+        return $normalized
+    }
+
+    if ($InputObject -is [System.Collections.IEnumerable] -and $InputObject -isnot [string]) {
+        $items = [System.Collections.Generic.List[object]]::new()
+        foreach ($item in $InputObject) {
+            $items.Add((ConvertTo-NormalizedJsonValue $item))
+        }
+        return $items.ToArray()
+    }
+
+    if ($InputObject -is [psobject] -and $InputObject.PSObject.BaseObject -is [pscustomobject]) {
+        $normalized = [ordered]@{}
+        foreach ($property in @($InputObject.PSObject.Properties | Sort-Object Name)) {
+            if ($property.IsGettable) {
+                $normalized[$property.Name] = ConvertTo-NormalizedJsonValue $property.Value
+            }
+        }
+        return [pscustomobject]$normalized
+    }
+
+    return $InputObject
 }
 
 function ConvertTo-CanonicalYamlObjectJson {
