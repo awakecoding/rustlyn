@@ -2225,30 +2225,28 @@ fn snapshot_type_is_decimal(type_name: &str) -> bool {
 }
 
 fn snapshot_is_boolean(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_BOOLEAN)
-        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_boolean(type_name))
+    snapshot_type_is_boolean(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_BOOLEAN)
 }
 
 fn snapshot_is_signed_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_SIGNED_INTEGER)
-        || (snapshot_should_fallback_to_type_name(snapshot)
-            && snapshot_type_is_signed_integer(type_name))
+    snapshot_type_is_signed_integer(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_SIGNED_INTEGER)
 }
 
 fn snapshot_is_unsigned_integer(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
-        || (snapshot_should_fallback_to_type_name(snapshot)
-            && snapshot_type_is_unsigned_integer(type_name))
+    snapshot_type_is_unsigned_integer(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_UNSIGNED_INTEGER)
 }
 
 fn snapshot_is_float(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_FLOATING_POINT)
-        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_float(type_name))
+    snapshot_type_is_float(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_FLOATING_POINT)
 }
 
 fn snapshot_is_decimal(snapshot: &PowerShellObjectSnapshot, type_name: &str) -> bool {
-    normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_DECIMAL)
-        || (snapshot_should_fallback_to_type_name(snapshot) && snapshot_type_is_decimal(type_name))
+    snapshot_type_is_decimal(type_name)
+        || normalized_snapshot_scalar_type(snapshot) == Some(SCALAR_TYPE_DECIMAL)
 }
 
 fn is_non_finite_float_text(value: &str) -> bool {
