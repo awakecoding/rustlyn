@@ -5161,6 +5161,9 @@ static Type ResolvePowerShellDescriptorParameterType(string typeName)
 static void PowerShellRustFormatRuntimeMigratesFormatGlue()
 {
     var (bitcodePath, llvmRoot) = BuildCargoSampleBitcode("powershell_cmdlets");
+    var generatedLlPath = Path.ChangeExtension(bitcodePath, ".ll");
+    var generatedJsonFallbackHelperPresent = File.Exists(generatedLlPath)
+        && File.ReadAllText(generatedLlPath).Contains("snapshot_should_fallback_to_type_name", StringComparison.Ordinal);
     using var tempAssembly = TemporaryFile.CreateEmpty(".dll");
     var options = EmitOptions.Default with
     {
@@ -5353,19 +5356,36 @@ static void PowerShellRustFormatRuntimeMigratesFormatGlue()
                 _ => element.ToString()
             };
 
-        var outputs = InvokeGeneratedLifecycle(
-            "convert_to_rust_json",
-            new OrderedDictionary(StringComparer.Ordinal)
-            {
-                ["name"] = "rustlyn",
-                ["count"] = 3
-            },
-            new Dictionary<string, object?>
-            {
-                ["Compress"] = new SwitchParameter(true),
-                ["Depth"] = 8
-            });
-        Assert(outputs.Count == 1 && Equals(outputs[0], "{\"name\":\"rustlyn\",\"count\":3}"), $"Expected generated Rust JSON lifecycle to emit compressed JSON with numeric scalars preserved, but got '{string.Join(", ", outputs)}'.");
+        var jsonInput = new OrderedDictionary(StringComparer.Ordinal)
+        {
+            ["name"] = "rustlyn",
+            ["count"] = 3
+        };
+        var jsonParameters = new Dictionary<string, object?>
+        {
+            ["Compress"] = new SwitchParameter(true),
+            ["Depth"] = 8
+        };
+        var bridgedSnapshot = PowerShellCmdletBridge.GetInputSnapshot(
+            CreateTestPowerShellContext(
+                outputs: [],
+                inputObject: jsonInput,
+                lifecycleStateHandle: 0,
+                boundParameters: jsonParameters));
+        var bridgedSnapshotJson = JsonSerializer.Serialize(bridgedSnapshot);
+        var bridgedCountProperty = bridgedSnapshot.Properties.FirstOrDefault(static property => string.Equals(property.Name, "count", StringComparison.OrdinalIgnoreCase));
+        Assert(
+            bridgedCountProperty is not null
+                && bridgedCountProperty.Value.Kind == "scalar"
+                && bridgedCountProperty.Value.TypeName == typeof(int).FullName
+                && bridgedCountProperty.Value.ScalarType == "i"
+                && bridgedCountProperty.Value.ScalarValue == "3",
+            $"Expected managed PowerShell snapshot bridge to preserve numeric metadata for JSON count, but got {bridgedSnapshotJson}.");
+
+        var outputs = InvokeGeneratedLifecycle("convert_to_rust_json", jsonInput, jsonParameters);
+        Assert(
+            outputs.Count == 1 && Equals(outputs[0], "{\"name\":\"rustlyn\",\"count\":3}"),
+            $"Expected generated Rust JSON lifecycle to emit compressed JSON with numeric scalars preserved, but got '{string.Join(", ", outputs)}'. Bridge snapshot: {bridgedSnapshotJson}. LLVM fallback helper present: {generatedJsonFallbackHelperPresent}.");
 
         outputs = InvokeGeneratedLifecycle(
             "convert_to_rust_toml",
